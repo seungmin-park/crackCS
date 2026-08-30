@@ -33,6 +33,13 @@
 - Enum은 특별한 이유가 없다면 `@Enumerated(EnumType.STRING)`으로 저장한다.
 - 엔티티를 API 응답으로 직접 반환하지 않고 용도에 맞는 DTO로 변환한다.
 
+## Service 구현 관례
+
+- Service는 호출자가 의존하는 인터페이스와 실제 유스케이스를 수행하는 구현 클래스로 분리한다.
+- Service 인터페이스의 기본 구현 클래스는 인터페이스 이름 앞에 `Default`를 붙여 `Default{ServiceName}` 형식으로 명명하며, 뒤에 `Impl`을 붙이지 않는다.
+- `@Service`, `@Transactional`과 Repository 의존성은 구현 클래스에 두고 인터페이스에는 유스케이스 계약만 선언한다.
+- 호출자와 테스트는 구체 구현 클래스가 아닌 Service 인터페이스 타입에 의존한다.
+
 ### 날짜 정보
 
 - `createdAt`, `updatedAt`을 가진 도메인 엔티티는 생성 로직에서 두 값을 같은 현재 시각으로 초기화한다.
@@ -62,17 +69,24 @@ update(...)
 - 모든 테스트 클래스와 테스트 메서드에 한글 `@DisplayName`을 작성한다.
 - 테스트 메서드명은 프로젝트의 Java 명명 관례에 맞는 영어로 작성하고, 요구사항은 `@DisplayName`에 자연스러운 한글 문장으로 표현한다.
 - 테스트 하나는 가능한 한 하나의 동작 또는 실패 원인을 검증한다.
+- 테스트 데이터 클렌징과 반복되는 공통 fixture 초기화는 `@BeforeEach`에서 수행한다.
+- `@BeforeEach`에는 준비와 정리만 두고, 핵심 실행과 검증은 각 테스트 메서드에 명시한다.
 
 ### 테스트 종류 선택
 
 - 도메인 엔티티와 순수 도메인 규칙은 Spring 또는 JPA를 사용하지 않는 단위 테스트로 검증한다.
   - `@SpringBootTest`, `EntityManager`, Repository, `@Transactional`을 사용하지 않는다.
+- Service 테스트는 `@SpringBootTest`를 사용하는 통합 테스트로 작성한다.
+  - 실제 Service, Repository와 테스트 DB를 연결해 전체 흐름을 검증한다.
+  - Mock 테스트와 Mockito의 `@Mock`, `@InjectMocks`, `@MockBean`을 사용하지 않는다.
+  - 각 테스트는 필요한 경우 `@Transactional`로 격리하고 종료 후 변경을 롤백한다.
 - JPA 매핑, DB 제약과 Repository query는 JPA 통합 테스트로 검증한다.
 - Controller의 HTTP 계약, 직렬화, 인증과 상태 코드는 MVC/API 테스트로 검증한다.
 - 여러 계층을 연결한 핵심 사용자 흐름만 필요한 범위에서 통합 테스트로 검증한다.
 
 ```text
 도메인 규칙       → 순수 단위 테스트
+Service 유스케이스 → Spring Boot 통합 테스트
 JPA 매핑·Query   → JPA 통합 테스트
 HTTP 요청·응답   → MVC/API 테스트
 핵심 사용자 흐름  → 통합 테스트

@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DisplayName("Question 도메인")
+@DisplayName("문제 도메인")
 class QuestionTest {
 
     @Test
