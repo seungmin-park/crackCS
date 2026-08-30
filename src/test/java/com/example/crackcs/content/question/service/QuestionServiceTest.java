@@ -7,11 +7,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -59,9 +59,15 @@ class QuestionServiceTest {
         saveQuestion("첫 번째 질문");
         saveQuestion("두 번째 질문");
 
-        List<Question> questions = questionService.findAll();
+        Page<Question> questions = questionService.findAll(
+                null,
+                null,
+                null,
+                null,
+                PageRequest.of(0, 20)
+        );
 
-        assertThat(questions)
+        assertThat(questions.getContent())
                 .extracting(Question::getContent)
                 .containsExactlyInAnyOrder("첫 번째 질문", "두 번째 질문");
     }

@@ -1,3 +1,7 @@
 spring:
   application:
     name: crackCS
+  data:
+    web:
+      pageable:
+        max-page-size: 100

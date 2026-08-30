@@ -40,6 +40,15 @@
 - `@Service`, `@Transactional`과 Repository 의존성은 구현 클래스에 두고 인터페이스에는 유스케이스 계약만 선언한다.
 - 호출자와 테스트는 구체 구현 클래스가 아닌 Service 인터페이스 타입에 의존한다.
 
+## DTO 패키지 관례
+
+- HTTP 요청 DTO는 해당 Controller 하위의 `request` 패키지에 둔다.
+- HTTP 응답 DTO는 해당 Controller 하위의 `response` 패키지에 둔다.
+- 여러 도메인에서 공유하는 요청·응답 DTO도 역할에 따라 공통 영역의 `request`, `response` 패키지로 분리한다.
+- HTTP 입력값의 필수 여부, 범위와 형식 검증은 request DTO에 선언한다.
+- 입력 검증 실패 시 클라이언트에 전달할 메시지도 request DTO가 소유한다. Controller에 validation annotation이나 검증 메시지를 흩어놓지 않는다.
+- 도메인 객체는 DTO를 거치지 않는 생성 경로에서도 불변식이 깨지지 않도록 최종 방어 검증을 유지한다.
+
 ### 날짜 정보
 
 - `createdAt`, `updatedAt`을 가진 도메인 엔티티는 생성 로직에서 두 값을 같은 현재 시각으로 초기화한다.

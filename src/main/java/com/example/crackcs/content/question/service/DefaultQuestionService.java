@@ -2,12 +2,14 @@ package com.example.crackcs.content.question.service;
 
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
+import com.example.crackcs.content.question.domain.QuestionOrigin;
+import com.example.crackcs.content.question.domain.QuestionStatus;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Service
 @RequiredArgsConstructor
@@ -30,8 +32,14 @@ public class DefaultQuestionService implements QuestionService {
     }
 
     @Override
-    public List<Question> findAll() {
-        return questionRepository.findAll();
+    public Page<Question> findAll(
+            Long topicId,
+            QuestionStatus status,
+            QuestionDifficulty difficulty,
+            QuestionOrigin origin,
+            Pageable pageable
+    ) {
+        return questionRepository.findAllByConditions(topicId, status, difficulty, origin, pageable);
     }
 
     @Override
