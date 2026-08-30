@@ -1,0 +1,17 @@
+:root {
+  --app-font-sans: "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --app-background: #f6f8fb;
+  --app-text: #1f2937;
+  --app-text-secondary: #64748b;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: var(--app-text);
+  background: var(--app-background);
+  font-family: var(--app-font-sans);
+}
