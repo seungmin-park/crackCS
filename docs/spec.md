@@ -376,20 +376,127 @@ LEARNING과 STABLE의 정확한 임계값은 구현 전 확정하고 알고리�
 - Question·QuestionConcept 관리
 - 평가 실패 및 NEEDS_REVIEW 목록
 
-## 12. API 경계 초안
+## 12. API URI
 
-세부 요청·응답 스키마는 API 명세에서 확정한다.
+### 공통 규칙
 
-| 영역 | 필요한 API |
-|---|---|
-| 인증 | 회원가입, 로그인, 로그아웃, 현재 회원 조회 |
-| 학습 홈 | Knowledge State 요약, 추천 Question 조회 |
-| 문제 풀이 | Question 조회, Answer 제출, Evaluation 상태·결과 조회 |
-| 이력 | 내 Answer·Evaluation 목록과 상세 조회 |
-| 관리자 Topic | Topic·Concept 등록, 수정, 조회, 비활성화 |
-| 관리자 문서 | KnowledgeDocument 등록, 새 버전 생성, 검수, 공개, 폐기, Chunk 조회 |
-| 관리자 문제 | Question 등록, 수정, 검수, 공개, 폐기, QuestionConcept 관리 |
-| 관리자 평가 | FAILED·NEEDS_REVIEW Evaluation 조회 |
+- 모든 제품 API의 base path는 `/api`이다.
+- URI는 복수형 명사를 사용하고 trailing slash를 붙이지 않는다.
+- 요청과 응답 본문은 JSON을 사용한다. 문서 원문 upload 방식은 구현 전에 별도 확정한다.
+- 목록 API는 `page`, `size`, `sort` query parameter를 공통으로 사용한다.
+- ID path variable은 도메인을 드러내는 `memberId`, `questionId`, `answerId` 형태를 사용한다.
+- `review`, `publish`, `retire`처럼 도메인 상태를 바꾸는 명령은 `POST` 하위 URI로 표현한다.
+- 인증이 필요한 리소스는 세션 또는 확정된 인증 수단으로 현재 회원을 식별한다. 클라이언트가 임의의 memberId를 보내 소유자를 선택하지 않는다.
+- 접근 권한 표기의 `USER`는 ADMIN도 접근할 수 있음을 포함한다.
+
+### 시스템과 인증
+
+| Method | URI | 권한 | 성공 응답 | 목적 |
+|---|---|---|---|---|
+| GET | `/api/health` | PUBLIC | 200 | 프런트 연결과 기본 상태 확인 |
+| POST | `/api/auth/sign-up` | PUBLIC | 201 | LOCAL 회원가입 |
+| POST | `/api/auth/login` | PUBLIC | 200 | 이메일·비밀번호 로그인 |
+| POST | `/api/auth/logout` | USER | 204 | 현재 인증 상태 무효화 |
+| GET | `/api/members/me` | USER | 200 | 현재 회원과 역할 조회 |
+
+### 학습자 문제·답변·평가
+
+| Method | URI | 권한 | 성공 응답 | 목적 |
+|---|---|---|---|---|
+| GET | `/api/questions` | USER | 200 | 공개 문제 목록 조회 |
+| GET | `/api/questions/{questionId}` | USER | 200 | 공개 문제 상세 조회 |
+| GET | `/api/recommendations/next-question` | USER | 200 | 다음 기본 문제와 추천 이유 조회 |
+| POST | `/api/questions/{questionId}/answers` | USER | 202 | 답변 저장과 평가 시작 |
+| GET | `/api/members/me/answers` | USER | 200 | 내 답변·평가 이력 목록 |
+| GET | `/api/answers/{answerId}` | USER | 200 | 내 답변 상세 조회 |
+| GET | `/api/answers/{answerId}/evaluation` | USER | 200 | 평가 상태·결과·근거 조회 |
+| GET | `/api/answers/{answerId}/follow-up-question` | USER | 200 | 답변에서 생성된 후속 질문 조회 |
+| GET | `/api/members/me/knowledge-states` | USER | 200 | Topic·Concept별 지식 상태 조회 |
+| GET | `/api/members/me/progress` | USER | 200 | 학습 홈 요약 조회 |
+
+`GET /api/questions`는 `topicId`, `difficulty`, `page`, `size`, `sort`를 선택적으로 받는다. Phase 1 개발 중에는 문제 조회 두 URI를 임시 PUBLIC으로 사용할 수 있지만, Phase 2 완료 전에 USER 권한으로 전환한다.
+
+`POST /api/questions/{questionId}/answers`는 `Idempotency-Key` 요청 헤더를 필수로 받는다. 성공 응답에는 `answerId`, `evaluationId`와 초기 평가 상태를 포함한다. 같은 회원이 같은 key와 같은 요청을 다시 보내면 기존 결과를 반환하고, 같은 key로 다른 본문을 보내면 `409 Conflict`를 반환한다.
+
+`GET /api/answers/{answerId}`, 평가와 후속 질문 URI는 현재 회원이 소유한 Answer에만 접근할 수 있다. 존재하지 않는 Answer와 다른 회원의 Answer를 외부에서 구분할 필요가 없으면 모두 `404 Not Found`로 처리해 소유권 정보를 숨긴다.
+
+### 관리자 회원·분류
+
+| Method | URI | 권한 | 성공 응답 | 목적 |
+|---|---|---|---|---|
+| GET | `/api/admin/members` | ADMIN | 200 | 회원 목록 조회 |
+| PATCH | `/api/admin/members/{memberId}/status` | ADMIN | 200 | 회원 상태 변경 |
+| GET | `/api/admin/topics` | ADMIN | 200 | Topic 목록 조회 |
+| POST | `/api/admin/topics` | ADMIN | 201 | Topic 등록 |
+| GET | `/api/admin/topics/{topicId}` | ADMIN | 200 | Topic 상세 조회 |
+| PATCH | `/api/admin/topics/{topicId}` | ADMIN | 200 | Topic 수정 |
+| POST | `/api/admin/topics/{topicId}/deactivate` | ADMIN | 204 | Topic 비활성화 |
+| GET | `/api/admin/concepts` | ADMIN | 200 | Concept 목록 조회 |
+| POST | `/api/admin/concepts` | ADMIN | 201 | Concept 등록 |
+| GET | `/api/admin/concepts/{conceptId}` | ADMIN | 200 | Concept 상세 조회 |
+| PATCH | `/api/admin/concepts/{conceptId}` | ADMIN | 200 | Concept 수정 |
+| POST | `/api/admin/concepts/{conceptId}/deactivate` | ADMIN | 204 | Concept 비활성화 |
+
+Concept 목록은 `topicId`, `active`, `page`, `size`, `sort`를 선택적으로 받는다. Topic 목록은 `parentId`, `active`, `page`, `size`, `sort`를 선택적으로 받는다.
+
+### 관리자 KnowledgeDocument
+
+| Method | URI | 권한 | 성공 응답 | 목적 |
+|---|---|---|---|---|
+| GET | `/api/admin/knowledge-documents` | ADMIN | 200 | 문서 목록 조회 |
+| POST | `/api/admin/knowledge-documents` | ADMIN | 201 | 최초 DRAFT 문서 등록 |
+| GET | `/api/admin/knowledge-documents/{documentId}` | ADMIN | 200 | 문서 상세 조회 |
+| PATCH | `/api/admin/knowledge-documents/{documentId}` | ADMIN | 200 | DRAFT 문서 수정 |
+| POST | `/api/admin/knowledge-documents/{documentId}/versions` | ADMIN | 201 | 기존 문서 기반 새 DRAFT 버전 생성 |
+| POST | `/api/admin/knowledge-documents/{documentId}/review` | ADMIN | 200 | 문서 검수 완료 |
+| POST | `/api/admin/knowledge-documents/{documentId}/publish` | ADMIN | 200 | 문서 공개 |
+| POST | `/api/admin/knowledge-documents/{documentId}/retire` | ADMIN | 200 | 문서 폐기 상태 전환 |
+| POST | `/api/admin/knowledge-documents/{documentId}/chunks` | ADMIN | 202 | Chunk·embedding 생성 작업 시작 |
+| GET | `/api/admin/knowledge-documents/{documentId}/chunks` | ADMIN | 200 | 문서 Chunk 목록과 생성 상태 조회 |
+
+문서 목록은 `topicId`, `status`, `technologyVersion`, `page`, `size`, `sort`를 선택적으로 받는다. 상태 전이 명령은 현재 상태에서 허용되지 않으면 `409 Conflict`를 반환한다.
+
+### 관리자 Question
+
+| Method | URI | 권한 | 성공 응답 | 목적 |
+|---|---|---|---|---|
+| GET | `/api/admin/questions` | ADMIN | 200 | 문제 목록 조회 |
+| POST | `/api/admin/questions` | ADMIN | 201 | DRAFT 문제 등록 |
+| GET | `/api/admin/questions/{questionId}` | ADMIN | 200 | 문제와 평가 기준 상세 조회 |
+| PATCH | `/api/admin/questions/{questionId}` | ADMIN | 200 | DRAFT 문제 수정 |
+| PUT | `/api/admin/questions/{questionId}/concepts` | ADMIN | 200 | QuestionConcept 전체 교체 |
+| POST | `/api/admin/questions/{questionId}/review` | ADMIN | 200 | 문제 검수 완료 |
+| POST | `/api/admin/questions/{questionId}/publish` | ADMIN | 200 | 문제 공개 |
+| POST | `/api/admin/questions/{questionId}/retire` | ADMIN | 200 | 문제 폐기 상태 전환 |
+
+문제 목록은 `topicId`, `status`, `difficulty`, `origin`, `page`, `size`, `sort`를 선택적으로 받는다. QuestionConcept를 전체 교체하는 `PUT`은 DRAFT 문제에서만 허용하고, 공개된 문제의 의미 변경은 새 버전 생성 정책을 따른다.
+
+### 관리자 Evaluation
+
+| Method | URI | 권한 | 성공 응답 | 목적 |
+|---|---|---|---|---|
+| GET | `/api/admin/evaluations` | ADMIN | 200 | 평가 목록·실패 필터 조회 |
+| GET | `/api/admin/evaluations/{evaluationId}` | ADMIN | 200 | 평가, Answer, Evidence와 실패 상세 조회 |
+
+평가 목록은 `status`, `verdict`, `modelName`, `from`, `to`, `page`, `size`, `sort`를 선택적으로 받는다. FAILED는 `status=FAILED`, 검토 필요는 `verdict=NEEDS_REVIEW`로 조회한다.
+
+### HTTP 상태와 오류
+
+| 상황 | 상태 |
+|---|---:|
+| 조회·수정·상태 전이 성공 | 200 |
+| 리소스 생성 성공 | 201 |
+| 비동기 작업 접수 | 202 |
+| 응답 본문 없는 성공 | 204 |
+| 입력 형식·validation 실패 | 400 |
+| 인증되지 않음 | 401 |
+| 권한 없음 | 403 |
+| 리소스 없음 또는 숨겨야 하는 타인 소유 리소스 | 404 |
+| 중복·허용되지 않는 상태 전이·멱등 키 충돌 | 409 |
+| 과도한 요청 | 429 |
+| 외부 AI를 포함한 서버 내부 실패 | 500 또는 내부 오류 정책에 맞는 5xx |
+
+세부 request/response DTO 필드와 example은 각 Phase의 API 구현 전에 계약 테스트와 함께 확정한다. URI나 메서드를 변경하려면 `spec.md`를 먼저 수정하고 `tasks.md`와 프런트 API client를 함께 갱신한다.
 
 ## 13. 도메인 책임
 

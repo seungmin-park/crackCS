@@ -32,6 +32,7 @@
 |---|---|
 | `spec.md` | 무엇을 만들고 어떤 조건을 만족해야 하는지 정의 |
 | `plan.md` | 어떤 순서로 만들고 각 단계에서 어떻게 검증할지 정의 |
+| `tasks.md` | Phase를 체크 가능한 구현·검증 작업으로 분해 |
 | `domain-model-and-erd.md` | 도메인 관계와 테이블 구조 정의 |
 | `content-and-ai-policy.md` | 지식 출처, 검수와 AI 운영 정책 정의 |
 | `extension-features.md` | P0 이후 확장 기능 보관 |
