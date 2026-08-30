@@ -2,13 +2,57 @@ openapi: 3.1.0
 info:
   title: CrackCS Question API
   version: 1.0.0
-  description: 관리자용 Question 생성, 목록 조회, 상세 조회와 수정 API
+  description: 공개 문제 조회와 관리자용 Question 관리 API
 servers:
   - url: /
 tags:
+  - name: Public Questions
+    description: 학습자에게 공개된 문제 조회
   - name: Admin Questions
     description: 관리자 문제 관리
 paths:
+  /api/questions:
+    get:
+      tags:
+        - Public Questions
+      operationId: findPublicQuestions
+      summary: 공개 문제 목록 조회
+      description: PUBLISHED 상태인 문제만 페이지 단위로 조회한다.
+      parameters:
+        - $ref: '#/components/parameters/TopicIdQuery'
+        - $ref: '#/components/parameters/DifficultyQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/SizeQuery'
+        - $ref: '#/components/parameters/PublicSortQuery'
+      responses:
+        '200':
+          description: 공개 문제 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicQuestionPageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /api/questions/{questionId}:
+    parameters:
+      - $ref: '#/components/parameters/QuestionIdPath'
+    get:
+      tags:
+        - Public Questions
+      operationId: findPublicQuestionById
+      summary: 공개 문제 상세 조회
+      description: PUBLISHED 상태인 문제만 조회하며, 비공개 문제와 존재하지 않는 문제를 동일하게 처리한다.
+      responses:
+        '200':
+          description: 공개 문제 상세 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicQuestionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/QuestionNotFound'
   /api/admin/questions:
     get:
       tags:
@@ -173,6 +217,19 @@ components:
           - id,asc
       style: form
       explode: true
+    PublicSortQuery:
+      name: sort
+      in: query
+      required: false
+      description: '정렬 조건. 허용 필드: id, difficulty, createdAt. 형식: property,(asc|desc). 여러 조건은 반복해서 전달한다.'
+      schema:
+        type: array
+        items:
+          type: string
+        default:
+          - id,asc
+      style: form
+      explode: true
   responses:
     BadRequest:
       description: 요청 형식 또는 검증 실패
@@ -192,6 +249,64 @@ components:
             fieldErrors: []
             requestId: 1e85b909-2114-47be-a1c3-1fa47a4a7235
   schemas:
+    PublicTopicResponse:
+      type: object
+      required:
+        - id
+        - code
+        - name
+      properties:
+        id:
+          type: integer
+          format: int64
+        code:
+          type: string
+        name:
+          type: string
+    PublicQuestionResponse:
+      type: object
+      required:
+        - id
+        - topic
+        - difficulty
+        - content
+      properties:
+        id:
+          type: integer
+          format: int64
+        topic:
+          $ref: '#/components/schemas/PublicTopicResponse'
+        difficulty:
+          $ref: '#/components/schemas/QuestionDifficulty'
+        content:
+          type: string
+      description: 모범 답안과 Concept 평가 정보는 공개 응답에 포함하지 않는다.
+    PublicQuestionPageResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicQuestionResponse'
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
     QuestionCreateRequest:
       type: object
       required:

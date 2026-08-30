@@ -31,14 +31,14 @@ Phase Gate 체크
 - [x] Spring MVC, Spring Data JPA와 H2 의존성이 존재한다.
 - [x] Vue 3.5, TypeScript 6과 Vite 8 프로젝트 골격이 존재한다.
 - [x] 백엔드 기본 context-load 테스트 파일이 존재한다.
-- [ ] 현재 백엔드 테스트가 실제로 통과하는지 확인한다.
-- [ ] 현재 프런트 type-check와 production build가 통과하는지 확인한다.
-- [ ] 로컬 실행 절차와 필수 도구 버전을 README에 기록한다.
+- [x] 현재 백엔드 테스트가 실제로 통과하는지 확인한다.
+- [x] 현재 프런트 type-check와 production build가 통과하는지 확인한다.
+- [x] 로컬 실행 절차와 필수 도구 버전을 README에 기록한다.
 
 ## 3. 전체 진행 현황
 
 - [ ] Phase 0 — 개발 기반과 결정 기록
-- [ ] Phase 1 — 공개 문제 조회 최소 제품
+- [x] Phase 1 — 공개 문제 조회 최소 제품
 - [ ] Phase 2 — 회원 인증과 관리자 경계
 - [ ] Phase 3 — 관리자 콘텐츠 운영
 - [ ] Phase 4 — 답변과 평가 상태 골격
@@ -61,8 +61,8 @@ Phase Gate 체크
 - [ ] `POST /api/auth/login` — PUBLIC, 로그인
 - [ ] `POST /api/auth/logout` — USER, 로그아웃
 - [ ] `GET /api/members/me` — USER, 현재 회원 조회
-- [ ] `GET /api/questions` — USER, 공개 문제 목록
-- [ ] `GET /api/questions/{questionId}` — USER, 공개 문제 상세
+- [x] `GET /api/questions` — USER, 공개 문제 목록
+- [x] `GET /api/questions/{questionId}` — USER, 공개 문제 상세
 
 Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 Gate 전에 USER 권한으로 전환한다.
 
@@ -226,69 +226,69 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ### P1-T01 Topic 도메인과 schema
 
-- [ ] Topic ID, parent, code와 name 규칙을 구현한다.
-- [ ] 상위 Topic이 자기 자신을 가리키지 못하게 한다.
-- [ ] Topic code의 유일성을 DB에서 보장한다.
-- [ ] Topic migration과 JPA mapping을 작성한다.
-- [ ] 계층 조회에 필요한 repository query를 작성한다.
-- [ ] Topic 도메인·repository 테스트를 작성한다.
+- [x] Topic ID, parent, code와 name 규칙을 구현한다.
+- [x] 상위 Topic이 자기 자신을 가리키지 못하게 한다.
+- [x] Topic code의 유일성을 DB에서 보장한다.
+- [x] Topic migration과 JPA mapping을 작성한다.
+- [x] 계층 조회에 필요한 repository query를 작성한다.
+- [x] Topic 도메인·repository 테스트를 작성한다.
 
 ### P1-T02 Concept 도메인과 schema
 
-- [ ] Concept ID, Topic, code, name과 description 규칙을 구현한다.
-- [ ] Concept code의 유일성을 DB에서 보장한다.
-- [ ] 존재하는 Topic에만 Concept를 연결할 수 있게 한다.
-- [ ] Concept migration과 JPA mapping을 작성한다.
-- [ ] Topic별 Concept 조회 query와 테스트를 작성한다.
+- [x] Concept ID, Topic, code, name과 description 규칙을 구현한다.
+- [x] Concept code의 유일성을 DB에서 보장한다.
+- [x] 존재하는 Topic에만 Concept를 연결할 수 있게 한다.
+- [x] Concept migration과 JPA mapping을 작성한다.
+- [x] Topic별 Concept 조회 query와 테스트를 작성한다.
 
 ### P1-T03 Question과 QuestionConcept 최소 모델
 
-- [ ] Question의 Topic, origin, type, difficulty, content, reference answer와 status를 구현한다.
-- [ ] QuestionConcept 복합 키와 weight, required를 구현한다.
-- [ ] weight 범위와 필수 Concept 규칙을 정의한다.
-- [ ] PUBLISHED 문제는 Concept를 하나 이상 가져야 한다는 규칙을 구현한다.
-- [ ] 공개 조회에서 reference answer, Concept와 weight가 노출되지 않도록 DTO를 분리한다.
-- [ ] migration, mapping과 도메인 테스트를 작성한다.
+- [x] Question의 Topic, origin, type, difficulty, content, reference answer와 status를 구현한다.
+- [x] QuestionConcept 식별자와 Question·Concept 조합의 유일성, weight, required를 구현한다.
+- [x] weight 범위와 필수 Concept 규칙을 정의한다.
+- [x] PUBLISHED 문제는 Concept를 하나 이상 가져야 한다는 규칙을 구현한다.
+- [x] 공개 조회에서 reference answer, Concept와 weight가 노출되지 않도록 DTO를 분리한다.
+- [x] migration, mapping과 도메인 테스트를 작성한다.
 
 ### P1-T04 초기 문제 데이터
 
-- [ ] 네트워크, 운영체제 또는 Java 중 하나의 작은 Topic 구조를 선택한다.
-- [ ] DRAFT, PUBLISHED와 RETIRED 문제를 각각 준비한다.
-- [ ] PUBLISHED 문제에 하나 이상의 필수 Concept를 연결한다.
-- [ ] seed가 운영 데이터와 혼동되지 않도록 profile 또는 migration을 구분한다.
-- [ ] seed를 반복 적용해도 데이터가 중복되지 않는지 확인한다.
+- [x] 네트워크, 운영체제 또는 Java 중 하나의 작은 Topic 구조를 선택한다.
+- [x] DRAFT, PUBLISHED와 RETIRED 문제를 각각 준비한다.
+- [x] PUBLISHED 문제에 하나 이상의 필수 Concept를 연결한다.
+- [x] seed가 운영 데이터와 혼동되지 않도록 profile 또는 migration을 구분한다.
+- [x] seed를 반복 적용해도 데이터가 중복되지 않는지 확인한다.
 
 ### P1-T05 공개 문제 조회 API
 
-- [ ] 문제 목록 요청·응답 계약을 정의한다.
-- [ ] 문제 상세 요청·응답 계약을 정의한다.
-- [ ] PUBLISHED만 조회하는 application service를 구현한다.
-- [ ] 목록 pagination 또는 초기 조회 한도를 적용한다.
-- [ ] 존재하지 않거나 비공개인 문제는 공개 API에서 구분 없이 노출하지 않는다.
-- [ ] 엔티티를 직접 직렬화하지 않는다.
+- [x] 문제 목록 요청·응답 계약을 정의한다.
+- [x] 문제 상세 요청·응답 계약을 정의한다.
+- [x] PUBLISHED만 조회하는 application service를 구현한다.
+- [x] 목록 pagination 또는 초기 조회 한도를 적용한다.
+- [x] 존재하지 않거나 비공개인 문제는 공개 API에서 구분 없이 노출하지 않는다.
+- [x] 엔티티를 직접 직렬화하지 않는다.
 
 검증:
 
-- [ ] PUBLISHED 목록·상세 API 테스트가 통과한다.
-- [ ] DRAFT와 RETIRED가 조회되지 않는 테스트가 통과한다.
-- [ ] 응답에 reference answer와 평가 가중치가 없는지 테스트한다.
+- [x] PUBLISHED 목록·상세 API 테스트가 통과한다.
+- [x] DRAFT와 RETIRED가 조회되지 않는 테스트가 통과한다.
+- [x] 응답에 reference answer와 평가 가중치가 없는지 테스트한다.
 
 ### P1-T06 문제 목록·상세 화면
 
-- [ ] 문제 목록 route와 화면을 만든다.
-- [ ] 문제 상세 route와 화면을 만든다.
-- [ ] Topic, 난이도와 문제 본문을 표시한다.
-- [ ] loading, empty, not found와 server error 상태를 표시한다.
-- [ ] 화면에서 모범 답안과 내부 평가 정보에 접근하지 않는다.
-- [ ] 주요 화면 상태의 프런트 테스트를 작성한다.
+- [x] 문제 목록 route와 화면을 만든다.
+- [x] 문제 상세 route와 화면을 만든다.
+- [x] Topic, 난이도와 문제 본문을 표시한다.
+- [x] loading, empty, not found와 server error 상태를 표시한다.
+- [x] 화면에서 모범 답안과 내부 평가 정보에 접근하지 않는다.
+- [x] 주요 화면 상태의 프런트 테스트를 작성한다.
 
 ### Phase 1 Gate
 
-- [ ] 브라우저에서 PUBLISHED 문제 목록과 상세를 조회할 수 있다.
-- [ ] DRAFT·RETIRED 문제는 API와 화면에 노출되지 않는다.
-- [ ] 평가용 비공개 필드가 응답에 포함되지 않는다.
-- [ ] repository와 API 통합 테스트가 통과한다.
-- [ ] 공통 Phase 완료 정의를 통과한다.
+- [x] 브라우저에서 PUBLISHED 문제 목록과 상세를 조회할 수 있다.
+- [x] DRAFT·RETIRED 문제는 API와 화면에 노출되지 않는다.
+- [x] 평가용 비공개 필드가 응답에 포함되지 않는다.
+- [x] repository와 API 통합 테스트가 통과한다.
+- [x] 공통 Phase 완료 정의를 통과한다.
 
 ---
 
@@ -851,7 +851,7 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
 ### 문제, 답변과 평가
 
 - [ ] `FR-QUESTION-001` 추천 문제 조회 — P6-T05
-- [ ] `FR-QUESTION-002` 문제 표시 — P1-T05, P1-T06
+- [x] `FR-QUESTION-002` 문제 표시 — P1-T05, P1-T06
 - [ ] `FR-ANSWER-001` Answer 제출 — P4-T01, P4-T05, P4-T06
 - [ ] `FR-ANSWER-002` 중복 제출 방지 — P4-T02
 - [ ] `FR-ANSWER-003` 답변 이력 — P4-T06, P4-T07

@@ -285,12 +285,13 @@ FOLLOW_UP → source_answer_id IS NOT NULL
 
 | 컬럼          | 타입           | 제약                | 설명          |
 |-------------|--------------|-------------------|-------------|
-| question_id | BIGINT       | PK, FK → QUESTION | 문제 ID       |
-| concept_id  | BIGINT       | PK, FK → CONCEPT  | 개념 ID       |
+| id          | BIGINT       | PK                | 문제 평가 개념 ID |
+| question_id | BIGINT       | FK → QUESTION     | 문제 ID       |
+| concept_id  | BIGINT       | FK → CONCEPT      | 개념 ID       |
 | weight      | DECIMAL(5,2) | NOT NULL          | 문제 내 평가 가중치 |
 | required    | BOOLEAN      | NOT NULL          | 필수 개념 여부    |
 
-복합 기본 키는 `(question_id, concept_id)`이다. DRAFT 상태에서는 연결이 없을 수 있지만, PUBLISHED 또는 SYSTEM_FOLLOW_UP Question은 하나 이상의 QuestionConcept를 가져야 한다. 이 최소 개수는 일반 FK로 강제할 수 없으므로 공개 상태 전이와 후속 질문 생성 유스케이스에서 검증한다.
+`id`를 엔티티 식별자로 사용하고 `(question_id, concept_id)` UNIQUE 제약으로 같은 문제에 동일한 Concept가 중복 연결되는 것을 막는다. `required`는 정답에 반드시 포함해야 하는 Concept인지 나타내고, `weight`는 여러 Concept가 평가 결과에 기여하는 상대적 비중이다. DRAFT 상태에서는 연결이 없을 수 있지만, PUBLISHED 또는 SYSTEM_FOLLOW_UP Question은 하나 이상의 QuestionConcept를 가져야 한다. 이 최소 개수는 일반 FK로 강제할 수 없으므로 공개 상태 전이와 후속 질문 생성 유스케이스에서 검증한다.
 
 ### ANSWER
 

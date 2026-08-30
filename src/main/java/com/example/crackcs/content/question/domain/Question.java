@@ -1,20 +1,31 @@
 package com.example.crackcs.content.question.domain;
 
+import com.example.crackcs.content.concept.domain.Concept;
+import com.example.crackcs.content.topic.domain.Topic;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -32,8 +43,9 @@ public class Question {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "topic_id", nullable = false)
-    private Long topicId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "topic_id", nullable = false)
+    private Topic topic;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -63,14 +75,17 @@ public class Question {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<QuestionConcept> questionConcepts = new LinkedHashSet<>();
+
     @Builder
     private Question(
-            Long topicId,
+            Topic topic,
             QuestionDifficulty difficulty,
             String content,
             String referenceAnswer
     ) {
-        this.topicId = requirePositive(topicId, "topicId");
+        this.topic = requireNonNull(topic, "topic");
         this.origin = QuestionOrigin.ADMIN;
         this.type = QuestionType.NORMAL;
         this.difficulty = requireNonNull(difficulty, "difficulty");
@@ -84,28 +99,67 @@ public class Question {
     }
 
     public void update(
-            Long topicId,
+            Topic topic,
             QuestionDifficulty difficulty,
             String content,
             String referenceAnswer
     ) {
-        Long validatedTopicId = requirePositive(topicId, "topicId");
+        Topic validatedTopic = requireNonNull(topic, "topic");
         QuestionDifficulty validatedDifficulty = requireNonNull(difficulty, "difficulty");
         String validatedContent = requireText(content, "content");
         String validatedReferenceAnswer = requireText(referenceAnswer, "referenceAnswer");
 
-        this.topicId = validatedTopicId;
+        this.topic = validatedTopic;
         this.difficulty = validatedDifficulty;
         this.content = validatedContent;
         this.referenceAnswer = validatedReferenceAnswer;
         this.updatedAt = LocalDateTime.now();
     }
 
-    private static Long requirePositive(Long value, String fieldName) {
-        if (value == null || value <= 0) {
-            throw new IllegalArgumentException(fieldName + " must be positive");
+    public QuestionConcept addConcept(Concept concept, BigDecimal weight, boolean required) {
+        requireNonNull(concept, "concept");
+        if (hasConcept(concept)) {
+            throw new IllegalArgumentException("concept must not be duplicated");
         }
-        return value;
+
+        QuestionConcept questionConcept = QuestionConcept.create(this, concept, weight, required);
+        questionConcepts.add(questionConcept);
+        return questionConcept;
+    }
+
+    public void publish() {
+        if (questionConcepts.isEmpty()) {
+            throw new IllegalStateException("published question must have at least one concept");
+        }
+        if (questionConcepts.stream().noneMatch(QuestionConcept::isRequired)) {
+            throw new IllegalStateException("published question must have at least one required concept");
+        }
+
+        this.status = QuestionStatus.PUBLISHED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void retire() {
+        this.status = QuestionStatus.RETIRED;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public Long getTopicId() {
+        return topic.getId();
+    }
+
+    public Set<QuestionConcept> getQuestionConcepts() {
+        return Collections.unmodifiableSet(questionConcepts);
+    }
+
+    private boolean hasConcept(Concept concept) {
+        return questionConcepts.stream()
+                .map(QuestionConcept::getConcept)
+                .anyMatch(existing -> existing == concept || samePersistentConcept(existing, concept));
+    }
+
+    private boolean samePersistentConcept(Concept existing, Concept candidate) {
+        return existing.getId() != null && existing.getId().equals(candidate.getId());
     }
 
     private static <T> T requireNonNull(T value, String fieldName) {
@@ -121,5 +175,4 @@ public class Question {
         }
         return value;
     }
-
 }

@@ -1,4 +1,4 @@
-package com.example.crackcs.content.question.service;
+package com.example.crackcs.exception;
 
 public class QuestionNotFoundException extends RuntimeException {
 

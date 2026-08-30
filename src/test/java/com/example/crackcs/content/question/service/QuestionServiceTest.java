@@ -1,8 +1,10 @@
 package com.example.crackcs.content.question.service;
 
 import com.example.crackcs.content.question.domain.*;
+import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.content.question.repository.QuestionRepository;
-import org.junit.jupiter.api.BeforeEach;
+import com.example.crackcs.content.topic.domain.Topic;
+import com.example.crackcs.content.topic.repository.TopicRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +19,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Transactional
-@DisplayName("문제 서비스")
 class QuestionServiceTest {
 
     @Autowired
@@ -26,16 +27,15 @@ class QuestionServiceTest {
     @Autowired
     private QuestionRepository questionRepository;
 
-    @BeforeEach
-    void setup() {
-        questionRepository.deleteAllInBatch();
-    }
+    @Autowired
+    private TopicRepository topicRepository;
 
     @Test
     @DisplayName("관리자 초안 일반 문제를 생성하고 저장한다")
     void createsAndSavesQuestion() {
+        Topic firstTopic = saveTopic("OPERATING_SYSTEM", "운영체제");
         Question createdQuestion = questionService.create(
-                1L,
+                firstTopic.getId(),
                 QuestionDifficulty.BASIC,
                 "프로세스와 스레드의 차이를 설명하세요.",
                 "프로세스는 자원을 독립적으로 소유하고, 스레드는 프로세스의 자원을 공유합니다."
@@ -43,7 +43,7 @@ class QuestionServiceTest {
 
         Question savedQuestion = questionRepository.findById(createdQuestion.getId()).orElseThrow();
 
-        assertThat(savedQuestion.getTopicId()).isEqualTo(1L);
+        assertThat(savedQuestion.getTopicId()).isEqualTo(firstTopic.getId());
         assertThat(savedQuestion.getOrigin()).isEqualTo(QuestionOrigin.ADMIN);
         assertThat(savedQuestion.getType()).isEqualTo(QuestionType.NORMAL);
         assertThat(savedQuestion.getDifficulty()).isEqualTo(QuestionDifficulty.BASIC);
@@ -56,8 +56,9 @@ class QuestionServiceTest {
     @Test
     @DisplayName("저장된 문제 목록을 조회한다")
     void findsAllQuestions() {
-        saveQuestion("첫 번째 질문");
-        saveQuestion("두 번째 질문");
+        Topic firstTopic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        saveQuestion(firstTopic, "첫 번째 질문");
+        saveQuestion(firstTopic, "두 번째 질문");
 
         Page<Question> questions = questionService.findAll(
                 null,
@@ -75,7 +76,8 @@ class QuestionServiceTest {
     @Test
     @DisplayName("ID에 해당하는 문제를 조회한다")
     void findsQuestionById() {
-        Question savedQuestion = saveQuestion("기존 질문");
+        Topic firstTopic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        Question savedQuestion = saveQuestion(firstTopic, "기존 질문");
         Long questionId = savedQuestion.getId();
 
         Question foundQuestion = questionService.findById(questionId);
@@ -95,14 +97,16 @@ class QuestionServiceTest {
     @Test
     @DisplayName("문제를 조회한 뒤 정보를 수정하고 저장한다")
     void updatesAndSavesQuestion() {
-        Question savedQuestion = saveQuestion("기존 질문");
+        Topic firstTopic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        Topic secondTopic = saveTopic("NETWORK", "네트워크");
+        Question savedQuestion = saveQuestion(firstTopic, "기존 질문");
         Long questionId = savedQuestion.getId();
         LocalDateTime createdAt = savedQuestion.getCreatedAt();
         LocalDateTime firstUpdatedAt = savedQuestion.getUpdatedAt();
 
         questionService.update(
                 questionId,
-                2L,
+                secondTopic.getId(),
                 QuestionDifficulty.ADVANCED,
                 "변경된 질문",
                 "변경된 모범 답안"
@@ -110,7 +114,7 @@ class QuestionServiceTest {
 
         Question updatedQuestion = questionService.findById(questionId);
 
-        assertThat(updatedQuestion.getTopicId()).isEqualTo(2L);
+        assertThat(updatedQuestion.getTopicId()).isEqualTo(secondTopic.getId());
         assertThat(updatedQuestion.getDifficulty()).isEqualTo(QuestionDifficulty.ADVANCED);
         assertThat(updatedQuestion.getContent()).isEqualTo("변경된 질문");
         assertThat(updatedQuestion.getReferenceAnswer()).isEqualTo("변경된 모범 답안");
@@ -123,7 +127,7 @@ class QuestionServiceTest {
     void throwsExceptionWhenQuestionToUpdateDoesNotExist() {
         assertThatThrownBy(() -> questionService.update(
                 Long.MAX_VALUE,
-                2L,
+                1L,
                 QuestionDifficulty.ADVANCED,
                 "변경된 질문",
                 "변경된 모범 답안"
@@ -132,9 +136,16 @@ class QuestionServiceTest {
                 .hasMessage("Question not found: " + Long.MAX_VALUE);
     }
 
-    private Question saveQuestion(String content) {
+    private Topic saveTopic(String code, String name) {
+        return topicRepository.save(Topic.builder()
+                .code(code)
+                .name(name)
+                .build());
+    }
+
+    private Question saveQuestion(Topic topic, String content) {
         Question question = Question.builder()
-                .topicId(1L)
+                .topic(topic)
                 .difficulty(QuestionDifficulty.BASIC)
                 .content(content)
                 .referenceAnswer("모범 답안")

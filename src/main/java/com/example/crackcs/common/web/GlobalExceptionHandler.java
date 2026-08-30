@@ -1,7 +1,8 @@
 package com.example.crackcs.common.web;
 
 import com.example.crackcs.common.web.response.ApiErrorResponse;
-import com.example.crackcs.content.question.service.QuestionNotFoundException;
+import com.example.crackcs.exception.QuestionNotFoundException;
+import com.example.crackcs.exception.TopicNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(QuestionNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleQuestionNotFound(QuestionNotFoundException exception) {
         return error(HttpStatus.NOT_FOUND, "QUESTION_NOT_FOUND", exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(TopicNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleTopicNotFound(TopicNotFoundException exception) {
+        return error(HttpStatus.NOT_FOUND, "TOPIC_NOT_FOUND", exception.getMessage(), List.of());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -85,18 +91,18 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", exception.getMessage(), List.of());
     }
 
-    private ResponseEntity<ApiErrorResponse> error(
-            HttpStatus status,
-            String code,
-            String message,
-            List<ApiErrorResponse.FieldErrorResponse> fieldErrors
-    ) {
-        ApiErrorResponse response = new ApiErrorResponse(
-                code,
-                message,
-                fieldErrors,
-                UUID.randomUUID().toString()
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorResponse> handleUnexpectedException() {
+        return error(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "INTERNAL_SERVER_ERROR",
+                "서버에서 요청을 처리하는 중 오류가 발생했습니다.",
+                List.of()
         );
+    }
+
+    private ResponseEntity<ApiErrorResponse> error(HttpStatus status, String code, String message, List<ApiErrorResponse.FieldErrorResponse> fieldErrors) {
+        ApiErrorResponse response = new ApiErrorResponse(code, message, fieldErrors, UUID.randomUUID().toString());
         return ResponseEntity.status(status).body(response);
     }
 }

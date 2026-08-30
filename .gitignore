@@ -3,6 +3,7 @@ HELP.md
 build/
 front/node_modules/
 front/dist/
+data/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
