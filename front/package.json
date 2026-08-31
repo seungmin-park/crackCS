@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "npm-run-all2 type-check build-only",
     "build-only": "vite build",
+    "test": "vitest run",
     "type-check": "vue-tsc --build",
     "preview": "vite preview"
   },
@@ -21,11 +22,14 @@
     "@tsconfig/node24": "^24.0.4",
     "@types/node": "^25.5.0",
     "@vitejs/plugin-vue": "^6.0.5",
+    "@vue/test-utils": "^2.5.0",
     "@vue/tsconfig": "^0.9.1",
+    "jsdom": "^29.1.1",
     "npm-run-all2": "^8.0.4",
     "sass": "^1.103.1",
     "typescript": "~6.0.2",
     "vite": "^8.0.3",
+    "vitest": "^4.1.11",
     "vue-tsc": "^3.2.6"
   },
   "engines": {
