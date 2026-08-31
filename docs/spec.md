@@ -93,6 +93,8 @@ AI 정오 판정
 | 초기 콘텐츠 | 관리자가 등록하고 검수한 문제 은행 |
 | 초기 주제 | CS 기초, Java 21, Spring Boot 4.1.x, Spring Framework 7.0.x, Jakarta Persistence 3.2 |
 | 인증 | 이메일·비밀번호 기반 LOCAL 계정 |
+| 인증 상태 유지 | 동일 출처 웹 기준 HttpOnly 서버 세션, CSRF token 병행 |
+| 비밀번호 정책 | 15~64자 passphrase, 제어 문자 금지, UTF-8 72 byte 이하 |
 | 권한 | USER, ADMIN |
 | 평가 우선순위 | 표현력보다 핵심 개념의 정오 판정 우선 |
 | 평가 판정 | CORRECT, PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW |
@@ -720,14 +722,14 @@ And 새로운 Evaluation만 새 문서 버전을 사용할 수 있다.
 
 | ID | 결정 필요 항목 | 결정 시점 | 기본 제안 |
 |---|---|---|---|
-| OQ-001 | 서버 세션과 토큰 중 인증 상태 유지 방식 | Phase 0 | 동일 출처 웹 운영이면 서버 세션 우선 검토 |
+| OQ-001 | 서버 세션과 토큰 중 인증 상태 유지 방식 | 결정 | 동일 출처 웹의 HttpOnly 서버 세션과 CSRF token 사용 ([ADR-0001](./adr/0001-session-based-authentication.md)) |
 | OQ-002 | Production DB와 벡터 저장 방식 | Phase 0 | PostgreSQL + pgvector 우선 검토 |
 | OQ-003 | PARTIALLY_CORRECT Concept 충족 기준 | 골든 세트 작성 후 | 필수 Concept 누락과 오개념을 분리해 판정 |
 | OQ-004 | Knowledge State 갱신 공식과 STABLE 임계값 | Phase 3 전 | 버전 필드를 두고 초기에는 단순 가중 평균 |
 | OQ-005 | AI 평가 동기·비동기 실행 방식 | Phase 2 전 | Answer 저장 후 비동기 평가 우선 검토 |
 | OQ-006 | 초기 Topic별 문제·문서 최소 수 | 콘텐츠 입력 전 | 하위 Topic별 공개 문제 5개 이상으로 파일럿 |
 | OQ-007 | AI 생성 문제 기능 도입 시점 | P0 출시 후 | 골든 세트와 관리자 검수 처리량 확인 후 결정 |
-| OQ-008 | 비밀번호 최소 길이와 복잡도 정책 | Phase 1 전 | 최소 8자 이상을 출발점으로 보안·사용성을 함께 검토 |
+| OQ-008 | 비밀번호 최소 길이와 복잡도 정책 | 결정 | 15~64자 passphrase, 제어 문자 금지, UTF-8 72 byte 이하 ([ADR-0002](./adr/0002-password-policy.md)) |
 
 ## 22. P0 완료 정의
 

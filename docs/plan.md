@@ -77,7 +77,7 @@
 
 | 기술·결정 | 도입 Phase | 판단 |
 |---|---:|---|
-| Flyway 또는 동등한 DB migration | Phase 0 | 테이블 변경 이력을 초기부터 재현하기 위해 필요 |
+| 버전 기반 DB migration | 운영 DB 결정 시 재검토 | 현재 H2 개발 단계에서는 보류하고 profile별 Hibernate schema 정책 사용 |
 | Spring Security | Phase 2 | 인증·인가가 시작될 때 도입 |
 | Bean Validation | Phase 1 | API 입력 경계부터 사용 |
 | 프런트 API client와 공통 오류 처리 | Phase 1 | 화면마다 HTTP 처리를 복제하지 않도록 초기 도입 |
@@ -123,7 +123,7 @@ com.example.crackcs
 
 | Phase | 결과물 | 핵심 검증 |
 |---:|---|---|
-| 0 | 실행·변경 가능한 개발 기반 | 백엔드·프런트 실행, DB migration 재현 |
+| 0 | 실행·변경 가능한 개발 기반 | 백엔드·프런트 실행, profile별 DB schema 재현 |
 | 1 | 로그인 없이 문제를 조회하는 최소 제품 | 등록된 문제 목록·상세 조회 |
 | 2 | 회원가입·로그인과 관리자 경계 | USER의 관리자 API 접근 차단 |
 | 3 | 관리자가 콘텐츠를 공개하는 운영 흐름 | DRAFT가 노출되지 않고 PUBLISHED만 조회 |
@@ -143,7 +143,7 @@ com.example.crackcs
 
 - 백엔드와 프런트엔드 로컬 실행 절차를 문서화한다.
 - 개발용 H2 설정과 테스트용 DB 설정을 분리한다.
-- DB migration 도구를 선택하고 첫 schema migration을 적용한다.
+- 운영 DB 확정 전 schema 관리 방식을 결정하고 profile별 Hibernate 정책을 적용한다.
 - API 오류 응답 형식과 예외 처리 기준을 정한다.
 - 프런트 개발 서버에서 백엔드 API로 연결되는 proxy 또는 CORS 방식을 정한다.
 - `spec.md`의 OQ-001, OQ-002, OQ-008 결정 시점을 확인하고 ADR 형식을 준비한다.
@@ -152,13 +152,13 @@ com.example.crackcs
 기술 초점:
 
 - Spring profile로 실행 환경을 분리한다.
-- migration이 JPA 자동 생성보다 schema의 변경 이력을 명시적으로 소유한다.
+- 기본 profile은 외부 schema를 검증하고 local과 test에서만 Hibernate가 schema를 생성·변경한다.
 - 개발 편의를 위해 H2를 쓰되 운영 DB 호환성을 보장한다고 가정하지 않는다.
 
 완료 조건:
 
 - 새 환경에서 정해진 명령으로 백엔드와 프런트엔드를 실행할 수 있다.
-- 빈 DB에 migration을 적용해 동일 schema를 만들 수 있다.
+- 빈 local DB에 엔티티 mapping으로 동일 schema를 만들 수 있다.
 - 기본 애플리케이션 테스트, 프런트 type-check와 build가 통과한다.
 - 오류 응답 예제가 문서화되어 있다.
 
@@ -179,7 +179,7 @@ com.example.crackcs
 작업:
 
 - Topic, Concept, Question, QuestionConcept의 최소 테이블과 도메인을 구현한다.
-- migration 또는 seed로 소수의 PUBLISHED 문제를 넣는다.
+- local seed로 소수의 PUBLISHED 문제를 넣는다.
 - PUBLISHED 문제 목록과 상세 조회 API를 구현한다.
 - Vue에 문제 목록과 상세 화면을 구현한다.
 - 모범 답안과 평가용 Concept가 응답에 노출되지 않도록 DTO를 분리한다.
@@ -438,7 +438,7 @@ flowchart LR
 - 대상 요구사항과 인수 조건이 테스트 또는 재현 절차로 검증된다.
 - 백엔드 테스트가 통과한다.
 - 프런트 type-check와 production build가 통과한다.
-- 새 schema 변경은 migration으로 재현된다.
+- 새 schema 변경이 현재 profile별 schema 정책으로 재현된다.
 - API 변경이 프런트와 문서에 반영된다.
 - 비밀정보와 개인정보가 로그·저장소에 노출되지 않는다.
 - 실패 상태가 사용자에게 무한 대기나 빈 화면으로 나타나지 않는다.
@@ -449,7 +449,7 @@ flowchart LR
 한 Phase도 하나의 거대한 변경으로 만들지 않는다. 다음 순서의 작은 완료 단위로 나눈다.
 
 ```text
-도메인 규칙과 migration
+도메인 규칙과 schema mapping
         ↓
 Repository와 통합 테스트
         ↓

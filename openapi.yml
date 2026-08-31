@@ -1,16 +1,103 @@
 openapi: 3.1.0
 info:
-  title: CrackCS Question API
-  version: 1.0.0
-  description: 공개 문제 조회와 관리자용 Question 관리 API
+  title: CrackCS API
+  version: 2.0.0
+  description: 세션 인증과 공개 문제 조회 및 관리자 API
 servers:
   - url: /
 tags:
+  - name: Authentication
+    description: LOCAL 회원가입과 서버 세션 인증
+  - name: Members
+    description: 현재 인증 회원 조회
   - name: Public Questions
     description: 학습자에게 공개된 문제 조회
   - name: Admin Questions
     description: 관리자 문제 관리
 paths:
+  /api/auth/csrf:
+    get:
+      tags: [Authentication]
+      operationId: issueCsrfToken
+      summary: CSRF token 발급
+      security: []
+      responses:
+        '200':
+          description: 상태 변경 요청에 사용할 CSRF token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CsrfTokenResponse'
+  /api/auth/sign-up:
+    post:
+      tags: [Authentication]
+      operationId: signUp
+      summary: LOCAL 회원가입
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUpRequest'
+      responses:
+        '201':
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/DuplicateAuthAccount'
+  /api/auth/login:
+    post:
+      tags: [Authentication]
+      operationId: login
+      summary: 이메일과 비밀번호 로그인
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 로그인 성공과 session 생성
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/InvalidCredentials'
+  /api/auth/logout:
+    post:
+      tags: [Authentication]
+      operationId: logout
+      summary: 현재 session 로그아웃
+      responses:
+        '204':
+          description: session 무효화 성공
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/members/me:
+    get:
+      tags: [Members]
+      operationId: findCurrentMember
+      summary: 현재 회원과 역할 조회
+      responses:
+        '200':
+          description: 현재 인증 회원
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
   /api/questions:
     get:
       tags:
@@ -145,6 +232,11 @@ paths:
         '404':
           $ref: '#/components/responses/QuestionNotFound'
 components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: CRACKCS_SESSION
   parameters:
     QuestionIdPath:
       name: questionId
@@ -248,7 +340,83 @@ components:
             message: 'Question not found: 999'
             fieldErrors: []
             requestId: 1e85b909-2114-47be-a1c3-1fa47a4a7235
+    Unauthorized:
+      description: 인증이 필요함
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    Forbidden:
+      description: 인증됐지만 역할 또는 소유권이 없음
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    InvalidCredentials:
+      description: 이메일 또는 비밀번호가 올바르지 않거나 회원이 비활성 상태임
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
+    DuplicateAuthAccount:
+      description: 같은 LOCAL 이메일 계정이 이미 존재함
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
   schemas:
+    SignUpRequest:
+      type: object
+      required: [email, password, nickname]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          format: password
+          minLength: 15
+          maxLength: 64
+          description: 제어 문자가 없고 UTF-8 기준 72 byte 이하인 passphrase
+        nickname:
+          type: string
+          minLength: 1
+          maxLength: 100
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    MemberResponse:
+      type: object
+      required: [id, nickname, role, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nickname:
+          type: string
+        role:
+          type: string
+          enum: [USER, ADMIN]
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, WITHDRAWN]
+    CsrfTokenResponse:
+      type: object
+      required: [token, headerName]
+      properties:
+        token:
+          type: string
+        headerName:
+          type: string
+          example: X-CSRF-TOKEN
     PublicTopicResponse:
       type: object
       required:
@@ -469,3 +637,5 @@ components:
         - DRAFT
         - PUBLISHED
         - RETIRED
+security:
+  - sessionCookie: []

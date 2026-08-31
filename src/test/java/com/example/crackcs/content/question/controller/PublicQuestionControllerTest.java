@@ -9,11 +9,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
@@ -23,12 +23,14 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PublicQuestionController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class PublicQuestionControllerTest {
 
     @Autowired
@@ -112,22 +114,19 @@ class PublicQuestionControllerTest {
     }
 
     private Topic createTopic() {
-        Topic topic = Topic.builder()
-                .code("OPERATING_SYSTEM")
-                .name("운영체제")
-                .build();
-        ReflectionTestUtils.setField(topic, "id", 1L);
+        Topic topic = mock(Topic.class);
+        given(topic.getId()).willReturn(1L);
+        given(topic.getCode()).willReturn("OPERATING_SYSTEM");
+        given(topic.getName()).willReturn("운영체제");
         return topic;
     }
 
     private Question createPublicQuestion(Topic topic) {
-        Question question = Question.builder()
-                .topic(topic)
-                .difficulty(QuestionDifficulty.BASIC)
-                .content("공개 질문")
-                .referenceAnswer("외부에 노출하면 안 되는 모범 답안")
-                .build();
-        ReflectionTestUtils.setField(question, "id", 10L);
+        Question question = mock(Question.class);
+        given(question.getId()).willReturn(10L);
+        given(question.getTopic()).willReturn(topic);
+        given(question.getDifficulty()).willReturn(QuestionDifficulty.BASIC);
+        given(question.getContent()).willReturn("공개 질문");
         return question;
     }
 }

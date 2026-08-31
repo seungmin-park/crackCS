@@ -1,6 +1,10 @@
 package com.example.crackcs.common.web;
 
 import com.example.crackcs.common.web.response.ApiErrorResponse;
+import com.example.crackcs.exception.DuplicateAuthAccountException;
+import com.example.crackcs.exception.InvalidCredentialsException;
+import com.example.crackcs.exception.MemberNotFoundException;
+import com.example.crackcs.exception.TooManyLoginAttemptsException;
 import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.exception.TopicNotFoundException;
 import jakarta.validation.ConstraintViolationException;
@@ -17,6 +21,34 @@ import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(TooManyLoginAttemptsException.class)
+    public ResponseEntity<ApiErrorResponse> handleTooManyLoginAttempts(TooManyLoginAttemptsException exception) {
+        ApiErrorResponse response = new ApiErrorResponse(
+                "TOO_MANY_LOGIN_ATTEMPTS",
+                exception.getMessage(),
+                List.of(),
+                UUID.randomUUID().toString()
+        );
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", Long.toString(exception.getRetryAfterSeconds()))
+                .body(response);
+    }
+
+    @ExceptionHandler(MemberNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleMemberNotFound(MemberNotFoundException exception) {
+        return error(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidCredentials(InvalidCredentialsException exception) {
+        return error(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(DuplicateAuthAccountException.class)
+    public ResponseEntity<ApiErrorResponse> handleDuplicateAuthAccount(DuplicateAuthAccountException exception) {
+        return error(HttpStatus.CONFLICT, "DUPLICATE_AUTH_ACCOUNT", exception.getMessage(), List.of());
+    }
 
     @ExceptionHandler(QuestionNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleQuestionNotFound(QuestionNotFoundException exception) {

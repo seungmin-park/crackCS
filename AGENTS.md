@@ -91,6 +91,14 @@ update(...)
 - 로컬 seed SQL은 개발자가 애플리케이션을 실행해 API와 화면을 즉시 확인하기 위한 용도로만 사용한다.
 - 자동화 테스트는 로컬 seed SQL에 의존하지 않고 각 테스트에 필요한 데이터를 Java fixture로 직접 생성한다. 따라서 로컬 seed의 내용과 건수를 검증하는 별도 테스트는 두지 않는다.
 
+### DB schema 관리
+
+- 현재 Flyway 같은 버전 기반 migration 도구는 사용하지 않는다.
+- 기본 profile은 `ddl-auto=validate`로 외부에서 준비한 schema와 JPA mapping의 일치만 확인한다.
+- local profile은 개발 편의를 위해 `ddl-auto=update`를 사용하고, 화면 확인용 데이터만 local SQL 초기화로 넣는다.
+- test profile은 `ddl-auto=create-drop`을 사용하며 local DB나 local seed를 읽지 않는다.
+- `ddl-auto=update`를 운영 schema 변경 수단으로 사용하지 않는다. 운영 DB 도입 전에 버전 관리, 배포 순서와 rollback을 포함한 별도 schema 변경 절차를 결정한다.
+
 ### 테스트 종류 선택
 
 - 도메인 엔티티와 순수 도메인 규칙은 Spring 또는 JPA를 사용하지 않는 단위 테스트로 검증한다.
@@ -105,6 +113,8 @@ update(...)
 - DB 저장 후 새 객체로 복원되는 mapping 자체가 검증 대상인 특별한 경우에만 이유가 드러나는 테스트에서 `flush()`와 `clear()`를 사용한다. 객체 참조가 다르다는 `isNotSameAs()`는 요구사항이 아니므로 검증하지 않는다.
 - Controller의 HTTP 계약, 직렬화, 인증과 상태 코드는 MVC/API 테스트로 검증한다.
 - Controller 테스트는 Service를 mock으로 대체하고 실제 Repository나 DB를 사용하지 않는다. 요청 바인딩, DTO validation, Service 호출 계약, HTTP 상태 코드와 응답 직렬화에 집중한다.
+- Controller 테스트에서 Service가 반환할 저장 완료 엔티티나 결과 객체도 mock으로 구성한다. 생성 ID를 준비하기 위해 `ReflectionTestUtils`로 private 필드를 변경하지 않는다.
+- Controller/API 테스트의 JSON 요청 본문은 기본적으로 요청 객체를 `ObjectMapper`로 직렬화해 만든다. JSON 문법 오류 자체를 검증하는 경우처럼 객체로 표현할 수 없는 요청만 원문 JSON 문자열을 사용한다.
 - Controller부터 Service, Repository와 DB까지 연결하는 검증이 필요하면 Controller 테스트에 섞지 않고 별도의 API 통합 테스트로 작성하며, 핵심 사용자 흐름만 소수로 유지한다.
 - 여러 계층을 연결한 핵심 사용자 흐름만 필요한 범위에서 통합 테스트로 검증한다.
 

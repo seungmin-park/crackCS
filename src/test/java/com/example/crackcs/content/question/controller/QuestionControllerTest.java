@@ -2,6 +2,9 @@ package com.example.crackcs.content.question.controller;
 
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
+import com.example.crackcs.content.question.domain.QuestionOrigin;
+import com.example.crackcs.content.question.domain.QuestionStatus;
+import com.example.crackcs.content.question.domain.QuestionType;
 import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.content.question.service.QuestionService;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -9,15 +12,16 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -25,6 +29,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -35,6 +40,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(QuestionController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class QuestionControllerTest {
 
     @Autowired
@@ -271,8 +277,10 @@ class QuestionControllerTest {
     }
 
     private Topic topic(Long id, String code, String name) {
-        Topic topic = Topic.builder().code(code).name(name).build();
-        ReflectionTestUtils.setField(topic, "id", id);
+        Topic topic = mock(Topic.class);
+        given(topic.getId()).willReturn(id);
+        given(topic.getCode()).willReturn(code);
+        given(topic.getName()).willReturn(name);
         return topic;
     }
 
@@ -283,13 +291,19 @@ class QuestionControllerTest {
             String content,
             String referenceAnswer
     ) {
-        Question question = Question.builder()
-                .topic(topic)
-                .difficulty(difficulty)
-                .content(content)
-                .referenceAnswer(referenceAnswer)
-                .build();
-        ReflectionTestUtils.setField(question, "id", id);
+        Long topicId = topic.getId();
+        LocalDateTime createdAt = LocalDateTime.of(2026, 1, 1, 12, 0);
+        Question question = mock(Question.class);
+        given(question.getId()).willReturn(id);
+        given(question.getTopicId()).willReturn(topicId);
+        given(question.getOrigin()).willReturn(QuestionOrigin.ADMIN);
+        given(question.getType()).willReturn(QuestionType.NORMAL);
+        given(question.getDifficulty()).willReturn(difficulty);
+        given(question.getContent()).willReturn(content);
+        given(question.getReferenceAnswer()).willReturn(referenceAnswer);
+        given(question.getStatus()).willReturn(QuestionStatus.DRAFT);
+        given(question.getCreatedAt()).willReturn(createdAt);
+        given(question.getUpdatedAt()).willReturn(createdAt);
         return question;
     }
 }

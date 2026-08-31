@@ -1,6 +1,7 @@
 package com.example.crackcs.common.web;
 
 import com.example.crackcs.content.question.controller.QuestionController;
+import com.example.crackcs.content.question.controller.request.QuestionCreateRequest;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.content.question.service.QuestionService;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -16,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import tools.jackson.databind.ObjectMapper;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -24,11 +27,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(QuestionController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandlerTest.FailureController.class)
 class GlobalExceptionHandlerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @MockitoBean
     private QuestionService questionService;
@@ -48,14 +55,12 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("존재하지 않는 주제 예외를 공통 404 응답으로 변환한다")
     void handlesTopicNotFoundException() throws Exception {
-        String validQuestionRequest = """
-                {
-                  "topicId": 999999,
-                  "difficulty": "BASIC",
-                  "content": "프로세스란 무엇인가요?",
-                  "referenceAnswer": "모범 답안"
-                }
-                """;
+        QuestionCreateRequest request = new QuestionCreateRequest(
+                999999L,
+                "BASIC",
+                "프로세스란 무엇인가요?",
+                "모범 답안"
+        );
         given(questionService.create(
                 999999L,
                 QuestionDifficulty.BASIC,
@@ -65,7 +70,7 @@ class GlobalExceptionHandlerTest {
 
         mockMvc.perform(post("/api/admin/questions")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(validQuestionRequest))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("TOPIC_NOT_FOUND"))
                 .andExpect(jsonPath("$.requestId").isNotEmpty());
@@ -74,16 +79,16 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("DTO 검증 실패를 필드 오류가 포함된 공통 400 응답으로 변환한다")
     void handlesRequestValidationException() throws Exception {
+        QuestionCreateRequest request = new QuestionCreateRequest(
+                1L,
+                "BASIC",
+                " ",
+                "모범 답안"
+        );
+
         mockMvc.perform(post("/api/admin/questions")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "topicId": 1,
-                                  "difficulty": "BASIC",
-                                  "content": " ",
-                                  "referenceAnswer": "모범 답안"
-                                }
-                                """))
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.fieldErrors[0].field").value("content"));

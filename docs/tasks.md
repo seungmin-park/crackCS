@@ -20,7 +20,7 @@
    ↓
 브라우저 또는 API 재현
    ↓
-문서·migration 갱신
+문서·schema 정책 갱신
    ↓
 Phase Gate 체크
 ```
@@ -39,7 +39,7 @@ Phase Gate 체크
 
 - [ ] Phase 0 — 개발 기반과 결정 기록
 - [x] Phase 1 — 공개 문제 조회 최소 제품
-- [ ] Phase 2 — 회원 인증과 관리자 경계
+- [x] Phase 2 — 회원 인증과 관리자 경계
 - [ ] Phase 3 — 관리자 콘텐츠 운영
 - [ ] Phase 4 — 답변과 평가 상태 골격
 - [ ] Phase 5 — Knowledge Retrieval과 실제 AI 평가
@@ -57,10 +57,10 @@ Phase Gate 체크
 
 ### Phase 1·2 학습자와 인증
 
-- [ ] `POST /api/auth/sign-up` — PUBLIC, 회원가입
-- [ ] `POST /api/auth/login` — PUBLIC, 로그인
-- [ ] `POST /api/auth/logout` — USER, 로그아웃
-- [ ] `GET /api/members/me` — USER, 현재 회원 조회
+- [x] `POST /api/auth/sign-up` — PUBLIC, 회원가입
+- [x] `POST /api/auth/login` — PUBLIC, 로그인
+- [x] `POST /api/auth/logout` — USER, 로그아웃
+- [x] `GET /api/members/me` — USER, 현재 회원 조회
 - [x] `GET /api/questions` — USER, 공개 문제 목록
 - [x] `GET /api/questions/{questionId}` — USER, 공개 문제 상세
 
@@ -154,19 +154,19 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 - [ ] `test` 실행이 개발 DB 내용을 읽거나 변경하지 않는다.
 - [ ] 저장소에 실제 비밀값이 없음을 확인한다.
 
-### P0-T03 DB migration 기반 구축
+### P0-T03 DB schema 관리 기반 구축
 
-- [ ] Flyway 또는 동등한 migration 도구를 결정한다.
-- [ ] 선택 이유와 대안을 ADR로 기록한다.
-- [ ] migration 의존성과 설정을 추가한다.
-- [ ] 첫 migration과 migration 검증 테스트를 만든다.
-- [ ] JPA가 migration schema를 검증하도록 설정한다.
-- [ ] 빈 DB와 이미 migration된 DB에서 애플리케이션 기동을 확인한다.
+- [x] 운영 DB 확정 전에는 버전 기반 migration 도구를 보류한다.
+- [x] 선택 이유와 대안을 ADR로 기록한다.
+- [x] 기본, local과 test profile의 Hibernate schema 정책을 분리한다.
+- [x] local seed를 운영 schema 관리와 분리한다.
+- [x] 기본 profile이 외부 schema와 JPA mapping을 검증하도록 설정한다.
+- [x] 빈 DB와 기존 local DB에서 애플리케이션 기동을 확인한다.
 
 검증:
 
-- [ ] 빈 DB에 같은 schema를 반복 생성할 수 있다.
-- [ ] 엔티티와 migration이 다르면 테스트 또는 기동이 실패한다.
+- [x] 빈 local DB에 같은 엔티티 mapping을 반복 적용할 수 있다.
+- [x] 기본 profile에서 외부 schema와 엔티티가 다르면 기동이 실패한다.
 
 ### P0-T04 공통 API 오류 계약
 
@@ -212,7 +212,7 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 ### Phase 0 Gate
 
 - [ ] 새 환경에서 백엔드와 프런트가 실행된다.
-- [ ] 빈 DB에 migration을 적용할 수 있다.
+- [x] 빈 local DB에 Hibernate schema와 local seed를 적용할 수 있다.
 - [ ] 백엔드 테스트, 프런트 type-check와 build가 통과한다.
 - [ ] 공통 오류 응답 예제가 문서화되어 있다.
 - [ ] 실제 비밀정보가 저장소와 로그에 없다.
@@ -229,7 +229,7 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 - [x] Topic ID, parent, code와 name 규칙을 구현한다.
 - [x] 상위 Topic이 자기 자신을 가리키지 못하게 한다.
 - [x] Topic code의 유일성을 DB에서 보장한다.
-- [x] Topic migration과 JPA mapping을 작성한다.
+- [x] Topic의 DB constraint와 JPA mapping을 작성한다.
 - [x] 계층 조회에 필요한 repository query를 작성한다.
 - [x] Topic 도메인·repository 테스트를 작성한다.
 
@@ -238,7 +238,7 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 - [x] Concept ID, Topic, code, name과 description 규칙을 구현한다.
 - [x] Concept code의 유일성을 DB에서 보장한다.
 - [x] 존재하는 Topic에만 Concept를 연결할 수 있게 한다.
-- [x] Concept migration과 JPA mapping을 작성한다.
+- [x] Concept의 DB constraint와 JPA mapping을 작성한다.
 - [x] Topic별 Concept 조회 query와 테스트를 작성한다.
 
 ### P1-T03 Question과 QuestionConcept 최소 모델
@@ -248,14 +248,14 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 - [x] weight 범위와 필수 Concept 규칙을 정의한다.
 - [x] PUBLISHED 문제는 Concept를 하나 이상 가져야 한다는 규칙을 구현한다.
 - [x] 공개 조회에서 reference answer, Concept와 weight가 노출되지 않도록 DTO를 분리한다.
-- [x] migration, mapping과 도메인 테스트를 작성한다.
+- [x] JPA mapping, DB constraint와 도메인 테스트를 작성한다.
 
 ### P1-T04 초기 문제 데이터
 
 - [x] 네트워크, 운영체제 또는 Java 중 하나의 작은 Topic 구조를 선택한다.
 - [x] DRAFT, PUBLISHED와 RETIRED 문제를 각각 준비한다.
 - [x] PUBLISHED 문제에 하나 이상의 필수 Concept를 연결한다.
-- [x] seed가 운영 데이터와 혼동되지 않도록 profile 또는 migration을 구분한다.
+- [x] seed가 운영 데이터와 혼동되지 않도록 local profile로 구분한다.
 - [x] seed를 반복 적용해도 데이터가 중복되지 않는지 확인한다.
 
 ### P1-T05 공개 문제 조회 API
@@ -298,75 +298,75 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ### P2-T01 인증 방식과 비밀번호 정책 결정
 
-- [ ] 동일 출처 웹 배포를 기준으로 세션과 토큰을 비교한다.
-- [ ] `OQ-001`을 결정하고 ADR을 작성한다.
-- [ ] 비밀번호 최소 길이와 허용 규칙을 결정한다.
-- [ ] `OQ-008`을 결정하고 명세에 반영한다.
-- [ ] 세션 cookie를 쓴다면 Secure, HttpOnly와 SameSite 정책을 정한다.
-- [ ] CSRF 처리 방식을 정한다.
+- [x] 동일 출처 웹 배포를 기준으로 세션과 토큰을 비교한다.
+- [x] `OQ-001`을 결정하고 ADR을 작성한다.
+- [x] 비밀번호 최소 길이와 허용 규칙을 결정한다.
+- [x] `OQ-008`을 결정하고 명세에 반영한다.
+- [x] 세션 cookie를 쓴다면 Secure, HttpOnly와 SameSite 정책을 정한다.
+- [x] CSRF 처리 방식을 정한다.
 
 ### P2-T02 Member와 AuthAccount 모델
 
-- [ ] Member의 nickname, role, status와 audit 필드를 구현한다.
-- [ ] AuthAccount의 provider, loginId, passwordHash와 lastLoginAt을 구현한다.
-- [ ] `(provider, login_id)` unique constraint를 migration에 추가한다.
-- [ ] Member와 LOCAL AuthAccount 생성을 한 트랜잭션으로 묶는다.
-- [ ] BLOCKED와 WITHDRAWN 회원의 인증 규칙을 구현한다.
-- [ ] repository와 트랜잭션 통합 테스트를 작성한다.
+- [x] Member의 nickname, role, status와 audit 필드를 구현한다.
+- [x] AuthAccount의 provider, loginId, passwordHash와 lastLoginAt을 구현한다.
+- [x] `(provider, login_id)` unique constraint를 JPA schema에 추가한다.
+- [x] Member와 LOCAL AuthAccount 생성을 한 트랜잭션으로 묶는다.
+- [x] BLOCKED와 WITHDRAWN 회원의 인증 규칙을 구현한다.
+- [x] repository와 트랜잭션 통합 테스트를 작성한다.
 
 ### P2-T03 Spring Security 기반
 
-- [ ] Spring Security 의존성을 추가한다.
-- [ ] SecurityFilterChain을 구성한다.
-- [ ] 공개, 로그인 필요와 ADMIN endpoint 규칙을 명시한다.
-- [ ] PasswordEncoder를 구성한다.
-- [ ] 인증 실패와 접근 거부 응답을 공통 오류 계약으로 변환한다.
-- [ ] 테스트 profile에서도 실제 인가 규칙을 우회하지 않게 한다.
+- [x] Spring Security 의존성을 추가한다.
+- [x] SecurityFilterChain을 구성한다.
+- [x] 공개, 로그인 필요와 ADMIN endpoint 규칙을 명시한다.
+- [x] PasswordEncoder를 구성한다.
+- [x] 인증 실패와 접근 거부 응답을 공통 오류 계약으로 변환한다.
+- [x] 테스트 profile에서도 실제 인가 규칙을 우회하지 않게 한다.
 
 ### P2-T04 회원가입 API와 화면
 
-- [ ] 이메일, 비밀번호와 닉네임 입력 DTO를 정의한다.
-- [ ] 이메일 형식과 비밀번호 정책 validation을 구현한다.
-- [ ] 중복 LOCAL 이메일을 409로 처리한다.
-- [ ] 비밀번호를 해시한 뒤 저장하고 원문 참조를 남기지 않는다.
-- [ ] 회원가입 Vue 화면과 필드 오류 표시를 구현한다.
-- [ ] 정상, 중복, 잘못된 입력과 트랜잭션 rollback 테스트를 작성한다.
+- [x] 이메일, 비밀번호와 닉네임 입력 DTO를 정의한다.
+- [x] 이메일 형식과 비밀번호 정책 validation을 구현한다.
+- [x] 중복 LOCAL 이메일을 409로 처리한다.
+- [x] 비밀번호를 해시한 뒤 저장하고 원문 참조를 남기지 않는다.
+- [x] 회원가입 Vue 화면과 필드 오류 표시를 구현한다.
+- [x] 정상, 중복, 잘못된 입력과 트랜잭션 rollback 테스트를 작성한다.
 
 ### P2-T05 로그인·로그아웃·현재 회원
 
-- [ ] 로그인 API 또는 Security 인증 endpoint를 구현한다.
-- [ ] 로그인 성공 시 lastLoginAt을 갱신한다.
-- [ ] 로그아웃 후 기존 인증 상태를 무효화한다.
-- [ ] 현재 회원과 역할 조회 API를 구현한다.
-- [ ] 로그인 화면과 인증 상태 composable을 구현한다.
-- [ ] 새로고침 후 인증 상태 복구를 구현한다.
-- [ ] 실패, 차단 회원과 로그아웃 테스트를 작성한다.
+- [x] 로그인 API 또는 Security 인증 endpoint를 구현한다.
+- [x] 로그인 성공 시 lastLoginAt을 갱신한다.
+- [x] 로그아웃 후 기존 인증 상태를 무효화한다.
+- [x] 현재 회원과 역할 조회 API를 구현한다.
+- [x] 로그인 화면과 인증 상태 composable을 구현한다.
+- [x] 새로고침 후 인증 상태 복구를 구현한다.
+- [x] 실패, 차단 회원과 로그아웃 테스트를 작성한다.
 
 ### P2-T06 관리자 인가와 라우팅
 
-- [ ] `/admin/**` API를 ADMIN으로 제한한다.
-- [ ] 일반 회원 데이터 API는 본인 소유권을 기준으로 조회하도록 기반을 만든다.
-- [ ] Vue 관리자 route guard를 구현한다.
-- [ ] 비로그인 사용자는 로그인 화면으로 안내한다.
-- [ ] USER에게 관리자 링크를 숨기되 서버 인가를 최종 기준으로 유지한다.
-- [ ] `AC-006` 통합 테스트를 작성한다.
+- [x] `/admin/**` API를 ADMIN으로 제한한다.
+- [x] 일반 회원 데이터 API는 본인 소유권을 기준으로 조회하도록 기반을 만든다.
+- [x] Vue 관리자 route guard를 구현한다.
+- [x] 비로그인 사용자는 로그인 화면으로 안내한다.
+- [x] USER에게 관리자 링크를 숨기되 서버 인가를 최종 기준으로 유지한다.
+- [x] `AC-006` 통합 테스트를 작성한다.
 
 ### P2-T07 인증 보안 최소 기준
 
-- [ ] 로그인 시도 제한 기준과 구현 방식을 정한다.
-- [ ] 인증 관련 로그에서 이메일 마스킹 여부를 정한다.
-- [ ] 비밀번호와 session/token 값이 로그에 남지 않는지 확인한다.
-- [ ] session fixation, CSRF와 CORS 경계를 테스트한다.
-- [ ] 인증 오류 메시지가 계정 존재 여부를 과도하게 노출하지 않게 한다.
+- [x] 로그인 시도 제한 기준과 구현 방식을 정한다.
+- [x] 인증 관련 로그에서 이메일 마스킹 여부를 정한다.
+- [x] 비밀번호와 session/token 값이 로그에 남지 않는지 확인한다.
+- [x] session fixation, CSRF와 CORS 경계를 테스트한다.
+- [x] 인증 오류 메시지가 계정 존재 여부를 과도하게 노출하지 않게 한다.
 
 ### Phase 2 Gate
 
-- [ ] 브라우저에서 회원가입·로그인·로그아웃을 완료할 수 있다.
-- [ ] BLOCKED·WITHDRAWN 회원은 로그인할 수 없다.
-- [ ] USER의 관리자 API 요청이 서버에서 거부된다.
-- [ ] DB와 로그에 비밀번호 원문이 없다.
-- [ ] `AC-006`이 통과한다.
-- [ ] Phase 1 무인증 문제 API에 최종 인증 정책을 적용했다.
+- [x] 브라우저에서 회원가입·로그인·로그아웃을 완료할 수 있다.
+- [x] BLOCKED·WITHDRAWN 회원은 로그인할 수 없다.
+- [x] USER의 관리자 API 요청이 서버에서 거부된다.
+- [x] DB와 로그에 비밀번호 원문이 없다.
+- [x] `AC-006`이 통과한다.
+- [x] Phase 1 무인증 문제 API에 최종 인증 정책을 적용했다.
 
 ---
 
@@ -839,9 +839,9 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
 
 ### 인증과 관리자
 
-- [ ] `FR-AUTH-001` 회원가입 — P2-T02, P2-T04
-- [ ] `FR-AUTH-002` 로그인·로그아웃 — P2-T03, P2-T05
-- [ ] `FR-AUTH-003` 관리자 인가 — P2-T06
+- [x] `FR-AUTH-001` 회원가입 — P2-T02, P2-T04
+- [x] `FR-AUTH-002` 로그인·로그아웃 — P2-T03, P2-T05
+- [x] `FR-AUTH-003` 관리자 인가 — P2-T06
 - [ ] `FR-ADMIN-001` Topic·Concept 관리 — P3-T02
 - [ ] `FR-ADMIN-002` KnowledgeDocument 관리 — P3-T03, P3-T04
 - [ ] `FR-ADMIN-003` KnowledgeChunk 생성 — P5-T02
@@ -892,7 +892,7 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
 
 - [ ] 실패 시 어느 데이터가 저장되고 rollback되는지 테스트한다.
 - [ ] 중복 요청과 동시 요청 결과를 테스트한다.
-- [ ] 새 schema는 migration으로 재현된다.
+- [ ] 새 schema가 현재 profile별 schema 정책으로 재현된다.
 - [ ] 과거 평가와 콘텐츠 버전이 보존된다.
 
 ### API와 화면
