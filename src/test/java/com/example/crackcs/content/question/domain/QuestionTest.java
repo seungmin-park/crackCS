@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -136,6 +137,79 @@ class QuestionTest {
         assertThat(questionConcept.getConcept()).isSameAs(concept);
         assertThat(questionConcept.getWeight()).isEqualByComparingTo("0.70");
         assertThat(questionConcept.isRequired()).isTrue();
+    }
+
+    @Test
+    @DisplayName("비활성 Concept은 문제에 연결할 수 없다")
+    void rejectsInactiveConcept() {
+        Topic topic = createTopic();
+        Concept inactiveConcept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
+        inactiveConcept.deactivate();
+        Question question = createQuestion(topic, "질문", "모범 답안");
+
+        assertThatThrownBy(() -> question.addConcept(inactiveConcept, BigDecimal.ONE, true))
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("비활성 Concept은 문제에 연결할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("문제와 다른 Topic의 Concept은 연결할 수 없다")
+    void rejectsConceptFromDifferentTopic() {
+        Topic questionTopic = createTopic("OPERATING_SYSTEM", "운영체제");
+        Concept concept = createConcept(
+                createTopic("NETWORK", "네트워크"),
+                "TCP",
+                "TCP"
+        );
+        Question question = createQuestion(questionTopic, "질문", "모범 답안");
+
+        assertThatThrownBy(() -> question.addConcept(concept, BigDecimal.ONE, true))
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("문제와 같은 Topic의 Concept만 연결할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("Concept 교체 검증에 실패하면 기존 연결과 수정 시각을 유지한다")
+    void failedConceptReplacementDoesNotChangeQuestion() {
+        Topic topic = createTopic();
+        Question question = createQuestion(topic, "질문", "모범 답안");
+        QuestionConcept original = question.addConcept(
+                createConcept(topic, "PROCESS", "프로세스"),
+                BigDecimal.ONE,
+                true
+        );
+        LocalDateTime updatedAt = question.getUpdatedAt();
+        Concept validReplacement = createConcept(topic, "THREAD", "스레드");
+        Concept inactiveReplacement = createConcept(topic, "SCHEDULER", "스케줄러");
+        inactiveReplacement.deactivate();
+
+        assertThatThrownBy(() -> question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(validReplacement, new BigDecimal("0.50"), true),
+                new QuestionConceptAssignment(inactiveReplacement, new BigDecimal("0.50"), false)
+        )))
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("비활성 Concept은 문제에 연결할 수 없습니다.");
+
+        assertThat(question.getQuestionConcepts()).containsExactly(original);
+        assertThat(question.getUpdatedAt()).isEqualTo(updatedAt);
+    }
+
+    @Test
+    @DisplayName("Concept 교체 시 문제와 다른 Topic의 Concept은 연결할 수 없다")
+    void replacementRejectsConceptFromDifferentTopic() {
+        Topic questionTopic = createTopic("OPERATING_SYSTEM", "운영체제");
+        Concept otherTopicConcept = createConcept(
+                createTopic("NETWORK", "네트워크"),
+                "TCP",
+                "TCP"
+        );
+        Question question = createQuestion(questionTopic, "질문", "모범 답안");
+
+        assertThatThrownBy(() -> question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(otherTopicConcept, BigDecimal.ONE, true)
+        )))
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("문제와 같은 Topic의 Concept만 연결할 수 있습니다.");
     }
 
     @Test

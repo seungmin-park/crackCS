@@ -158,12 +158,12 @@ public class Question {
 
     public QuestionConcept addConcept(Concept concept, BigDecimal weight, boolean required) {
         ensureDraft("DRAFT 문제에만 Concept을 연결할 수 있습니다.");
-        requireNonNull(concept, "concept");
-        if (hasConcept(concept)) {
+        Concept validatedConcept = requireAssignableConcept(concept);
+        if (hasConcept(validatedConcept)) {
             throw new IllegalArgumentException("concept must not be duplicated");
         }
 
-        QuestionConcept questionConcept = QuestionConcept.create(this, concept, weight, required);
+        QuestionConcept questionConcept = QuestionConcept.create(this, validatedConcept, weight, required);
         questionConcepts.add(questionConcept);
         return questionConcept;
     }
@@ -175,7 +175,7 @@ public class Question {
         Set<QuestionConcept> replacements = new LinkedHashSet<>();
         for (QuestionConceptAssignment assignment : assignments) {
             requireNonNull(assignment, "assignment");
-            Concept concept = requireNonNull(assignment.concept(), "concept");
+            Concept concept = requireAssignableConcept(assignment.concept());
             boolean duplicated = replacements.stream()
                     .map(QuestionConcept::getConcept)
                     .anyMatch(existing -> existing == concept || samePersistentConcept(existing, concept));
@@ -194,6 +194,17 @@ public class Question {
         questionConcepts.addAll(replacements);
         clearReview();
         updatedAt = LocalDateTime.now();
+    }
+
+    private Concept requireAssignableConcept(Concept concept) {
+        Concept validatedConcept = requireNonNull(concept, "concept");
+        if (!validatedConcept.isActive()) {
+            throw new InvalidContentStateException("비활성 Concept은 문제에 연결할 수 없습니다.");
+        }
+        if (!samePersistentTopic(topic, validatedConcept.getTopic())) {
+            throw new InvalidContentStateException("문제와 같은 Topic의 Concept만 연결할 수 있습니다.");
+        }
+        return validatedConcept;
     }
 
     public void review(Member reviewer) {
