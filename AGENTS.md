@@ -1,146 +1,180 @@
 # CrackCS 작업 지침
 
-## 적용 범위와 우선순위
+## 범위와 우선순위
 
-- 이 파일은 저장소 전체에 적용한다.
-- 하위 디렉터리에 별도의 `AGENTS.md`가 있으면 해당 디렉터리에서는 더 가까운 지침을 함께 적용한다.
-- 사용자가 현재 작업에서 명시한 요구사항이 이 문서보다 우선한다.
-- 기존 사용자 변경과 관련 없는 코드는 임의로 되돌리거나 정리하지 않는다.
+- 적용 범위: 저장소 전체
+- 하위 `AGENTS.md`: 해당 디렉터리에서 함께 적용
+- 우선순위: 현재 사용자 요구 > 가까운 `AGENTS.md` > 이 문서
+- 보호 대상: 관련 없는 사용자 변경. 임의 복원·정리 금지
 
-## 설명과 협업 방식
+## 설명과 협업
 
-- 무엇이 일어나는지 먼저 설명하고, 왜 필요한지와 어떻게 동작하는지를 이어서 설명한다.
-- 답이나 코드만 전달하지 않는다. 사용자가 같은 판단을 재현할 수 있도록 관찰, 가정, 선택한 설계, 실행 흐름과 검증 결과를 공개한다.
-- private한 내부 추론을 그대로 노출하지 않고, 코드·명령·테스트로 확인할 수 있는 공학적 중간 과정을 보여준다.
-- 객체 지향 용어만 나열하지 않는다. 다음 책임 질문으로 설계를 설명한다.
-  - 누가 이 상태를 소유하는가?
-  - 이 결정을 내리는 데 필요한 정보를 누가 알고 있는가?
-  - 요구사항이 바뀌면 어떤 객체가 변경되어야 하는가?
-- 의미 있는 흐름, 상태 변화, 의존 관계가 있으면 작은 텍스트 도식으로 설명한다.
-- 왜 현재 방식이 동작하는지뿐 아니라 어떤 조건에서 동작하지 않는지도 설명한다.
-- 구현 완료 후 변경 사항, 테스트 결과와 아직 검증하지 못한 경계를 분명히 보고한다.
+- 설명 순서: 현상 → 필요한 이유 → 동작 원리 → 검증 결과
+- 공개할 과정: 관찰, 가정, 설계 선택, 실행 명령, 테스트 증거
+- 제외할 내용: private 내부 추론의 원문
+- 설계 판단 질문:
+  - 누가 상태를 소유하는가?
+  - 결정에 필요한 정보를 누가 아는가?
+  - 요구사항이 바뀌면 어떤 객체가 바뀌는가?
+- 의미 있는 흐름·상태·의존성: 작은 텍스트 도식 사용
+- 완료 보고: 변경, 테스트 수와 결과, 미검증 경계, 실패 조건
 
-## 도메인과 엔티티 구현 관례
+## 개발 흐름: TDD
 
-- 도메인 규칙은 Controller, Service 또는 JPA 콜백에 흩어놓지 않고 해당 상태를 소유한 도메인 객체에 둔다.
-- JPA 엔티티는 기본적으로 `@Getter`를 사용하고 모든 필드의 public setter를 만들지 않는다.
-- 외부 객체 생성에는 Lombok `@Builder`를 사용한다.
-- 값을 받는 생성자는 `private`으로 선언해 외부의 `new Entity(...)` 호출을 막는다.
-- JPA가 사용하는 인자 없는 생성자는 `@NoArgsConstructor(access = AccessLevel.PROTECTED)`로 제공한다.
-- 빌더에는 외부에서 결정해도 되는 값만 노출한다. 초기 상태, 유형과 출처처럼 함께 결정되어야 하는 값은 생성자가 일관되게 설정한다.
-- 상태 변경은 의미가 드러나는 `update`, `publish`, `retire` 등의 도메인 메서드로 수행한다.
-- 변경 메서드는 모든 입력을 먼저 검증한 뒤 필드를 대입한다. 검증 도중 예외가 발생해 일부 필드만 바뀌는 부분 수정을 허용하지 않는다.
-- Enum은 특별한 이유가 없다면 `@Enumerated(EnumType.STRING)`으로 저장한다.
-- 엔티티를 API 응답으로 직접 반환하지 않고 용도에 맞는 DTO로 변환한다.
+기능 추가, 버그 수정, 동작을 바꾸는 리팩터링의 기본 순서:
 
-## Service 구현 관례
+```text
+RED      요구사항을 보여주는 최소 테스트 작성
+  ↓      기대한 이유로 실패하는지 확인
+GREEN    테스트를 통과하는 최소 구현
+  ↓
+REFACTOR 중복·이름·책임 개선
+  ↓      관련 테스트를 다시 실행해 GREEN 유지
+전체 테스트
+```
 
-- Service는 호출자가 의존하는 인터페이스와 실제 유스케이스를 수행하는 구현 클래스로 분리한다.
-- Service 인터페이스의 기본 구현 클래스는 인터페이스 이름 앞에 `Default`를 붙여 `Default{ServiceName}` 형식으로 명명하며, 뒤에 `Impl`을 붙이지 않는다.
-- `@Service`, `@Transactional`과 Repository 의존성은 구현 클래스에 두고 인터페이스에는 유스케이스 계약만 선언한다.
-- 호출자와 테스트는 구체 구현 클래스가 아닌 Service 인터페이스 타입에 의존한다.
+- Production 코드보다 실패 테스트가 먼저
+- 테스트 하나당 하나의 동작 또는 실패 원인
+- RED 인정 조건: 누락된 동작 때문에 실패. 문법·fixture·환경 오류는 제외
+- 처음부터 통과한 테스트: 기존 동작을 검증한 것. 요구사항 재검토
+- GREEN 범위: 현재 실패를 해결하는 최소 코드. 예상 확장 선구현 금지
+- REFACTOR 조건: GREEN 이후. 동작 변경 금지
+- 버그 수정: 증상 재현 테스트부터 시작
+- 완료 조건: 관련 테스트 → 가능한 범위의 전체 테스트
 
-## 예외 패키지 관례
+## 도메인과 엔티티
 
-- 사용자 정의 예외는 엔티티나 Service 하위 패키지에 두지 않고 애플리케이션 상위의 `com.example.crackcs.exception` 패키지에서 관리한다.
-- 공통 예외 처리기는 상위 예외 패키지의 예외를 HTTP 오류 응답으로 변환한다.
+- 도메인 규칙의 위치: 상태를 소유한 도메인 객체
+- 최종 방어: DTO·Service를 우회해도 불변식 유지
+- 상태 변경: `update`, `publish`, `retire` 같은 의도 기반 메서드
+- 변경 순서: 모든 입력 검증 → 필드 변경 → `updatedAt` 갱신
+- 부분 수정 금지: 검증 실패 시 필드와 시각 모두 유지
+- JPA 기본 형태: `@Getter`, public setter 없음
+- 외부 생성: Lombok `@Builder` + 값을 받는 `private` 생성자
+- JPA 생성자: `@NoArgsConstructor(access = AccessLevel.PROTECTED)`
+- 빌더 노출: 외부 결정 값만. 초기 상태·유형·출처는 생성자가 결정
+- Enum 저장: 특별한 이유가 없으면 `@Enumerated(EnumType.STRING)`
+- API 응답: Entity 직접 반환 금지. 응답 DTO로 변환
 
-## DTO 패키지 관례
-
-- HTTP 요청 DTO는 해당 Controller 하위의 `request` 패키지에 둔다.
-- HTTP 응답 DTO는 해당 Controller 하위의 `response` 패키지에 둔다.
-- 여러 도메인에서 공유하는 요청·응답 DTO도 역할에 따라 공통 영역의 `request`, `response` 패키지로 분리한다.
-- HTTP 입력값의 필수 여부, 범위와 형식 검증은 request DTO에 선언한다.
-- 입력 검증 실패 시 클라이언트에 전달할 메시지도 request DTO가 소유한다. Controller에 validation annotation이나 검증 메시지를 흩어놓지 않는다.
-- 도메인 객체는 DTO를 거치지 않는 생성 경로에서도 불변식이 깨지지 않도록 최종 방어 검증을 유지한다.
-
-### 날짜 정보
-
-- `createdAt`, `updatedAt`을 가진 도메인 엔티티는 생성 로직에서 두 값을 같은 현재 시각으로 초기화한다.
-- 수정이 성공하면 도메인 변경 메서드에서 `updatedAt`을 갱신하고 `createdAt`은 유지한다.
-- 날짜 정보 생성을 `@PrePersist`, `@PreUpdate` 같은 JPA 생명주기 콜백에 맡기지 않는다.
-- 입력 검증이 실패한 경우 필드뿐 아니라 `updatedAt`도 변경하지 않는다.
+### 날짜
 
 ```text
 builder().build()
-        ↓
-도메인 검증
-        ↓
-createdAt = updatedAt = 현재 시각
+        ↓ 검증
+createdAt = updatedAt = now
 
 update(...)
-        ↓
-모든 입력 검증
-        ↓
-상태 변경 + updatedAt 갱신
+        ↓ 전체 검증
+상태 변경 + updatedAt = now
 ```
 
-## 테스트 관례
+- 생성 시 `createdAt`과 `updatedAt`: 같은 시각
+- 수정 성공 시: `createdAt` 유지, `updatedAt` 갱신
+- JPA 생명주기 콜백(`@PrePersist`, `@PreUpdate`)에 시각 생성 위임 금지
 
-- 기능을 추가하거나 기존 동작을 수정할 때 그 동작을 검증하는 테스트를 같은 작업에서 함께 작성하거나 수정한다.
-- 생성자, getter와 setter만 가진 단순 DTO는 DTO 자체의 단위 테스트를 작성하지 않는다. 이런 테스트는 구현 코드를 그대로 반복할 뿐 별도의 동작이나 요구사항을 검증하지 못한다.
-- DTO에 validation, 값 변환, 기본값, 정규화 또는 계산 로직이 있으면 해당 동작을 테스트한다. JSON 필드명, 직렬화 형태, validation 메시지와 HTTP 상태처럼 API 계약에 속하는 내용은 Controller/API 테스트에서 검증한다.
-- 버그를 수정할 때는 가능하면 증상을 재현하는 회귀 테스트를 먼저 추가한다.
-- 정상 흐름뿐 아니라 의미 있는 경계값과 실패 흐름도 검증한다.
-- 테스트 클래스에는 `@DisplayName`을 작성하지 않는다. 모든 테스트 메서드에는 한글 `@DisplayName`을 작성한다.
-- 테스트 메서드명은 프로젝트의 Java 명명 관례에 맞는 영어로 작성하고, 요구사항은 `@DisplayName`에 자연스러운 한글 문장으로 표현한다.
-- 테스트 하나는 가능한 한 하나의 동작 또는 실패 원인을 검증한다.
-- 모든 테스트가 반복해서 사용하는 최소 공통 fixture와 필요한 정리만 `@BeforeEach`에서 수행한다.
-- 특정 테스트의 성공·실패 조건을 구성하는 데이터는 해당 테스트 메서드 안에서 준비한다. 반복되는 생성 코드는 private fixture helper로 추출하되 helper 호출은 테스트 메서드에 드러나게 한다.
-- `@BeforeEach`에는 핵심 실행과 검증을 두지 않으며, 일부 테스트만 사용하는 fixture나 mock stubbing을 숨기지 않는다.
-- 로컬 seed SQL은 개발자가 애플리케이션을 실행해 API와 화면을 즉시 확인하기 위한 용도로만 사용한다.
-- 자동화 테스트는 로컬 seed SQL에 의존하지 않고 각 테스트에 필요한 데이터를 Java fixture로 직접 생성한다. 따라서 로컬 seed의 내용과 건수를 검증하는 별도 테스트는 두지 않는다.
+## Service
 
-### DB schema 관리
+- 구조: `{ServiceName}` 인터페이스 + `Default{ServiceName}` 구현
+- 금지 이름: `{ServiceName}Impl`
+- 인터페이스 책임: 유스케이스 계약
+- 구현 책임: `@Service`, production `@Transactional`, Repository 의존성, 유스케이스 조정
+- 호출자와 테스트의 의존 타입: Service 인터페이스
+- 도메인이 판단할 수 있는 상태 규칙을 Service에만 두지 않음
 
-- 현재 Flyway 같은 버전 기반 migration 도구는 사용하지 않는다.
-- 기본 profile은 `ddl-auto=validate`로 외부에서 준비한 schema와 JPA mapping의 일치만 확인한다.
-- local profile은 개발 편의를 위해 `ddl-auto=update`를 사용하고, 화면 확인용 데이터만 local SQL 초기화로 넣는다.
-- test profile은 `ddl-auto=create-drop`을 사용하며 local DB나 local seed를 읽지 않는다.
-- `ddl-auto=update`를 운영 schema 변경 수단으로 사용하지 않는다. 운영 DB 도입 전에 버전 관리, 배포 순서와 rollback을 포함한 별도 schema 변경 절차를 결정한다.
+## HTTP 경계
 
-### 테스트 종류 선택
+- 요청 DTO: Controller 하위 `request`
+- 응답 DTO: Controller 하위 `response`
+- 공용 DTO: 역할에 따라 공통 `request`, `response`
+- 입력 필수값·범위·형식·메시지: request DTO가 소유
+- Controller에 validation 규칙과 메시지 분산 금지
+- 사용자 정의 예외: `com.example.crackcs.exception`
+- 공통 예외 처리기: 애플리케이션 예외를 HTTP 오류 응답으로 변환
 
-- 도메인 엔티티와 순수 도메인 규칙은 Spring 또는 JPA를 사용하지 않는 단위 테스트로 검증한다.
-  - `@SpringBootTest`, `EntityManager`, Repository, `@Transactional`을 사용하지 않는다.
-- Service 테스트는 `@SpringBootTest`를 사용하는 통합 테스트로 작성한다.
-  - 실제 Service, Repository와 테스트 DB를 연결해 전체 흐름을 검증한다.
-  - Mock 테스트와 Mockito의 `@Mock`, `@InjectMocks`, `@MockBean`을 사용하지 않는다.
-  - 각 테스트는 필요한 경우 `@Transactional`로 격리하고 종료 후 변경을 롤백한다.
-- JPA 매핑, DB 제약과 Repository query는 JPA 통합 테스트로 검증한다.
-- 엔티티 저장에는 기본적으로 `save()`를 사용한다. DB 제약의 발생 시점처럼 즉시 SQL 실행 자체가 검증 대상이고 `save()`로 검증할 수 없는 경우에만 이유를 명확히 하고 `flush()` 또는 `saveAndFlush()`를 사용한다.
-- Repository query 테스트는 `save()`로 fixture를 준비한 뒤 Repository 조회 결과를 검증하며, 관례적으로 `EntityManager.clear()`를 호출하지 않는다.
-- DB 저장 후 새 객체로 복원되는 mapping 자체가 검증 대상인 특별한 경우에만 이유가 드러나는 테스트에서 `flush()`와 `clear()`를 사용한다. 객체 참조가 다르다는 `isNotSameAs()`는 요구사항이 아니므로 검증하지 않는다.
-- Controller의 HTTP 계약, 직렬화, 인증과 상태 코드는 MVC/API 테스트로 검증한다.
-- Controller 테스트는 Service를 mock으로 대체하고 실제 Repository나 DB를 사용하지 않는다. 요청 바인딩, DTO validation, Service 호출 계약, HTTP 상태 코드와 응답 직렬화에 집중한다.
-- Controller 테스트에서 Service가 반환할 저장 완료 엔티티나 결과 객체도 mock으로 구성한다. 생성 ID를 준비하기 위해 `ReflectionTestUtils`로 private 필드를 변경하지 않는다.
-- Controller/API 테스트의 JSON 요청 본문은 기본적으로 요청 객체를 `ObjectMapper`로 직렬화해 만든다. JSON 문법 오류 자체를 검증하는 경우처럼 객체로 표현할 수 없는 요청만 원문 JSON 문자열을 사용한다.
-- Controller부터 Service, Repository와 DB까지 연결하는 검증이 필요하면 Controller 테스트에 섞지 않고 별도의 API 통합 테스트로 작성하며, 핵심 사용자 흐름만 소수로 유지한다.
-- 여러 계층을 연결한 핵심 사용자 흐름만 필요한 범위에서 통합 테스트로 검증한다.
+## 테스트 작성
+
+- 기본 성질: 빠름, 독립적, 반복 가능, 자동 판정
+- 본문 구조: 준비 → 실행 → 검증이 눈에 보이도록 작성
+- 메서드명: 영어 Java 명명 관례
+- `@DisplayName`: 모든 테스트 메서드에 자연스러운 한글 문장
+- 테스트 클래스의 `@DisplayName`: 금지
+- 정상 흐름과 의미 있는 경계·실패 흐름 검증
+- 공통 fixture: 모든 테스트가 쓰는 최소 준비만 `@BeforeEach`
+- 테스트별 성공·실패 조건: 해당 테스트 본문에서 준비
+- 반복 생성: private fixture helper 허용. 호출은 본문에 노출
+- `@BeforeEach`에 핵심 실행·검증·일부 테스트 전용 stubbing 금지
+- Fake: 시계처럼 제어할 외부 조건만 대체. 실제 도메인 규칙 대체 금지
+- 상태 있는 Fake: 테스트 사이 공유 금지
+- `if`·`for`: 요구사항 반복 표현에는 허용. 검증 분기와 상태 추적에는 사용 자제
+- 단순 DTO: 자체 단위 테스트 생략
+- DTO의 validation·변환·기본값·정규화·계산: 해당 동작 테스트
+- JSON 이름·직렬화·validation 메시지·HTTP 상태: Controller/API 테스트
+- 로컬 seed SQL: 수동 화면 확인 전용. 자동화 테스트 의존·건수 검증 금지
+
+## 테스트 격리와 teardown
+
+- 정리 책임: 데이터를 만든 테스트 클래스
+- Service 통합 테스트의 test-level `@Transactional`: 금지
+- Service 테스트 정리: `@AfterEach`에서 DB 데이터를 FK 역순으로 삭제
+- `@BeforeEach`에 이전 테스트 데이터 정리 금지
+- bulk 삭제 순서 예시: 연결 엔티티 → 본 엔티티 → 참조 엔티티
+- `deleteAllInBatch()`: cascade를 실행하지 않으므로 연결 테이블을 먼저 삭제
+- teardown: assertion 실패와 부분 fixture 생성 후에도 실행 가능한 순서
+- 공유 DB 병렬 실행: 전체 `deleteAll*()` 금지. 테스트별 데이터·schema 격리 또는 직렬화 필요
+- DB 밖 공유 상태: static, singleton, `ThreadLocal`, 보안 컨텍스트, 시스템 속성, 파일을 원래 상태로 복원
+- Spring singleton 재생성이 필요한 테스트: 필요한 클래스에만 `@DirtiesContext`
+- 테스트마다 새로 만든 일반 객체: 불필요한 teardown 금지
 
 ```text
-도메인 규칙       → 순수 단위 테스트
-Service 유스케이스 → Spring Boot 통합 테스트
-JPA 매핑·Query   → JPA 통합 테스트
-HTTP 요청·응답   → MVC/API 테스트
-핵심 사용자 흐름  → 통합 테스트
+Service 호출(transaction commit)
+            ↓
+Repository 재조회로 저장 결과 검증
+            ↓
+@AfterEach: child → parent 삭제
 ```
 
-### 테스트 완료 기준
+## 테스트 수준 선택
 
-- 변경한 코드와 직접 관련된 테스트를 먼저 실행한다.
-- 작업 완료 전 가능한 범위에서 전체 테스트를 실행한다.
-- 테스트 개수, 성공·실패 여부와 실행하지 못한 검증을 최종 결과에 기록한다.
-- 테스트가 통과했다는 이유만으로 DB 제약, 동시성 또는 외부 시스템 동작까지 검증됐다고 주장하지 않는다.
+```text
+도메인 규칙        → Spring/JPA 없는 순수 단위 테스트
+Service 유스케이스 → @SpringBootTest + 실제 Repository/DB + @AfterEach
+JPA 매핑·Query    → JPA 통합 테스트
+HTTP 계약         → MVC/API 테스트 + Service mock
+핵심 사용자 흐름   → 소수의 전체 통합 테스트
+```
 
-## 구현 완료 점검
+- Service 테스트: Mockito `@Mock`, `@InjectMocks`, `@MockBean` 금지
+- Service 저장 검증: Service transaction 종료 후 Repository로 재조회
+- JPA 저장: 기본 `save()`; SQL 즉시 실행이 검증 대상일 때만 `flush()`/`saveAndFlush()`
+- Repository query fixture: `save()` 후 조회. 관례적인 `EntityManager.clear()` 금지
+- mapping 복원이 검증 대상일 때만 이유를 드러내고 `flush()` + `clear()`
+- 객체 참조 차이(`isNotSameAs`) 자체는 검증하지 않음
+- Controller 테스트: 실제 DB 금지. binding, validation, Service 계약, 상태 코드, 직렬화에 집중
+- Controller 반환 fixture: mock 객체 사용. ID 주입을 위한 `ReflectionTestUtils` 금지
+- JSON 요청: 기본적으로 요청 객체를 `ObjectMapper`로 직렬화
+- 원문 JSON: 문법 오류처럼 객체로 표현할 수 없는 요청만 허용
+- Controller부터 DB까지의 검증: 별도 API 통합 테스트
+- test-level `@Transactional`이 필요한 JPA/API 테스트: rollback만으로 검증 목적이 가려지지 않는지 확인
 
-기능 변경을 완료하기 전에 다음을 확인한다.
+## DB schema
 
-1. 요구한 동작이 코드에 반영되었는가?
-2. 도메인 상태를 소유한 객체가 규칙도 함께 소유하는가?
-3. 잘못된 객체나 부분 수정 상태가 만들어질 수 없는가?
-4. 변경을 검증하는 적절한 수준의 테스트가 있는가?
-5. 모든 테스트 메서드에 한글 `@DisplayName`이 있고 테스트 클래스에는 없는가?
-6. 관련 테스트와 전체 테스트가 통과하는가?
-7. 왜 동작하고 언제 실패할 수 있는지 설명할 수 있는가?
+- migration 도구: 현재 미사용
+- 기본 profile: `ddl-auto=validate`
+- local profile: `ddl-auto=update` + 화면 확인용 seed
+- test profile: `ddl-auto=create-drop`, local DB/seed 미사용
+- 운영 schema 변경 수단으로 `ddl-auto=update` 사용 금지
+- 운영 DB 도입 전 결정: version 관리, 배포 순서, rollback 절차
+
+## 완료 점검
+
+- [ ] 요구 동작 반영
+- [ ] RED 실패 원인 확인
+- [ ] 최소 GREEN 구현
+- [ ] REFACTOR 후 GREEN 유지
+- [ ] 상태 소유 객체가 규칙도 소유
+- [ ] 잘못된 객체와 부분 수정 차단
+- [ ] 테스트 수준 적절
+- [ ] 모든 테스트 메서드에 한글 `@DisplayName`, 클래스에는 없음
+- [ ] 관련 테스트와 가능한 범위의 전체 테스트 통과
+- [ ] 테스트 수·성공·실패·미검증 경계 보고
+- [ ] 동작 이유와 실패 조건 설명 가능

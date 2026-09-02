@@ -1,33 +1,37 @@
 package com.example.crackcs.content.question.service;
 
-import com.example.crackcs.content.question.domain.*;
-import com.example.crackcs.exception.QuestionNotFoundException;
+import com.example.crackcs.content.concept.domain.Concept;
+import com.example.crackcs.content.concept.repository.ConceptRepository;
+import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionDifficulty;
+import com.example.crackcs.content.question.domain.QuestionOrigin;
+import com.example.crackcs.content.question.domain.QuestionStatus;
+import com.example.crackcs.content.question.domain.QuestionType;
+import com.example.crackcs.content.question.repository.QuestionConceptRepository;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
+import com.example.crackcs.exception.InvalidContentStateException;
+import com.example.crackcs.exception.QuestionNotFoundException;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
+import com.example.crackcs.member.repository.MemberRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.transaction.annotation.Transactional;
-import com.example.crackcs.member.domain.Member;
-import com.example.crackcs.member.domain.MemberRole;
-import com.example.crackcs.member.repository.MemberRepository;
-import com.example.crackcs.content.concept.domain.Concept;
-import com.example.crackcs.content.concept.repository.ConceptRepository;
-import com.example.crackcs.exception.InvalidContentStateException;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
-import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@Transactional
 class QuestionServiceTest {
 
     @Autowired
@@ -37,6 +41,9 @@ class QuestionServiceTest {
     private QuestionRepository questionRepository;
 
     @Autowired
+    private QuestionConceptRepository questionConceptRepository;
+
+    @Autowired
     private TopicRepository topicRepository;
 
     @Autowired
@@ -44,6 +51,15 @@ class QuestionServiceTest {
 
     @Autowired
     private ConceptRepository conceptRepository;
+
+    @AfterEach
+    void tearDown() {
+        questionConceptRepository.deleteAllInBatch();
+        questionRepository.deleteAllInBatch();
+        conceptRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
+    }
 
     @Test
     @DisplayName("관리자 초안 일반 문제를 생성하고 저장한다")
@@ -182,6 +198,7 @@ class QuestionServiceTest {
         Concept concept = conceptRepository.save(Concept.builder()
                 .topic(topic).code("PROCESS_THREAD").name("프로세스와 스레드").build());
         concept.deactivate();
+        conceptRepository.save(concept);
         Question question = questionService.create(
                 admin.getId(), topic.getId(), QuestionDifficulty.BASIC, "질문", "모범 답안"
         );
@@ -197,6 +214,7 @@ class QuestionServiceTest {
         Topic topic = saveTopic("OPERATING_SYSTEM", "운영체제");
         Member admin = saveAdmin();
         topic.deactivate();
+        topicRepository.save(topic);
 
         assertThatThrownBy(() -> questionService.create(
                 admin.getId(), topic.getId(), QuestionDifficulty.BASIC, "질문", "모범 답안"
@@ -227,8 +245,10 @@ class QuestionServiceTest {
         questionService.review(second.getId(), admin.getId());
         questionService.publish(second.getId());
 
-        assertThat(first.getStatus()).isEqualTo(QuestionStatus.RETIRED);
-        assertThat(second.getStatus()).isEqualTo(QuestionStatus.PUBLISHED);
+        assertThat(questionRepository.findById(first.getId()).orElseThrow().getStatus())
+                .isEqualTo(QuestionStatus.RETIRED);
+        assertThat(questionRepository.findById(second.getId()).orElseThrow().getStatus())
+                .isEqualTo(QuestionStatus.PUBLISHED);
         assertThat(questionRepository.findPublishedById(first.getId())).isEmpty();
         assertThat(questionRepository.findPublishedById(second.getId())).isPresent();
     }

@@ -11,23 +11,29 @@ import com.example.crackcs.exception.InvalidContentStateException;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@Transactional
 class KnowledgeDocumentServiceTest {
 
     @Autowired KnowledgeDocumentService documentService;
     @Autowired KnowledgeDocumentRepository documentRepository;
     @Autowired TopicRepository topicRepository;
     @Autowired MemberRepository memberRepository;
+
+    @AfterEach
+    void tearDown() {
+        documentRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
+    }
 
     @Test
     @DisplayName("문서를 검수하고 공개한 뒤 기존 공개본을 보존하는 다음 버전을 생성한다")
@@ -51,8 +57,10 @@ class KnowledgeDocumentServiceTest {
         documentService.review(second.getId(), admin.getId());
         documentService.publish(second.getId());
 
-        assertThat(first.getStatus()).isEqualTo(KnowledgeDocumentStatus.RETIRED);
-        assertThat(second.getStatus()).isEqualTo(KnowledgeDocumentStatus.PUBLISHED);
+        assertThat(documentRepository.findById(first.getId()).orElseThrow().getStatus())
+                .isEqualTo(KnowledgeDocumentStatus.RETIRED);
+        assertThat(documentRepository.findById(second.getId()).orElseThrow().getStatus())
+                .isEqualTo(KnowledgeDocumentStatus.PUBLISHED);
         assertThat(documentService.findPublishedCandidates(topic.getId()))
                 .extracting(KnowledgeDocument::getId)
                 .containsExactly(second.getId());
@@ -75,6 +83,7 @@ class KnowledgeDocumentServiceTest {
         Topic topic = saveTopic();
         Member admin = saveAdmin();
         topic.deactivate();
+        topicRepository.save(topic);
 
         assertThatThrownBy(() -> documentService.create(admin.getId(), data(topic, "원문")))
                 .isInstanceOf(InvalidContentStateException.class)

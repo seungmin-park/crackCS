@@ -6,7 +6,7 @@ import com.example.crackcs.auth.repository.AuthAccountRepository;
 import com.example.crackcs.exception.DuplicateAuthAccountException;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.repository.MemberRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,10 +39,10 @@ class AuthServiceTest {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    @BeforeEach
-    void setUp() {
-        authAccountRepository.deleteAll();
-        memberRepository.deleteAll();
+    @AfterEach
+    void tearDown() {
+        authAccountRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @Test

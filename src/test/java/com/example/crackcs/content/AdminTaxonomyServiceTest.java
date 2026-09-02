@@ -1,26 +1,35 @@
 package com.example.crackcs.content;
 
 import com.example.crackcs.content.concept.domain.Concept;
+import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.concept.service.ConceptService;
 import com.example.crackcs.content.topic.domain.Topic;
+import com.example.crackcs.content.topic.repository.TopicRepository;
 import com.example.crackcs.content.topic.service.TopicService;
 import com.example.crackcs.exception.DuplicateContentCodeException;
 import com.example.crackcs.exception.InvalidContentStateException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
-@Transactional
 class AdminTaxonomyServiceTest {
 
     @Autowired TopicService topicService;
     @Autowired ConceptService conceptService;
+    @Autowired ConceptRepository conceptRepository;
+    @Autowired TopicRepository topicRepository;
+
+    @AfterEach
+    void tearDown() {
+        conceptRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+    }
 
     @Test
     @DisplayName("Topic을 계층으로 등록하고 간접 순환으로 변경하는 요청을 차단한다")
