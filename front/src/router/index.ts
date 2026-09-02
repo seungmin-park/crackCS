@@ -32,9 +32,21 @@ const router = createRouter({
     },
     {
       path: "/admin",
-      name: "admin",
-      component: () => import("@/views/AdminDashboardView.vue"),
+      component: () => import("@/views/admin/AdminLayoutView.vue"),
       meta: { requiresAuth: true, requiresAdmin: true },
+      children: [
+        { path: "", name: "admin", component: () => import("@/views/admin/AdminOverviewView.vue") },
+        { path: "taxonomy", name: "admin-taxonomy", component: () => import("@/views/admin/AdminTaxonomyView.vue") },
+        { path: "knowledge-documents", name: "admin-knowledge", component: () => import("@/views/admin/AdminKnowledgeDocumentView.vue") },
+        { path: "questions", name: "admin-questions", component: () => import("@/views/admin/AdminQuestionView.vue") },
+        { path: "members", name: "admin-members", component: () => import("@/views/admin/AdminMembersView.vue") },
+      ],
+    },
+    {
+      path: "/admin/forbidden",
+      name: "admin-forbidden",
+      component: () => import("@/views/admin/AdminForbiddenView.vue"),
+      meta: { requiresAuth: true },
     },
   ],
 });
@@ -50,7 +62,7 @@ export async function authorizationGuard(to: RouteLocationNormalized) {
     return { name: "login", query: { redirect: to.fullPath } };
   }
   if (to.meta.requiresAdmin && auth.currentMember.value?.role !== "ADMIN") {
-    return { name: "questions" };
+    return { name: "admin-forbidden" };
   }
   return true;
 }

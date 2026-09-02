@@ -26,7 +26,7 @@ describe("인증 라우트 가드", () => {
     expect(result).toEqual({ name: "login", query: { redirect: "/questions/7" } });
   });
 
-  it("USER가 관리자 화면에 접근하면 일반 문제 화면으로 돌려보낸다", async () => {
+  it("USER가 관리자 화면에 접근하면 접근 거부 화면으로 안내한다", async () => {
     currentMember.value = { role: "USER" };
 
     const result = await authorizationGuard({
@@ -34,7 +34,7 @@ describe("인증 라우트 가드", () => {
       fullPath: "/admin",
     } as never);
 
-    expect(result).toEqual({ name: "questions" });
+    expect(result).toEqual({ name: "admin-forbidden" });
   });
 
   it("ADMIN은 관리자 화면에 접근할 수 있다", async () => {

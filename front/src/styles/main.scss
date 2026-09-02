@@ -157,6 +157,40 @@ button { font: inherit; }
 .admin-card p { color: var(--muted); font-size: .82rem; line-height: 1.7; }
 .admin-card small { display: block; margin-top: 34px; padding-top: 16px; color: var(--muted); border-top: 1px solid var(--line); font-size: .68rem; }
 
+.admin-workspace { display: grid; width: min(1440px, calc(100% - 40px)); min-height: calc(100vh - 79px); margin: 0 auto; padding: 32px 0 80px; grid-template-columns: 230px minmax(0, 1fr); gap: 38px; }
+.admin-sidebar { display: flex; min-height: calc(100vh - 144px); padding: 24px 20px; flex-direction: column; background: var(--navy); color: white; border-radius: 3px 20px; position: sticky; top: 24px; }
+.admin-home-link { padding-bottom: 22px; border-bottom: 1px solid rgb(255 255 255 / 18%); font-size: .82rem; font-weight: 800; }
+.admin-sidebar nav { display: grid; margin-top: 24px; gap: 5px; }
+.admin-sidebar nav a { padding: 11px 10px; color: rgb(255 255 255 / 67%); border-radius: 4px 10px; font-size: .76rem; font-weight: 700; }
+.admin-sidebar nav a.router-link-active { color: white; background: rgb(255 255 255 / 12%); }
+.admin-sidebar small { margin-top: auto; color: rgb(255 255 255 / 52%); line-height: 1.55; }
+.admin-content { min-width: 0; padding: 14px 0; }
+.admin-page-heading { display: flex; margin-bottom: 32px; align-items: end; justify-content: space-between; gap: 30px; border-bottom: 1px solid var(--line); padding-bottom: 24px; }
+.admin-page-heading h1 { margin: 0; font-family: Georgia, "Noto Serif KR", serif; font-size: clamp(2rem, 4vw, 3.7rem); font-weight: 500; letter-spacing: -.05em; }
+.admin-page-heading > p { max-width: 430px; margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.7; }
+.admin-flow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.admin-flow a { display: grid; min-height: 220px; padding: 24px; align-content: space-between; background: var(--surface); border: 1px solid var(--line); border-radius: 3px 16px; }
+.admin-flow span { color: var(--accent-dark); font-family: Georgia, serif; font-style: italic; }.admin-flow strong { font-size: 1.15rem; }.admin-flow small { color: var(--muted); }
+.admin-two-column { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.admin-panel { min-width: 0; padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 3px 16px; }
+.admin-panel h2 { margin: 0 0 22px; font-size: 1rem; }
+.admin-form { display: grid; gap: 14px; }
+.admin-form > label { display: grid; gap: 6px; color: var(--ink); font-size: .72rem; font-weight: 750; }
+.admin-form input, .admin-form textarea, .admin-form select, .admin-toolbar select, .admin-list select, .criteria-row input, .criteria-row select { width: 100%; padding: 10px 11px; color: var(--ink); background: white; border: 1px solid var(--line); border-radius: 3px 8px; font: inherit; }
+.admin-form textarea { resize: vertical; line-height: 1.55; }.admin-form label small { min-height: .8rem; color: var(--accent-dark); font-size: .65rem; }
+.admin-primary { padding: 11px 15px !important; color: white !important; background: var(--navy) !important; border-color: var(--navy) !important; }
+.admin-actions { display: flex; flex-wrap: wrap; gap: 8px; }.admin-actions button, .admin-toolbar button, .admin-list button, .section-heading button, .criteria-row button { padding: 7px 10px; color: var(--navy); background: #f0ede5; border: 1px solid var(--line); border-radius: 3px 7px; cursor: pointer; font-size: .68rem; font-weight: 750; }
+.admin-list { display: grid; margin: 22px 0 0; padding: 0; gap: 7px; list-style: none; }
+.admin-list li { display: flex; padding: 13px 12px; align-items: center; justify-content: space-between; gap: 12px; background: white; border: 1px solid var(--line); border-radius: 3px 9px; }
+.admin-list li > div:first-child { display: grid; min-width: 0; gap: 4px; }.admin-list li > div:last-child { display: flex; gap: 5px; }.admin-list strong { overflow: hidden; font-size: .76rem; text-overflow: ellipsis; }.admin-list small { color: var(--muted); font-size: .62rem; }.admin-list li.inactive { opacity: .55; }
+.admin-list.selectable { align-content: start; margin: 0; max-height: 760px; overflow: auto; }.admin-list.selectable li { cursor: pointer; }.admin-list.selectable li.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgb(232 93 63 / 9%); }
+.admin-editor-layout { display: grid; grid-template-columns: minmax(250px, .72fr) minmax(430px, 1.45fr); gap: 18px; }
+.admin-toolbar { display: flex; margin-bottom: 14px; align-items: center; justify-content: space-between; }.admin-toolbar label { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .7rem; }.admin-toolbar select { width: auto; }
+.admin-feedback { margin: 0 0 14px; padding: 12px 14px; border-radius: 3px 9px; font-size: .75rem; }.admin-feedback.success { color: #31576b; background: #e4eff0; }.admin-feedback.error { color: #843d32; background: #f4dfda; }.admin-loading { padding: 30px; color: var(--muted); text-align: center; }
+.admin-meta { overflow-wrap: anywhere; margin: 22px 0 0; padding-top: 14px; color: var(--muted); border-top: 1px solid var(--line); font-family: monospace; font-size: .62rem; line-height: 1.7; }
+.criteria-panel { margin-top: 28px; padding-top: 22px; border-top: 1px solid var(--line); }.criteria-row { display: grid; margin-bottom: 8px; grid-template-columns: minmax(150px, 1fr) 90px 70px auto; gap: 8px; align-items: center; }.criteria-row label { font-size: .68rem; }.criteria-row label input { width: auto; }
+.criteria-add { display: flex; gap: 7px; }.criteria-add select { min-width: 170px; padding: 7px 9px; background: white; border: 1px solid var(--line); border-radius: 3px 7px; }
+
 @keyframes shimmer { to { background-position-x: -200%; } }
 
 @media (max-width: 680px) {
@@ -174,4 +208,5 @@ button { font: inherit; }
   .auth-steps { margin-top: 38px; }
   .admin-grid { grid-template-columns: 1fr; }
   .admin-card { min-height: 250px; }
+  .admin-workspace { width: min(100% - 28px, 1040px); grid-template-columns: 1fr; }.admin-sidebar { min-height: auto; position: static; }.admin-sidebar nav { grid-template-columns: repeat(2, 1fr); }.admin-sidebar small { margin-top: 18px; }.admin-page-heading { display: block; }.admin-page-heading > p { margin-top: 16px; }.admin-flow, .admin-two-column, .admin-editor-layout { grid-template-columns: 1fr; }.criteria-row { grid-template-columns: 1fr 80px; }
 }

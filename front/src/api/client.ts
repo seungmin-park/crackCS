@@ -24,9 +24,21 @@ export async function get<T>(path: string): Promise<T> {
 }
 
 export async function post<T>(path: string, body?: unknown): Promise<T> {
+  return write<T>(path, "POST", body);
+}
+
+export async function patch<T>(path: string, body: unknown): Promise<T> {
+  return write<T>(path, "PATCH", body);
+}
+
+export async function put<T>(path: string, body: unknown): Promise<T> {
+  return write<T>(path, "PUT", body);
+}
+
+async function write<T>(path: string, method: "POST" | "PATCH" | "PUT", body?: unknown): Promise<T> {
   const csrf = await fetchCsrfToken();
   return request<T>(path, {
-    method: "POST",
+    method,
     headers: { [csrf.headerName]: csrf.token },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
