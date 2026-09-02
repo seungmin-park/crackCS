@@ -64,10 +64,11 @@ public class QuestionConcept {
     private static BigDecimal requireValidWeight(BigDecimal weight) {
         if (weight == null
                 || weight.compareTo(MIN_WEIGHT_EXCLUSIVE) <= 0
-                || weight.compareTo(MAX_WEIGHT_INCLUSIVE) > 0) {
+                || weight.compareTo(MAX_WEIGHT_INCLUSIVE) > 0
+                || weight.stripTrailingZeros().scale() > 2) {
             throw new IllegalArgumentException("weight must be greater than 0 and less than or equal to 1");
         }
-        return weight;
+        return weight.setScale(2);
     }
 
     private static <T> T requireNonNull(T value, String fieldName) {

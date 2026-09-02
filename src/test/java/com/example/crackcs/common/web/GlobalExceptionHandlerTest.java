@@ -6,6 +6,15 @@ import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.content.question.service.QuestionService;
 import com.example.crackcs.exception.TopicNotFoundException;
+import com.example.crackcs.auth.security.AuthenticatedMember;
+import jakarta.validation.constraints.Positive;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import java.util.List;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +34,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.mock;
 
 @WebMvcTest(QuestionController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -39,6 +49,21 @@ class GlobalExceptionHandlerTest {
 
     @MockitoBean
     private QuestionService questionService;
+
+    @BeforeEach
+    void authenticateAdmin() {
+        AuthenticatedMember principal = adminPrincipal();
+        SecurityContextHolder.getContext().setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(
+                        principal, principal.getPassword(), principal.getAuthorities()
+                )
+        );
+    }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
 
     @Test
     @DisplayName("존재하지 않는 문제 예외를 공통 404 응답으로 변환한다")
@@ -62,6 +87,7 @@ class GlobalExceptionHandlerTest {
                 "모범 답안"
         );
         given(questionService.create(
+                77L,
                 999999L,
                 QuestionDifficulty.BASIC,
                 "프로세스란 무엇인가요?",
@@ -69,11 +95,23 @@ class GlobalExceptionHandlerTest {
         )).willThrow(new TopicNotFoundException(999999L));
 
         mockMvc.perform(post("/api/admin/questions")
+                        .principal(SecurityContextHolder.getContext().getAuthentication())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code").value("TOPIC_NOT_FOUND"))
                 .andExpect(jsonPath("$.requestId").isNotEmpty());
+    }
+
+    private AuthenticatedMember adminPrincipal() {
+        AuthenticatedMember principal = mock(AuthenticatedMember.class);
+        given(principal.memberId()).willReturn(77L);
+        given(principal.getUsername()).willReturn("admin@example.com");
+        given(principal.getPassword()).willReturn("encoded");
+        org.mockito.Mockito.doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                .when(principal).getAuthorities();
+        given(principal.isEnabled()).willReturn(true);
+        return principal;
     }
 
     @Test
@@ -101,6 +139,16 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
                 .andExpect(jsonPath("$.fieldErrors").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("Controller 메서드 파라미터 검증 실패를 공통 400 응답으로 변환한다")
+    void handlesMethodValidationException() throws Exception {
+        mockMvc.perform(get("/test/errors/method-validation").queryParam("value", "0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("value"))
+                .andExpect(jsonPath("$.fieldErrors[0].reason").value("value는 양수여야 합니다."));
     }
 
     @Test
@@ -147,6 +195,12 @@ class GlobalExceptionHandlerTest {
 
         @GetMapping("/test/errors/type-mismatch")
         void typeMismatch(@RequestParam Long value) {
+        }
+
+        @GetMapping("/test/errors/method-validation")
+        void methodValidation(
+                @Positive(message = "value는 양수여야 합니다.") @RequestParam Long value
+        ) {
         }
 
         @GetMapping("/test/errors/illegal-argument")

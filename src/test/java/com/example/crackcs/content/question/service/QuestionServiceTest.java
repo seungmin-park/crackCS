@@ -12,6 +12,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
+import com.example.crackcs.member.repository.MemberRepository;
+import com.example.crackcs.content.concept.domain.Concept;
+import com.example.crackcs.content.concept.repository.ConceptRepository;
+import com.example.crackcs.exception.InvalidContentStateException;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -30,11 +39,18 @@ class QuestionServiceTest {
     @Autowired
     private TopicRepository topicRepository;
 
+    @Autowired
+    private MemberRepository memberRepository;
+
+    @Autowired
+    private ConceptRepository conceptRepository;
+
     @Test
     @DisplayName("관리자 초안 일반 문제를 생성하고 저장한다")
     void createsAndSavesQuestion() {
         Topic firstTopic = saveTopic("OPERATING_SYSTEM", "운영체제");
         Question createdQuestion = questionService.create(
+                saveAdmin().getId(),
                 firstTopic.getId(),
                 QuestionDifficulty.BASIC,
                 "프로세스와 스레드의 차이를 설명하세요.",
@@ -136,6 +152,87 @@ class QuestionServiceTest {
                 .hasMessage("Question not found: " + Long.MAX_VALUE);
     }
 
+    @Test
+    @DisplayName("평가 Concept을 교체하고 검수한 문제를 공개한다")
+    void replacesConceptsReviewsAndPublishesQuestion() {
+        Topic topic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        Member admin = saveAdmin();
+        Concept concept = conceptRepository.save(Concept.builder()
+                .topic(topic).code("PROCESS_THREAD").name("프로세스와 스레드").build());
+        Question question = questionService.create(
+                admin.getId(), topic.getId(), QuestionDifficulty.BASIC, "질문", "모범 답안"
+        );
+
+        questionService.replaceConcepts(
+                question.getId(), List.of(new QuestionConceptData(concept.getId(), BigDecimal.ONE, true))
+        );
+        questionService.review(question.getId(), admin.getId());
+        Question published = questionService.publish(question.getId());
+
+        assertThat(published.getStatus()).isEqualTo(QuestionStatus.PUBLISHED);
+        assertThat(published.getReviewedAt()).isNotNull();
+        assertThat(published.getQuestionConcepts()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("비활성 Concept을 문제의 평가 기준으로 연결할 수 없다")
+    void rejectsInactiveConceptConnection() {
+        Topic topic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        Member admin = saveAdmin();
+        Concept concept = conceptRepository.save(Concept.builder()
+                .topic(topic).code("PROCESS_THREAD").name("프로세스와 스레드").build());
+        concept.deactivate();
+        Question question = questionService.create(
+                admin.getId(), topic.getId(), QuestionDifficulty.BASIC, "질문", "모범 답안"
+        );
+
+        assertThatThrownBy(() -> questionService.replaceConcepts(
+                question.getId(), List.of(new QuestionConceptData(concept.getId(), BigDecimal.ONE, true))
+        )).isInstanceOf(InvalidContentStateException.class);
+    }
+
+    @Test
+    @DisplayName("비활성 Topic에는 새 문제를 연결할 수 없다")
+    void rejectsInactiveTopicConnection() {
+        Topic topic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        Member admin = saveAdmin();
+        topic.deactivate();
+
+        assertThatThrownBy(() -> questionService.create(
+                admin.getId(), topic.getId(), QuestionDifficulty.BASIC, "질문", "모범 답안"
+        ))
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("비활성 Topic에는 Question을 연결할 수 없습니다.");
+    }
+
+    @Test
+    @DisplayName("새 문제 버전을 공개하면 이전 공개본은 보존된 RETIRED 상태가 된다")
+    void retiresPreviousVersionWhenPublishingNextVersion() {
+        Topic topic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        Member admin = saveAdmin();
+        Concept concept = conceptRepository.save(Concept.builder()
+                .topic(topic).code("PROCESS_THREAD").name("프로세스와 스레드").build());
+        Question first = questionService.create(
+                admin.getId(), topic.getId(), QuestionDifficulty.BASIC, "첫 문제", "첫 답안"
+        );
+        questionService.replaceConcepts(
+                first.getId(), List.of(new QuestionConceptData(concept.getId(), BigDecimal.ONE, true))
+        );
+        questionService.review(first.getId(), admin.getId());
+        questionService.publish(first.getId());
+
+        Question second = questionService.createNextVersion(
+                first.getId(), admin.getId(), QuestionDifficulty.INTERMEDIATE, "둘째 문제", "둘째 답안"
+        );
+        questionService.review(second.getId(), admin.getId());
+        questionService.publish(second.getId());
+
+        assertThat(first.getStatus()).isEqualTo(QuestionStatus.RETIRED);
+        assertThat(second.getStatus()).isEqualTo(QuestionStatus.PUBLISHED);
+        assertThat(questionRepository.findPublishedById(first.getId())).isEmpty();
+        assertThat(questionRepository.findPublishedById(second.getId())).isPresent();
+    }
+
     private Topic saveTopic(String code, String name) {
         return topicRepository.save(Topic.builder()
                 .code(code)
@@ -146,11 +243,19 @@ class QuestionServiceTest {
     private Question saveQuestion(Topic topic, String content) {
         Question question = Question.builder()
                 .topic(topic)
+                .createdByMember(saveAdmin())
                 .difficulty(QuestionDifficulty.BASIC)
                 .content(content)
                 .referenceAnswer("모범 답안")
                 .build();
 
         return questionRepository.save(question);
+    }
+
+    private Member saveAdmin() {
+        return memberRepository.save(Member.builder()
+                .nickname("관리자-" + System.nanoTime())
+                .role(MemberRole.ADMIN)
+                .build());
     }
 }

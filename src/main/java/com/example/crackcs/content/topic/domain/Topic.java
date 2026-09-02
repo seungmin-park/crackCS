@@ -38,15 +38,29 @@ public class Topic {
     @Column(nullable = false, length = 100)
     private String name;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private boolean active;
+
     @Builder
     private Topic(Topic parent, String code, String name) {
         this.parent = requireDifferentParent(parent);
-        this.code = requireText(code, "code");
-        this.name = requireText(name, "name");
+        this.code = requireText(code, "code", 50);
+        this.name = requireText(name, "name", 100);
+        this.active = true;
     }
 
-    public void updateParent(Topic parent) {
-        this.parent = requireDifferentParent(parent);
+    public void update(Topic parent, String code, String name) {
+        Topic validatedParent = requireDifferentParent(parent);
+        String validatedCode = requireText(code, "code", 50);
+        String validatedName = requireText(name, "name", 100);
+
+        this.parent = validatedParent;
+        this.code = validatedCode;
+        this.name = validatedName;
+    }
+
+    public void deactivate() {
+        this.active = false;
     }
 
     private Topic requireDifferentParent(Topic parent) {
@@ -56,10 +70,14 @@ public class Topic {
         return parent;
     }
 
-    private static String requireText(String value, String fieldName) {
+    private static String requireText(String value, String fieldName, int maxLength) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
-        return value;
+        String normalized = value.trim();
+        if (normalized.length() > maxLength) {
+            throw new IllegalArgumentException(fieldName + " must be " + maxLength + " characters or fewer");
+        }
+        return normalized;
     }
 }

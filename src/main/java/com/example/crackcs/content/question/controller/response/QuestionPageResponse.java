@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 
 public record QuestionPageResponse(
-        List<QuestionResponse> content,
+        List<QuestionSummaryResponse> content,
         int page,
         int size,
         long totalElements,
@@ -16,7 +16,7 @@ public record QuestionPageResponse(
     public static QuestionPageResponse from(Page<Question> questions) {
         return new QuestionPageResponse(
                 questions.getContent().stream()
-                        .map(QuestionResponse::from)
+                        .map(QuestionSummaryResponse::from)
                         .toList(),
                 questions.getNumber(),
                 questions.getSize(),

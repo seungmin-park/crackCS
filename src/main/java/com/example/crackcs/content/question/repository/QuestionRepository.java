@@ -9,10 +9,25 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.EntityGraph;
 
 import java.util.Optional;
+import java.util.List;
 
 public interface QuestionRepository extends JpaRepository<Question, Long> {
+
+    @EntityGraph(attributePaths = {"questionConcepts", "questionConcepts.concept"})
+    @Query("SELECT question FROM Question question WHERE question.id = :questionId")
+    Optional<Question> findAdminById(@Param("questionId") Long questionId);
+
+    @Query("""
+            SELECT COALESCE(MAX(question.questionVersion), 0)
+            FROM Question question
+            WHERE question.versionSeriesId = :versionSeriesId
+            """)
+    int findMaxVersion(@Param("versionSeriesId") String versionSeriesId);
+
+    List<Question> findAllByVersionSeriesIdAndStatus(String versionSeriesId, QuestionStatus status);
 
     @Query("""
             SELECT question

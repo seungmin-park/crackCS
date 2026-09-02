@@ -3,6 +3,8 @@ package com.example.crackcs.content.question.controller.response;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -22,6 +24,7 @@ class PublicQuestionResponseTest {
                 .build();
         Question question = Question.builder()
                 .topic(topic)
+                .createdByMember(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build())
                 .difficulty(QuestionDifficulty.BASIC)
                 .content("프로세스와 스레드의 차이를 설명하세요.")
                 .referenceAnswer("외부에 노출하면 안 되는 모범 답안")

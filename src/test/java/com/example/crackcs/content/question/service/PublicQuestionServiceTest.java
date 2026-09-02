@@ -16,6 +16,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
+import com.example.crackcs.member.repository.MemberRepository;
 
 import java.math.BigDecimal;
 
@@ -38,8 +41,12 @@ class PublicQuestionServiceTest {
     @Autowired
     private TopicRepository topicRepository;
 
+    @Autowired
+    private MemberRepository memberRepository;
+
     private Topic topic;
     private Concept concept;
+    private Member admin;
 
     @BeforeEach
     void setup() {
@@ -51,6 +58,10 @@ class PublicQuestionServiceTest {
                 .topic(topic)
                 .code("PROCESS_THREAD")
                 .name("프로세스와 스레드")
+                .build());
+        admin = memberRepository.save(Member.builder()
+                .nickname("관리자")
+                .role(MemberRole.ADMIN)
                 .build());
     }
 
@@ -108,12 +119,14 @@ class PublicQuestionServiceTest {
     ) {
         Question question = Question.builder()
                 .topic(topic)
+                .createdByMember(admin)
                 .difficulty(difficulty)
                 .content(content)
                 .referenceAnswer("모범 답안")
                 .build();
         if (publish) {
             question.addConcept(concept, BigDecimal.ONE, true);
+            question.review(admin);
             question.publish();
         }
         if (retire) {

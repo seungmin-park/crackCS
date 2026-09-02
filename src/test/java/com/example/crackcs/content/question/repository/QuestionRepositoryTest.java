@@ -4,6 +4,9 @@ import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
+import com.example.crackcs.member.repository.MemberRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +23,9 @@ class QuestionRepositoryTest {
     @Autowired
     private TopicRepository topicRepository;
 
+    @Autowired
+    private MemberRepository memberRepository;
+
     @Test
     @DisplayName("문제를 저장하고 ID로 조회한다")
     void savesAndFindsQuestionById() {
@@ -29,6 +35,10 @@ class QuestionRepositoryTest {
                 .build());
         Question question = Question.builder()
                 .topic(topic)
+                .createdByMember(memberRepository.save(Member.builder()
+                        .nickname("관리자")
+                        .role(MemberRole.ADMIN)
+                        .build()))
                 .difficulty(QuestionDifficulty.BASIC)
                 .content("프로세스와 스레드의 차이를 설명하세요.")
                 .referenceAnswer("프로세스는 자원을 독립적으로 소유하고, 스레드는 프로세스의 자원을 공유합니다.")

@@ -40,7 +40,7 @@ class TopicTest {
     void rejectsSelfAsParent() {
         Topic topic = createTopic("OPERATING_SYSTEM", "운영체제");
 
-        assertThatThrownBy(() -> topic.updateParent(topic))
+        assertThatThrownBy(() -> topic.update(topic, "OPERATING_SYSTEM", "운영체제"))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("parent must not be self");
     }

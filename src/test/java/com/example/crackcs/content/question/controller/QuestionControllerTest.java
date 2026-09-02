@@ -8,6 +8,12 @@ import com.example.crackcs.content.question.domain.QuestionType;
 import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.content.question.service.QuestionService;
 import com.example.crackcs.content.topic.domain.Topic;
+import com.example.crackcs.auth.security.AuthenticatedMember;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
@@ -52,6 +59,21 @@ class QuestionControllerTest {
     @MockitoBean
     private QuestionService questionService;
 
+    @BeforeEach
+    void authenticateAdmin() {
+        AuthenticatedMember principal = adminPrincipal(77L);
+        SecurityContextHolder.getContext().setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(
+                        principal, principal.getPassword(), principal.getAuthorities()
+                )
+        );
+    }
+
+    @AfterEach
+    void clearAuthentication() {
+        SecurityContextHolder.clearContext();
+    }
+
     @Test
     @DisplayName("관리자 초안 문제를 생성하면 201과 생성된 문제를 반환한다")
     void createsQuestion() throws Exception {
@@ -60,6 +82,7 @@ class QuestionControllerTest {
                 "프로세스와 스레드의 차이를 설명하세요.",
                 "프로세스는 자원을 독립적으로 소유하고 스레드는 자원을 공유합니다.");
         given(questionService.create(
+                77L,
                 firstTopic.getId(),
                 QuestionDifficulty.BASIC,
                 created.getContent(),
@@ -73,6 +96,7 @@ class QuestionControllerTest {
         );
 
         mockMvc.perform(post("/api/admin/questions")
+                        .principal(SecurityContextHolder.getContext().getAuthentication())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -87,6 +111,7 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.updatedAt").isNotEmpty());
 
         verify(questionService).create(
+                77L,
                 firstTopic.getId(),
                 QuestionDifficulty.BASIC,
                 created.getContent(),
@@ -95,8 +120,8 @@ class QuestionControllerTest {
     }
 
     @Test
-    @DisplayName("조건과 페이지를 Service에 전달하고 문제 목록 응답을 반환한다")
-    void findsQuestionsWithFiltersAndPaging() throws Exception {
+    @DisplayName("목록 조건을 Service에 전달하고 문제 목록 응답을 반환한다")
+    void findsQuestionsWithFilters() throws Exception {
         Topic firstTopic = topic(1L, "OPERATING_SYSTEM", "운영체제");
         Question question = question(11L, firstTopic, QuestionDifficulty.BASIC, "첫 번째 질문", "모범 답안");
         given(questionService.findAll(
@@ -110,8 +135,6 @@ class QuestionControllerTest {
         mockMvc.perform(get("/api/admin/questions")
                         .param("topicId", firstTopic.getId().toString())
                         .param("difficulty", "BASIC")
-                        .param("page", "0")
-                        .param("size", "1")
                         .param("sort", "id,asc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
@@ -128,6 +151,58 @@ class QuestionControllerTest {
                 isNull(),
                 any(Pageable.class)
         );
+    }
+
+    @Test
+    @DisplayName("page 하한 0과 size 하한 1을 허용한다")
+    void acceptsPagingLowerBounds() throws Exception {
+        given(questionService.findAll(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 1), 0));
+
+        mockMvc.perform(get("/api/admin/questions").param("page", "0").param("size", "1"))
+                .andExpect(status().isOk());
+
+        verify(questionService).findAll(
+                isNull(), isNull(), isNull(), isNull(),
+                argThat(pageable -> pageable.getPageNumber() == 0 && pageable.getPageSize() == 1)
+        );
+    }
+
+    @Test
+    @DisplayName("size 상한 100을 허용한다")
+    void acceptsSizeUpperBound() throws Exception {
+        given(questionService.findAll(isNull(), isNull(), isNull(), isNull(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(), PageRequest.of(0, 100), 0));
+
+        mockMvc.perform(get("/api/admin/questions").param("size", "100"))
+                .andExpect(status().isOk());
+
+        verify(questionService).findAll(
+                isNull(), isNull(), isNull(), isNull(),
+                argThat(pageable -> pageable.getPageSize() == 100)
+        );
+    }
+
+    @Test
+    @DisplayName("page 하한보다 작은 -1은 거부한다")
+    void rejectsPageBelowLowerBound() throws Exception {
+        mockMvc.perform(get("/api/admin/questions").param("page", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("page"))
+                .andExpect(jsonPath("$.fieldErrors[0].reason").value("page는 0 이상이어야 합니다."));
+
+        verifyNoInteractions(questionService);
+    }
+
+    @Test
+    @DisplayName("size 상한보다 큰 101은 거부한다")
+    void rejectsSizeAboveUpperBound() throws Exception {
+        mockMvc.perform(get("/api/admin/questions").param("size", "101"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("size"))
+                .andExpect(jsonPath("$.fieldErrors[0].reason").value("size는 100 이하여야 합니다."));
+
+        verifyNoInteractions(questionService);
     }
 
     @Test
@@ -199,10 +274,32 @@ class QuestionControllerTest {
     }
 
     @Test
-    @DisplayName("문제 생성 값이 올바르지 않으면 Service를 호출하지 않고 400을 반환한다")
-    void returnsValidationError() throws Exception {
+    @DisplayName("문제 생성 topicId가 양수가 아니면 Service를 호출하지 않고 400을 반환한다")
+    void rejectsNonPositiveTopicId() throws Exception {
         Map<String, Object> request = Map.of(
                 "topicId", 0L,
+                "difficulty", "BASIC",
+                "content", "문제 본문",
+                "referenceAnswer", "모범 답안"
+        );
+
+        mockMvc.perform(post("/api/admin/questions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors.length()").value(1))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("topicId"))
+                .andExpect(jsonPath("$.requestId").isNotEmpty());
+
+        verifyNoInteractions(questionService);
+    }
+
+    @Test
+    @DisplayName("문제 본문이 공백이면 Service를 호출하지 않고 400을 반환한다")
+    void rejectsBlankContent() throws Exception {
+        Map<String, Object> request = Map.of(
+                "topicId", 1L,
                 "difficulty", "BASIC",
                 "content", " ",
                 "referenceAnswer", "모범 답안"
@@ -213,7 +310,8 @@ class QuestionControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
-                .andExpect(jsonPath("$.fieldErrors.length()").value(2))
+                .andExpect(jsonPath("$.fieldErrors.length()").value(1))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("content"))
                 .andExpect(jsonPath("$.requestId").isNotEmpty());
 
         verifyNoInteractions(questionService);
@@ -305,5 +403,16 @@ class QuestionControllerTest {
         given(question.getCreatedAt()).willReturn(createdAt);
         given(question.getUpdatedAt()).willReturn(createdAt);
         return question;
+    }
+
+    private AuthenticatedMember adminPrincipal(Long memberId) {
+        AuthenticatedMember principal = mock(AuthenticatedMember.class);
+        given(principal.memberId()).willReturn(memberId);
+        given(principal.getUsername()).willReturn("admin@example.com");
+        given(principal.getPassword()).willReturn("encoded");
+        org.mockito.Mockito.doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                .when(principal).getAuthorities();
+        given(principal.isEnabled()).willReturn(true);
+        return principal;
     }
 }

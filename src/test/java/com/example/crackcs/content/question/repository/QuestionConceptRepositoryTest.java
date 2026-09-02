@@ -7,6 +7,9 @@ import com.example.crackcs.content.question.domain.QuestionConcept;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
+import com.example.crackcs.member.repository.MemberRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceException;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +39,9 @@ class QuestionConceptRepositoryTest {
     private TopicRepository topicRepository;
 
     @Autowired
+    private MemberRepository memberRepository;
+
+    @Autowired
     private EntityManager entityManager;
 
     @Test
@@ -52,6 +58,7 @@ class QuestionConceptRepositoryTest {
                 .build());
         Question question = Question.builder()
                 .topic(topic)
+                .createdByMember(saveAdmin())
                 .difficulty(QuestionDifficulty.BASIC)
                 .content("프로세스와 스레드의 차이를 설명하세요.")
                 .referenceAnswer("모범 답안")
@@ -83,6 +90,7 @@ class QuestionConceptRepositoryTest {
                 .build());
         Question question = Question.builder()
                 .topic(topic)
+                .createdByMember(saveAdmin())
                 .difficulty(QuestionDifficulty.BASIC)
                 .content("프로세스와 스레드의 차이를 설명하세요.")
                 .referenceAnswer("모범 답안")
@@ -98,5 +106,12 @@ class QuestionConceptRepositoryTest {
                 .setParameter("conceptId", concept.getId())
                 .executeUpdate())
                 .isInstanceOf(PersistenceException.class);
+    }
+
+    private Member saveAdmin() {
+        return memberRepository.save(Member.builder()
+                .nickname("관리자-" + System.nanoTime())
+                .role(MemberRole.ADMIN)
+                .build());
     }
 }

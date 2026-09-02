@@ -42,12 +42,32 @@ public class Concept {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @Column(nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private boolean active;
+
     @Builder
     private Concept(Topic topic, String code, String name, String description) {
         this.topic = requireNonNull(topic, "topic");
-        this.code = requireText(code, "code");
-        this.name = requireText(name, "name");
+        this.code = requireText(code, "code", 100);
+        this.name = requireText(name, "name", 150);
         this.description = normalizeDescription(description);
+        this.active = true;
+    }
+
+    public void update(Topic topic, String code, String name, String description) {
+        Topic validatedTopic = requireNonNull(topic, "topic");
+        String validatedCode = requireText(code, "code", 100);
+        String validatedName = requireText(name, "name", 150);
+        String validatedDescription = normalizeDescription(description);
+
+        this.topic = validatedTopic;
+        this.code = validatedCode;
+        this.name = validatedName;
+        this.description = validatedDescription;
+    }
+
+    public void deactivate() {
+        this.active = false;
     }
 
     private static <T> T requireNonNull(T value, String fieldName) {
@@ -57,14 +77,18 @@ public class Concept {
         return value;
     }
 
-    private static String requireText(String value, String fieldName) {
+    private static String requireText(String value, String fieldName, int maxLength) {
         if (value == null || value.isBlank()) {
             throw new IllegalArgumentException(fieldName + " must not be blank");
         }
-        return value;
+        String normalized = value.trim();
+        if (normalized.length() > maxLength) {
+            throw new IllegalArgumentException(fieldName + " must be " + maxLength + " characters or fewer");
+        }
+        return normalized;
     }
 
     private static String normalizeDescription(String description) {
-        return description == null || description.isBlank() ? null : description;
+        return description == null || description.isBlank() ? null : description.trim();
     }
 }

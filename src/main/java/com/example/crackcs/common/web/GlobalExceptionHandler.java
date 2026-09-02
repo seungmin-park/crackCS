@@ -7,6 +7,11 @@ import com.example.crackcs.exception.MemberNotFoundException;
 import com.example.crackcs.exception.TooManyLoginAttemptsException;
 import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.exception.TopicNotFoundException;
+import com.example.crackcs.exception.ConceptNotFoundException;
+import com.example.crackcs.exception.KnowledgeDocumentNotFoundException;
+import com.example.crackcs.exception.DuplicateContentCodeException;
+import com.example.crackcs.exception.DuplicateKnowledgeDocumentException;
+import com.example.crackcs.exception.InvalidContentStateException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +19,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
@@ -60,6 +66,28 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.NOT_FOUND, "TOPIC_NOT_FOUND", exception.getMessage(), List.of());
     }
 
+    @ExceptionHandler(ConceptNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleConceptNotFound(ConceptNotFoundException exception) {
+        return error(HttpStatus.NOT_FOUND, "CONCEPT_NOT_FOUND", exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(KnowledgeDocumentNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleKnowledgeDocumentNotFound(
+            KnowledgeDocumentNotFoundException exception
+    ) {
+        return error(HttpStatus.NOT_FOUND, "KNOWLEDGE_DOCUMENT_NOT_FOUND", exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler({DuplicateContentCodeException.class, DuplicateKnowledgeDocumentException.class})
+    public ResponseEntity<ApiErrorResponse> handleDuplicateContent(RuntimeException exception) {
+        return error(HttpStatus.CONFLICT, "CONTENT_CONFLICT", exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(InvalidContentStateException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidContentState(InvalidContentStateException exception) {
+        return error(HttpStatus.CONFLICT, "INVALID_CONTENT_STATE", exception.getMessage(), List.of());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleValidation(MethodArgumentNotValidException exception) {
         List<ApiErrorResponse.FieldErrorResponse> fieldErrors = exception.getBindingResult()
@@ -84,6 +112,25 @@ public class GlobalExceptionHandler {
                         violation.getPropertyPath().toString(),
                         violation.getMessage()
                 ))
+                .toList();
+
+        return error(
+                HttpStatus.BAD_REQUEST,
+                "VALIDATION_ERROR",
+                "요청 값이 올바르지 않습니다.",
+                fieldErrors
+        );
+    }
+
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public ResponseEntity<ApiErrorResponse> handleMethodValidation(HandlerMethodValidationException exception) {
+        List<ApiErrorResponse.FieldErrorResponse> fieldErrors = exception.getParameterValidationResults()
+                .stream()
+                .flatMap(result -> result.getResolvableErrors().stream()
+                        .map(error -> new ApiErrorResponse.FieldErrorResponse(
+                                result.getMethodParameter().getParameterName(),
+                                error.getDefaultMessage()
+                        )))
                 .toList();
 
         return error(

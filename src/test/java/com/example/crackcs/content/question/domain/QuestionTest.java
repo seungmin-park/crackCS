@@ -2,6 +2,9 @@ package com.example.crackcs.content.question.domain;
 
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.topic.domain.Topic;
+import com.example.crackcs.exception.InvalidContentStateException;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -96,6 +99,7 @@ class QuestionTest {
     void difficultyMustNotBeNull() {
         assertThatThrownBy(() -> Question.builder()
                 .topic(createTopic())
+                .createdByMember(createAdmin())
                 .content("질문")
                 .referenceAnswer("모범 답안")
                 .build())
@@ -135,13 +139,74 @@ class QuestionTest {
     }
 
     @Test
+    @DisplayName("검수하지 않은 문제는 평가 Concept이 있어도 공개할 수 없다")
+    void rejectsPublishWithoutReview() {
+        Topic topic = createTopic();
+        Question question = createQuestion(topic, "질문", "모범 답안");
+        question.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true);
+
+        assertThatThrownBy(question::publish)
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("검수자와 검수 시각이 있어야 문제를 공개할 수 있습니다.");
+    }
+
+    @Test
     @DisplayName("평가 개념 없이 문제를 공개할 수 없다")
     void rejectsPublishWithoutConcept() {
         Question question = createQuestion(createTopic(), "질문", "모범 답안");
+        question.review(createAdmin());
 
         assertThatThrownBy(question::publish)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(InvalidContentStateException.class)
                 .hasMessage("published question must have at least one concept");
+    }
+
+    @Test
+    @DisplayName("평가 Concept 가중치 합이 1이 아니면 문제를 공개할 수 없다")
+    void rejectsPublishWhenWeightsDoNotSumToOne() {
+        Topic topic = createTopic();
+        Question question = createQuestion(topic, "질문", "모범 답안");
+        question.addConcept(createConcept(topic, "PROCESS", "프로세스"), new BigDecimal("0.60"), true);
+        question.addConcept(createConcept(topic, "THREAD", "스레드"), new BigDecimal("0.30"), false);
+        question.review(createAdmin());
+
+        assertThatThrownBy(question::publish)
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("question concept weights must sum to 1.00");
+    }
+
+    @Test
+    @DisplayName("PUBLISHED 문제는 직접 수정할 수 없다")
+    void rejectsDirectUpdateOfPublishedQuestion() {
+        Topic topic = createTopic();
+        Question published = createQuestion(topic, "기존 질문", "기존 답안");
+        published.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true);
+        published.review(createAdmin());
+        published.publish();
+
+        assertThatThrownBy(() -> published.update(topic, QuestionDifficulty.ADVANCED, "변경 질문", "변경 답안"))
+                .isInstanceOf(InvalidContentStateException.class);
+    }
+
+    @Test
+    @DisplayName("PUBLISHED 문제에서 같은 계열의 다음 DRAFT 버전을 만든다")
+    void createsNextVersionFromPublishedQuestion() {
+        Topic topic = createTopic();
+        Question published = createQuestion(topic, "기존 질문", "기존 답안");
+        published.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true);
+        published.review(createAdmin());
+        published.publish();
+
+        Question next = published.createNextVersion(
+                2, createAdmin(), QuestionDifficulty.ADVANCED, "변경 질문", "변경 답안"
+        );
+
+        assertThat(published.getContent()).isEqualTo("기존 질문");
+        assertThat(published.getStatus()).isEqualTo(QuestionStatus.PUBLISHED);
+        assertThat(next.getStatus()).isEqualTo(QuestionStatus.DRAFT);
+        assertThat(next.getQuestionVersion()).isEqualTo(2);
+        assertThat(next.getVersionSeriesId()).isEqualTo(published.getVersionSeriesId());
+        assertThat(next.getQuestionConcepts()).hasSize(1);
     }
 
     @Test
@@ -150,9 +215,10 @@ class QuestionTest {
         Topic topic = createTopic();
         Question question = createQuestion(topic, "질문", "모범 답안");
         question.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, false);
+        question.review(createAdmin());
 
         assertThatThrownBy(question::publish)
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(InvalidContentStateException.class)
                 .hasMessage("published question must have at least one required concept");
     }
 
@@ -162,6 +228,7 @@ class QuestionTest {
         Topic topic = createTopic();
         Question question = createQuestion(topic, "질문", "모범 답안");
         question.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true);
+        question.review(createAdmin());
 
         question.publish();
 
@@ -182,8 +249,8 @@ class QuestionTest {
     }
 
     @Test
-    @DisplayName("가중치는 0보다 크고 1 이하여야 한다")
-    void validatesWeightRange() {
+    @DisplayName("가중치 0은 허용하지 않는다")
+    void rejectsZeroWeight() {
         Topic topic = createTopic();
         Concept concept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
         Question question = createQuestion(topic, "질문", "모범 답안");
@@ -191,6 +258,27 @@ class QuestionTest {
         assertThatThrownBy(() -> question.addConcept(concept, BigDecimal.ZERO, true))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("weight must be greater than 0 and less than or equal to 1");
+    }
+
+    @Test
+    @DisplayName("가중치 상한 1은 허용한다")
+    void acceptsOneAsWeight() {
+        Topic topic = createTopic();
+        Concept concept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
+        Question question = createQuestion(topic, "질문", "모범 답안");
+
+        QuestionConcept questionConcept = question.addConcept(concept, BigDecimal.ONE, true);
+
+        assertThat(questionConcept.getWeight()).isEqualByComparingTo("1.00");
+    }
+
+    @Test
+    @DisplayName("가중치 1 초과는 허용하지 않는다")
+    void rejectsWeightGreaterThanOne() {
+        Topic topic = createTopic();
+        Concept concept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
+        Question question = createQuestion(topic, "질문", "모범 답안");
+
         assertThatThrownBy(() -> question.addConcept(concept, new BigDecimal("1.01"), true))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("weight must be greater than 0 and less than or equal to 1");
@@ -199,10 +287,15 @@ class QuestionTest {
     private Question createQuestion(Topic topic, String content, String referenceAnswer) {
         return Question.builder()
                 .topic(topic)
+                .createdByMember(createAdmin())
                 .difficulty(QuestionDifficulty.BASIC)
                 .content(content)
                 .referenceAnswer(referenceAnswer)
                 .build();
+    }
+
+    private Member createAdmin() {
+        return Member.builder().nickname("관리자").role(MemberRole.ADMIN).build();
     }
 
     private Topic createTopic() {
