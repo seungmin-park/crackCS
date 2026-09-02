@@ -14,6 +14,12 @@ tags:
     description: 학습자에게 공개된 문제 조회
   - name: Admin Questions
     description: 관리자 문제 관리
+  - name: Admin Members
+    description: 관리자 회원 상태 관리
+  - name: Admin Taxonomy
+    description: 관리자 Topic과 Concept 관리
+  - name: Admin Knowledge
+    description: 관리자 KnowledgeDocument 버전과 공개 상태 관리
 paths:
   /api/auth/csrf:
     get:
@@ -98,6 +104,195 @@ paths:
                 $ref: '#/components/schemas/MemberResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /api/admin/members:
+    get:
+      tags: [Admin Members]
+      operationId: findAdminMembers
+      summary: 회원 목록 조회
+      parameters:
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/SizeQuery'
+      responses:
+        '200':
+          description: 회원 페이지
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberPageResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/admin/members/{memberId}/status:
+    parameters:
+      - $ref: '#/components/parameters/MemberIdPath'
+    patch:
+      tags: [Admin Members]
+      operationId: changeMemberStatus
+      summary: 회원 상태 변경
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MemberStatusUpdateRequest'
+      responses:
+        '200':
+          description: 변경된 회원
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/admin/topics:
+    get:
+      tags: [Admin Taxonomy]
+      operationId: findAdminTopics
+      summary: Topic 목록 조회
+      parameters:
+        - $ref: '#/components/parameters/ParentIdQuery'
+        - $ref: '#/components/parameters/ActiveQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/SizeQuery'
+      responses:
+        '200':
+          description: Topic 페이지
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicPageResponse'
+    post:
+      tags: [Admin Taxonomy]
+      operationId: createTopic
+      summary: Topic 등록
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicRequest'
+      responses:
+        '201':
+          description: 생성된 Topic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/topics/{topicId}:
+    parameters:
+      - $ref: '#/components/parameters/TopicIdPath'
+    get:
+      tags: [Admin Taxonomy]
+      operationId: findTopicById
+      responses:
+        '200':
+          description: Topic 상세
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicResponse'
+    patch:
+      tags: [Admin Taxonomy]
+      operationId: updateTopic
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TopicRequest'
+      responses:
+        '200':
+          description: 변경된 Topic
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TopicResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/topics/{topicId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/TopicIdPath'
+    post:
+      tags: [Admin Taxonomy]
+      operationId: deactivateTopic
+      responses:
+        '204':
+          description: Topic 비활성화 완료
+  /api/admin/concepts:
+    get:
+      tags: [Admin Taxonomy]
+      operationId: findAdminConcepts
+      parameters:
+        - $ref: '#/components/parameters/TopicIdQuery'
+        - $ref: '#/components/parameters/ActiveQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/SizeQuery'
+      responses:
+        '200':
+          description: Concept 페이지
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConceptPageResponse'
+    post:
+      tags: [Admin Taxonomy]
+      operationId: createConcept
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConceptRequest'
+      responses:
+        '201':
+          description: 생성된 Concept
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConceptResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/concepts/{conceptId}:
+    parameters:
+      - $ref: '#/components/parameters/ConceptIdPath'
+    get:
+      tags: [Admin Taxonomy]
+      operationId: findConceptById
+      responses:
+        '200':
+          description: Concept 상세
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConceptResponse'
+    patch:
+      tags: [Admin Taxonomy]
+      operationId: updateConcept
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConceptRequest'
+      responses:
+        '200':
+          description: 변경된 Concept
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConceptResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/concepts/{conceptId}/deactivate:
+    parameters:
+      - $ref: '#/components/parameters/ConceptIdPath'
+    post:
+      tags: [Admin Taxonomy]
+      operationId: deactivateConcept
+      responses:
+        '204':
+          description: Concept 비활성화 완료
   /api/questions:
     get:
       tags:
@@ -140,6 +335,140 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/QuestionNotFound'
+  /api/admin/knowledge-documents:
+    get:
+      tags: [Admin Knowledge]
+      operationId: findKnowledgeDocuments
+      parameters:
+        - $ref: '#/components/parameters/TopicIdQuery'
+        - $ref: '#/components/parameters/DocumentStatusQuery'
+        - $ref: '#/components/parameters/TechnologyVersionQuery'
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/SizeQuery'
+      responses:
+        '200':
+          description: KnowledgeDocument 페이지
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeDocumentPageResponse'
+    post:
+      tags: [Admin Knowledge]
+      operationId: createKnowledgeDocument
+      summary: 최초 DRAFT 문서 등록
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeDocumentRequest'
+      responses:
+        '201':
+          description: 생성된 문서
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeDocumentResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/knowledge-documents/{documentId}:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdPath'
+    get:
+      tags: [Admin Knowledge]
+      operationId: findKnowledgeDocumentById
+      responses:
+        '200':
+          description: 문서 상세
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeDocumentResponse'
+    patch:
+      tags: [Admin Knowledge]
+      operationId: updateKnowledgeDocument
+      summary: DRAFT 문서 수정
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeDocumentRequest'
+      responses:
+        '200':
+          description: 변경된 문서
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeDocumentResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/knowledge-documents/{documentId}/versions:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdPath'
+    post:
+      tags: [Admin Knowledge]
+      operationId: createKnowledgeDocumentVersion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KnowledgeDocumentRequest'
+      responses:
+        '201':
+          description: 같은 계열의 새 DRAFT 버전
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeDocumentResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/knowledge-documents/{documentId}/review:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdPath'
+    post:
+      tags: [Admin Knowledge]
+      operationId: reviewKnowledgeDocument
+      responses:
+        '200':
+          description: 검수 정보가 기록된 문서
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeDocumentResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/knowledge-documents/{documentId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdPath'
+    post:
+      tags: [Admin Knowledge]
+      operationId: publishKnowledgeDocument
+      responses:
+        '200':
+          description: 공개된 문서. 같은 계열의 이전 공개본은 RETIRED가 된다.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeDocumentResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/knowledge-documents/{documentId}/retire:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdPath'
+    post:
+      tags: [Admin Knowledge]
+      operationId: retireKnowledgeDocument
+      responses:
+        '200':
+          description: RETIRED 문서
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeDocumentResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
   /api/admin/questions:
     get:
       tags:
@@ -231,6 +560,93 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/QuestionNotFound'
+  /api/admin/questions/{questionId}/concepts:
+    parameters:
+      - $ref: '#/components/parameters/QuestionIdPath'
+    put:
+      tags: [Admin Questions]
+      operationId: replaceQuestionConcepts
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionConceptReplaceRequest'
+      responses:
+        '200':
+          description: 평가 Concept이 교체된 DRAFT 문제
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/questions/{questionId}/review:
+    parameters:
+      - $ref: '#/components/parameters/QuestionIdPath'
+    post:
+      tags: [Admin Questions]
+      operationId: reviewQuestion
+      responses:
+        '200':
+          description: 검수 정보가 기록된 문제
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/questions/{questionId}/publish:
+    parameters:
+      - $ref: '#/components/parameters/QuestionIdPath'
+    post:
+      tags: [Admin Questions]
+      operationId: publishQuestion
+      responses:
+        '200':
+          description: 공개된 문제
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/questions/{questionId}/retire:
+    parameters:
+      - $ref: '#/components/parameters/QuestionIdPath'
+    post:
+      tags: [Admin Questions]
+      operationId: retireQuestion
+      responses:
+        '200':
+          description: RETIRED 문제
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+  /api/admin/questions/{questionId}/versions:
+    parameters:
+      - $ref: '#/components/parameters/QuestionIdPath'
+    post:
+      tags: [Admin Questions]
+      operationId: createQuestionVersion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuestionVersionRequest'
+      responses:
+        '201':
+          description: 평가 Concept을 복사한 새 DRAFT 문제 버전
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuestionResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
 components:
   securitySchemes:
     sessionCookie:
@@ -247,6 +663,38 @@ components:
         type: integer
         format: int64
         minimum: 1
+    MemberIdPath:
+      name: memberId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    TopicIdPath:
+      name: topicId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    ConceptIdPath:
+      name: conceptId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    DocumentIdPath:
+      name: documentId
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
     TopicIdQuery:
       name: topicId
       in: query
@@ -256,6 +704,33 @@ components:
         type: integer
         format: int64
         minimum: 1
+    ParentIdQuery:
+      name: parentId
+      in: query
+      required: false
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    ActiveQuery:
+      name: active
+      in: query
+      required: false
+      schema:
+        type: boolean
+    DocumentStatusQuery:
+      name: status
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/KnowledgeDocumentStatus'
+    TechnologyVersionQuery:
+      name: technologyVersion
+      in: query
+      required: false
+      schema:
+        type: string
+        maxLength: 100
     StatusQuery:
       name: status
       in: query
@@ -364,6 +839,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
+    ContentConflict:
+      description: 중복 코드·원문 또는 현재 상태에서 허용되지 않는 전이
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiErrorResponse'
   schemas:
     SignUpRequest:
       type: object
@@ -408,6 +889,172 @@ components:
         status:
           type: string
           enum: [ACTIVE, BLOCKED, WITHDRAWN]
+    MemberStatusUpdateRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, BLOCKED, WITHDRAWN]
+    MemberPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageMetadata'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/MemberResponse'
+    TopicRequest:
+      type: object
+      required: [code, name]
+      properties:
+        parentId:
+          type: [integer, 'null']
+          format: int64
+          minimum: 1
+        code:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 100
+    TopicResponse:
+      type: object
+      required: [id, parentId, code, name, active]
+      properties:
+        id:
+          type: integer
+          format: int64
+        parentId:
+          type: [integer, 'null']
+          format: int64
+        code:
+          type: string
+        name:
+          type: string
+        active:
+          type: boolean
+    TopicPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageMetadata'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/TopicResponse'
+    ConceptRequest:
+      type: object
+      required: [topicId, code, name]
+      properties:
+        topicId:
+          type: integer
+          format: int64
+          minimum: 1
+        code:
+          type: string
+          maxLength: 100
+        name:
+          type: string
+          maxLength: 150
+        description:
+          type: [string, 'null']
+    ConceptResponse:
+      type: object
+      required: [id, topicId, code, name, description, active]
+      properties:
+        id:
+          type: integer
+          format: int64
+        topicId:
+          type: integer
+          format: int64
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: [string, 'null']
+        active:
+          type: boolean
+    ConceptPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageMetadata'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/ConceptResponse'
+    KnowledgeDocumentRequest:
+      type: object
+      required: [topicId, title, sourceType, content]
+      properties:
+        topicId:
+          type: integer
+          format: int64
+          minimum: 1
+        title:
+          type: string
+          maxLength: 255
+        sourceType:
+          $ref: '#/components/schemas/KnowledgeSourceType'
+        sourceUrl:
+          type: [string, 'null']
+          format: uri
+          maxLength: 1000
+        technologyVersion:
+          type: [string, 'null']
+          maxLength: 100
+        licenseNote:
+          type: [string, 'null']
+          maxLength: 500
+        content:
+          type: string
+          minLength: 1
+    KnowledgeDocumentResponse:
+      type: object
+      required: [id, topicId, createdByMemberId, title, sourceType, versionSeriesId, documentVersion, content, checksum, status, createdAt, updatedAt]
+      properties:
+        id: { type: integer, format: int64 }
+        topicId: { type: integer, format: int64 }
+        createdByMemberId: { type: integer, format: int64 }
+        reviewedByMemberId: { type: [integer, 'null'], format: int64 }
+        title: { type: string }
+        sourceType: { $ref: '#/components/schemas/KnowledgeSourceType' }
+        sourceUrl: { type: [string, 'null'] }
+        versionSeriesId: { type: string, format: uuid }
+        documentVersion: { type: integer, minimum: 1 }
+        technologyVersion: { type: [string, 'null'] }
+        licenseNote: { type: [string, 'null'] }
+        content: { type: string }
+        checksum: { type: string, pattern: '^[0-9a-f]{64}$' }
+        status: { $ref: '#/components/schemas/KnowledgeDocumentStatus' }
+        reviewedAt: { type: [string, 'null'] }
+        createdAt: { type: string }
+        updatedAt: { type: string }
+    KnowledgeDocumentPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageMetadata'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/KnowledgeDocumentResponse'
+    PageMetadata:
+      type: object
+      required: [page, size, totalElements, totalPages]
+      properties:
+        page: { type: integer, minimum: 0 }
+        size: { type: integer, minimum: 1, maximum: 100 }
+        totalElements: { type: integer, format: int64, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
     CsrfTokenResponse:
       type: object
       required: [token, headerName]
@@ -520,6 +1167,48 @@ components:
         referenceAnswer:
           type: string
           minLength: 1
+    QuestionVersionRequest:
+      type: object
+      required: [difficulty, content, referenceAnswer]
+      properties:
+        difficulty:
+          $ref: '#/components/schemas/QuestionDifficulty'
+        content:
+          type: string
+          minLength: 1
+        referenceAnswer:
+          type: string
+          minLength: 1
+    QuestionConceptReplaceRequest:
+      type: object
+      required: [concepts]
+      properties:
+        concepts:
+          type: array
+          items:
+            type: object
+            required: [conceptId, weight, required]
+            properties:
+              conceptId:
+                type: integer
+                format: int64
+                minimum: 1
+              weight:
+                type: number
+                exclusiveMinimum: 0
+                maximum: 1
+                multipleOf: 0.01
+              required:
+                type: boolean
+    QuestionConceptResponse:
+      type: object
+      required: [conceptId, code, name, weight, required]
+      properties:
+        conceptId: { type: integer, format: int64 }
+        code: { type: string }
+        name: { type: string }
+        weight: { type: number }
+        required: { type: boolean }
     QuestionResponse:
       type: object
       required:
@@ -531,6 +1220,9 @@ components:
         - content
         - referenceAnswer
         - status
+        - versionSeriesId
+        - questionVersion
+        - concepts
         - createdAt
         - updatedAt
       properties:
@@ -552,6 +1244,24 @@ components:
           type: string
         status:
           $ref: '#/components/schemas/QuestionStatus'
+        versionSeriesId:
+          type: string
+          format: uuid
+        questionVersion:
+          type: integer
+          minimum: 1
+        createdByMemberId:
+          type: [integer, 'null']
+          format: int64
+        reviewedByMemberId:
+          type: [integer, 'null']
+          format: int64
+        reviewedAt:
+          type: [string, 'null']
+        concepts:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionConceptResponse'
         createdAt:
           type: string
           description: 서버 로컬 시간 기준 ISO-8601 날짜와 시간
@@ -572,7 +1282,7 @@ components:
         content:
           type: array
           items:
-            $ref: '#/components/schemas/QuestionResponse'
+            $ref: '#/components/schemas/QuestionSummaryResponse'
         page:
           type: integer
           minimum: 0
@@ -586,6 +1296,19 @@ components:
         totalPages:
           type: integer
           minimum: 0
+    QuestionSummaryResponse:
+      type: object
+      required: [id, topicId, origin, difficulty, content, status, questionVersion, createdAt, updatedAt]
+      properties:
+        id: { type: integer, format: int64 }
+        topicId: { type: integer, format: int64 }
+        origin: { $ref: '#/components/schemas/QuestionOrigin' }
+        difficulty: { $ref: '#/components/schemas/QuestionDifficulty' }
+        content: { type: string }
+        status: { $ref: '#/components/schemas/QuestionStatus' }
+        questionVersion: { type: integer, minimum: 1 }
+        createdAt: { type: string }
+        updatedAt: { type: string }
     ApiErrorResponse:
       type: object
       required:
@@ -637,5 +1360,11 @@ components:
         - DRAFT
         - PUBLISHED
         - RETIRED
+    KnowledgeSourceType:
+      type: string
+      enum: [OFFICIAL_SPEC, OFFICIAL_DOC, INTERNAL_SUMMARY]
+    KnowledgeDocumentStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED, RETIRED]
 security:
   - sessionCookie: []

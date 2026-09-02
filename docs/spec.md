@@ -197,11 +197,12 @@ flowchart TD
 
 #### FR-ADMIN-002 KnowledgeDocument 관리
 
-- 관리자는 문서 제목, Topic, 출처 유형, 원문 URL, 내부 문서 버전, 기술 버전과 라이선스 메모를 등록한다.
+- 관리자는 문서 제목, Topic, 출처 유형, 원문 URL, 원문 내용, 내부 문서 버전, 기술 버전과 라이선스 메모를 등록한다.
 - 문서는 DRAFT, PUBLISHED, RETIRED 상태를 가진다.
 - PUBLISHED 전에는 관리자 검수자와 검수 시각이 필요하다.
 - PUBLISHED 문서만 Retrieval 대상으로 사용한다.
 - 공개 문서를 수정할 때 기존 버전을 덮어쓰지 않고 새 document_version을 만든다.
+- 새 버전을 공개하면 이전 공개본은 행과 Chunk를 보존한 채 RETIRED로 전환하고 새 버전만 Retrieval 후보가 된다.
 - 과거 Evaluation은 평가 당시 KnowledgeChunk를 계속 참조한다.
 
 #### FR-ADMIN-003 KnowledgeChunk 생성
@@ -216,6 +217,7 @@ flowchart TD
 - 관리자는 서술형 문제 본문, Topic, 모범 답안, 난이도와 상태를 관리한다.
 - 일반 Question은 하나 이상의 QuestionConcept를 가져야 한다.
 - QuestionConcept마다 필수 여부와 평가 가중치를 지정한다.
+- QuestionConcept 가중치는 `(0, 1]` 범위의 소수 둘째 자리 값이며 공개 시 합계가 `1.00`이어야 한다.
 - PUBLISHED Question만 학습자에게 제공한다.
 - 이미 Answer가 존재하는 Question은 과거 의미가 바뀌도록 덮어쓰지 않는다.
 
@@ -384,8 +386,8 @@ LEARNING과 STABLE의 정확한 임계값은 구현 전 확정하고 알고리�
 
 - 모든 제품 API의 base path는 `/api`이다.
 - URI는 복수형 명사를 사용하고 trailing slash를 붙이지 않는다.
-- 요청과 응답 본문은 JSON을 사용한다. 문서 원문 upload 방식은 구현 전에 별도 확정한다.
-- 목록 API는 `page`, `size`, `sort` query parameter를 공통으로 사용한다.
+- 요청과 응답 본문은 JSON을 사용한다. Phase 3에서는 문서 원문을 `content` 문자열로 받으며, 대용량 파일 upload 방식은 도입 전에 별도 확정한다.
+- 목록 API는 `page`, `size`, `sort` query parameter를 공통으로 사용한다. `page`는 0부터 시작하고 기본값은 0, `size` 기본값은 20이며 최댓값은 100이다. 응답은 `content`, `page`, `size`, `totalElements`, `totalPages`를 사용한다.
 - ID path variable은 도메인을 드러내는 `memberId`, `questionId`, `answerId` 형태를 사용한다.
 - `review`, `publish`, `retire`처럼 도메인 상태를 바꾸는 명령은 `POST` 하위 URI로 표현한다.
 - 인증이 필요한 리소스는 세션 또는 확정된 인증 수단으로 현재 회원을 식별한다. 클라이언트가 임의의 memberId를 보내 소유자를 선택하지 않는다.
@@ -470,8 +472,9 @@ Concept 목록은 `topicId`, `active`, `page`, `size`, `sort`를 선택적으로
 | POST | `/api/admin/questions/{questionId}/review` | ADMIN | 200 | 문제 검수 완료 |
 | POST | `/api/admin/questions/{questionId}/publish` | ADMIN | 200 | 문제 공개 |
 | POST | `/api/admin/questions/{questionId}/retire` | ADMIN | 200 | 문제 폐기 상태 전환 |
+| POST | `/api/admin/questions/{questionId}/versions` | ADMIN | 201 | 공개 문제 기반 새 DRAFT 버전 생성 |
 
-문제 목록은 `topicId`, `status`, `difficulty`, `origin`, `page`, `size`, `sort`를 선택적으로 받는다. QuestionConcept를 전체 교체하는 `PUT`은 DRAFT 문제에서만 허용하고, 공개된 문제의 의미 변경은 새 버전 생성 정책을 따른다.
+문제 목록은 `topicId`, `status`, `difficulty`, `origin`, `page`, `size`, `sort`를 선택적으로 받는다. QuestionConcept를 전체 교체하는 `PUT`은 DRAFT 문제에서만 허용하고, 공개된 문제의 의미 변경은 새 버전 생성 정책을 따른다. 새 버전 공개 시 이전 공개본은 삭제하지 않고 RETIRED로 전환한다.
 
 ### 관리자 Evaluation
 

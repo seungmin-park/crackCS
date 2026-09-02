@@ -210,6 +210,7 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 | parent_id | BIGINT | FK → TOPIC, NULL | CS 기초·백엔드 기본 같은 상위 주제 |
 | code | VARCHAR(50) | UNIQUE, NOT NULL | 주제 코드 |
 | name | VARCHAR(100) | NOT NULL | 주제 이름 |
+| active | BOOLEAN | NOT NULL | 신규 콘텐츠 연결 가능 여부 |
 
 ### CONCEPT
 
@@ -220,6 +221,7 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 | code        | VARCHAR(100) | UNIQUE, NOT NULL     | 개념 코드 |
 | name        | VARCHAR(150) | NOT NULL             | 개념 이름 |
 | description | TEXT         | NULL                 | 개념 설명 |
+| active      | BOOLEAN      | NOT NULL             | 신규 콘텐츠 연결 가능 여부 |
 
 ### KNOWLEDGE_DOCUMENT
 
@@ -232,13 +234,18 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 | title | VARCHAR(255) | NOT NULL | 문서 제목 |
 | source_type | VARCHAR(30) | NOT NULL | OFFICIAL_SPEC, OFFICIAL_DOC, INTERNAL_SUMMARY 등 |
 | source_url | VARCHAR(1000) | NULL | 원문 출처 |
+| version_series_id | VARCHAR(36) | NOT NULL | 같은 논리 문서의 버전 계열 ID |
 | document_version | INTEGER | NOT NULL | 내부 문서 버전 |
 | technology_version | VARCHAR(100) | NULL | Java 21, Spring Boot 4.1 등 적용 범위 |
 | license_note | VARCHAR(500) | NULL | 사용·인용 조건 |
+| content | TEXT | NOT NULL | Phase 3 JSON 입력으로 보관하는 원문 |
 | checksum | VARCHAR(128) | NOT NULL | 원문 변경 탐지 값 |
 | status | VARCHAR(20) | NOT NULL | DRAFT, PUBLISHED, RETIRED |
 | reviewed_at | TIMESTAMP | NULL | 최종 검수 일시 |
 | created_at | TIMESTAMP | NOT NULL | 등록 일시 |
+| updated_at | TIMESTAMP | NOT NULL | 최종 수정·상태 전이 일시 |
+
+`checksum`은 줄바꿈을 LF로 통일하고 앞뒤 공백을 제거한 `content`의 SHA-256이다. `(version_series_id, document_version)`은 유일하며 같은 checksum의 원문도 중복 저장할 수 없다. 새 버전을 공개하면 같은 계열의 이전 공개본은 삭제하지 않고 `RETIRED`로 전환한다.
 
 ### KNOWLEDGE_CHUNK
 
@@ -266,9 +273,12 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 | difficulty       | VARCHAR(20) | NOT NULL             | BASIC, INTERMEDIATE, ADVANCED |
 | content          | TEXT        | NOT NULL             | 문제 본문                         |
 | reference_answer | TEXT        | NOT NULL             | 평가용 모범 답안                     |
+| version_series_id | VARCHAR(36) | NOT NULL | 같은 논리 문제의 버전 계열 ID |
+| question_version | INTEGER | NOT NULL | 문제 버전 |
 | status           | VARCHAR(20) | NOT NULL             | DRAFT, PUBLISHED, RETIRED     |
 | reviewed_at | TIMESTAMP | NULL | 검수 완료 일시 |
 | created_at       | TIMESTAMP   | NOT NULL             | 생성 일시                         |
+| updated_at       | TIMESTAMP   | NOT NULL             | 최종 수정·상태 전이 일시 |
 
 관리자가 등록한 일반 문제는 검수 후 PUBLISHED가 된다. `SYSTEM_FOLLOW_UP` 문제는 이미 검수된 원문 문제와 KnowledgeDocument를 바탕으로 특정 Answer에 대해서만 생성되므로 `created_by_member_id`와 `reviewed_by_member_id`가 NULL일 수 있다.
 
@@ -291,7 +301,7 @@ FOLLOW_UP → source_answer_id IS NOT NULL
 | weight      | DECIMAL(5,2) | NOT NULL          | 문제 내 평가 가중치 |
 | required    | BOOLEAN      | NOT NULL          | 필수 개념 여부    |
 
-`id`를 엔티티 식별자로 사용하고 `(question_id, concept_id)` UNIQUE 제약으로 같은 문제에 동일한 Concept가 중복 연결되는 것을 막는다. `required`는 정답에 반드시 포함해야 하는 Concept인지 나타내고, `weight`는 여러 Concept가 평가 결과에 기여하는 상대적 비중이다. DRAFT 상태에서는 연결이 없을 수 있지만, PUBLISHED 또는 SYSTEM_FOLLOW_UP Question은 하나 이상의 QuestionConcept를 가져야 한다. 이 최소 개수는 일반 FK로 강제할 수 없으므로 공개 상태 전이와 후속 질문 생성 유스케이스에서 검증한다.
+`id`를 엔티티 식별자로 사용하고 `(question_id, concept_id)` UNIQUE 제약으로 같은 문제에 동일한 Concept가 중복 연결되는 것을 막는다. `required`는 정답에 반드시 포함해야 하는 Concept인지 나타내고, `weight`는 여러 Concept가 평가 결과에 기여하는 상대적 비중이다. 가중치는 `(0, 1]` 범위의 소수 둘째 자리 값이며 공개 시 전체 합이 정확히 `1.00`이어야 한다. DRAFT 상태에서는 연결이 없을 수 있지만, PUBLISHED 또는 SYSTEM_FOLLOW_UP Question은 하나 이상의 QuestionConcept와 하나 이상의 필수 Concept를 가져야 한다. 이 조건은 일반 FK로 강제할 수 없으므로 공개 상태 전이와 후속 질문 생성 유스케이스에서 검증한다.
 
 ### ANSWER
 
@@ -405,9 +415,14 @@ EVALUATING 또는 FAILED Evaluation은 EvaluationConcept가 없을 수 있다. E
 | ANSWER          | `(question_id)`                      | 문제별 답변 조회    |
 | QUESTION        | `UNIQUE(source_answer_id)`           | 답변당 후속 질문 최대 한 개 보장 |
 | QUESTION        | `(topic_id, status, difficulty)`     | 추천 문제 후보 조회  |
+| KNOWLEDGE_DOCUMENT | `(topic_id, status, technology_version)` | Topic별 공개 Retrieval 후보와 관리자 문서 필터 조회 |
 | KNOWLEDGE_STATE | `(member_id, status, mastery_score)` | 회원별 취약 개념 조회 |
 | KNOWLEDGE_CHUNK | 벡터 인덱스                               | 유사 문서 검색     |
 | EVALUATION      | `(status, evaluated_at)`             | 평가 작업과 실패 조회 |
+
+`QUESTION(topic_id, status, difficulty)`는 Topic을 먼저 정한 뒤 공개 상태와 난이도로 후보를 줄이는 추천 조회를 기준으로 한다. `KNOWLEDGE_DOCUMENT(topic_id, status, technology_version)`는 Topic별 `PUBLISHED` Retrieval 후보 조회와 관리자 화면의 기술 버전 필터를 함께 지원한다.
+
+두 인덱스 모두 선두 컬럼인 `topic_id`가 없는 검색까지 모두 최적화하지는 않는다. 또한 선택 필터를 `OR :parameter IS NULL` 형태로 처리하거나 임의 정렬을 적용하면 DB가 인덱스를 선택하지 않을 수 있다. 현재는 제품의 주 조회 경로를 반영한 초기 후보이며, 운영 DB와 데이터 분포가 정해지면 실제 SQL의 실행 계획과 쓰기 비용을 측정해 컬럼 순서, 별도 인덱스 또는 제거 여부를 다시 결정한다.
 
 ## 7. 문서 범위
 

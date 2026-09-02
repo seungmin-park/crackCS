@@ -40,7 +40,7 @@ Phase Gate 체크
 - [ ] Phase 0 — 개발 기반과 결정 기록
 - [x] Phase 1 — 공개 문제 조회 최소 제품
 - [x] Phase 2 — 회원 인증과 관리자 경계
-- [ ] Phase 3 — 관리자 콘텐츠 운영
+- [x] Phase 3 — 관리자 콘텐츠 운영
 - [ ] Phase 4 — 답변과 평가 상태 골격
 - [ ] Phase 5 — Knowledge Retrieval과 실제 AI 평가
 - [ ] Phase 6 — Knowledge State와 개인 추천
@@ -68,34 +68,35 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ### Phase 3 관리자 콘텐츠
 
-- [ ] `GET /api/admin/members` — ADMIN, 회원 목록
-- [ ] `PATCH /api/admin/members/{memberId}/status` — ADMIN, 회원 상태 변경
-- [ ] `GET /api/admin/topics` — ADMIN, Topic 목록
-- [ ] `POST /api/admin/topics` — ADMIN, Topic 등록
-- [ ] `GET /api/admin/topics/{topicId}` — ADMIN, Topic 상세
-- [ ] `PATCH /api/admin/topics/{topicId}` — ADMIN, Topic 수정
-- [ ] `POST /api/admin/topics/{topicId}/deactivate` — ADMIN, Topic 비활성화
-- [ ] `GET /api/admin/concepts` — ADMIN, Concept 목록
-- [ ] `POST /api/admin/concepts` — ADMIN, Concept 등록
-- [ ] `GET /api/admin/concepts/{conceptId}` — ADMIN, Concept 상세
-- [ ] `PATCH /api/admin/concepts/{conceptId}` — ADMIN, Concept 수정
-- [ ] `POST /api/admin/concepts/{conceptId}/deactivate` — ADMIN, Concept 비활성화
-- [ ] `GET /api/admin/knowledge-documents` — ADMIN, 문서 목록
-- [ ] `POST /api/admin/knowledge-documents` — ADMIN, 문서 등록
-- [ ] `GET /api/admin/knowledge-documents/{documentId}` — ADMIN, 문서 상세
-- [ ] `PATCH /api/admin/knowledge-documents/{documentId}` — ADMIN, DRAFT 수정
-- [ ] `POST /api/admin/knowledge-documents/{documentId}/versions` — ADMIN, 새 버전
-- [ ] `POST /api/admin/knowledge-documents/{documentId}/review` — ADMIN, 검수
-- [ ] `POST /api/admin/knowledge-documents/{documentId}/publish` — ADMIN, 공개
-- [ ] `POST /api/admin/knowledge-documents/{documentId}/retire` — ADMIN, 폐기
-- [ ] `GET /api/admin/questions` — ADMIN, 문제 목록
-- [ ] `POST /api/admin/questions` — ADMIN, 문제 등록
-- [ ] `GET /api/admin/questions/{questionId}` — ADMIN, 문제 상세
-- [ ] `PATCH /api/admin/questions/{questionId}` — ADMIN, DRAFT 수정
-- [ ] `PUT /api/admin/questions/{questionId}/concepts` — ADMIN, 평가 Concept 교체
-- [ ] `POST /api/admin/questions/{questionId}/review` — ADMIN, 검수
-- [ ] `POST /api/admin/questions/{questionId}/publish` — ADMIN, 공개
-- [ ] `POST /api/admin/questions/{questionId}/retire` — ADMIN, 폐기
+- [x] `GET /api/admin/members` — ADMIN, 회원 목록
+- [x] `PATCH /api/admin/members/{memberId}/status` — ADMIN, 회원 상태 변경
+- [x] `GET /api/admin/topics` — ADMIN, Topic 목록
+- [x] `POST /api/admin/topics` — ADMIN, Topic 등록
+- [x] `GET /api/admin/topics/{topicId}` — ADMIN, Topic 상세
+- [x] `PATCH /api/admin/topics/{topicId}` — ADMIN, Topic 수정
+- [x] `POST /api/admin/topics/{topicId}/deactivate` — ADMIN, Topic 비활성화
+- [x] `GET /api/admin/concepts` — ADMIN, Concept 목록
+- [x] `POST /api/admin/concepts` — ADMIN, Concept 등록
+- [x] `GET /api/admin/concepts/{conceptId}` — ADMIN, Concept 상세
+- [x] `PATCH /api/admin/concepts/{conceptId}` — ADMIN, Concept 수정
+- [x] `POST /api/admin/concepts/{conceptId}/deactivate` — ADMIN, Concept 비활성화
+- [x] `GET /api/admin/knowledge-documents` — ADMIN, 문서 목록
+- [x] `POST /api/admin/knowledge-documents` — ADMIN, 문서 등록
+- [x] `GET /api/admin/knowledge-documents/{documentId}` — ADMIN, 문서 상세
+- [x] `PATCH /api/admin/knowledge-documents/{documentId}` — ADMIN, DRAFT 수정
+- [x] `POST /api/admin/knowledge-documents/{documentId}/versions` — ADMIN, 새 버전
+- [x] `POST /api/admin/knowledge-documents/{documentId}/review` — ADMIN, 검수
+- [x] `POST /api/admin/knowledge-documents/{documentId}/publish` — ADMIN, 공개
+- [x] `POST /api/admin/knowledge-documents/{documentId}/retire` — ADMIN, 폐기
+- [x] `GET /api/admin/questions` — ADMIN, 문제 목록
+- [x] `POST /api/admin/questions` — ADMIN, 문제 등록
+- [x] `GET /api/admin/questions/{questionId}` — ADMIN, 문제 상세
+- [x] `PATCH /api/admin/questions/{questionId}` — ADMIN, DRAFT 수정
+- [x] `PUT /api/admin/questions/{questionId}/concepts` — ADMIN, 평가 Concept 교체
+- [x] `POST /api/admin/questions/{questionId}/review` — ADMIN, 검수
+- [x] `POST /api/admin/questions/{questionId}/publish` — ADMIN, 공개
+- [x] `POST /api/admin/questions/{questionId}/retire` — ADMIN, 폐기
+- [x] `POST /api/admin/questions/{questionId}/versions` — ADMIN, 새 문제 버전
 
 ### Phase 4 답변과 평가
 
@@ -372,75 +373,75 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ## Phase 3 — 관리자 콘텐츠 운영
 
-대상: `FR-ADMIN-001`, `FR-ADMIN-002`, `FR-ADMIN-003`, `FR-ADMIN-004`.
+대상: `FR-ADMIN-001`, `FR-ADMIN-002`, `FR-ADMIN-004`.
 
 ### P3-T01 관리자 레이아웃과 공통 목록
 
-- [ ] 관리자 레이아웃, 메뉴와 route를 구성한다.
-- [ ] 공통 pagination 요청·응답 규칙을 정한다.
-- [ ] ADMIN 여부 확인 중 loading과 접근 거부 화면을 구현한다.
-- [ ] 등록·수정 성공과 validation 실패 피드백 방식을 통일한다.
+- [x] 관리자 레이아웃, 메뉴와 route를 구성한다.
+- [x] 공통 pagination 요청·응답 규칙을 정한다.
+- [x] ADMIN 여부 확인 중 loading과 접근 거부 화면을 구현한다.
+- [x] 등록·수정 성공과 validation 실패 피드백 방식을 통일한다.
 
 ### P3-T02 Topic·Concept 관리
 
-- [ ] Topic 등록, 수정, 조회와 비활성화 API를 구현한다.
-- [ ] Concept 등록, 수정, 조회와 비활성화 API를 구현한다.
-- [ ] 참조 중인 Topic·Concept의 물리 삭제를 차단한다.
-- [ ] 계층 순환과 중복 code를 차단한다.
-- [ ] 관리자 Topic·Concept 목록과 편집 화면을 구현한다.
-- [ ] ADMIN 인가와 상태 변경 통합 테스트를 작성한다.
+- [x] Topic 등록, 수정, 조회와 비활성화 API를 구현한다.
+- [x] Concept 등록, 수정, 조회와 비활성화 API를 구현한다.
+- [x] 참조 중인 Topic·Concept의 물리 삭제를 차단한다.
+- [x] 계층 순환과 중복 code를 차단한다.
+- [x] 관리자 Topic·Concept 목록과 편집 화면을 구현한다.
+- [x] ADMIN 인가와 상태 변경 통합 테스트를 작성한다.
 
 ### P3-T03 KnowledgeDocument 모델과 버전
 
-- [ ] KnowledgeDocument 전체 컬럼과 상태를 ERD에 맞게 구현한다.
-- [ ] checksum 계산과 중복 원문 감지 규칙을 구현한다.
-- [ ] 새 documentVersion 생성 규칙을 구현한다.
-- [ ] PUBLISHED 문서를 덮어쓰지 못하게 한다.
-- [ ] 검수자, reviewedAt과 출처 정보를 공개 조건으로 검증한다.
-- [ ] RETIRED 전환이 과거 Evaluation 근거를 삭제하지 않게 한다.
+- [x] KnowledgeDocument 전체 컬럼과 상태를 ERD에 맞게 구현한다.
+- [x] checksum 계산과 중복 원문 감지 규칙을 구현한다.
+- [x] 새 documentVersion 생성 규칙을 구현한다.
+- [x] PUBLISHED 문서를 덮어쓰지 못하게 한다.
+- [x] 검수자, reviewedAt과 출처 정보를 공개 조건으로 검증한다.
+- [x] RETIRED 전환이 과거 Evaluation 근거를 삭제하지 않게 한다.
 
 ### P3-T04 KnowledgeDocument API와 화면
 
-- [ ] 문서 등록, 상세, 목록과 수정 API를 구현한다.
-- [ ] 새 버전 생성, 검수, 공개와 폐기 API를 구현한다.
-- [ ] 출처 유형, URL, 기술 버전과 라이선스 메모 validation을 구현한다.
-- [ ] 관리자 문서 목록·등록·검수 화면을 구현한다.
-- [ ] DRAFT, PUBLISHED와 RETIRED 필터를 구현한다.
-- [ ] 콘텐츠 버전 보존 통합 테스트를 작성한다.
+- [x] 문서 등록, 상세, 목록과 수정 API를 구현한다.
+- [x] 새 버전 생성, 검수, 공개와 폐기 API를 구현한다.
+- [x] 출처 유형, URL, 기술 버전과 라이선스 메모 validation을 구현한다.
+- [x] 관리자 문서 목록·등록·검수 화면을 구현한다.
+- [x] DRAFT, PUBLISHED와 RETIRED 필터를 구현한다.
+- [x] 콘텐츠 버전 보존 통합 테스트를 작성한다.
 
 ### P3-T05 Question 관리 도메인
 
-- [ ] Question의 DRAFT → PUBLISHED → RETIRED 상태 전이를 구현한다.
-- [ ] PUBLISHED 전 검수자와 reviewedAt을 요구한다.
-- [ ] PUBLISHED 전 QuestionConcept가 하나 이상인지 검증한다.
-- [ ] 필수 Concept 존재와 weight 합계 정책을 확정한다.
-- [ ] Answer가 있는 문제를 덮어쓰지 않고 새 버전 또는 폐기로 처리한다.
-- [ ] NORMAL 문제의 관리자 생성자 필수 규칙을 구현한다.
+- [x] Question의 DRAFT → PUBLISHED → RETIRED 상태 전이를 구현한다.
+- [x] PUBLISHED 전 검수자와 reviewedAt을 요구한다.
+- [x] PUBLISHED 전 QuestionConcept가 하나 이상인지 검증한다.
+- [x] 필수 Concept 존재와 weight 합계 정책을 확정한다.
+- [x] Answer가 있는 문제를 덮어쓰지 않고 새 버전 또는 폐기로 처리한다.
+- [x] NORMAL 문제의 관리자 생성자 필수 규칙을 구현한다.
 
 ### P3-T06 Question API와 화면
 
-- [ ] 문제 등록, 상세, 목록과 수정 API를 구현한다.
-- [ ] QuestionConcept 추가·수정·삭제 API를 구현한다.
-- [ ] 문제 검수, 공개와 폐기 API를 구현한다.
-- [ ] 관리자 문제 목록·등록·검수 화면을 구현한다.
-- [ ] 모범 답안, 필수 Concept와 weight 입력 UI를 구현한다.
-- [ ] 공개 조건과 버전 보존 API 테스트를 작성한다.
+- [x] 문제 등록, 상세, 목록과 수정 API를 구현한다.
+- [x] QuestionConcept 추가·수정·삭제 API를 구현한다.
+- [x] 문제 검수, 공개와 폐기 API를 구현한다.
+- [x] 관리자 문제 목록·등록·검수 화면을 구현한다.
+- [x] 모범 답안, 필수 Concept와 weight 입력 UI를 구현한다.
+- [x] 공개 조건과 버전 보존 API 테스트를 작성한다.
 
 ### P3-T07 콘텐츠 공개 경계 검증
 
-- [ ] 공개 문제 API에는 PUBLISHED Question만 포함되는지 확인한다.
-- [ ] Retrieval 후보에는 PUBLISHED KnowledgeDocument만 포함되도록 query를 준비한다.
-- [ ] ADMIN이 아닌 사용자가 DRAFT 상세를 조회하지 못하게 한다.
-- [ ] 비활성 Topic·Concept의 신규 연결을 차단한다.
-- [ ] `AC-007`의 문서 버전 시나리오 기반 테스트 골격을 작성한다.
+- [x] 공개 문제 API에는 PUBLISHED Question만 포함되는지 확인한다.
+- [x] Retrieval 후보에는 PUBLISHED KnowledgeDocument만 포함되도록 query를 준비한다.
+- [x] ADMIN이 아닌 사용자가 DRAFT 상세를 조회하지 못하게 한다.
+- [x] 비활성 Topic·Concept의 신규 연결을 차단한다.
+- [x] `AC-007`의 문서 버전 시나리오 기반 테스트 골격을 작성한다.
 
 ### Phase 3 Gate
 
-- [ ] ADMIN이 Topic → Concept → 문서·문제를 등록하고 공개할 수 있다.
-- [ ] 검수 조건을 충족하지 않은 콘텐츠는 공개할 수 없다.
-- [ ] 일반 사용자는 PUBLISHED 콘텐츠만 볼 수 있다.
-- [ ] 공개된 콘텐츠의 과거 버전이 보존된다.
-- [ ] 관리자 핵심 흐름의 브라우저 E2E 테스트가 통과한다.
+- [x] ADMIN이 Topic → Concept → 문서·문제를 등록하고 공개할 수 있다.
+- [x] 검수 조건을 충족하지 않은 콘텐츠는 공개할 수 없다.
+- [x] 일반 사용자는 PUBLISHED 콘텐츠만 볼 수 있다.
+- [x] 공개된 콘텐츠의 과거 버전이 보존된다.
+- [x] 관리자 핵심 흐름의 브라우저 E2E 테스트가 통과한다.
 
 ---
 
@@ -842,10 +843,10 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
 - [x] `FR-AUTH-001` 회원가입 — P2-T02, P2-T04
 - [x] `FR-AUTH-002` 로그인·로그아웃 — P2-T03, P2-T05
 - [x] `FR-AUTH-003` 관리자 인가 — P2-T06
-- [ ] `FR-ADMIN-001` Topic·Concept 관리 — P3-T02
-- [ ] `FR-ADMIN-002` KnowledgeDocument 관리 — P3-T03, P3-T04
+- [x] `FR-ADMIN-001` Topic·Concept 관리 — P3-T02
+- [x] `FR-ADMIN-002` KnowledgeDocument 관리 — P3-T03, P3-T04
 - [ ] `FR-ADMIN-003` KnowledgeChunk 생성 — P5-T02
-- [ ] `FR-ADMIN-004` Question 관리 — P3-T05, P3-T06
+- [x] `FR-ADMIN-004` Question 관리 — P3-T05, P3-T06
 - [ ] `FR-ADMIN-005` 평가 실패 조회 — P5-T08
 
 ### 문제, 답변과 평가
