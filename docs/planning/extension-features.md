@@ -75,7 +75,7 @@
 | `QUESTION_REVIEW` | 자동 생성 문제의 검수 상태와 검수자 기록 |
 | `QUESTION_SUBMISSION` | 사용자 문제 제안과 검수 상태 관리 |
 
-현재 필수 Question은 관리자가 등록·검수한 서술형과 후속 질문만 다룬다. 문제 공급 방식의 선택 이유는 [콘텐츠·AI 운영 정책](./content-and-ai-policy.md)을 따른다.
+현재 필수 Question은 관리자가 등록·검수한 서술형과 후속 질문만 다룬다. 문제 공급 방식의 선택 이유는 [콘텐츠·AI 운영 정책](../product/content-and-ai-policy.md)을 따른다.
 
 ## 4. 평가 고도화
 

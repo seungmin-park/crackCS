@@ -1,6 +1,6 @@
 # crackCS
 
-질문에 직접 답하며 컴퓨터 과학 개념을 학습하는 애플리케이션입니다. Phase 1은 공개 상태(`PUBLISHED`)인 문제의 목록과 상세 조회를 제공합니다.
+질문에 직접 답하며 컴퓨터 과학 개념을 학습하는 애플리케이션. 구현 현황은 [작업 목록](docs/planning/tasks.md) 참조.
 
 ## 필수 도구
 
@@ -8,24 +8,24 @@
 - Node.js 24
 - npm 11 이상
 
-Gradle은 Wrapper를 사용하므로 별도 설치가 필요하지 않습니다.
+Gradle: Wrapper 사용. 별도 설치 불필요.
 
 ## 로컬 실행
 
-터미널 하나에서 local profile로 백엔드를 실행합니다. Hibernate가 개발 schema를 갱신하고 Spring SQL 초기화가 화면 확인용 예제 데이터를 준비하며, 로컬 DB 파일은 `data/`에 생성됩니다.
+백엔드: local profile로 실행. 개발 schema 자동 갱신, 화면 확인용 예제 데이터 준비. DB 파일 위치: `data/`.
 
 ```bash
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
-local profile은 API와 Vue 화면 확인용 예시 문제와 관리자 계정을 seed한다.
+local seed: 화면 확인용 예시 문제·관리자 계정.
 
 - 관리자 이메일: `admin@crackcs.local`
 - 관리자 비밀번호: `local admin passphrase`
 
-이 계정은 local H2에서만 생성되며 운영 환경에 사용하지 않는다.
+계정 사용 범위: local H2 전용. 운영 사용 금지.
 
-다른 터미널에서 프런트를 실행합니다. `/api` 요청은 Vite proxy를 통해 `http://localhost:8080`으로 전달됩니다.
+프런트: 다른 터미널에서 실행. `/api` 요청은 Vite proxy를 거쳐 `http://localhost:8080`으로 전달.
 
 ```bash
 cd front
@@ -33,7 +33,7 @@ npm install
 npm run dev
 ```
 
-브라우저에서 `http://127.0.0.1:5173/questions`를 엽니다.
+접속: `http://127.0.0.1:5173/questions`.
 
 ```text
 Browser :5173
@@ -42,13 +42,13 @@ Browser :5173
 Vite proxy ─────────▶ Spring Boot :8080 ─▶ H2 + local SQL seed
 ```
 
-schema 정책은 profile별로 다릅니다.
+profile별 schema 정책:
 
-- 기본 profile: `ddl-auto=validate` — 외부에서 준비한 schema와 JPA mapping만 검증한다.
-- local profile: `ddl-auto=update` — 개발 편의를 위해 Hibernate가 H2 schema를 갱신한다.
-- test profile: `ddl-auto=create-drop` — 각 테스트 context가 독립 schema를 사용한다.
+- 기본 profile: `ddl-auto=validate` — 외부 schema와 JPA mapping 검증.
+- local profile: `ddl-auto=update` — 개발용 H2 schema 자동 갱신.
+- test profile: `ddl-auto=create-drop` — 테스트용 schema 생성·종료 시 삭제.
 
-현재는 버전 기반 DB migration 도구를 사용하지 않는다. 따라서 local의 `update`를 운영에 사용하지 않으며, 운영 DB를 도입하기 전에 별도의 schema 변경·배포 절차를 결정해야 한다.
+버전 기반 DB migration 도구: 미사용. 운영에서 `update` 사용 금지. 운영 DB 도입 전 schema 변경·배포 절차 결정 필요.
 
 ## 검증
 
@@ -61,4 +61,10 @@ npm run type-check
 npm run build-only
 ```
 
-API 계약은 루트의 `openapi.yml`, 구현 작업 현황은 `docs/tasks.md`에서 확인할 수 있습니다.
+## 문서
+
+- [문서 지도](docs/README.md): 전체 문서의 역할·존재 여부·상태·위치·갱신 기준
+- [제품 명세](docs/product/spec.md): 요구사항·인수 조건
+- [작업 목록](docs/planning/tasks.md): 진행·검증 상태
+- [OpenAPI](openapi.yml): HTTP 계약
+- [작업 지침](AGENTS.md): 협업·설계·테스트 규칙

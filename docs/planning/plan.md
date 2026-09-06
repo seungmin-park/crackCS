@@ -139,15 +139,7 @@ com.example.crackcs
 
 목표: 이후 기능을 같은 방식으로 실행·검증할 수 있는 기반을 만든다.
 
-작업:
-
-- 백엔드와 프런트엔드 로컬 실행 절차를 문서화한다.
-- 개발용 H2 설정과 테스트용 DB 설정을 분리한다.
-- 운영 DB 확정 전 schema 관리 방식을 결정하고 profile별 Hibernate 정책을 적용한다.
-- API 오류 응답 형식과 예외 처리 기준을 정한다.
-- 프런트 개발 서버에서 백엔드 API로 연결되는 proxy 또는 CORS 방식을 정한다.
-- `spec.md`의 OQ-001, OQ-002, OQ-008 결정 시점을 확인하고 ADR 형식을 준비한다.
-- CI에서 백엔드 테스트와 프런트 type-check/build를 실행한다.
+세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
 기술 초점:
 
@@ -176,13 +168,7 @@ com.example.crackcs
 
 이 단계의 무인증 조회는 개발 중간 산출물이며 독립 출시 범위가 아니다. Phase 2에서 인증 경계를 적용하기 전에는 외부 환경에 배포하지 않는다.
 
-작업:
-
-- Topic, Concept, Question, QuestionConcept의 최소 테이블과 도메인을 구현한다.
-- local seed로 소수의 PUBLISHED 문제를 넣는다.
-- PUBLISHED 문제 목록과 상세 조회 API를 구현한다.
-- Vue에 문제 목록과 상세 화면을 구현한다.
-- 모범 답안과 평가용 Concept가 응답에 노출되지 않도록 DTO를 분리한다.
+세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
 기술 초점:
 
@@ -203,14 +189,7 @@ com.example.crackcs
 
 목표: 사용자 데이터가 생기기 전에 누가 어떤 기능을 사용할 수 있는지 경계를 만든다.
 
-작업:
-
-- Member와 LOCAL AuthAccount를 구현한다.
-- 이메일 회원가입, 로그인, 로그아웃과 현재 회원 조회를 구현한다.
-- USER와 ADMIN 역할을 구현한다.
-- `/admin/**` 화면과 API를 서버에서 ADMIN으로 제한한다.
-- Vue Router guard는 사용성 보조로 사용하고, 실제 보안 판단은 서버가 수행한다.
-- 로그인 실패 횟수와 과도한 요청 제한의 최소 정책을 적용한다.
+세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
 기술 초점:
 
@@ -233,14 +212,7 @@ com.example.crackcs
 
 목표: 개발자가 DB를 직접 수정하지 않아도 관리자가 평가에 필요한 콘텐츠를 준비할 수 있게 한다.
 
-작업:
-
-- Topic·Concept CRUD와 비활성화를 구현한다.
-- KnowledgeDocument 등록, 버전 생성, 검수, 공개, 폐기를 구현한다.
-- Question·QuestionConcept 등록, 검수, 공개, 폐기를 구현한다.
-- 관리자 Vue 화면과 validation feedback을 구현한다.
-- PUBLISHED 전 검수자·검수 시각 조건과 상태 전이 규칙을 도메인에서 검증한다.
-- 이미 참조된 콘텐츠는 물리 삭제하지 않고 비활성화 또는 새 버전으로 관리한다.
+세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
 기술 초점:
 
@@ -261,14 +233,7 @@ com.example.crackcs
 
 목표: 외부 AI를 연결하기 전에 Answer와 Evaluation의 생명주기, 실패 처리와 화면 흐름을 검증한다.
 
-작업:
-
-- Answer 제출, 멱등 키와 답변 이력을 구현한다.
-- Evaluation의 EVALUATING, EVALUATED, FAILED, NEEDS_REVIEW 상태를 구현한다.
-- verdict에서 100·50·0 점수를 계산하는 규칙을 구현한다.
-- 개발·테스트 전용 `StubEvaluationAdapter`를 만들어 정해진 결과와 실패를 반환한다.
-- Vue에서 답변 작성, 평가 대기, 성공, 검토 필요와 실패 화면을 구현한다.
-- Answer 저장과 Evaluation 시작의 일관성 경계를 테스트한다.
+세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
 기술 초점:
 
@@ -290,16 +255,7 @@ com.example.crackcs
 
 목표: 공개된 지식 문서를 근거로 재현 가능한 AI 평가를 수행한다.
 
-작업:
-
-- 문서 chunking과 중복 생성 방지를 구현한다.
-- Topic·Concept 선필터와 관련 Chunk 검색을 구현한다.
-- EvaluationEvidence에 실제 사용 Chunk를 저장한다.
-- AI structured output schema와 검증기를 구현한다.
-- 외부 AI adapter, timeout, 제한 재시도와 오류 변환을 구현한다.
-- 평가 규칙 버전, 모델명, 처리 시간과 실패 원인을 기록한다.
-- 관리자 실패·NEEDS_REVIEW 조회 화면을 구현한다.
-- 골든 평가 세트로 모델 후보를 비교한다.
+세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
 기술 결정 게이트:
 
@@ -323,14 +279,7 @@ com.example.crackcs
 
 목표: 개별 평가를 누적 상태로 바꾸고 다음 학습 행동을 결정한다.
 
-작업:
-
-- Member·Concept별 KnowledgeState와 알고리즘 버전을 구현한다.
-- EvaluationConcept를 정확히 한 번 상태에 반영한다.
-- UNKNOWN, LEARNING, STABLE 상태 전이와 점수 공식을 확정한다.
-- 미평가 → 낮은 mastery → 오래 풀지 않은 문제 순 추천을 구현한다.
-- 지식 지도, 학습 홈과 추천 이유를 구현한다.
-- 동시 평가 완료 상황을 재현하는 통합 테스트를 추가한다.
+세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
 기술 초점:
 
@@ -352,14 +301,7 @@ com.example.crackcs
 
 목표: 평가 결과를 즉시 확인 질문으로 연결하되 무한 질문 생성을 막는다.
 
-작업:
-
-- 오답·부분 정답은 가장 중요한 누락 또는 오개념을 묻는다.
-- 정답은 동일 Concept의 적용 질문을 만든다.
-- 후속 Question이 원본 Answer를 참조하도록 저장한다.
-- 후속 답변도 기존 Answer·Evaluation 파이프라인을 재사용한다.
-- 후속 질문에는 또 다른 후속 질문을 만들지 않는 규칙을 구현한다.
-- 후속 평가 후 다음 기본 문제를 추천한다.
+세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
 기술 초점:
 
@@ -379,16 +321,7 @@ com.example.crackcs
 
 목표: 기능이 동작하는 수준을 넘어 제한된 실제 사용자가 안전하게 사용할 수 있게 한다.
 
-작업:
-
-- 전체 핵심 흐름 E2E 테스트를 구축한다.
-- 권한 우회, 소유권 검사, 입력 크기와 prompt injection 경계를 점검한다.
-- AI 지연·오류·중복 callback 또는 worker 재시작 상황을 시험한다.
-- 일반 API와 AI 평가 latency를 측정한다.
-- requestId, answerId, evaluationId 연결 로그와 운영 지표를 구성한다.
-- DB backup·restore와 콘텐츠 rollback 절차를 문서화하고 연습한다.
-- 초기 CS·Java·Spring·JPA 콘텐츠를 검수해 입력한다.
-- 제한된 사용자 파일럿에서 오판정과 운영 병목을 수집한다.
+세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
 완료 조건:
 
@@ -475,7 +408,7 @@ E2E 확인과 문서 갱신
 - 결제·구독
 - 알림, 랭킹, 댓글과 스터디 그룹
 
-도입 여부는 P0 파일럿 결과 이후 [추가 확장 기능](./extension-features.md)에서 우선순위를 정한다.
+도입 여부는 P0 파일럿 결과 이후 [추가 확장 기능](extension-features.md)에서 우선순위를 정한다.
 
 ## 12. 계획 변경 규칙
 

@@ -2,12 +2,15 @@
 
 ## 1. 참조 문서
 
-이 명세서는 아래 문서의 합의 내용을 통합한다. 세부 정책이나 테이블 정의가 충돌하면 이 명세서의 범위를 먼저 따르고, 해당 원본 문서를 함께 수정한다.
+제품 요구사항·범위·인수 조건의 기준 문서. 관련 문서는 아래 책임만 소유.
 
-- [필수 기능 명세](./functional-specification.md)
-- [필수 도메인 모델 및 ERD](./domain-model-and-erd.md)
-- [콘텐츠·AI 운영 정책](./content-and-ai-policy.md)
-- [추가 확장 기능](./extension-features.md)
+- [도메인 모델·ERD](../architecture/domain-model-and-erd.md): 관계·불변식·테이블 구조
+- [콘텐츠·AI 정책](content-and-ai-policy.md): 검수·근거·판정 정책
+- [확장 후보](../planning/extension-features.md): 출시 이후 아이디어
+- [개발 계획](../planning/plan.md): 순서·의존성
+- [작업 목록](../planning/tasks.md): 진행·검증 상태
+
+중복 정의 대신 기준 문서 링크 사용. 요구사항과 구현이 다르면 차이를 작업 목록에 기록.
 
 ## 2. 제품 개요
 
@@ -68,7 +71,7 @@ AI 정오 판정
 - 결제, 구독과 사용량 제한
 - 추천 알고리즘 A/B 테스트
 
-확장 범위는 [추가 확장 기능](./extension-features.md)에서 관리한다.
+확장 범위는 [추가 확장 기능](../planning/extension-features.md)에서 관리한다.
 
 ## 6. 대상 사용자
 
@@ -380,7 +383,11 @@ LEARNING과 STABLE의 정확한 임계값은 구현 전 확정하고 알고리�
 - Question·QuestionConcept 관리
 - 평가 실패 및 NEEDS_REVIEW 목록
 
-## 12. API URI
+## 12. API 설계 범위
+
+아래 목록: 미구현 기능을 포함한 목표 API. 현재 문서화된 HTTP 계약은 [OpenAPI](../../openapi.yml), 구현 여부는 [작업 목록](../planning/tasks.md#api-uri-구현-체크리스트) 참조. 목표 목록만으로 구현 완료 판단 금지.
+
+향후 API 구현 시 목표 항목의 상세 계약을 OpenAPI로 이관하고 이 문서에는 목적·권한 요구만 유지.
 
 ### 공통 규칙
 
@@ -609,7 +616,7 @@ Persistence / AI / Embedding adapter
 
 ## 17. 개발 계획
 
-기능을 단순한 수직 흐름부터 점진적으로 확장하는 구현 순서, Phase별 기술 도입 시점과 검증 기준은 [개발 계획](./plan.md)에서 관리한다.
+기능을 단순한 수직 흐름부터 점진적으로 확장하는 구현 순서, Phase별 기술 도입 시점과 검증 기준은 [개발 계획](../planning/plan.md)에서 관리한다.
 
 ## 18. 테스트 전략
 
@@ -725,14 +732,14 @@ And 새로운 Evaluation만 새 문서 버전을 사용할 수 있다.
 
 | ID | 결정 필요 항목 | 결정 시점 | 기본 제안 |
 |---|---|---|---|
-| OQ-001 | 서버 세션과 토큰 중 인증 상태 유지 방식 | 결정 | 동일 출처 웹의 HttpOnly 서버 세션과 CSRF token 사용 ([ADR-0001](./adr/0001-session-based-authentication.md)) |
+| OQ-001 | 서버 세션과 토큰 중 인증 상태 유지 방식 | 결정 | 동일 출처 웹의 HttpOnly 서버 세션과 CSRF token 사용 ([ADR-0001](../adr/0001-session-based-authentication.md)) |
 | OQ-002 | Production DB와 벡터 저장 방식 | Phase 0 | PostgreSQL + pgvector 우선 검토 |
 | OQ-003 | PARTIALLY_CORRECT Concept 충족 기준 | 골든 세트 작성 후 | 필수 Concept 누락과 오개념을 분리해 판정 |
 | OQ-004 | Knowledge State 갱신 공식과 STABLE 임계값 | Phase 3 전 | 버전 필드를 두고 초기에는 단순 가중 평균 |
 | OQ-005 | AI 평가 동기·비동기 실행 방식 | Phase 2 전 | Answer 저장 후 비동기 평가 우선 검토 |
 | OQ-006 | 초기 Topic별 문제·문서 최소 수 | 콘텐츠 입력 전 | 하위 Topic별 공개 문제 5개 이상으로 파일럿 |
 | OQ-007 | AI 생성 문제 기능 도입 시점 | P0 출시 후 | 골든 세트와 관리자 검수 처리량 확인 후 결정 |
-| OQ-008 | 비밀번호 최소 길이와 복잡도 정책 | 결정 | 15~64자 passphrase, 제어 문자 금지, UTF-8 72 byte 이하 ([ADR-0002](./adr/0002-password-policy.md)) |
+| OQ-008 | 비밀번호 최소 길이와 복잡도 정책 | 결정 | 15~64자 passphrase, 제어 문자 금지, UTF-8 72 byte 이하 ([ADR-0002](../adr/0002-password-policy.md)) |
 
 ## 22. P0 완료 정의
 

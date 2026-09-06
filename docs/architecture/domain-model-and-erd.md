@@ -129,31 +129,7 @@ Learning use case
 
 ## 3. ERD
 
-```mermaid
-erDiagram
-    MEMBER ||--|{ AUTH_ACCOUNT: authenticates_with
-    MEMBER ||--o{ ANSWER: submits
-    TOPIC ||--o{ CONCEPT: contains
-    TOPIC |o--o{ TOPIC: contains_subtopic
-    TOPIC ||--o{ QUESTION: groups
-    TOPIC ||--o{ KNOWLEDGE_DOCUMENT: groups
-    MEMBER |o--o{ QUESTION: creates
-    MEMBER |o--o{ QUESTION: reviews
-    MEMBER ||--o{ KNOWLEDGE_DOCUMENT: creates
-    MEMBER |o--o{ KNOWLEDGE_DOCUMENT: reviews
-    KNOWLEDGE_DOCUMENT ||--o{ KNOWLEDGE_CHUNK: splits_into
-    QUESTION ||--o{ QUESTION_CONCEPT: evaluates
-    CONCEPT ||--o{ QUESTION_CONCEPT: mapped_to
-    QUESTION ||--o{ ANSWER: receives
-    ANSWER ||--o| EVALUATION: evaluated_as
-    ANSWER |o--o| QUESTION: creates_follow_up
-    EVALUATION ||--o{ EVALUATION_CONCEPT: contains
-    CONCEPT ||--o{ EVALUATION_CONCEPT: judged_as
-    MEMBER ||--o{ KNOWLEDGE_STATE: has
-    CONCEPT ||--o{ KNOWLEDGE_STATE: tracked_as
-    EVALUATION ||--o{ EVALUATION_EVIDENCE: cites
-    KNOWLEDGE_CHUNK ||--o{ EVALUATION_EVIDENCE: used_by
-```
+![CrackCS ERD](images/crackcs-erd-illustrated.png)
 
 Cardinality 표기는 관계선 가까이에 있는 엔티티가 아니라 반대편 엔티티 한 건을 기준으로 읽는다.
 
@@ -428,4 +404,4 @@ EVALUATING 또는 FAILED Evaluation은 EvaluationConcept가 없을 수 있다. E
 
 이 ERD는 이메일·비밀번호 인증, 관리자 검수, 문제 풀이, 근거 검색, AI 평가, Knowledge State 갱신, 후속 질문과 다음 문제 추천에 반드시 필요한 테이블만 포함한다.
 
-학습 세션, 목표 설정, 추천 이력, 자동 문제 생성 이력처럼 핵심 루프 없이도 나중에 추가할 수 있는 모델은 [추가 확장 기능](./extension-features.md)에서 관리한다.
+학습 세션, 목표 설정, 추천 이력, 자동 문제 생성 이력처럼 핵심 루프 없이도 나중에 추가할 수 있는 모델은 [추가 확장 기능](../planning/extension-features.md)에서 관리한다.

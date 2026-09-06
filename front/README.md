@@ -1,45 +1,19 @@
-# front
+# CrackCS 프런트
 
-This template should help get you started developing with Vue 3 in Vite.
+Vue 기반 학습자·관리자 화면.
 
-## Recommended IDE Setup
+- 실행·검증 명령: [루트 README](../README.md#로컬-실행)
+- API 계약: [OpenAPI](../openapi.yml)
+- UI 변경 근거·검증: [UI 변경 기록](../docs/changes/2026-09-06-ui/verification.md)
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (
-and disable Vetur).
+| 위치 | 책임 |
+|---|---|
+| `src/views/` | 페이지·관리자 화면 |
+| `src/components/` | 공유 UI |
+| `src/api/` | 서버 API 호출 |
+| `src/styles/` | 공통 스타일·테마 |
+| `src/router/` | 화면 경로·접근 제어 |
+| `vite.config.ts` | 개발 서버·`/api` proxy·`@` 경로 별칭 |
+| `package.json` | 실행·테스트·빌드 명령 원본 |
 
-## Recommended Browser Setup
-
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-    - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-    - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-    - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-    - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
-
-## Type Support for `.vue` Imports in TS
-
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for
-type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the
-TypeScript language service aware of `.vue` types.
-
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
-```
-
-### Compile and Hot-Reload for Development
-
-```sh
-npm run dev
-```
-
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
+개발 요청 흐름: 브라우저 → Vite `/api` proxy → 백엔드 `localhost:8080`.
