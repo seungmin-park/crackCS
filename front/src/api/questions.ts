@@ -21,8 +21,10 @@ export type PublicQuestionPage = {
   totalPages: number;
 };
 
-export function fetchQuestions(): Promise<PublicQuestionPage> {
-  return get<PublicQuestionPage>("/api/questions?size=20&sort=id,asc");
+export function fetchQuestions(options: { page?: number; difficulty?: QuestionDifficulty | undefined } = {}): Promise<PublicQuestionPage> {
+  const query = new URLSearchParams({ page: String(options.page ?? 0), size: "20", sort: "id,asc" });
+  if (options.difficulty) query.set("difficulty", options.difficulty);
+  return get<PublicQuestionPage>(`/api/questions?${query}`);
 }
 
 export function fetchQuestion(questionId: string): Promise<PublicQuestion> {
