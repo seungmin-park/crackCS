@@ -40,9 +40,9 @@ describe("관리자 레이아웃", () => {
     member.value = { role: "ADMIN" }; resolved.value = true;
     const wrapper = mountView();
     await flushPromises();
-    expect(wrapper.text()).toContain("Topic · Concept");
-    expect(wrapper.text()).toContain("Knowledge Document");
-    expect(wrapper.text()).toContain("Question");
+    expect(wrapper.text()).toContain("분류와 개념");
+    expect(wrapper.text()).toContain("근거 문서");
+    expect(wrapper.text()).toContain("문제");
     expect(wrapper.text()).toContain("관리 화면");
   });
 });

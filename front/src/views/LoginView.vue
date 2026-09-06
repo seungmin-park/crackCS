@@ -34,20 +34,21 @@ async function submit() {
 <template>
   <main class="auth-shell auth-shell-login">
     <section class="auth-story" aria-labelledby="login-title">
-      <p class="eyebrow">WELCOME BACK</p>
-      <h1 id="login-title">오늘의 질문이<br />생각을 단단하게.</h1>
-      <p>지난 이해 상태를 이어받아 지금 가장 먼저 설명해 볼 문제부터 시작합니다.</p>
+      <p class="eyebrow">다시 시작하는 공부</p>
+      <h1 id="login-title">읽었던 개념을,<br />내 언어로.</h1>
+      <p>CS와 백엔드 질문을 살펴보며, 어디까지 설명할 수 있는지 확인해 보세요.</p>
       <blockquote class="auth-quote">
         <span aria-hidden="true">“</span>
-        외운 문장은 사라지지만, 자신의 말로 설명한 구조는 오래 남습니다.
+        프로세스와 스레드는 어떻게 다를까요?
+        익숙한 질문 하나부터 생각을 정리해 보세요.
       </blockquote>
     </section>
 
     <section class="auth-card" aria-label="로그인 양식">
       <div class="auth-card-heading">
-        <span class="auth-index">SESSION / 01</span>
-        <h2>다시 이어서 학습하기</h2>
-        <p>브라우저에는 인증 token 대신 안전한 HttpOnly session만 남습니다.</p>
+        <span class="auth-index">로그인</span>
+        <h2>문제집 펼치기</h2>
+        <p>가입한 이메일과 비밀번호로 로그인하세요.</p>
       </div>
 
       <p v-if="registered" class="form-success" role="status">
@@ -73,7 +74,7 @@ async function submit() {
             name="password"
             type="password"
             autocomplete="current-password"
-            placeholder="가입할 때 만든 passphrase"
+            placeholder="비밀번호를 입력하세요"
           />
         </label>
 

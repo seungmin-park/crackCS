@@ -81,7 +81,7 @@ onMounted(load);
 
 <template>
   <section>
-    <header class="admin-page-heading"><div><p class="eyebrow">TAXONOMY</p><h1>Topic · Concept</h1></div><p>비활성 분류는 기존 이력을 보존하지만 새 콘텐츠에는 연결할 수 없습니다.</p></header>
+    <header class="admin-page-heading"><div><p class="eyebrow">TAXONOMY</p><h1>분류와 개념</h1></div><p>비활성 분류는 기존 이력을 보존하지만 새 콘텐츠에는 연결할 수 없습니다.</p></header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
     <p v-if="loading" class="admin-loading">분류 체계를 불러오는 중…</p>
     <div v-else class="admin-two-column">

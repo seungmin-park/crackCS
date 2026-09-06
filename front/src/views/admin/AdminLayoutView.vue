@@ -25,12 +25,12 @@ const { currentMember, authenticationResolved } = useAuth();
       <aside class="admin-sidebar">
         <RouterLink class="admin-home-link" to="/admin">crackCS / 운영</RouterLink>
         <nav aria-label="관리자 메뉴">
-          <RouterLink to="/admin/taxonomy">Topic · Concept</RouterLink>
-          <RouterLink to="/admin/knowledge-documents">Knowledge Document</RouterLink>
-          <RouterLink to="/admin/questions">Question</RouterLink>
-          <RouterLink to="/admin/members">Member</RouterLink>
+          <RouterLink to="/admin/taxonomy">분류와 개념</RouterLink>
+          <RouterLink to="/admin/knowledge-documents">근거 문서</RouterLink>
+          <RouterLink to="/admin/questions">문제</RouterLink>
+          <RouterLink to="/admin/members">회원</RouterLink>
         </nav>
-        <small>모든 변경은 서버에서 ADMIN 권한을 다시 확인합니다.</small>
+        <small>분류부터 검수·공개까지, 콘텐츠를 관리합니다.</small>
       </aside>
       <section class="admin-content"><RouterView /></section>
     </template>

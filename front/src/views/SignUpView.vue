@@ -39,23 +39,23 @@ async function submit() {
 <template>
   <main class="auth-shell">
     <section class="auth-story" aria-labelledby="sign-up-title">
-      <p class="eyebrow">START YOUR LOOP</p>
-      <h1 id="sign-up-title">아는 것과<br />설명할 수 있는 것 사이.</h1>
+      <p class="eyebrow">나의 첫 질문</p>
+      <h1 id="sign-up-title">하나씩 읽고,<br />차근차근 설명하기.</h1>
       <p>
-        서술형 질문에 답하며 이해의 빈틈을 찾고, 다음 학습으로 이어지는 개인 지식 지도를 만드세요.
+        CS와 Java·Spring 질문을 한곳에서 살펴보세요. 기본 개념부터 상황에 적용하는 질문까지 준비되어 있습니다.
       </p>
       <ol class="auth-steps" aria-label="학습 흐름">
-        <li><span>01</span> 질문을 읽고 자신의 언어로 답하기</li>
-        <li><span>02</span> 핵심 개념 단위로 이해도 확인하기</li>
-        <li><span>03</span> 취약 개념에 맞는 다음 질문 받기</li>
+        <li><span>01</span> 난이도에 맞는 질문 고르기</li>
+        <li><span>02</span> 개념과 원리를 자신의 언어로 설명하기</li>
+        <li><span>03</span> 설명이 막히는 부분 다시 공부하기</li>
       </ol>
     </section>
 
     <section class="auth-card" aria-label="회원가입 양식">
       <div class="auth-card-heading">
-        <span class="auth-index">ACCOUNT / 01</span>
+        <span class="auth-index">회원가입</span>
         <h2>학습 계정 만들기</h2>
-        <p>긴 passphrase를 사용하면 외우기 쉽고 추측하기 어렵습니다.</p>
+        <p>이메일, 비밀번호, 닉네임으로 시작하세요.</p>
       </div>
 
       <form novalidate @submit.prevent="submit">
@@ -80,7 +80,7 @@ async function submit() {
             type="password"
             name="password"
             autocomplete="new-password"
-            placeholder="15자 이상의 passphrase"
+            placeholder="15자 이상의 비밀번호"
             :aria-invalid="Boolean(fieldErrors.password)"
             :aria-describedby="fieldErrors.password ? 'password-error' : 'password-help'"
           />
@@ -95,7 +95,7 @@ async function submit() {
             type="text"
             name="nickname"
             autocomplete="nickname"
-            placeholder="학습 기록에 표시할 이름"
+            placeholder="사용할 닉네임"
             :aria-invalid="Boolean(fieldErrors.nickname)"
             :aria-describedby="fieldErrors.nickname ? 'nickname-error' : undefined"
           />

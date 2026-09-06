@@ -82,7 +82,7 @@ onMounted(load);
 
 <template>
   <section>
-    <header class="admin-page-heading"><div><p class="eyebrow">KNOWLEDGE</p><h1>Knowledge Document</h1></div><p>공개본은 수정하지 않고 같은 계열의 새 버전을 만듭니다.</p></header>
+    <header class="admin-page-heading"><div><p class="eyebrow">KNOWLEDGE</p><h1>근거 문서</h1></div><p>공개본은 수정하지 않고 같은 계열의 새 버전을 만듭니다.</p></header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="load"><option value="">전체</option><option>DRAFT</option><option>PUBLISHED</option><option>RETIRED</option></select></label><button @click="select()">새 문서</button></div>
     <p v-if="loading" class="admin-loading">문서를 불러오는 중…</p>

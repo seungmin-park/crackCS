@@ -116,7 +116,7 @@ onMounted(load);
 
 <template>
   <section>
-    <header class="admin-page-heading"><div><p class="eyebrow">QUESTION BANK</p><h1>Question</h1></div><p>모범 답안과 Concept 가중치의 합이 1.00인지 검수한 뒤 공개합니다.</p></header>
+    <header class="admin-page-heading"><div><p class="eyebrow">QUESTION BANK</p><h1>문제</h1></div><p>모범 답안과 Concept 가중치의 합이 1.00인지 검수한 뒤 공개합니다.</p></header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="load"><option value="">전체</option><option>DRAFT</option><option>PUBLISHED</option><option>RETIRED</option></select></label><button @click="clearSelection">새 문제</button></div>
     <p v-if="loading" class="admin-loading">문제를 불러오는 중…</p>
