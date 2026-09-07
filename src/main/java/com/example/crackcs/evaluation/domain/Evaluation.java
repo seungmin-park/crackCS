@@ -13,6 +13,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
@@ -35,7 +36,9 @@ import java.util.stream.Collectors;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "evaluation")
+@Table(name = "evaluation", indexes = @Index(
+        name = "idx_evaluation_status_created", columnList = "status, created_at"
+))
 public class Evaluation {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
     @Version private Long version;
@@ -111,11 +114,17 @@ public class Evaluation {
             throw new IllegalArgumentException("concept results must not contain duplicates", duplicate);
         }
         if (!actual.keySet().equals(expected)) throw new IllegalArgumentException("concept results must exactly match question concepts");
+        Set<Long> required = answer.getQuestion().getQuestionConcepts().stream()
+                .filter(QuestionConcept::isRequired)
+                .map(questionConcept -> questionConcept.getConcept().getId())
+                .collect(Collectors.toSet());
+        boolean hasRequiredNeedsReview = required.stream()
+                .map(actual::get)
+                .anyMatch(concept -> concept.verdict() == Verdict.NEEDS_REVIEW);
+        if (hasRequiredNeedsReview && result.verdict() != Verdict.NEEDS_REVIEW) {
+            throw new IllegalArgumentException("required concept NEEDS_REVIEW requires overall NEEDS_REVIEW");
+        }
         if (result.verdict() == Verdict.CORRECT) {
-            Set<Long> required = answer.getQuestion().getQuestionConcepts().stream()
-                    .filter(QuestionConcept::isRequired)
-                    .map(questionConcept -> questionConcept.getConcept().getId())
-                    .collect(Collectors.toSet());
             boolean hasNonCorrectRequiredConcept = required.stream()
                     .map(actual::get)
                     .anyMatch(concept -> concept.verdict() != Verdict.CORRECT);

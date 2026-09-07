@@ -2,6 +2,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AnswerDetailView from "@/views/AnswerDetailView.vue";
+import { ApiClientError } from "@/api/client";
 
 const { fetchAnswer, fetchAnswerEvaluation, routeState } = vi.hoisted(() => ({ fetchAnswer: vi.fn(), fetchAnswerEvaluation: vi.fn(), routeState: { route: null as any } }));
 vi.mock("@/api/answers", () => ({ fetchAnswer, fetchAnswerEvaluation }));
@@ -73,5 +74,42 @@ describe("답변 상세 화면", () => {
     await flushPromises();
     expect(failed.text()).toContain("평가 실패");
     expect(failed.text()).toContain("답변이 틀렸다는 뜻은 아닙니다");
+    expect(failed.text()).not.toContain("다시 확인");
+  });
+
+  it("평가 조회가 404이면 polling을 끝내고 오류 화면을 표시한다", async () => {
+    fetchAnswer.mockResolvedValue({ answerId: 31, questionId: 7, questionContent: "질문", content: "내 답변", submittedAt: "2026-09-07T10:00:00Z", evaluation: evaluating });
+    fetchAnswerEvaluation.mockRejectedValue(new ApiClientError(404, "답변을 찾을 수 없습니다."));
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });
+    await flushPromises();
+
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(4000);
+
+    expect(fetchAnswerEvaluation).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).toContain("답변을 불러오지 못했어요");
+  });
+
+  it("일시적인 평가 조회 오류도 세 번 연속 발생하면 polling을 중단한다", async () => {
+    fetchAnswer.mockResolvedValue({ answerId: 31, questionId: 7, questionContent: "질문", content: "내 답변", submittedAt: "2026-09-07T10:00:00Z", evaluation: evaluating });
+    fetchAnswerEvaluation.mockRejectedValue(new TypeError("network"));
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });
+    await flushPromises();
+
+    await vi.advanceTimersByTimeAsync(8000);
+    await flushPromises();
+
+    expect(fetchAnswerEvaluation).toHaveBeenCalledTimes(3);
+    expect(wrapper.text()).toContain("답변을 불러오지 못했어요");
+  });
+
+  it("평가 Concept 이름을 식별자 대신 표시한다", async () => {
+    fetchAnswer.mockResolvedValue({ answerId: 31, questionId: 7, questionContent: "질문", content: "내 답변", submittedAt: "2026-09-07T10:00:00Z", evaluation: { ...evaluating, status: "EVALUATED", verdict: "CORRECT", score: 100, concepts: [{ conceptId: 11, conceptName: "스레드", verdict: "CORRECT", score: 100, feedback: "정확함" }] } });
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("스레드 · 정답");
+    expect(wrapper.text()).not.toContain("개념 11");
   });
 });

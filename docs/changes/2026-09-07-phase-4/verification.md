@@ -3,7 +3,7 @@
 - 대상: P4-T01~T07, Phase 4 Gate
 - 독자·질문: 개발자·리뷰어 — 어떤 계약과 책임으로 구현했고 무엇을 검증했는가?
 - 기준: [작업 목록](../../planning/tasks.md), [제품 명세](../../product/spec.md), [OpenAPI](../../../openapi.yml)
-- 상태: 구현 완료·Phase 4 Gate 통과 (2026-09-07)
+- 상태: 구현 완료·코드 리뷰 개선 완료·Phase 4 Gate 통과 (2026-09-07)
 
 ## 결정과 동작
 
@@ -12,7 +12,9 @@ USER + Idempotency-Key + 답변 원문
   ↓ 회원 행 잠금, 동일 키·payload 확인
 Answer + Evaluation(EVALUATING) 저장·커밋
   ↓ DB 대기 행 주기 탐색 (기본 1초, 최대 20건)
-평가 행 잠금 → Port 호출 (최대 3회)
+평가 입력 조회·잠금 → 트랜잭션 종료
+  ↓ Port 호출 (최대 3회, DB 트랜잭션 밖)
+평가 행 재조회·잠금 → 결과 반영
   ├─ 유효 결과 → EVALUATED + 전체·개념별 verdict/score
   └─ 최종 오류 → FAILED + 안전한 진단 코드
 ```
@@ -20,7 +22,7 @@ Answer + Evaluation(EVALUATING) 저장·커밋
 - Answer 책임: 활성 USER·공개 문제·유효 원문·표준 UUID 검증, 제출 사실 보존
 - Evaluation 책임: 상태 전이·Concept 완전성·판정 점수·부분 수정 방지
 - AnswerService 책임: 회원별 멱등 처리와 제출 트랜잭션, 소유권 조회
-- EvaluationProcessor 책임: 제출과 분리된 트랜잭션, 잠금·제한 재시도·최종 확정
+- EvaluationProcessor 책임: 짧은 입력·결과 트랜잭션, 트랜잭션 밖 제한 재시도·최종 확정
 - Worker 책임: DB 대기 행 재발견; 서버 중단으로 미커밋 작업은 다음 실행에서 재처리
 - 화면 책임: 미확정 제출의 키·원문 보존, 같은 payload 재전송, 페이지·평가 상태 복구
 
@@ -33,7 +35,8 @@ Answer + Evaluation(EVALUATING) 저장·커밋
 ```
 
 - Stub 결과 설정: CORRECT(기본), PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW, TIMEOUT, FAILURE
-- Stub·Worker 활성 조건: `(local | test) & !prod & !production`
+- Stub 활성 조건: `(local | test) & !prod & !production`
+- Worker 활성 조건: 모든 profile. Provider가 없으면 `PROVIDER_UNAVAILABLE`로 종결
 - 기본·prod·production·혼합 운영 profile: Stub 미등록
 - `crackcs.evaluation.worker-enabled=false`: 자동 Worker 정지, 통합 테스트의 직접 처리 검증에 사용
 - `crackcs.evaluation.poll-delay`: DB 탐색 주기(ms), 기본 1000
@@ -55,6 +58,12 @@ Answer + Evaluation(EVALUATING) 저장·커밋
 | 이력 페이지 이동 누락 | 다음 페이지 버튼 없음 | URL page와 이전·다음 이동 |
 | 문제 route 재사용 | 질문 8 이동 후 질문 7 유지 | 경로 감시·늦은 응답 무시 |
 | 미확정 요청·polling 경계 | 계정 간 키 공유, 5xx 키 소실, unmount 후 재예약 | 회원별 sessionStorage·세대 검사 |
+| 운영 profile 평가 정체 | Worker profile 제한으로 EVALUATING 유지 | Worker 전 profile 활성·Provider 부재 시 FAILED 종결 |
+| 외부 호출 중 DB 잠금 | Port에서 활성 트랜잭션 관찰 | 입력·결과 트랜잭션 사이에서 Port 호출 |
+| 이력 N+1 조회 | 답변 한 건에 SQL 5개 | 페이지 조회 SQL 3개 이하 |
+| 판정 불변식 모순 | 필수 Concept NEEDS_REVIEW와 부분 정답 허용 | 전체 NEEDS_REVIEW 강제·부분 수정 차단 |
+| 종결 오류 무한 polling | 404 뒤에도 2초 재요청 | 4xx 즉시 종료·일시 오류 3회 제한 |
+| 평가 표현 부족 | 실패 후 재확인 안내·Concept ID 표시 | 재제출 안내·Concept 이름 응답/표시 |
 
 초기 타입 누락·fixture 컴파일 오류는 유효 RED에서 제외. 실행 가능한 행동 실패를 별도로 확인.
 
@@ -62,9 +71,9 @@ Answer + Evaluation(EVALUATING) 저장·커밋
 
 | 검증 | 명령·범위 | 결과 |
 |---|---|---|
-| 전체 백엔드 | `./gradlew test` | 35개 클래스, 197개 성공, 실패·오류·skip 0 |
-| Phase 4 백엔드 | 아래 7개 클래스 | 54개 성공 |
-| 전체 프런트 | `cd front && npm test` | 17개 파일, 102개 성공 |
+| 전체 백엔드 | `./gradlew test --rerun-tasks` | 36개 클래스, 202개 성공, 실패·오류·skip 0 |
+| Phase 4 백엔드 | 아래 8개 클래스 | 59개 성공 |
+| 전체 프런트 | `cd front && npm test -- --run` | 17개 파일, 105개 성공 |
 | 타입 검사·빌드 | `cd front && npm run build` | vue-tsc·Vite 성공 |
 | 공백 오류 | `git diff --check` | 오류 없음 |
 | OpenAPI 구문·참조 | Ruby YAML 파싱·로컬 $ref 확인 | 32개 path, 38개 schema, 182개 참조 누락 없음 |
@@ -73,13 +82,14 @@ Answer + Evaluation(EVALUATING) 저장·커밋
 
 Phase 4 테스트 분포:
 
-- AnswerTest: 6개 — 원문·공개 상태·UUID·길이·회원 상태
-- EvaluationTest: 8개 — 상태 전이·Concept 완전성·점수·부분 수정 방지
+- AnswerTest: 7개 — 원문·공개 상태·UUID·길이·회원 상태·이력 인덱스
+- EvaluationTest: 10개 — 상태 전이·Concept 완전성·판정 일관성·점수·부분 수정 방지·대기 인덱스
 - StubEvaluationAdapterTest: 4개 — 성공·검토 필요·실패와 profile 경계
-- AnswerServiceTest: 10개 — 저장 커밋·멱등·이력·중복 worker·재시도·FK·timeout
+- AnswerServiceTest: 11개 — 저장 커밋·멱등·일괄 이력 조회·중복 worker·재시도·FK·timeout·외부 호출 트랜잭션 경계
 - AnswerControllerTest: 22개 — HTTP 계약·validation·401/403/404/409
 - AnswerFlowTest: 3개 — 제출·동시 멱등 요청·다른 회원 소유권
 - EvaluationWorkerTest: 1개 — 알림 없이 DB 대기 작업 발견·커밋 확인
+- EvaluationWorkerProfileTest: 1개 — 운영을 포함한 전 profile Worker 활성
 
 관찰된 환경 경고: JVM class sharing, Vitest `--localstorage-file` 경고. 테스트·빌드 실패 없음.
 
@@ -92,6 +102,7 @@ Phase 4 테스트 분포:
 - 임시 회원가입 → 로그인 → 공개 문제 → 원문 입력 → 제출 → `정답 · 100점` 모의 결과 확인
 - `/answers/1` 새로고침 후 동일 원문·평가 결과 복구
 - 내 답변 이력에 질문·원문·정답 표시
+- Concept ID 대신 `프로세스와 스레드 · 정답` 이름 표시
 - 데스크톱 1280×900, 모바일 390×844 확인
 - 모바일: document 폭 373 ≤ viewport 폭 390, 가로 넘침 없음
 - [데스크톱 평가 화면](assets/evaluation-desktop.png)
@@ -103,7 +114,7 @@ Phase 4 테스트 분포:
 
 - 외부 AI·검색 근거·Knowledge State 실제 갱신: Phase 5~6 범위
 - 운영 DB·다중 서버·프로세스 강제 종료 실험: 미검증; 현재 DB 잠금 검증은 H2의 동시 스레드 기준
-- 실제 AI 전환 전: 긴 호출의 DB 잠금 분리, 작업 lease·호출 timeout·영속 재시도 횟수 검토
+- 실제 AI 전환 전: 작업 lease·호출 timeout·영속 재시도 횟수 검토
 - 동일 평가의 최종 DB 확정은 한 번; 프로세스 중단 직전 외부 호출의 중복 자체는 보장하지 않음
 - 브라우저 탭 종료·로그아웃: 미확정 제출 복구 저장소 제거. 저장된 답변은 이력에서 확인
-- 기본 profile에 실제 평가 provider 없음: Phase 4는 local/test 개발 흐름만 제공
+- 기본·운영 profile에 실제 평가 provider가 없으면 Worker가 `PROVIDER_UNAVAILABLE`로 평가를 종결

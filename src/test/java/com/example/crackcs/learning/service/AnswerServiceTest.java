@@ -19,6 +19,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.data.domain.PageRequest;
+import jakarta.persistence.EntityManagerFactory;
 import java.math.BigDecimal;
 import java.util.UUID;
 import static org.assertj.core.api.Assertions.*;
@@ -36,6 +37,7 @@ class AnswerServiceTest {
     @Autowired AnswerRepository answers;
     @Autowired EvaluationRepository evaluations;
     @Autowired JdbcTemplate jdbc;
+    @Autowired EntityManagerFactory entityManagerFactory;
     @Autowired ControlledPort port;
 
     @AfterEach
@@ -67,6 +69,7 @@ class AnswerServiceTest {
         assertThat(saved.getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(saved.getScore()).isEqualTo(100);
         assertThat(service.findEvaluation(member.getId(), response.answerId()).concepts()).hasSize(1);
+        assertThat(port.allCallsOutsideTransaction).isTrue();
     }
 
     @Test
@@ -84,6 +87,26 @@ class AnswerServiceTest {
                 .extracting(answer -> answer.answerId()).containsExactly(second.answerId());
         assertThat(answers.findById(first.answerId()).orElseThrow().getContent()).isEqualTo("첫 답변");
         assertThat(answers.count()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("답변 목록은 질문과 평가 및 Concept을 페이지 단위로 일괄 조회한다")
+    void loadsAnswerPageWithoutPerAnswerQueries() {
+        Member member = members.save(Member.builder().nickname("학습자").build());
+        Question question = publishedQuestion();
+        var first = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "첫 답변");
+        var second = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "둘째 답변");
+        processor.process(first.evaluationId());
+        processor.process(second.evaluationId());
+        var statistics = entityManagerFactory.unwrap(org.hibernate.SessionFactory.class).getStatistics();
+        statistics.setStatisticsEnabled(true);
+        statistics.clear();
+
+        var page = service.findAll(member.getId(), PageRequest.of(0, 1));
+
+        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent().getFirst().evaluation().concepts()).hasSize(1);
+        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
     }
 
     @Test
@@ -236,13 +259,16 @@ class AnswerServiceTest {
         int failuresRemaining;
         int calls;
         String outcome = "CORRECT";
+        boolean allCallsOutsideTransaction = true;
         @Override
         public com.example.crackcs.evaluation.port.EvaluationResult evaluate(com.example.crackcs.evaluation.port.EvaluationRequest request) {
             calls++;
+            allCallsOutsideTransaction &= !org.springframework.transaction.support.TransactionSynchronizationManager
+                    .isActualTransactionActive();
             if (failuresRemaining-- > 0) throw new IllegalStateException("provider secret must never be exposed");
             return new com.example.crackcs.evaluation.adapter.StubEvaluationAdapter(outcome).evaluate(request);
         }
-        void reset() { failuresRemaining = 0; calls = 0; outcome = "CORRECT"; }
+        void reset() { failuresRemaining = 0; calls = 0; outcome = "CORRECT"; allCallsOutsideTransaction = true; }
     }
 
     private Question publishedQuestion() {

@@ -69,9 +69,7 @@ class EvaluationTest {
     @Test
     @DisplayName("전체 정답 판정은 모든 필수 Concept이 정답일 때만 허용한다")
     void correctOverallVerdictRequiresEveryRequiredConceptToBeCorrect() {
-        for (Verdict contradictoryVerdict : List.of(
-                Verdict.PARTIALLY_CORRECT, Verdict.INCORRECT, Verdict.NEEDS_REVIEW
-        )) {
+        for (Verdict contradictoryVerdict : List.of(Verdict.PARTIALLY_CORRECT, Verdict.INCORRECT)) {
             Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
             EvaluationResult contradictory = new EvaluationResult(Verdict.CORRECT, "전체 정답", List.of(
                     new ConceptResult(11L, contradictoryVerdict, "필수 Concept 모순"),
@@ -105,15 +103,40 @@ class EvaluationTest {
     }
 
     @Test
-    @DisplayName("필수 Concept이 검토 필요이면 지식 상태 반영 대상이 아니다")
-    void requiredNeedsReviewIsNotEligible() {
+    @DisplayName("필수 Concept이 검토 필요이면 전체 판정도 검토 필요여야 한다")
+    void requiredNeedsReviewRequiresOverallNeedsReview() {
         Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
-        evaluation.complete(new EvaluationResult(Verdict.PARTIALLY_CORRECT, "검토 필요", List.of(
+
+        assertThatThrownBy(() -> evaluation.complete(new EvaluationResult(Verdict.PARTIALLY_CORRECT, "검토 필요", List.of(
+                new ConceptResult(11L, Verdict.NEEDS_REVIEW, "근거 부족"),
+                new ConceptResult(12L, Verdict.CORRECT, "정확함")
+        )))).isInstanceOf(IllegalArgumentException.class).hasMessageContaining("NEEDS_REVIEW");
+
+        assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.EVALUATING);
+        assertThat(evaluation.getConcepts()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("전체와 필수 Concept이 검토 필요이면 지식 상태 반영 대상이 아니다")
+    void consistentNeedsReviewIsNotEligible() {
+        Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
+        evaluation.complete(new EvaluationResult(Verdict.NEEDS_REVIEW, "검토 필요", List.of(
                 new ConceptResult(11L, Verdict.NEEDS_REVIEW, "근거 부족"),
                 new ConceptResult(12L, Verdict.CORRECT, "정확함")
         )));
 
         assertThat(evaluation.isKnowledgeStateEligible()).isFalse();
+    }
+
+    @Test
+    @DisplayName("평가 대기 조회를 위한 상태와 시각 복합 인덱스를 선언한다")
+    void declaresPendingEvaluationIndex() {
+        var table = Evaluation.class.getAnnotation(jakarta.persistence.Table.class);
+
+        assertThat(table.indexes()).anySatisfy(index -> {
+            assertThat(index.name()).isEqualTo("idx_evaluation_status_created");
+            assertThat(index.columnList()).isEqualTo("status, created_at");
+        });
     }
 
     @Test

@@ -449,7 +449,7 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 대상: `FR-ANSWER-001`, `FR-ANSWER-002`, `FR-ANSWER-003`, `FR-EVAL-001`, `FR-EVAL-004`, `FR-EVAL-005`.
 
-검증 근거: [Phase 4 결정·검증 기록](../changes/2026-09-07-phase-4/verification.md). 백엔드 197개·프런트 102개 성공, 타입 검사·빌드·실제 화면 흐름 통과.
+검증 근거: [Phase 4 결정·검증 기록](../changes/2026-09-07-phase-4/verification.md). 백엔드 202개·프런트 105개 성공, 타입 검사·빌드·실제 화면 흐름 통과.
 
 ### P4-T01 Answer 모델과 제출 규칙
 
@@ -520,6 +520,17 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 - [x] 평가 실패에도 Answer가 보존된다.
 - [x] 다른 회원의 답변과 평가를 조회할 수 없다.
 - [x] Stub adapter가 운영 환경에 노출되지 않는다.
+
+### Phase 4 코드 리뷰 개선
+
+- [x] P4-R01 모든 실행 profile에서 평가 Worker가 대기 작업을 종결한다.
+- [x] P4-R02 외부 평가 호출을 DB 트랜잭션과 비관적 잠금 밖에서 실행한다.
+- [x] P4-R03 답변 목록의 질문·평가·개념 조회를 페이지 단위로 일괄 처리한다.
+- [x] P4-R04 복구 불가능한 HTTP 오류와 반복된 일시 오류에서 polling을 중단한다.
+- [x] P4-R05 필수 Concept의 NEEDS_REVIEW와 전체 verdict 불변식을 일치시킨다.
+- [x] P4-R06 평가 실패 안내와 Concept 이름 표시를 실제 상태에 맞춘다.
+- [x] P4-R07 답변 이력과 평가 대기 조회 인덱스를 선언한다.
+- [x] P4-R08 관련 테스트·전체 테스트·프런트 빌드·문서 검증을 통과한다.
 
 ---
 

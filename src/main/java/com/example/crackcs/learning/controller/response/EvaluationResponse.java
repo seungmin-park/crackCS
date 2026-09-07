@@ -8,7 +8,7 @@ public record EvaluationResponse(EvaluationStatus status, Verdict verdict, Integ
     public static EvaluationResponse from(Evaluation evaluation) {
         return new EvaluationResponse(evaluation.getStatus(), evaluation.getVerdict(), evaluation.getScore(),
                 evaluation.getFeedback(), evaluation.getFailureReason(), evaluation.getConcepts().stream()
-                .map(c -> new ConceptResponse(c.getConceptId(), c.getVerdict(), c.getScore(), c.getFeedback())).toList());
+                .map(c -> new ConceptResponse(c.getConceptId(), c.getConceptName(), c.getVerdict(), c.getScore(), c.getFeedback())).toList());
     }
-    public record ConceptResponse(Long conceptId, Verdict verdict, Integer score, String feedback) {}
+    public record ConceptResponse(Long conceptId, String conceptName, Verdict verdict, Integer score, String feedback) {}
 }

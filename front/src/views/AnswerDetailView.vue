@@ -2,6 +2,7 @@
 import { onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { fetchAnswer, fetchAnswerEvaluation, type AnswerResponse } from "@/api/answers";
+import { ApiClientError } from "@/api/client";
 import EvaluationPanel from "@/components/EvaluationPanel.vue";
 import QuestionState from "@/components/QuestionState.vue";
 
@@ -11,6 +12,8 @@ const error = ref(false);
 let timer: ReturnType<typeof setTimeout> | undefined;
 let generation = 0;
 let disposed = false;
+let consecutivePollFailures = 0;
+const MAX_POLL_FAILURES = 3;
 
 function cancelTimer() {
   if (timer) clearTimeout(timer);
@@ -25,9 +28,17 @@ function schedulePoll(answerId: string, activeGeneration: number) {
       const evaluation = await fetchAnswerEvaluation(answerId);
       if (disposed || activeGeneration !== generation || !answer.value) return;
       answer.value.evaluation = evaluation;
+      consecutivePollFailures = 0;
       if (evaluation.status === "EVALUATING") schedulePoll(answerId, activeGeneration);
-    } catch {
-      if (!disposed && activeGeneration === generation) schedulePoll(answerId, activeGeneration);
+    } catch (failure) {
+      if (disposed || activeGeneration !== generation) return;
+      consecutivePollFailures++;
+      const retryable = !(failure instanceof ApiClientError) || failure.status >= 500;
+      if (retryable && consecutivePollFailures < MAX_POLL_FAILURES) {
+        schedulePoll(answerId, activeGeneration);
+      } else {
+        error.value = true;
+      }
     }
   }, 2000);
 }
@@ -37,6 +48,7 @@ async function loadAnswer(answerId = String(route.params.answerId)) {
   const activeGeneration = ++generation;
   answer.value = undefined;
   error.value = false;
+  consecutivePollFailures = 0;
   try {
     const loaded = await fetchAnswer(answerId);
     if (disposed || activeGeneration !== generation) return;

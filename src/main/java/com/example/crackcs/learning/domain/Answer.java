@@ -9,6 +9,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
@@ -26,7 +27,7 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "answer", uniqueConstraints = @UniqueConstraint(
         name = "uk_answer_member_request", columnNames = {"member_id", "request_id"}
-))
+), indexes = @Index(name = "idx_answer_member_submitted", columnList = "member_id, submitted_at"))
 public class Answer {
     private static final int MAX_CONTENT_LENGTH = 10_000;
 

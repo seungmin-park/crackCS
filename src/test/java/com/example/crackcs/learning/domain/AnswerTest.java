@@ -18,6 +18,17 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AnswerTest {
 
     @Test
+    @DisplayName("회원별 최신 답변 이력 조회를 위한 복합 인덱스를 선언한다")
+    void declaresMemberHistoryIndex() {
+        var table = Answer.class.getAnnotation(jakarta.persistence.Table.class);
+
+        assertThat(table.indexes()).anySatisfy(index -> {
+            assertThat(index.name()).isEqualTo("idx_answer_member_submitted");
+            assertThat(index.columnList()).isEqualTo("member_id, submitted_at");
+        });
+    }
+
+    @Test
     @DisplayName("공개된 문제의 답변 원문과 요청 식별자를 변경 없이 보존한다")
     void createsImmutableSubmissionForPublishedQuestion() {
         Member member = user("학습자");

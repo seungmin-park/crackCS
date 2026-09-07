@@ -35,6 +35,7 @@ public class EvaluationConcept {
     @Column(nullable = false, columnDefinition = "TEXT") private String feedback;
 
     public Long getConceptId() { return concept.getId(); }
+    public String getConceptName() { return concept.getName(); }
 
     static EvaluationConcept from(Evaluation evaluation, ConceptResult result) {
         EvaluationConcept concept = new EvaluationConcept();

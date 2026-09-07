@@ -293,6 +293,7 @@ Phase 4 구현 기준.
 | submitted_at | TIMESTAMP | NOT NULL | 제출 시각 |
 
 - 유일 제약: `(member_id, request_id)`
+- 이력 조회 인덱스: `(member_id, submitted_at)`
 - 같은 회원·문제의 새 키: 새 답변 이력
 - 회원 행 잠금: 같은 키 동시 요청 직렬화
 - 폐기된 문제: 신규 제출 차단, 기존 이력·멱등 복구 유지
@@ -316,11 +317,13 @@ Phase 4 구현 기준. 실제 AI 모델 정보·검색 근거는 Phase 5 계획.
 | evaluated_at | TIMESTAMP | NULL | 완료·실패 확정 시각 |
 
 - Answer + EVALUATING 생성: 같은 제출 트랜잭션
-- 평가 처리: 별도 트랜잭션에서 평가 행 잠금 → 최대 3회 Port 호출 → 최종 상태 확정
+- 평가 처리: 짧은 조회 트랜잭션에서 입력 고정 → 트랜잭션 밖에서 최대 3회 Port 호출 → 짧은 결과 반영 트랜잭션에서 최종 상태 확정
 - NEEDS_REVIEW: EVALUATED 상태의 verdict, score=NULL
-- FAILED·전체 NEEDS_REVIEW·필수 Concept NEEDS_REVIEW: Knowledge State 반영 대상 제외
+- 필수 Concept NEEDS_REVIEW: 전체 verdict도 NEEDS_REVIEW만 허용
+- FAILED·전체 NEEDS_REVIEW: Knowledge State 반영 대상 제외
 - 작업 재탐색: DB의 EVALUATING 행; 메모리 이벤트에 의존하지 않음
-- Phase 4 한계: 짧은 Stub 호출 동안 DB 잠금 유지. 실제 AI 연결 전 타임아웃·lease·영속 재시도 횟수 설계 필요
+- 대기 조회 인덱스: `(status, created_at)`
+- 단일 인스턴스 중복 호출: 평가 ID별 로컬 직렬화. 다중 인스턴스 외부 호출 중복 방지는 Phase 5 lease에서 처리
 
 ### EVALUATION_CONCEPT
 
@@ -336,6 +339,7 @@ Phase 4 구현 기준.
 | feedback | TEXT | NOT NULL | 개념별 피드백 |
 
 - 유일 제약: `(evaluation_id, concept_id)`
+- API 응답: Concept ID와 현재 참조 Concept 이름 제공
 - EVALUATING·FAILED: 결과 없음
 - EVALUATED: 문제에 연결된 모든 Concept 결과 필수; 누락·중복·추가 결과 거부
 - 전체 CORRECT: 모든 필수 Concept CORRECT 필요

@@ -6,6 +6,7 @@ export type EvaluationVerdict = "CORRECT" | "PARTIALLY_CORRECT" | "INCORRECT" | 
 
 export type ConceptEvaluation = {
   conceptId: number;
+  conceptName: string;
   verdict: EvaluationVerdict;
   score: number | null;
   feedback: string | null;

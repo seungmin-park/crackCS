@@ -1033,11 +1033,13 @@ components:
           type: array
           items:
             type: object
-            required: [conceptId, verdict, score, feedback]
+            required: [conceptId, conceptName, verdict, score, feedback]
             properties:
               conceptId:
                 type: integer
                 format: int64
+              conceptName:
+                type: string
               verdict:
                 type: string
                 enum: [CORRECT, PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW]

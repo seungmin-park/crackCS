@@ -58,11 +58,10 @@ class EvaluationWorkerTest {
         Question question = publishedQuestion();
         var response = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "답변");
 
-        assertThat(port.committed.await(5, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+        awaitEvaluation(response.answerId());
 
-        assertThat(evaluations.findByAnswerId(response.answerId()).orElseThrow().getStatus())
-                .isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(service.findEvaluation(member.getId(), response.answerId()).concepts()).hasSize(1);
+        assertThat(port.calledOutsideTransaction).isTrue();
     }
 
     @org.springframework.boot.test.context.TestConfiguration
@@ -73,15 +72,23 @@ class EvaluationWorkerTest {
     }
 
     static class CommitSignalPort implements com.example.crackcs.evaluation.port.EvaluationPort {
-        final java.util.concurrent.CountDownLatch committed = new java.util.concurrent.CountDownLatch(1);
+        volatile boolean calledOutsideTransaction;
         @Override
         public com.example.crackcs.evaluation.port.EvaluationResult evaluate(com.example.crackcs.evaluation.port.EvaluationRequest request) {
-            org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                    new org.springframework.transaction.support.TransactionSynchronization() {
-                        @Override public void afterCommit() { committed.countDown(); }
-                    });
+            calledOutsideTransaction = !org.springframework.transaction.support.TransactionSynchronizationManager
+                    .isActualTransactionActive();
             return new com.example.crackcs.evaluation.adapter.StubEvaluationAdapter("CORRECT").evaluate(request);
         }
+    }
+
+    private void awaitEvaluation(Long answerId) throws InterruptedException {
+        long deadline = System.nanoTime() + java.time.Duration.ofSeconds(5).toNanos();
+        while (System.nanoTime() < deadline) {
+            if (evaluations.findByAnswerId(answerId).orElseThrow().getStatus() == EvaluationStatus.EVALUATED) return;
+            Thread.sleep(10);
+        }
+        assertThat(evaluations.findByAnswerId(answerId).orElseThrow().getStatus())
+                .isEqualTo(EvaluationStatus.EVALUATED);
     }
 
     private Question publishedQuestion() {

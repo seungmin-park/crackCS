@@ -431,6 +431,8 @@ LEARNING과 STABLE의 정확한 임계값은 구현 전 확정하고 알고리�
 
 `GET /api/answers/{answerId}`, 평가와 후속 질문 URI는 현재 회원이 소유한 Answer에만 접근할 수 있다. 존재하지 않는 Answer와 다른 회원의 Answer를 외부에서 구분할 필요가 없으면 모두 `404 Not Found`로 처리해 소유권 정보를 숨긴다.
 
+평가 응답의 Concept별 결과는 `conceptId`와 사용자에게 표시할 `conceptName`을 함께 제공한다. 필수 Concept 중 하나라도 `NEEDS_REVIEW`이면 전체 verdict도 `NEEDS_REVIEW`로 확정한다.
+
 ### 관리자 회원·분류
 
 | Method | URI | 권한 | 성공 응답 | 목적 |

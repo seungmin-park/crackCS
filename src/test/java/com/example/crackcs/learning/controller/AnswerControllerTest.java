@@ -436,7 +436,7 @@ class AnswerControllerTest {
                 "핵심 개념을 보완하세요.",
                 null,
                 List.of(new EvaluationResponse.ConceptResponse(
-                        11L, Verdict.CORRECT, 100, "정확합니다."))
+                        11L, "스레드", Verdict.CORRECT, 100, "정확합니다."))
         );
     }
 

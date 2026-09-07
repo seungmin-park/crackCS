@@ -14,6 +14,9 @@ import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -58,7 +61,12 @@ public class DefaultAnswerService implements AnswerService {
     public Page<AnswerResponse> findAll(Long memberId, Pageable pageable) {
         var latest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 Sort.by(Sort.Order.desc("submittedAt"), Sort.Order.desc("id")));
-        return answers.findByMemberId(memberId, latest).map(this::response);
+        var answerPage = answers.findByMemberId(memberId, latest);
+        if (answerPage.isEmpty()) return Page.empty(latest);
+        var evaluationByAnswerId = evaluations.findAllWithConceptsByAnswerIdIn(answerPage.getContent().stream()
+                        .map(Answer::getId).toList()).stream()
+                .collect(Collectors.toMap(evaluation -> evaluation.getAnswer().getId(), Function.identity()));
+        return answerPage.map(answer -> AnswerResponse.from(answer, evaluationByAnswerId.get(answer.getId())));
     }
 
     private Answer ownedAnswer(Long memberId, Long answerId) {
