@@ -28,6 +28,7 @@ async function handleLogout() {
     <nav class="header-actions" aria-label="계정 메뉴">
       <template v-if="currentMember">
         <span class="member-caption">{{ currentMember.nickname }}</span>
+        <RouterLink v-if="currentMember.role === 'USER'" to="/answers">답변 이력</RouterLink>
         <RouterLink v-if="currentMember.role === 'ADMIN'" to="/admin">관리</RouterLink>
         <button class="header-text-button" type="button" @click="handleLogout">로그아웃</button>
       </template>

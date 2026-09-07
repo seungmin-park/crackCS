@@ -41,7 +41,7 @@ Phase Gate 체크
 - [x] Phase 1 — 공개 문제 조회 최소 제품
 - [x] Phase 2 — 회원 인증과 관리자 경계
 - [x] Phase 3 — 관리자 콘텐츠 운영
-- [ ] Phase 4 — 답변과 평가 상태 골격
+- [x] Phase 4 — 답변과 평가 상태 골격
 - [ ] Phase 5 — Knowledge Retrieval과 실제 AI 평가
 - [ ] Phase 6 — Knowledge State와 개인 추천
 - [ ] Phase 7 — 후속 질문 학습 루프
@@ -100,10 +100,10 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ### Phase 4 답변과 평가
 
-- [ ] `POST /api/questions/{questionId}/answers` — USER, 답변 제출과 평가 접수
-- [ ] `GET /api/members/me/answers` — USER, 내 답변 목록
-- [ ] `GET /api/answers/{answerId}` — USER, 내 답변 상세
-- [ ] `GET /api/answers/{answerId}/evaluation` — USER, 평가 상태·결과
+- [x] `POST /api/questions/{questionId}/answers` — USER, 답변 제출과 평가 접수
+- [x] `GET /api/members/me/answers` — USER, 내 답변 목록
+- [x] `GET /api/answers/{answerId}` — USER, 내 답변 상세
+- [x] `GET /api/answers/{answerId}/evaluation` — USER, 평가 상태·결과
 
 ### Phase 5 근거와 운영
 
@@ -449,75 +449,77 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 대상: `FR-ANSWER-001`, `FR-ANSWER-002`, `FR-ANSWER-003`, `FR-EVAL-001`, `FR-EVAL-004`, `FR-EVAL-005`.
 
+검증 근거: [Phase 4 결정·검증 기록](../changes/2026-09-07-phase-4/verification.md). 백엔드 197개·프런트 102개 성공, 타입 검사·빌드·실제 화면 흐름 통과.
+
 ### P4-T01 Answer 모델과 제출 규칙
 
-- [ ] Answer schema와 immutable 제출 모델을 구현한다.
-- [ ] 공백 답변과 최대 길이 validation을 구현한다.
-- [ ] 로그인 회원과 Answer 소유권을 연결한다.
-- [ ] PUBLISHED Question에만 답변할 수 있게 한다.
-- [ ] 재답변은 기존 row 수정이 아니라 새 Answer로 저장한다.
-- [ ] Answer repository와 도메인 테스트를 작성한다.
+- [x] Answer schema와 immutable 제출 모델을 구현한다.
+- [x] 공백 답변과 최대 길이 validation을 구현한다.
+- [x] 로그인 회원과 Answer 소유권을 연결한다.
+- [x] PUBLISHED Question에만 답변할 수 있게 한다.
+- [x] 재답변은 기존 row 수정이 아니라 새 Answer로 저장한다.
+- [x] Answer repository와 도메인 테스트를 작성한다.
 
 ### P4-T02 멱등 제출
 
-- [ ] 멱등 키의 전달 위치와 유효 범위를 정의한다.
-- [ ] 회원·요청별 unique constraint 또는 동등한 저장 구조를 설계한다.
-- [ ] 같은 멱등 키와 같은 payload는 기존 결과를 반환한다.
-- [ ] 같은 멱등 키와 다른 payload는 충돌로 처리한다.
-- [ ] 동시에 같은 요청이 들어오는 통합 테스트를 작성한다.
+- [x] 멱등 키의 전달 위치와 유효 범위를 정의한다.
+- [x] 회원·요청별 unique constraint 또는 동등한 저장 구조를 설계한다.
+- [x] 같은 멱등 키와 같은 payload는 기존 결과를 반환한다.
+- [x] 같은 멱등 키와 다른 payload는 충돌로 처리한다.
+- [x] 동시에 같은 요청이 들어오는 통합 테스트를 작성한다.
 
 ### P4-T03 Evaluation 모델과 상태 전이
 
-- [ ] Evaluation schema와 Answer 1:0..1 unique constraint를 구현한다.
-- [ ] EVALUATING, EVALUATED와 FAILED 상태를 구현한다.
-- [ ] NEEDS_REVIEW는 성공 status의 verdict인지 별도 status인지 최종 확정한다.
-- [ ] CORRECT, PARTIALLY_CORRECT, INCORRECT와 NEEDS_REVIEW verdict를 구현한다.
-- [ ] verdict → 100·50·0·NULL 변환을 서버 규칙으로 구현한다.
-- [ ] 허용되지 않는 상태 전이와 필드 조합을 차단한다.
-- [ ] 상태 전이 단위 테스트를 작성한다.
+- [x] Evaluation schema와 Answer 1:0..1 unique constraint를 구현한다.
+- [x] EVALUATING, EVALUATED와 FAILED 상태를 구현한다.
+- [x] NEEDS_REVIEW는 성공 status의 verdict인지 별도 status인지 최종 확정한다.
+- [x] CORRECT, PARTIALLY_CORRECT, INCORRECT와 NEEDS_REVIEW verdict를 구현한다.
+- [x] verdict → 100·50·0·NULL 변환을 서버 규칙으로 구현한다.
+- [x] 허용되지 않는 상태 전이와 필드 조합을 차단한다.
+- [x] 상태 전이 단위 테스트를 작성한다.
 
 ### P4-T04 평가 Port와 Stub adapter
 
-- [ ] AI 제공자와 무관한 Evaluation 요청 모델을 정의한다.
-- [ ] 전체·Concept별 판정과 feedback을 담는 결과 모델을 정의한다.
-- [ ] EvaluationPort 인터페이스를 정의한다.
-- [ ] 성공, NEEDS_REVIEW, timeout과 실패를 재현하는 Stub adapter를 구현한다.
-- [ ] Stub adapter를 local/test profile에서만 활성화한다.
-- [ ] 운영 profile에 Stub이 활성화되면 기동 실패하도록 검토한다.
+- [x] AI 제공자와 무관한 Evaluation 요청 모델을 정의한다.
+- [x] 전체·Concept별 판정과 feedback을 담는 결과 모델을 정의한다.
+- [x] EvaluationPort 인터페이스를 정의한다.
+- [x] 성공, NEEDS_REVIEW, timeout과 실패를 재현하는 Stub adapter를 구현한다.
+- [x] Stub adapter를 local/test profile에서만 활성화한다.
+- [x] 운영 profile에 Stub이 활성화되면 기동 실패하도록 검토한다.
 
 ### P4-T05 답변 제출 유스케이스와 트랜잭션
 
-- [ ] Answer 저장과 Evaluation 생성의 트랜잭션 경계를 정의한다.
-- [ ] Answer가 저장된 뒤 평가 실패해도 Answer를 보존한다.
-- [ ] Evaluation 시작 작업이 유실되지 않는 방식을 정한다.
-- [ ] 중복 worker 실행에도 Evaluation이 한 번만 확정되게 한다.
-- [ ] 성공, 실패와 재시도 통합 테스트를 작성한다.
+- [x] Answer 저장과 Evaluation 생성의 트랜잭션 경계를 정의한다.
+- [x] Answer가 저장된 뒤 평가 실패해도 Answer를 보존한다.
+- [x] Evaluation 시작 작업이 유실되지 않는 방식을 정한다.
+- [x] 중복 worker 실행에도 Evaluation이 한 번만 확정되게 한다.
+- [x] 성공, 실패와 재시도 통합 테스트를 작성한다.
 
 ### P4-T06 답변·평가 API
 
-- [ ] Answer 제출 API 계약을 정의하고 구현한다.
-- [ ] Evaluation 상태·결과 조회 API를 구현한다.
-- [ ] 내 Answer 목록과 상세 조회 API를 구현한다.
-- [ ] 다른 회원의 Answer·Evaluation 조회를 차단한다.
-- [ ] 최신순 pagination을 구현한다.
-- [ ] 소유권과 실패 상태 API 테스트를 작성한다.
+- [x] Answer 제출 API 계약을 정의하고 구현한다.
+- [x] Evaluation 상태·결과 조회 API를 구현한다.
+- [x] 내 Answer 목록과 상세 조회 API를 구현한다.
+- [x] 다른 회원의 Answer·Evaluation 조회를 차단한다.
+- [x] 최신순 pagination을 구현한다.
+- [x] 소유권과 실패 상태 API 테스트를 작성한다.
 
 ### P4-T07 문제 풀이·평가 화면
 
-- [ ] 문제 상세에 답변 입력과 제출 UI를 구현한다.
-- [ ] 중복 클릭과 네트워크 재시도에서 같은 멱등 키를 사용한다.
-- [ ] EVALUATING polling 또는 상태 갱신 방식을 구현한다.
-- [ ] EVALUATED, NEEDS_REVIEW와 FAILED 화면을 구분한다.
-- [ ] 답변·평가 이력 목록과 상세 화면을 구현한다.
-- [ ] 새로고침 후에도 평가 상태를 복구한다.
+- [x] 문제 상세에 답변 입력과 제출 UI를 구현한다.
+- [x] 중복 클릭과 네트워크 재시도에서 같은 멱등 키를 사용한다.
+- [x] EVALUATING polling 또는 상태 갱신 방식을 구현한다.
+- [x] EVALUATED, NEEDS_REVIEW와 FAILED 화면을 구분한다.
+- [x] 답변·평가 이력 목록과 상세 화면을 구현한다.
+- [x] 새로고침 후에도 평가 상태를 복구한다.
 
 ### Phase 4 Gate
 
-- [ ] 문제 조회 → 답변 제출 → 평가 결과 확인 흐름을 완주한다.
-- [ ] 같은 멱등 요청으로 Answer와 Evaluation이 중복 생성되지 않는다.
-- [ ] 평가 실패에도 Answer가 보존된다.
-- [ ] 다른 회원의 답변과 평가를 조회할 수 없다.
-- [ ] Stub adapter가 운영 환경에 노출되지 않는다.
+- [x] 문제 조회 → 답변 제출 → 평가 결과 확인 흐름을 완주한다.
+- [x] 같은 멱등 요청으로 Answer와 Evaluation이 중복 생성되지 않는다.
+- [x] 평가 실패에도 Answer가 보존된다.
+- [x] 다른 회원의 답변과 평가를 조회할 수 없다.
+- [x] Stub adapter가 운영 환경에 노출되지 않는다.
 
 ---
 

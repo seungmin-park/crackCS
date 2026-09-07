@@ -50,6 +50,9 @@ profile별 schema 정책:
 
 버전 기반 DB migration 도구: 미사용. 운영에서 `update` 사용 금지. 운영 DB 도입 전 schema 변경·배포 절차 결정 필요.
 
+Phase 4 답변·평가: USER로 회원가입 후 문제 상세에서 제출. local/test에서만 모의 평가 실행.
+결과·실패 재현 설정과 검증 범위: [Phase 4 기록](docs/changes/2026-09-07-phase-4/verification.md).
+
 ## 검증
 
 ```bash

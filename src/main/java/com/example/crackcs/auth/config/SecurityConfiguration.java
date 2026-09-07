@@ -36,6 +36,7 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/auth/sign-up", "/api/auth/login", "/api/auth/csrf", "/api/health")
                         .permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/questions/*/answers", "/api/answers/**", "/api/members/me/answers").hasRole("USER")
                         .requestMatchers("/api/questions/**", "/api/members/me", "/api/members/me/**")
                         .authenticated()
                         .anyRequest().denyAll()

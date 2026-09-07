@@ -8,6 +8,7 @@ import {
   type Member,
 } from "@/api/auth";
 import { ApiClientError, clearCsrfToken } from "@/api/client";
+import { clearPendingAnswerSubmissions } from "@/composables/useAnswerSubmission";
 
 const currentMember = ref<Member | null>(null);
 const authenticationResolved = ref(false);
@@ -48,6 +49,7 @@ export function useAuth() {
   }
 
   function clearAuthenticationState(): void {
+    clearPendingAnswerSubmissions();
     currentMember.value = null;
     authenticationResolved.value = true;
     clearCsrfToken();

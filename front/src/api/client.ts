@@ -23,8 +23,8 @@ export async function get<T>(path: string): Promise<T> {
   return request<T>(path, { method: "GET" });
 }
 
-export async function post<T>(path: string, body?: unknown): Promise<T> {
-  return write<T>(path, "POST", body);
+export async function post<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
+  return write<T>(path, "POST", body, headers);
 }
 
 export async function patch<T>(path: string, body: unknown): Promise<T> {
@@ -35,11 +35,11 @@ export async function put<T>(path: string, body: unknown): Promise<T> {
   return write<T>(path, "PUT", body);
 }
 
-async function write<T>(path: string, method: "POST" | "PATCH" | "PUT", body?: unknown): Promise<T> {
+async function write<T>(path: string, method: "POST" | "PATCH" | "PUT", body?: unknown, headers?: Record<string, string>): Promise<T> {
   const csrf = await fetchCsrfToken();
   return request<T>(path, {
     method,
-    headers: { [csrf.headerName]: csrf.token },
+    headers: { ...headers, [csrf.headerName]: csrf.token },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
 }

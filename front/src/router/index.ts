@@ -30,6 +30,8 @@ const router = createRouter({
       component: () => import("@/views/QuestionDetailView.vue"),
       meta: { requiresAuth: true },
     },
+    { path: "/answers", name: "answer-history", component: () => import("@/views/AnswerHistoryView.vue"), meta: { requiresAuth: true } },
+    { path: "/answers/:answerId", name: "answer-detail", component: () => import("@/views/AnswerDetailView.vue"), meta: { requiresAuth: true } },
     {
       path: "/admin",
       component: () => import("@/views/admin/AdminLayoutView.vue"),

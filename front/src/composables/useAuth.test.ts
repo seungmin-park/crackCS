@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { fetchCurrentMember, clearCsrfToken } = vi.hoisted(() => ({
+const { fetchCurrentMember, clearCsrfToken, clearPendingAnswerSubmissions } = vi.hoisted(() => ({
   fetchCurrentMember: vi.fn(),
   clearCsrfToken: vi.fn(),
+  clearPendingAnswerSubmissions: vi.fn(),
 }));
+vi.mock("@/composables/useAnswerSubmission", () => ({ clearPendingAnswerSubmissions }));
 
 vi.mock("@/api/auth", () => ({
   fetchCurrentMember,
@@ -19,6 +21,7 @@ describe("인증 상태 composable", () => {
   beforeEach(() => {
     fetchCurrentMember.mockReset();
     clearCsrfToken.mockReset();
+    clearPendingAnswerSubmissions.mockReset();
   });
 
   it("애플리케이션을 새로 열면 서버 세션에서 현재 회원을 복구한다", async () => {
@@ -31,5 +34,11 @@ describe("인증 상태 composable", () => {
     expect(fetchCurrentMember).toHaveBeenCalledOnce();
     expect(auth.currentMember.value?.nickname).toBe("크랙러");
     expect(auth.authenticationResolved.value).toBe(true);
+  });
+
+  it("로그아웃 상태 정리 시 탭에 남은 미확정 답변도 제거한다", async () => {
+    const { useAuth } = await import("@/composables/useAuth");
+    useAuth().clearAuthenticationState();
+    expect(clearPendingAnswerSubmissions).toHaveBeenCalledOnce();
   });
 });

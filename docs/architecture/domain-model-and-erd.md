@@ -281,44 +281,66 @@ FOLLOW_UP → source_answer_id IS NOT NULL
 
 ### ANSWER
 
-| 컬럼           | 타입        | 제약                      | 설명    |
-|--------------|-----------|-------------------------|-------|
-| id           | BIGINT    | PK                      | 답변 ID |
-| member_id    | BIGINT    | FK → MEMBER, NOT NULL   | 답변 회원 |
-| question_id  | BIGINT    | FK → QUESTION, NOT NULL | 대상 문제 |
-| content      | TEXT      | NOT NULL                | 답변 원문 |
-| submitted_at | TIMESTAMP | NOT NULL                | 제출 일시 |
+Phase 4 구현 기준.
 
-같은 회원과 문제 조합에 여러 Answer가 존재할 수 있다. 이것이 다시 답변한 이력이다.
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | 답변 ID |
+| member_id | BIGINT | FK → MEMBER, NOT NULL | 답변 소유자 |
+| question_id | BIGINT | FK → QUESTION, NOT NULL | 제출 당시 문제 버전 |
+| request_id | VARCHAR(36) | NOT NULL | Idempotency-Key 헤더의 소문자 UUID |
+| content | TEXT | NOT NULL | 수정하지 않는 원문, 최대 10,000 UTF-16 코드 단위 |
+| submitted_at | TIMESTAMP | NOT NULL | 제출 시각 |
+
+- 유일 제약: `(member_id, request_id)`
+- 같은 회원·문제의 새 키: 새 답변 이력
+- 회원 행 잠금: 같은 키 동시 요청 직렬화
+- 폐기된 문제: 신규 제출 차단, 기존 이력·멱등 복구 유지
 
 ### EVALUATION
 
-| 컬럼                | 타입           | 제약                  | 설명                            |
-|-------------------|--------------|---------------------|-------------------------------|
-| id                | BIGINT       | PK                  | 평가 ID                         |
-| answer_id         | BIGINT       | UNIQUE, FK → ANSWER | 대상 답변                         |
-| status            | VARCHAR(30)  | NOT NULL            | EVALUATING, EVALUATED, FAILED |
-| verdict           | VARCHAR(30)  | NULL                | CORRECT, PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW |
-| total_score       | DECIMAL(5,2) | NULL                | 판정으로부터 계산한 100, 50, 0       |
-| feedback          | TEXT         | NULL                | 종합 피드백                        |
-| model_name        | VARCHAR(100) | NULL                | 평가 모델                         |
-| evaluator_version | VARCHAR(50)  | NULL                | 평가 규칙 버전                      |
-| evaluated_at      | TIMESTAMP    | NULL                | 평가 완료 일시                      |
+Phase 4 구현 기준. 실제 AI 모델 정보·검색 근거는 Phase 5 계획.
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | 평가 ID |
+| answer_id | BIGINT | UNIQUE, FK → ANSWER, NOT NULL | 대상 답변 |
+| version | BIGINT | JPA @Version | 동시 수정 최종 방어 |
+| status | VARCHAR(20) | NOT NULL | EVALUATING, EVALUATED, FAILED |
+| verdict | VARCHAR(30) | NULL | CORRECT, PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW |
+| score | INTEGER | NULL | 서버가 판정에서 계산한 100, 50, 0 또는 NULL |
+| feedback | TEXT | NULL | 종합 피드백 |
+| failure_reason | TEXT | NULL | 안전한 진단 코드 |
+| created_at | TIMESTAMP | NOT NULL | 평가 접수 시각 |
+| updated_at | TIMESTAMP | NOT NULL | 마지막 상태 변경 시각 |
+| evaluated_at | TIMESTAMP | NULL | 완료·실패 확정 시각 |
+
+- Answer + EVALUATING 생성: 같은 제출 트랜잭션
+- 평가 처리: 별도 트랜잭션에서 평가 행 잠금 → 최대 3회 Port 호출 → 최종 상태 확정
+- NEEDS_REVIEW: EVALUATED 상태의 verdict, score=NULL
+- FAILED·전체 NEEDS_REVIEW·필수 Concept NEEDS_REVIEW: Knowledge State 반영 대상 제외
+- 작업 재탐색: DB의 EVALUATING 행; 메모리 이벤트에 의존하지 않음
+- Phase 4 한계: 짧은 Stub 호출 동안 DB 잠금 유지. 실제 AI 연결 전 타임아웃·lease·영속 재시도 횟수 설계 필요
 
 ### EVALUATION_CONCEPT
 
-| 컬럼            | 타입           | 제약                  | 설명       |
-|---------------|--------------|---------------------|----------|
-| evaluation_id | BIGINT       | PK, FK → EVALUATION | 평가 ID    |
-| concept_id    | BIGINT       | PK, FK → CONCEPT    | 개념 ID    |
-| verdict       | VARCHAR(30)  | NOT NULL            | CORRECT, PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW |
-| score         | DECIMAL(5,2) | NULL                | 판정으로부터 계산한 100, 50, 0 |
-| is_weak       | BOOLEAN      | NOT NULL            | 취약 개념 여부 |
-| feedback      | TEXT         | NOT NULL            | 개념별 피드백  |
+Phase 4 구현 기준.
 
-복합 기본 키는 `(evaluation_id, concept_id)`이다.
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK | 결과 ID |
+| evaluation_id | BIGINT | FK → EVALUATION, NOT NULL | 평가 ID |
+| concept_id | BIGINT | FK → CONCEPT, NOT NULL | 평가 대상 개념 |
+| verdict | VARCHAR(30) | NOT NULL | 개념별 판정 |
+| score | INTEGER | NULL | 서버 판정 점수 |
+| feedback | TEXT | NOT NULL | 개념별 피드백 |
 
-EVALUATING 또는 FAILED Evaluation은 EvaluationConcept가 없을 수 있다. EVALUATED로 전환할 때는 Question의 모든 필수 QuestionConcept에 대응하는 EvaluationConcept가 존재해야 하며, 하나라도 누락되면 성공 상태로 전환하지 않고 FAILED 또는 NEEDS_REVIEW로 처리한다.
+- 유일 제약: `(evaluation_id, concept_id)`
+- EVALUATING·FAILED: 결과 없음
+- EVALUATED: 문제에 연결된 모든 Concept 결과 필수; 누락·중복·추가 결과 거부
+- 전체 CORRECT: 모든 필수 Concept CORRECT 필요
+- 전체 입력 검증 후 필드·시각 변경; 검증 실패 시 부분 수정 없음
+- `model_name`, `evaluator_version`, `is_weak`와 근거 저장: 후속 Phase 계획
 
 ### EVALUATION_EVIDENCE
 

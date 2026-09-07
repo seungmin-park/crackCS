@@ -17,3 +17,6 @@ Vue 기반 학습자·관리자 화면.
 | `package.json` | 실행·테스트·빌드 명령 원본 |
 
 개발 요청 흐름: 브라우저 → Vite `/api` proxy → 백엔드 `localhost:8080`.
+
+Phase 4 화면: 문제 상세의 답변 입력 → `/answers/:answerId` 평가 상태 → `/answers` 이력·페이지 이동.
+미확정 제출: 회원·문제별 sessionStorage에 키와 원문 보존. 동일 탭 새로고침 후 재시도 가능, 로그아웃 시 제거.

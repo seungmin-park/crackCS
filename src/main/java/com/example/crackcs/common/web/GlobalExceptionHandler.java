@@ -28,6 +28,17 @@ import java.util.UUID;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    @ExceptionHandler(com.example.crackcs.exception.AnswerNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleAnswerNotFound(RuntimeException exception) {
+        return error(HttpStatus.NOT_FOUND, "ANSWER_NOT_FOUND", exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(com.example.crackcs.exception.AnswerConflictException.class)
+    public ResponseEntity<ApiErrorResponse> handleAnswerConflict(RuntimeException exception) {
+        return error(HttpStatus.CONFLICT, "ANSWER_CONFLICT", exception.getMessage(), List.of());
+    }
+
+
     @ExceptionHandler(TooManyLoginAttemptsException.class)
     public ResponseEntity<ApiErrorResponse> handleTooManyLoginAttempts(TooManyLoginAttemptsException exception) {
         ApiErrorResponse response = new ApiErrorResponse(
@@ -139,6 +150,12 @@ public class GlobalExceptionHandler {
                 "요청 값이 올바르지 않습니다.",
                 fieldErrors
         );
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MissingRequestHeaderException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingHeader(org.springframework.web.bind.MissingRequestHeaderException exception) {
+        return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "필수 요청 헤더가 누락되었습니다.",
+                List.of(new ApiErrorResponse.FieldErrorResponse(exception.getHeaderName(), "필수 헤더입니다.")));
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)

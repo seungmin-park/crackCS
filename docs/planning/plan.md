@@ -235,6 +235,8 @@ com.example.crackcs
 
 세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
+구현·검증: [Phase 4 기록](../changes/2026-09-07-phase-4/verification.md). 완료 항목과 Gate는 tasks.md에서 관리.
+
 기술 초점:
 
 - AI adapter의 입력·출력 계약을 먼저 정의하고 외부 SDK는 아직 연결하지 않는다.

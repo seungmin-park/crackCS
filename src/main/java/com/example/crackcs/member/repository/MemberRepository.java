@@ -11,6 +11,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface MemberRepository extends JpaRepository<Member, Long> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select member from Member member where member.id = :id")
+    java.util.Optional<Member> findLockedById(@Param("id") Long id);
+
+
     @Query("""
             SELECT member
             FROM Member member

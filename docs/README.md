@@ -36,6 +36,7 @@
 | 개발 순서·의존성·실패 신호 | 있음 | 개발 계획 | [docs/planning/plan.md](planning/plan.md) | 순서·의존성 변경 |
 | 구현·검증·품질 개선 진행 | 있음 | 작업 현황 | [docs/planning/tasks.md](planning/tasks.md) | 작업 시작·완료·검증 결과 |
 | 출시 이후 확장 후보 | 있음 | 초안 | [docs/planning/extension-features.md](planning/extension-features.md) | 확장 채택·보류·폐기 |
+| Phase 4 결정·실행·검증 | 있음 | 구현 완료·Gate 통과 | [docs/changes/2026-09-07-phase-4/verification.md](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 또는 검증 변경 |
 | UI 개편 선택지·제품 분석 | 있음 | 제안 당시 기록 | [docs/changes/2026-09-06-ui/proposal.md](changes/2026-09-06-ui/proposal.md) | 제안 정정·후속 결정 연결 |
 | UI·테마 구현 범위 | 있음 | 작업 계획 기록 | [docs/changes/2026-09-06-ui/plan.md](changes/2026-09-06-ui/plan.md) | 후속 검증 연결 |
 | UI 변경·검증 증거 | 있음 | 검증 당시 기록 | [docs/changes/2026-09-06-ui/verification.md](changes/2026-09-06-ui/verification.md) | 검증 정정·후속 검증 추가 |
@@ -55,6 +56,7 @@
 
 ## 이미지 자료
 
+- [Phase 4 평가 화면](changes/2026-09-07-phase-4/assets/): 데스크톱·모바일 검증 증거
 - [ERD 이미지](architecture/images/crackcs-erd-illustrated.png): 도메인 문서 부속 자료. 모델 변경 시 함께 확인
 - [UI 시안·검증 화면](changes/2026-09-06-ui/assets/): 해당 UI 변경 기록 부속 자료
 

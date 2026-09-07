@@ -251,7 +251,7 @@ flowchart TD
 #### FR-ANSWER-001 Answer 제출
 
 - 로그인한 사용자는 자신에게 제공된 Question에 서술형 Answer를 제출한다.
-- 공백 답변과 최대 길이를 초과한 답변은 거부한다.
+- 공백 답변과 10,000자를 초과한 답변 거부. 길이 기준: Java/JavaScript UTF-16 코드 단위.
 - 제출 성공 시 Answer 원문과 제출 시각을 먼저 저장한다.
 - 제출된 Answer는 수정하지 않는다.
 - 같은 문제를 다시 풀면 새로운 Answer를 생성한다.
@@ -427,7 +427,7 @@ LEARNING과 STABLE의 정확한 임계값은 구현 전 확정하고 알고리�
 
 `GET /api/questions`는 `topicId`, `difficulty`, `page`, `size`, `sort`를 선택적으로 받는다. Phase 1 개발 중에는 문제 조회 두 URI를 임시 PUBLIC으로 사용할 수 있지만, Phase 2 완료 전에 USER 권한으로 전환한다.
 
-`POST /api/questions/{questionId}/answers`는 `Idempotency-Key` 요청 헤더를 필수로 받는다. 성공 응답에는 `answerId`, `evaluationId`와 초기 평가 상태를 포함한다. 같은 회원이 같은 key와 같은 요청을 다시 보내면 기존 결과를 반환하고, 같은 key로 다른 본문을 보내면 `409 Conflict`를 반환한다.
+`POST /api/questions/{questionId}/answers`는 `Idempotency-Key` 요청 헤더를 필수로 받는다. 성공 응답에는 `answerId`, `evaluationId`와 `evaluation.status`를 포함한다. 키는 소문자 표준 UUID이며 답변 원문은 `{ "content": "..." }` 본문으로 전달한다. 최초 응답은 EVALUATING, 멱등 재요청은 현재 평가 상태를 반환한다. 같은 회원이 같은 key와 같은 요청을 다시 보내면 기존 결과를 반환하고, 같은 key로 다른 본문을 보내면 `409 Conflict`를 반환한다.
 
 `GET /api/answers/{answerId}`, 평가와 후속 질문 URI는 현재 회원이 소유한 Answer에만 접근할 수 있다. 존재하지 않는 Answer와 다른 회원의 Answer를 외부에서 구분할 필요가 없으면 모두 `404 Not Found`로 처리해 소유권 정보를 숨긴다.
 
