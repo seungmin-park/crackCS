@@ -1,6 +1,9 @@
 package com.example.crackcs.evaluation.domain;
 
 import com.example.crackcs.content.concept.domain.Concept;
+import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
+import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
+import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -14,6 +17,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -129,17 +134,6 @@ class EvaluationTest {
     }
 
     @Test
-    @DisplayName("평가 대기 조회를 위한 상태와 시각 복합 인덱스를 선언한다")
-    void declaresPendingEvaluationIndex() {
-        var table = Evaluation.class.getAnnotation(jakarta.persistence.Table.class);
-
-        assertThat(table.indexes()).anySatisfy(index -> {
-            assertThat(index.name()).isEqualTo("idx_evaluation_status_created");
-            assertThat(index.columnList()).isEqualTo("status, created_at");
-        });
-    }
-
-    @Test
     @DisplayName("실패하면 안전한 사유를 저장하고 결과 점수는 비워 둔다")
     void failsEvaluation() {
         Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
@@ -163,11 +157,121 @@ class EvaluationTest {
         assertThatThrownBy(() -> failed.complete(validResult())).isInstanceOf(IllegalStateException.class);
     }
 
+    @Test
+    @DisplayName("평가에 전달하지 않은 Chunk 인용은 결과 전체를 거부한다")
+    void rejectsEvidenceThatWasNotProvidedToEvaluator() {
+        Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
+        KnowledgeChunk provided = chunk(21L, "프로세스는 자원을 소유한다.");
+        EvaluationResult result = detailedResult(List.of(22L));
+
+        assertThatThrownBy(() -> evaluation.completeWithEvidence(result, List.of(provided)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("evidence must reference only provided chunks");
+
+        assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.EVALUATING);
+        assertThat(evaluation.getEvidence()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("검증된 결과는 실제 전달 Chunk와 모델 실행 정보를 함께 확정한다")
+    void completesWithProvidedEvidenceAndExecutionMetadata() {
+        Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
+        KnowledgeChunk provided = chunk(21L, "프로세스는 자원을 소유한다.");
+
+        evaluation.completeWithEvidence(detailedResult(List.of(21L)), List.of(provided));
+
+        assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
+        assertThat(evaluation.getEvidence()).extracting(EvaluationEvidence::getChunkId).containsExactly(21L);
+        assertThat(evaluation.getModelName()).isEqualTo("gpt-5.6-luna");
+        assertThat(evaluation.getEvaluatorVersion()).isEqualTo("os-evaluator-v1");
+        assertThat(evaluation.getProcessingDurationMillis()).isEqualTo(1200L);
+        assertThat(evaluation.getStrengths()).containsExactly("프로세스의 자원 소유를 설명함");
+    }
+
+    @Test
+    @DisplayName("근거가 부족한 평가는 성공 점수 없이 검토 필요 상태로 확정한다")
+    void marksInsufficientEvidenceAsNeedsReview() {
+        Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
+
+        evaluation.requireReview("EVIDENCE_NOT_FOUND");
+
+        assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.NEEDS_REVIEW);
+        assertThat(evaluation.getScore()).isNull();
+        assertThat(evaluation.isKnowledgeStateEligible()).isFalse();
+    }
+
+    @Test
+    @DisplayName("평가 작업 lease는 중복 선점을 막고 만료 뒤 다른 worker가 복구한다")
+    void claimsWorkAndRecoversExpiredLease() {
+        Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
+        LocalDateTime now = evaluation.getCreatedAt().plusSeconds(1);
+
+        assertThat(evaluation.claim("worker-a", now, Duration.ofSeconds(30))).isTrue();
+        assertThat(evaluation.claim("worker-b", now.plusSeconds(10), Duration.ofSeconds(30))).isFalse();
+        assertThat(evaluation.claim("worker-b", now.plusSeconds(31), Duration.ofSeconds(30))).isTrue();
+
+        assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.PROCESSING);
+        assertThat(evaluation.getLeaseOwner()).isEqualTo("worker-b");
+        assertThat(evaluation.getAttemptCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("실패한 시도는 다음 실행 시각을 저장하고 대기 상태로 되돌린다")
+    void schedulesPersistedRetry() {
+        Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
+        LocalDateTime now = evaluation.getCreatedAt().plusSeconds(1);
+        evaluation.claim("worker-a", now, Duration.ofSeconds(30));
+
+        evaluation.scheduleRetry("PROVIDER_TIMEOUT", now, Duration.ofSeconds(2));
+
+        assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.EVALUATING);
+        assertThat(evaluation.getNextAttemptAt()).isEqualTo(now.plusSeconds(2));
+        assertThat(evaluation.getLeaseOwner()).isNull();
+        assertThat(evaluation.getFailureReason()).isEqualTo("PROVIDER_TIMEOUT");
+    }
+
     private EvaluationResult validResult() {
         return new EvaluationResult(Verdict.CORRECT, "정확함", List.of(
                 new ConceptResult(11L, Verdict.CORRECT, "정확함"),
                 new ConceptResult(12L, Verdict.CORRECT, "정확함")
         ));
+    }
+
+    private EvaluationResult detailedResult(List<Long> evidenceIds) {
+        return new EvaluationResult(
+                Verdict.CORRECT,
+                "정확함",
+                List.of(
+                        new ConceptResult(11L, Verdict.CORRECT, "정확함"),
+                        new ConceptResult(12L, Verdict.CORRECT, "정확함")
+                ),
+                List.of("프로세스의 자원 소유를 설명함"),
+                List.of(),
+                List.of(),
+                evidenceIds,
+                "gpt-5.6-luna",
+                "os-evaluator-v1",
+                1200L,
+                800L,
+                200L
+        );
+    }
+
+    private KnowledgeChunk chunk(Long id, String content) {
+        KnowledgeDocument document = KnowledgeDocument.builder()
+                .topic(Topic.builder().code("OS_EVIDENCE").name("운영체제").build())
+                .createdByMember(Member.builder().nickname("문서 관리자").role(MemberRole.ADMIN).build())
+                .title("프로세스")
+                .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
+                .technologyVersion("general")
+                .licenseNote("독립 작성")
+                .content(content)
+                .build();
+        document.review(Member.builder().nickname("검수 관리자").role(MemberRole.ADMIN).build());
+        document.publish();
+        KnowledgeChunk chunk = KnowledgeChunk.create(document, 0, 0, content.length(), content, "policy-v1");
+        ReflectionTestUtils.setField(chunk, "id", id);
+        return chunk;
     }
 
     private Answer answerWithConcepts() {

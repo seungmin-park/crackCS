@@ -110,6 +110,23 @@ export type AdminMember = {
   status: MemberStatus;
 };
 
+export type KnowledgeChunk = {
+  id: number; sequenceNo: number; startOffset: number; endOffset: number; content: string;
+  checksum: string; generationKey: string; searchStatus: "KEYWORD_SEARCHABLE" | "EMBEDDING_PENDING" | "EMBEDDING_FAILED" | "READY";
+};
+
+export type AdminEvaluationStatus = "FAILED" | "NEEDS_REVIEW";
+export type AdminEvaluationSummary = {
+  evaluationId: number; answerId: number; questionId: number; status: AdminEvaluationStatus;
+  failureCode: string | null; modelName: string | null; evaluatorVersion: string | null; occurredAt: string;
+};
+export type AdminEvaluationEvidence = {
+  chunkId: number; documentTitle: string; documentVersion: number; startOffset: number; endOffset: number; content: string;
+};
+export type AdminEvaluationDetail = AdminEvaluationSummary & {
+  questionContent: string; answerContent: string; evidence: AdminEvaluationEvidence[];
+};
+
 export function fetchTopics(filters: { active?: boolean } & PageRequest = {}): Promise<PageResponse<Topic>> {
   return get(`/api/admin/topics${queryString(filters)}`);
 }
@@ -216,4 +233,20 @@ export function fetchAdminMembers(filters: { status?: MemberStatus } & PageReque
 
 export function updateMemberStatus(id: number, status: MemberStatus): Promise<AdminMember> {
   return patch(`/api/admin/members/${id}/status`, { status });
+}
+
+export function generateKnowledgeChunks(id: number): Promise<{ generationKey: string; reused: boolean; chunks: KnowledgeChunk[] }> {
+  return post(`/api/admin/knowledge-documents/${id}/chunks`);
+}
+
+export function fetchKnowledgeChunks(id: number): Promise<KnowledgeChunk[]> {
+  return get(`/api/admin/knowledge-documents/${id}/chunks`);
+}
+
+export function fetchAdminEvaluations(filters: { status?: AdminEvaluationStatus | ""; page?: number; size?: number } = {}): Promise<PageResponse<AdminEvaluationSummary>> {
+  return get(`/api/admin/evaluations${queryString(filters)}`);
+}
+
+export function fetchAdminEvaluation(id: number): Promise<AdminEvaluationDetail> {
+  return get(`/api/admin/evaluations/${id}`);
 }

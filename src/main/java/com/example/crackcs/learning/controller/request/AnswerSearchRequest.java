@@ -1,6 +1,11 @@
 package com.example.crackcs.learning.controller.request;
-import jakarta.validation.constraints.*;
-import org.springframework.data.domain.*;
+
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 public record AnswerSearchRequest(
         @Min(value = 0, message = "페이지는 0 이상이어야 합니다.") Integer page,
         @Min(value = 1, message = "크기는 1 이상이어야 합니다.")

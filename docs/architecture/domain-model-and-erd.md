@@ -230,10 +230,16 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 | id          | BIGINT      | PK                                | 문서 조각 ID   |
 | document_id | BIGINT      | FK → KNOWLEDGE_DOCUMENT, NOT NULL | 원본 문서      |
 | sequence_no | INTEGER     | NOT NULL                          | 문서 안의 순서   |
+| start_offset | INTEGER | NOT NULL | 원문 시작 위치 |
+| end_offset | INTEGER | NOT NULL | 원문 끝 위치 |
 | content     | TEXT        | NOT NULL                          | 검색 대상 내용   |
-| embedding   | VECTOR/TEXT | NULL                              | 벡터 검색용 임베딩 |
+| checksum | VARCHAR(64) | NOT NULL | Chunk 내용 hash |
+| generation_key | VARCHAR(128) | NOT NULL | 문서 checksum + 분할 정책 키 |
+| chunk_policy_version | VARCHAR(30) | NOT NULL | 분할 정책 버전 |
+| search_status | VARCHAR(30) | NOT NULL | KEYWORD_SEARCHABLE, EMBEDDING_PENDING, EMBEDDING_FAILED, READY |
+| created_at | TIMESTAMP | NOT NULL | 생성 시각 |
 
-> 임베딩 저장 타입은 실제 DB 선택 후 확정한다. PostgreSQL을 사용하면 `pgvector`를 후보로 둘 수 있다.
+`(document_id, sequence_no)`는 유일하다. 현재 키워드 기준선을 사용하며 Recall@K가 85% 미만이거나 무관 Chunk 비율이 20%를 넘을 때 pgvector를 비교한다.
 
 ### QUESTION
 
@@ -300,14 +306,14 @@ Phase 4 구현 기준.
 
 ### EVALUATION
 
-Phase 4 구현 기준. 실제 AI 모델 정보·검색 근거는 Phase 5 계획.
+Phase 5 구현 기준.
 
 | 컬럼 | 타입 | 제약 | 설명 |
 |---|---|---|---|
 | id | BIGINT | PK | 평가 ID |
 | answer_id | BIGINT | UNIQUE, FK → ANSWER, NOT NULL | 대상 답변 |
 | version | BIGINT | JPA @Version | 동시 수정 최종 방어 |
-| status | VARCHAR(20) | NOT NULL | EVALUATING, EVALUATED, FAILED |
+| status | VARCHAR(20) | NOT NULL | EVALUATING, PROCESSING, EVALUATED, NEEDS_REVIEW, FAILED |
 | verdict | VARCHAR(30) | NULL | CORRECT, PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW |
 | score | INTEGER | NULL | 서버가 판정에서 계산한 100, 50, 0 또는 NULL |
 | feedback | TEXT | NULL | 종합 피드백 |
@@ -315,15 +321,24 @@ Phase 4 구현 기준. 실제 AI 모델 정보·검색 근거는 Phase 5 계획.
 | created_at | TIMESTAMP | NOT NULL | 평가 접수 시각 |
 | updated_at | TIMESTAMP | NOT NULL | 마지막 상태 변경 시각 |
 | evaluated_at | TIMESTAMP | NULL | 완료·실패 확정 시각 |
+| attempt_count | INTEGER | NOT NULL | lease 획득 횟수 |
+| next_attempt_at | TIMESTAMP | NOT NULL | 다음 재시도 가능 시각 |
+| lease_owner | VARCHAR(100) | NULL | 현재 worker |
+| lease_expires_at | TIMESTAMP | NULL | 재수령 가능 시각 |
+| model_name | VARCHAR(100) | NULL | 실제 평가 모델 |
+| evaluator_version | VARCHAR(100) | NULL | 평가 규칙 버전 |
+| processing_duration_millis | BIGINT | NULL | provider 처리 시간 |
+| input_tokens | BIGINT | NULL | 비용 계산 입력 token |
+| output_tokens | BIGINT | NULL | 비용 계산 출력 token |
 
 - Answer + EVALUATING 생성: 같은 제출 트랜잭션
-- 평가 처리: 짧은 조회 트랜잭션에서 입력 고정 → 트랜잭션 밖에서 최대 3회 Port 호출 → 짧은 결과 반영 트랜잭션에서 최종 상태 확정
-- NEEDS_REVIEW: EVALUATED 상태의 verdict, score=NULL
+- 평가 처리: lease 획득 → 트랜잭션 밖에서 1회 Port 호출 → 실패 시 지수 backoff 예약 → 최대 3회
+- NEEDS_REVIEW: 별도 terminal 상태, score=NULL
 - 필수 Concept NEEDS_REVIEW: 전체 verdict도 NEEDS_REVIEW만 허용
 - FAILED·전체 NEEDS_REVIEW: Knowledge State 반영 대상 제외
 - 작업 재탐색: DB의 EVALUATING 행; 메모리 이벤트에 의존하지 않음
 - 대기 조회 인덱스: `(status, created_at)`
-- 단일 인스턴스 중복 호출: 평가 ID별 로컬 직렬화. 다중 인스턴스 외부 호출 중복 방지는 Phase 5 lease에서 처리
+- 중복 호출: 평가 ID별 로컬 직렬화 + DB lease 소유권 확인
 
 ### EVALUATION_CONCEPT
 
@@ -344,17 +359,17 @@ Phase 4 구현 기준.
 - EVALUATED: 문제에 연결된 모든 Concept 결과 필수; 누락·중복·추가 결과 거부
 - 전체 CORRECT: 모든 필수 Concept CORRECT 필요
 - 전체 입력 검증 후 필드·시각 변경; 검증 실패 시 부분 수정 없음
-- `model_name`, `evaluator_version`, `is_weak`와 근거 저장: 후속 Phase 계획
+- 강점·누락·오개념: 별도 element collection 저장
 
 ### EVALUATION_EVIDENCE
 
 | 컬럼              | 타입           | 제약                       | 설명            |
 |-----------------|--------------|--------------------------|---------------|
-| evaluation_id   | BIGINT       | PK, FK → EVALUATION      | 평가 ID         |
-| chunk_id        | BIGINT       | PK, FK → KNOWLEDGE_CHUNK | 사용한 근거 조각     |
-| relevance_score | DECIMAL(6,5) | NULL                     | Retrieval 유사도 |
+| id | BIGINT | PK | 연결 ID |
+| evaluation_id   | BIGINT       | FK → EVALUATION, NOT NULL | 평가 ID         |
+| chunk_id        | BIGINT       | FK → KNOWLEDGE_CHUNK, NOT NULL | 사용한 근거 조각     |
 
-복합 기본 키는 `(evaluation_id, chunk_id)`이다.
+`(evaluation_id, chunk_id)`는 유일하다. 점수는 검색 단계의 순위 결정값이며 확정 Evidence의 사실 정보가 아니므로 저장하지 않는다.
 
 이 테이블은 AI가 어떤 KnowledgeChunk를 근거로 판단했는지 보존한다. 이 연결이 없으면 평가 결과는 남아도 그 결과가 왜 나왔는지 재현하기 어렵다.
 

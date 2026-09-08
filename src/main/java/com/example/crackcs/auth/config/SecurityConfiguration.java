@@ -9,6 +9,9 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.RequestCacheConfigurer;
+import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -36,7 +39,8 @@ public class SecurityConfiguration {
                         .requestMatchers("/api/auth/sign-up", "/api/auth/login", "/api/auth/csrf", "/api/health")
                         .permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/questions/*/answers", "/api/answers/**", "/api/members/me/answers").hasRole("USER")
+                        .requestMatchers("/api/questions/*/answers", "/api/answers/**", "/api/members/me/answers")
+                        .hasRole("USER")
                         .requestMatchers("/api/questions/**", "/api/members/me", "/api/members/me/**")
                         .authenticated()
                         .anyRequest().denyAll()
@@ -47,7 +51,7 @@ public class SecurityConfiguration {
                         .securityContextRepository(securityContextRepository)
                 )
                 .sessionManagement(session -> session
-                        .sessionFixation(fixation -> fixation.changeSessionId())
+                        .sessionFixation(SessionManagementConfigurer.SessionFixationConfigurer::changeSessionId)
                 )
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(authenticationEntryPoint)
@@ -61,9 +65,9 @@ public class SecurityConfiguration {
                         .logoutSuccessHandler((request, response, authentication) ->
                                 response.setStatus(HttpServletResponse.SC_NO_CONTENT))
                 )
-                .requestCache(cache -> cache.disable())
-                .formLogin(form -> form.disable())
-                .httpBasic(basic -> basic.disable());
+                .requestCache(RequestCacheConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable);
 
         return http.build();
     }

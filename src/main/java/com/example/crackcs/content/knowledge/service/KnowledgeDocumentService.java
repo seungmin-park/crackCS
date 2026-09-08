@@ -5,8 +5,6 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeDocumentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
-
 public interface KnowledgeDocumentService {
 
     KnowledgeDocument create(Long creatorMemberId, KnowledgeDocumentData data);
@@ -29,6 +27,4 @@ public interface KnowledgeDocumentService {
     KnowledgeDocument publish(Long documentId);
 
     KnowledgeDocument retire(Long documentId);
-
-    List<KnowledgeDocument> findPublishedCandidates(Long topicId);
 }

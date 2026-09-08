@@ -1,6 +1,8 @@
 package com.example.crackcs.common.web;
 
 import com.example.crackcs.common.web.response.ApiErrorResponse;
+import com.example.crackcs.exception.AnswerConflictException;
+import com.example.crackcs.exception.AnswerNotFoundException;
 import com.example.crackcs.exception.DuplicateAuthAccountException;
 import com.example.crackcs.exception.InvalidCredentialsException;
 import com.example.crackcs.exception.MemberNotFoundException;
@@ -12,11 +14,13 @@ import com.example.crackcs.exception.KnowledgeDocumentNotFoundException;
 import com.example.crackcs.exception.DuplicateContentCodeException;
 import com.example.crackcs.exception.DuplicateKnowledgeDocumentException;
 import com.example.crackcs.exception.InvalidContentStateException;
+import com.example.crackcs.exception.EvaluationNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingRequestHeaderException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
@@ -28,12 +32,12 @@ import java.util.UUID;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(com.example.crackcs.exception.AnswerNotFoundException.class)
+    @ExceptionHandler(AnswerNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleAnswerNotFound(RuntimeException exception) {
         return error(HttpStatus.NOT_FOUND, "ANSWER_NOT_FOUND", exception.getMessage(), List.of());
     }
 
-    @ExceptionHandler(com.example.crackcs.exception.AnswerConflictException.class)
+    @ExceptionHandler(AnswerConflictException.class)
     public ResponseEntity<ApiErrorResponse> handleAnswerConflict(RuntimeException exception) {
         return error(HttpStatus.CONFLICT, "ANSWER_CONFLICT", exception.getMessage(), List.of());
     }
@@ -87,6 +91,11 @@ public class GlobalExceptionHandler {
             KnowledgeDocumentNotFoundException exception
     ) {
         return error(HttpStatus.NOT_FOUND, "KNOWLEDGE_DOCUMENT_NOT_FOUND", exception.getMessage(), List.of());
+    }
+
+    @ExceptionHandler(EvaluationNotFoundException.class)
+    public ResponseEntity<ApiErrorResponse> handleEvaluationNotFound(EvaluationNotFoundException exception) {
+        return error(HttpStatus.NOT_FOUND, "EVALUATION_NOT_FOUND", exception.getMessage(), List.of());
     }
 
     @ExceptionHandler({DuplicateContentCodeException.class, DuplicateKnowledgeDocumentException.class})
@@ -152,8 +161,9 @@ public class GlobalExceptionHandler {
         );
     }
 
-    @ExceptionHandler(org.springframework.web.bind.MissingRequestHeaderException.class)
-    public ResponseEntity<ApiErrorResponse> handleMissingHeader(org.springframework.web.bind.MissingRequestHeaderException exception) {
+    @ExceptionHandler(MissingRequestHeaderException.class)
+    public ResponseEntity<ApiErrorResponse> handleMissingHeader(
+            MissingRequestHeaderException exception) {
         return error(HttpStatus.BAD_REQUEST, "VALIDATION_ERROR", "필수 요청 헤더가 누락되었습니다.",
                 List.of(new ApiErrorResponse.FieldErrorResponse(exception.getHeaderName(), "필수 헤더입니다.")));
     }
@@ -197,7 +207,8 @@ public class GlobalExceptionHandler {
         );
     }
 
-    private ResponseEntity<ApiErrorResponse> error(HttpStatus status, String code, String message, List<ApiErrorResponse.FieldErrorResponse> fieldErrors) {
+    private ResponseEntity<ApiErrorResponse> error(HttpStatus status, String code, String message,
+                                                   List<ApiErrorResponse.FieldErrorResponse> fieldErrors) {
         ApiErrorResponse response = new ApiErrorResponse(code, message, fieldErrors, UUID.randomUUID().toString());
         return ResponseEntity.status(status).body(response);
     }

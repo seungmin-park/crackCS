@@ -15,8 +15,6 @@ public interface ConceptRepository extends JpaRepository<Concept, Long> {
 
     boolean existsByCodeAndIdNot(String code, Long id);
 
-    boolean existsByTopicId(Long topicId);
-
     List<Concept> findAllByTopicIdOrderByNameAsc(Long topicId);
 
     @Query("""

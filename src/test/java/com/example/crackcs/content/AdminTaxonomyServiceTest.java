@@ -20,10 +20,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 class AdminTaxonomyServiceTest {
 
-    @Autowired TopicService topicService;
-    @Autowired ConceptService conceptService;
-    @Autowired ConceptRepository conceptRepository;
-    @Autowired TopicRepository topicRepository;
+    @Autowired
+    TopicService topicService;
+    @Autowired
+    ConceptService conceptService;
+    @Autowired
+    ConceptRepository conceptRepository;
+    @Autowired
+    TopicRepository topicRepository;
 
     @AfterEach
     void tearDown() {

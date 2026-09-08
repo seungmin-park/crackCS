@@ -42,12 +42,4 @@ public interface KnowledgeDocumentRepository extends JpaRepository<KnowledgeDocu
             Pageable pageable
     );
 
-    @Query("""
-            SELECT document
-            FROM KnowledgeDocument document
-            WHERE document.topic.id = :topicId
-              AND document.status = com.example.crackcs.content.knowledge.domain.KnowledgeDocumentStatus.PUBLISHED
-            ORDER BY document.documentVersion DESC, document.id DESC
-            """)
-    List<KnowledgeDocument> findPublishedCandidatesByTopicId(@Param("topicId") Long topicId);
 }

@@ -2,6 +2,9 @@ package com.example.crackcs.content.knowledge.controller;
 
 import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.common.web.response.PageResponse;
+import com.example.crackcs.content.knowledge.chunk.controller.response.ChunkGenerationResponse;
+import com.example.crackcs.content.knowledge.chunk.controller.response.KnowledgeChunkResponse;
+import com.example.crackcs.content.knowledge.chunk.service.KnowledgeChunkService;
 import com.example.crackcs.content.knowledge.controller.request.KnowledgeDocumentRequest;
 import com.example.crackcs.content.knowledge.controller.request.KnowledgeDocumentSearchRequest;
 import com.example.crackcs.content.knowledge.controller.response.KnowledgeDocumentResponse;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,6 +33,7 @@ import java.net.URI;
 public class KnowledgeDocumentController {
 
     private final KnowledgeDocumentService knowledgeDocumentService;
+    private final KnowledgeChunkService knowledgeChunkService;
 
     @GetMapping
     public PageResponse<KnowledgeDocumentResponse> findAll(
@@ -105,6 +110,22 @@ public class KnowledgeDocumentController {
             @Positive(message = "documentId는 양수여야 합니다.") @PathVariable Long documentId
     ) {
         return KnowledgeDocumentResponse.from(knowledgeDocumentService.retire(documentId));
+    }
+
+    @PostMapping("/{documentId}/chunks")
+    public ChunkGenerationResponse generateChunks(
+            @Positive(message = "documentId는 양수여야 합니다.") @PathVariable Long documentId
+    ) {
+        return ChunkGenerationResponse.from(knowledgeChunkService.generateChunks(documentId));
+    }
+
+    @GetMapping("/{documentId}/chunks")
+    public List<KnowledgeChunkResponse> findChunks(
+            @Positive(message = "documentId는 양수여야 합니다.") @PathVariable Long documentId
+    ) {
+        return knowledgeChunkService.findByDocumentId(documentId).stream()
+                .map(KnowledgeChunkResponse::from)
+                .toList();
     }
 
     private Long memberId(Authentication authentication) {

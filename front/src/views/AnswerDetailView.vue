@@ -29,7 +29,7 @@ function schedulePoll(answerId: string, activeGeneration: number) {
       if (disposed || activeGeneration !== generation || !answer.value) return;
       answer.value.evaluation = evaluation;
       consecutivePollFailures = 0;
-      if (evaluation.status === "EVALUATING") schedulePoll(answerId, activeGeneration);
+      if (evaluation.status === "EVALUATING" || evaluation.status === "PROCESSING") schedulePoll(answerId, activeGeneration);
     } catch (failure) {
       if (disposed || activeGeneration !== generation) return;
       consecutivePollFailures++;
@@ -53,7 +53,7 @@ async function loadAnswer(answerId = String(route.params.answerId)) {
     const loaded = await fetchAnswer(answerId);
     if (disposed || activeGeneration !== generation) return;
     answer.value = loaded;
-    if (loaded.evaluation.status === "EVALUATING") schedulePoll(answerId, activeGeneration);
+    if (loaded.evaluation.status === "EVALUATING" || loaded.evaluation.status === "PROCESSING") schedulePoll(answerId, activeGeneration);
   } catch {
     if (!disposed && activeGeneration === generation) error.value = true;
   }

@@ -37,20 +37,17 @@
 | 구현·검증·품질 개선 진행 | 있음 | 작업 현황 | [docs/planning/tasks.md](planning/tasks.md) | 작업 시작·완료·검증 결과 |
 | 출시 이후 확장 후보 | 있음 | 초안 | [docs/planning/extension-features.md](planning/extension-features.md) | 확장 채택·보류·폐기 |
 | Phase 4 결정·실행·검증 | 있음 | 구현·코드 리뷰 개선 완료·Gate 통과 | [docs/changes/2026-09-07-phase-4/verification.md](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 또는 검증 변경 |
+| Phase 5 구현·검증 | 있음 | 구현 기반 완료·출시 측정 대기 | [docs/changes/2026-09-08-phase-5/verification.md](changes/2026-09-08-phase-5/verification.md) | 검색·평가·검증 결과 변경 |
 | UI 개편 선택지·제품 분석 | 있음 | 제안 당시 기록 | [docs/changes/2026-09-06-ui/proposal.md](changes/2026-09-06-ui/proposal.md) | 제안 정정·후속 결정 연결 |
 | UI·테마 구현 범위 | 있음 | 작업 계획 기록 | [docs/changes/2026-09-06-ui/plan.md](changes/2026-09-06-ui/plan.md) | 후속 검증 연결 |
 | UI 변경·검증 증거 | 있음 | 검증 당시 기록 | [docs/changes/2026-09-06-ui/verification.md](changes/2026-09-06-ui/verification.md) | 검증 정정·후속 검증 추가 |
 | 시안 재현 프롬프트 | 있음 | 시안 생성 기록 | [docs/changes/2026-09-06-ui/assets/prompts.md](changes/2026-09-06-ui/assets/prompts.md) | 시안 변경 |
-| 품질 진단 근거 | 있음 | 진단 당시 기록 | [docs/reviews/2026-09-03-code-quality.md](reviews/2026-09-03-code-quality.md) | 오류 정정; 진행은 tasks |
-| 모델 후보·비용 비교 | 있음 | 재검증 필요 | [docs/reviews/ai-model-selection.md](reviews/ai-model-selection.md) | AI 구현·모델 교체 전 |
 | 초기 제품 범위·학습 흐름 | 있음 | 대체됨: product/spec.md | [docs/archive/functional-specification.md](archive/functional-specification.md) | 현재 요구 수정 금지; 이력 오류만 정정 |
-| Phase 1 선택 이유·학습 | 있음 | 로컬 전용·커밋 제외 | `docs/retrospectives/phase-1-decisions-and-insights.md` | 사실 정정·현재 기준 링크 변경 |
-| Phase 2 선택 이유·학습 | 있음 | 로컬 전용·커밋 제외 | `docs/retrospectives/phase-2-decisions-and-insights.md` | 사실 정정·현재 기준 링크 변경 |
-| Phase 3 선택 이유·학습 | 있음 | 로컬 전용·커밋 제외 | `docs/retrospectives/phase-3-decisions-and-insights.md` | 사실 정정·현재 기준 링크 변경 |
 | ADR-0001: 동일 출처 웹의 서버 세션 인증 | 있음 | 승인된 결정 이력 | [docs/adr/0001-session-based-authentication.md](adr/0001-session-based-authentication.md) | 결정 변경 시 후속 ADR·대체 관계 기록 |
 | ADR-0002: LOCAL 계정 비밀번호 정책 | 있음 | 승인된 결정 이력 | [docs/adr/0002-password-policy.md](adr/0002-password-policy.md) | 결정 변경 시 후속 ADR·대체 관계 기록 |
 | ADR-0003: Phase 2 인증 보안 최소 기준 | 있음 | 승인된 결정 이력 | [docs/adr/0003-authentication-security-baseline.md](adr/0003-authentication-security-baseline.md) | 결정 변경 시 후속 ADR·대체 관계 기록 |
-| ADR-0004: 버전 기반 DB migration 도구 도입 보류 | 있음 | 승인된 결정 이력 | [docs/adr/0004-defer-versioned-database-migrations.md](adr/0004-defer-versioned-database-migrations.md) | 결정 변경 시 후속 ADR·대체 관계 기록 |
+| ADR-0004: 버전 기반 DB migration 도구 도입 보류 | 있음 | 현재 결정 | [docs/adr/0004-defer-versioned-database-migrations.md](adr/0004-defer-versioned-database-migrations.md) | persistent DB 도입 또는 schema 배포 절차 결정 시 |
+| ADR-0005: Phase 5 평가 실행 기반 | 있음 | 현재 결정 | [docs/adr/0005-phase-5-evaluation-runtime.md](adr/0005-phase-5-evaluation-runtime.md) | DB·검색·AI·worker·비용 기준 변경 |
 
 회고 경로: 로컬 파일 위치만 기록. 저장소 체크아웃에는 미포함.
 
@@ -66,6 +63,8 @@
 |---|---|---|
 | 루트 품질 개선 체크리스트 | 작업 목록의 ‘품질 개선 작업’에 통합 | 진행 상태의 소유 지점 통일. 체크 상태 보존 |
 | Spring 생성 도움말 | 제거 | 프로젝트 고유 정보 없이 외부 가이드 링크만 포함 |
+| 코드 품질 진단 보고서 | 제거 | 완료·미완료 상태는 tasks, 설계 기준은 AGENTS가 소유. 시점성 점수 중복 제거 |
+| AI 모델 선택 검토 | ADR-0005와 콘텐츠·AI 정책에 통합 | 현재 결정·가격·재검증 조건의 소유 지점 통일 |
 | 필수 기능 초안 | archive로 이동, 현재 제품 명세 연결 | 초기 맥락 보존; 중복 요구사항 갱신 중단 |
 | 프런트 생성 README | 프런트 고유 구조 안내로 교체 | 공통 실행 명령 중복 제거 |
 

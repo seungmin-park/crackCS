@@ -7,6 +7,8 @@ import com.example.crackcs.member.domain.MemberRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -142,7 +144,7 @@ class KnowledgeDocumentTest {
     void failedDraftUpdateIsAtomic() {
         KnowledgeDocument document = createDocument("기존 원문");
         String checksum = document.getChecksum();
-        var updatedAt = document.getUpdatedAt();
+        LocalDateTime updatedAt = document.getUpdatedAt();
 
         assertThatThrownBy(() -> document.updateDraft(
                 topic(), "변경 제목", KnowledgeSourceType.INTERNAL_SUMMARY, null,

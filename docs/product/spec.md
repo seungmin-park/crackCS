@@ -464,7 +464,7 @@ Concept 목록은 `topicId`, `active`, `page`, `size`, `sort`를 선택적으로
 | POST | `/api/admin/knowledge-documents/{documentId}/review` | ADMIN | 200 | 문서 검수 완료 |
 | POST | `/api/admin/knowledge-documents/{documentId}/publish` | ADMIN | 200 | 문서 공개 |
 | POST | `/api/admin/knowledge-documents/{documentId}/retire` | ADMIN | 200 | 문서 폐기 상태 전환 |
-| POST | `/api/admin/knowledge-documents/{documentId}/chunks` | ADMIN | 202 | Chunk·embedding 생성 작업 시작 |
+| POST | `/api/admin/knowledge-documents/{documentId}/chunks` | ADMIN | 200 | Chunk 동기 생성 또는 기존 결과 재사용 |
 | GET | `/api/admin/knowledge-documents/{documentId}/chunks` | ADMIN | 200 | 문서 Chunk 목록과 생성 상태 조회 |
 
 문서 목록은 `topicId`, `status`, `technologyVersion`, `page`, `size`, `sort`를 선택적으로 받는다. 상태 전이 명령은 현재 상태에서 허용되지 않으면 `409 Conflict`를 반환한다.
@@ -540,9 +540,9 @@ KnowledgeState    = 여러 평가가 반영되며 변하는 현재 학습 상태
 - Backend: Java 21, Spring Boot 4.1.x, Spring MVC, Spring Data JPA
 - Frontend: Vue 3, TypeScript, Vite, Element Plus
 - Local database: H2
-- Production database: 미확정; 벡터 검색을 사용할 경우 PostgreSQL + pgvector 우선 검토
-- AI: 제공자와 모델을 설정으로 교체 가능한 평가 인터페이스
-- Embedding: 초기 후보 `text-embedding-3-small`
+- Production database target: PostgreSQL 17. Migration·실제 DB 검증은 최초 persistent staging 전 결정 ([ADR-0004](../adr/0004-defer-versioned-database-migrations.md), [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md))
+- AI: OpenAI Responses API, 기본 GPT-5.6 Terra, 자동 fallback 없음
+- Retrieval: Topic·Concept 필터 + 키워드 기준선. 품질 미달 시 pgvector 비교
 
 ### 의존 방향
 
@@ -735,10 +735,10 @@ And 새로운 Evaluation만 새 문서 버전을 사용할 수 있다.
 | ID | 결정 필요 항목 | 결정 시점 | 기본 제안 |
 |---|---|---|---|
 | OQ-001 | 서버 세션과 토큰 중 인증 상태 유지 방식 | 결정 | 동일 출처 웹의 HttpOnly 서버 세션과 CSRF token 사용 ([ADR-0001](../adr/0001-session-based-authentication.md)) |
-| OQ-002 | Production DB와 벡터 저장 방식 | Phase 0 | PostgreSQL + pgvector 우선 검토 |
+| OQ-002 | Production DB와 벡터 저장 방식 | 결정 | PostgreSQL + 키워드 기준선, 품질 미달 시 pgvector 비교 ([ADR-0005](../adr/0005-phase-5-evaluation-runtime.md)) |
 | OQ-003 | PARTIALLY_CORRECT Concept 충족 기준 | 골든 세트 작성 후 | 필수 Concept 누락과 오개념을 분리해 판정 |
 | OQ-004 | Knowledge State 갱신 공식과 STABLE 임계값 | Phase 3 전 | 버전 필드를 두고 초기에는 단순 가중 평균 |
-| OQ-005 | AI 평가 동기·비동기 실행 방식 | Phase 2 전 | Answer 저장 후 비동기 평가 우선 검토 |
+| OQ-005 | AI 평가 동기·비동기 실행 방식 | 결정 | Answer 저장 후 DB lease worker 평가 ([ADR-0005](../adr/0005-phase-5-evaluation-runtime.md)) |
 | OQ-006 | 초기 Topic별 문제·문서 최소 수 | 콘텐츠 입력 전 | 하위 Topic별 공개 문제 5개 이상으로 파일럿 |
 | OQ-007 | AI 생성 문제 기능 도입 시점 | P0 출시 후 | 골든 세트와 관리자 검수 처리량 확인 후 결정 |
 | OQ-008 | 비밀번호 최소 길이와 복잡도 정책 | 결정 | 15~64자 passphrase, 제어 문자 금지, UTF-8 72 byte 이하 ([ADR-0002](../adr/0002-password-policy.md)) |

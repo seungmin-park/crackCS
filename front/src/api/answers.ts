@@ -1,7 +1,7 @@
 import { get, post } from "@/api/client";
 import type { PageResponse } from "@/api/pagination";
 
-export type EvaluationStatus = "EVALUATING" | "EVALUATED" | "FAILED";
+export type EvaluationStatus = "EVALUATING" | "PROCESSING" | "EVALUATED" | "NEEDS_REVIEW" | "FAILED";
 export type EvaluationVerdict = "CORRECT" | "PARTIALLY_CORRECT" | "INCORRECT" | "NEEDS_REVIEW";
 
 export type ConceptEvaluation = {
@@ -19,6 +19,19 @@ export type AnswerEvaluation = {
   feedback: string | null;
   failureReason: string | null;
   concepts: ConceptEvaluation[];
+  strengths: string[];
+  omissions: string[];
+  misconceptions: string[];
+  evidence: EvaluationEvidence[];
+};
+
+export type EvaluationEvidence = {
+  chunkId: number;
+  documentTitle: string;
+  documentVersion: number;
+  startOffset: number;
+  endOffset: number;
+  content: string;
 };
 
 export type AnswerResponse = {

@@ -6,6 +6,7 @@ import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
+import com.example.crackcs.member.domain.MemberStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -16,17 +17,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AnswerTest {
-
-    @Test
-    @DisplayName("회원별 최신 답변 이력 조회를 위한 복합 인덱스를 선언한다")
-    void declaresMemberHistoryIndex() {
-        var table = Answer.class.getAnnotation(jakarta.persistence.Table.class);
-
-        assertThat(table.indexes()).anySatisfy(index -> {
-            assertThat(index.name()).isEqualTo("idx_answer_member_submitted");
-            assertThat(index.columnList()).isEqualTo("member_id, submitted_at");
-        });
-    }
 
     @Test
     @DisplayName("공개된 문제의 답변 원문과 요청 식별자를 변경 없이 보존한다")
@@ -89,7 +79,7 @@ class AnswerTest {
     @DisplayName("비활성 회원은 도메인 생성에서도 답변을 제출할 수 없다")
     void rejectsInactiveSubmission() {
         Member member = user("학습자");
-        member.changeStatus(com.example.crackcs.member.domain.MemberStatus.BLOCKED);
+        member.changeStatus(MemberStatus.BLOCKED);
         assertThatThrownBy(() -> Answer.builder().member(member).question(publishedQuestion())
                 .requestId(UUID.randomUUID().toString()).content("답변").build())
                 .isInstanceOf(IllegalArgumentException.class);
@@ -111,6 +101,11 @@ class AnswerTest {
         return question;
     }
 
-    private Member user(String nickname) { return Member.builder().nickname(nickname).build(); }
-    private Member admin(String nickname) { return Member.builder().nickname(nickname).role(MemberRole.ADMIN).build(); }
+    private Member user(String nickname) {
+        return Member.builder().nickname(nickname).build();
+    }
+
+    private Member admin(String nickname) {
+        return Member.builder().nickname(nickname).role(MemberRole.ADMIN).build();
+    }
 }

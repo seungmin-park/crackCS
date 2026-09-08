@@ -1,19 +1,31 @@
 package com.example.crackcs.learning.service;
 
-import com.example.crackcs.learning.controller.response.*;
-import com.example.crackcs.learning.domain.Answer;
-import com.example.crackcs.learning.repository.AnswerRepository;
+import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionStatus;
+import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.evaluation.domain.Evaluation;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
-import com.example.crackcs.content.question.repository.QuestionRepository;
-import com.example.crackcs.content.question.domain.QuestionStatus;
+import com.example.crackcs.exception.AnswerConflictException;
+import com.example.crackcs.exception.AnswerNotFoundException;
+import com.example.crackcs.exception.InvalidContentStateException;
+import com.example.crackcs.exception.MemberNotFoundException;
+import com.example.crackcs.exception.QuestionNotFoundException;
+import com.example.crackcs.learning.controller.response.AnswerResponse;
+import com.example.crackcs.learning.controller.response.EvaluationResponse;
+import com.example.crackcs.learning.domain.Answer;
+import com.example.crackcs.learning.repository.AnswerRepository;
+import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.repository.MemberRepository;
-import com.example.crackcs.exception.*;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -29,9 +41,12 @@ public class DefaultAnswerService implements AnswerService {
     @Override
     @Transactional
     public AnswerResponse submit(Long memberId, Long questionId, String requestId, String content) {
-        var member = members.findLockedById(memberId).orElseThrow(() -> new MemberNotFoundException(memberId));
-        if (!member.isAuthenticatable()) throw new InvalidContentStateException("활성 회원만 답변할 수 있습니다.");
-        var existing = answers.findByMemberIdAndRequestId(memberId, requestId);
+        Member member = members.findLockedById(memberId)
+                .orElseThrow(() -> new MemberNotFoundException(memberId));
+        if (!member.isAuthenticatable()) {
+            throw new InvalidContentStateException("활성 회원만 답변할 수 있습니다.");
+        }
+        Optional<Answer> existing = answers.findByMemberIdAndRequestId(memberId, requestId);
         if (existing.isPresent()) {
             Answer answer = existing.get();
             if (!answer.getQuestion().getId().equals(questionId) || !answer.getContent().equals(content)) {
@@ -39,10 +54,16 @@ public class DefaultAnswerService implements AnswerService {
             }
             return response(answer);
         }
-        var question = questions.findById(questionId).filter(q -> q.getStatus() == QuestionStatus.PUBLISHED)
+        Question question = questions.findById(questionId)
+                .filter(candidate -> candidate.getStatus() == QuestionStatus.PUBLISHED)
                 .orElseThrow(() -> new QuestionNotFoundException(questionId));
-        var answer = answers.save(Answer.builder().member(member).question(question).requestId(requestId).content(content).build());
-        var evaluation = evaluations.save(Evaluation.builder().answer(answer).build());
+        Answer answer = answers.save(Answer.builder()
+                .member(member)
+                .question(question)
+                .requestId(requestId)
+                .content(content)
+                .build());
+        Evaluation evaluation = evaluations.save(Evaluation.builder().answer(answer).build());
         return AnswerResponse.from(answer, evaluation);
     }
 
@@ -59,12 +80,15 @@ public class DefaultAnswerService implements AnswerService {
 
     @Override
     public Page<AnswerResponse> findAll(Long memberId, Pageable pageable) {
-        var latest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
+        Pageable latest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 Sort.by(Sort.Order.desc("submittedAt"), Sort.Order.desc("id")));
-        var answerPage = answers.findByMemberId(memberId, latest);
-        if (answerPage.isEmpty()) return Page.empty(latest);
-        var evaluationByAnswerId = evaluations.findAllWithConceptsByAnswerIdIn(answerPage.getContent().stream()
-                        .map(Answer::getId).toList()).stream()
+        Page<Answer> answerPage = answers.findByMemberId(memberId, latest);
+        if (answerPage.isEmpty()) {
+            return Page.empty(latest);
+        }
+        Map<Long, Evaluation> evaluationByAnswerId = evaluations.findAllWithConceptsByAnswerIdIn(
+                        answerPage.getContent().stream().map(Answer::getId).toList()
+                ).stream()
                 .collect(Collectors.toMap(evaluation -> evaluation.getAnswer().getId(), Function.identity()));
         return answerPage.map(answer -> AnswerResponse.from(answer, evaluationByAnswerId.get(answer.getId())));
     }

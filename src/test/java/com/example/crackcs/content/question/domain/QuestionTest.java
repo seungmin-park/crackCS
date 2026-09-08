@@ -140,6 +140,16 @@ class QuestionTest {
     }
 
     @Test
+    @DisplayName("문제는 자신과 같은 Topic의 Concept인지 판단한다")
+    void identifiesConceptFromSameTopic() {
+        Topic topic = createTopic();
+        Question question = createQuestion(topic, "질문", "모범 답안");
+        Concept concept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
+
+        assertThat(question.hasSameTopicAs(concept)).isTrue();
+    }
+
+    @Test
     @DisplayName("비활성 Concept은 문제에 연결할 수 없다")
     void rejectsInactiveConcept() {
         Topic topic = createTopic();

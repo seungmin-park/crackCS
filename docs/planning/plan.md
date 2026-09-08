@@ -77,14 +77,14 @@
 
 | 기술·결정 | 도입 Phase | 판단 |
 |---|---:|---|
-| 버전 기반 DB migration | 운영 DB 결정 시 재검토 | 현재 H2 개발 단계에서는 보류하고 profile별 Hibernate schema 정책 사용 |
+| 버전 기반 DB migration | 최초 persistent staging 전 재검토 | 현재 H2 개발 단계에서는 보류하고 profile별 Hibernate schema 정책 사용 |
 | Spring Security | Phase 2 | 인증·인가가 시작될 때 도입 |
 | Bean Validation | Phase 1 | API 입력 경계부터 사용 |
 | 프런트 API client와 공통 오류 처리 | Phase 1 | 화면마다 HTTP 처리를 복제하지 않도록 초기 도입 |
-| Testcontainers + PostgreSQL | Phase 5 이전 결정 | H2와 운영 DB 차이가 Retrieval·쿼리에 영향을 줄 때 도입 |
-| PostgreSQL + pgvector | Phase 5 후보 | 문서 규모와 검색 품질 실험 후 확정 |
-| 비동기 작업 방식 | Phase 5 이전 결정 | 초기에는 단순 실행기/DB 상태 기반, 필요 시 queue 검토 |
-| 외부 AI SDK | Phase 5 | 평가 계약이 고정된 뒤 adapter로 연결 |
+| Testcontainers + PostgreSQL | 최초 persistent staging 전 재검토 | 현재 자동화 검증은 H2에 한정 |
+| PostgreSQL + 키워드 검색 | 운영 DB 목표 | 품질 기준 미달 시 pgvector 비교 |
+| DB lease 작업 | Phase 5 도입 | 한 서버에서 재시작·중복 실행 복구, 확장 시 queue 검토 |
+| OpenAI Responses API | Phase 5 도입 | strict schema와 Evidence 검증 뒤 저장 |
 | 전역 상태 관리 라이브러리 | 필요 시 | 초기 Vue composable로 충분하면 추가하지 않음 |
 
 ## 4. 목표 아키텍처와 책임
@@ -259,11 +259,13 @@ com.example.crackcs
 
 세부 작업·완료 상태: [작업 목록](tasks.md)의 해당 Phase 참조.
 
-기술 결정 게이트:
+구현·검증: [Phase 5 기록](../changes/2026-09-08-phase-5/verification.md).
 
-1. 작은 문서 집합에서 관계형 검색 또는 전문 검색으로 기준선을 측정한다.
-2. 기준선이 품질 목표를 만족하지 못하면 embedding 검색을 비교한다.
-3. 운영 DB, 검색 품질, 운영 복잡도를 함께 보고 PostgreSQL + pgvector 도입을 확정한다.
+기술 결정: [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md).
+
+1. H2에서 키워드 검색 기준선 측정. 최초 persistent staging 전 PostgreSQL 호환성 검증.
+2. Recall@K 85% 미만 또는 무관 Chunk 20% 초과 시 pgvector 비교.
+3. DB lease worker와 OpenAI Responses API로 실제 평가 실행.
 
 처음부터 벡터 DB를 확정하지 않는 이유는 데이터 규모와 검색 실패가 확인되기 전에 운영 복잡도만 늘어날 수 있기 때문이다. 반대로 단순 키워드 검색이 개념의 동의어와 문맥을 놓친다면 embedding 검색이 필요하다.
 

@@ -1,8 +1,8 @@
 openapi: 3.1.0
 info:
   title: CrackCS API
-  version: 4.0.0
-  description: 세션 인증, 콘텐츠 운영, 답변 제출과 평가 상태 API
+  version: 5.0.0
+  description: 세션 인증, 콘텐츠 운영, 근거 검색과 구조화 평가 API
 servers:
   - url: /
 tags:
@@ -22,6 +22,8 @@ tags:
     description: 관리자 Topic과 Concept 관리
   - name: Admin Knowledge
     description: 관리자 KnowledgeDocument 버전과 공개 상태 관리
+  - name: Admin Evaluations
+    description: 실패·검토 필요 평가 조회
 paths:
   /api/auth/csrf:
     get:
@@ -471,6 +473,74 @@ paths:
                 $ref: '#/components/schemas/KnowledgeDocumentResponse'
         '409':
           $ref: '#/components/responses/ContentConflict'
+  /api/admin/knowledge-documents/{documentId}/chunks:
+    parameters:
+      - $ref: '#/components/parameters/DocumentIdPath'
+    post:
+      tags: [Admin Knowledge]
+      operationId: generateKnowledgeChunks
+      summary: 공개 문서의 검색 Chunk 생성 또는 기존 생성 결과 재사용
+      responses:
+        '200':
+          description: Chunk 생성 결과
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChunkGenerationResponse'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
+    get:
+      tags: [Admin Knowledge]
+      operationId: findKnowledgeChunks
+      summary: 문서의 Chunk와 검색 상태 조회
+      responses:
+        '200':
+          description: 원문 순서의 Chunk 목록
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/KnowledgeChunkResponse'
+  /api/admin/evaluations:
+    get:
+      tags: [Admin Evaluations]
+      operationId: findReviewEvaluations
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [FAILED, NEEDS_REVIEW]
+        - $ref: '#/components/parameters/PageQuery'
+        - $ref: '#/components/parameters/SizeQuery'
+      responses:
+        '200':
+          description: 실패·검토 필요 평가 페이지
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminEvaluationPageResponse'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/admin/evaluations/{evaluationId}:
+    parameters:
+      - name: evaluationId
+        in: path
+        required: true
+        schema: { type: integer, format: int64, minimum: 1 }
+    get:
+      tags: [Admin Evaluations]
+      operationId: findReviewEvaluationById
+      responses:
+        '200':
+          description: 답변 원문과 검색 근거를 포함한 관리자 상세
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminEvaluationDetailResponse'
+        '404':
+          description: 평가 없음 또는 검토 대상 아님
   /api/admin/questions:
     get:
       tags:
@@ -751,7 +821,7 @@ paths:
       tags: [Answers]
       operationId: findMyEvaluation
       summary: USER 본인의 평가 상태와 결과
-      description: Phase 4는 모의 평가만 제공. 검색 근거는 Phase 5 범위.
+      description: 평가 상태, 구조화 피드백과 실제 사용 근거를 제공.
       responses:
         '200':
           description: 평가 진행·완료·실패 상태
@@ -1013,11 +1083,11 @@ components:
           type: integer
     EvaluationResponse:
       type: object
-      required: [status, verdict, score, feedback, failureReason, concepts]
+      required: [status, verdict, score, feedback, failureReason, concepts, strengths, omissions, misconceptions, evidence]
       properties:
         status:
           type: string
-          enum: [EVALUATING, EVALUATED, FAILED]
+          enum: [EVALUATING, PROCESSING, EVALUATED, NEEDS_REVIEW, FAILED]
         verdict:
           type: [string, 'null']
           enum: [CORRECT, PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW, null]
@@ -1028,7 +1098,7 @@ components:
           type: [string, 'null']
         failureReason:
           type: [string, 'null']
-          enum: [PROVIDER_ERROR, PROVIDER_TIMEOUT, INVALID_RESULT, PROVIDER_UNAVAILABLE, null]
+          enum: [PROVIDER_ERROR, PROVIDER_TIMEOUT, INVALID_RESULT, PROVIDER_UNAVAILABLE, EVIDENCE_NOT_FOUND, EVIDENCE_CONFLICT, MONTHLY_BUDGET_EXCEEDED, null]
         concepts:
           type: array
           items:
@@ -1048,6 +1118,19 @@ components:
                 enum: [100, 50, 0, null]
               feedback:
                 type: string
+        strengths:
+          type: array
+          items: { type: string }
+        omissions:
+          type: array
+          items: { type: string }
+        misconceptions:
+          type: array
+          items: { type: string }
+        evidence:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvaluationEvidenceResponse'
     SignUpRequest:
       type: object
       required: [email, password, nickname]
@@ -1249,6 +1332,71 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/KnowledgeDocumentResponse'
+    KnowledgeChunkResponse:
+      type: object
+      required: [id, sequenceNo, startOffset, endOffset, content, checksum, generationKey, searchStatus]
+      properties:
+        id: { type: integer, format: int64 }
+        sequenceNo: { type: integer, minimum: 0 }
+        startOffset: { type: integer, minimum: 0 }
+        endOffset: { type: integer, minimum: 1 }
+        content: { type: string }
+        checksum: { type: string }
+        generationKey: { type: string }
+        searchStatus:
+          type: string
+          enum: [KEYWORD_SEARCHABLE, EMBEDDING_PENDING, EMBEDDING_FAILED, READY]
+    ChunkGenerationResponse:
+      type: object
+      required: [generationKey, reused, chunks]
+      properties:
+        generationKey: { type: string }
+        reused: { type: boolean }
+        chunks:
+          type: array
+          items: { $ref: '#/components/schemas/KnowledgeChunkResponse' }
+    EvaluationEvidenceResponse:
+      type: object
+      required: [chunkId, documentTitle, documentVersion, startOffset, endOffset, content]
+      properties:
+        chunkId: { type: integer, format: int64 }
+        documentTitle: { type: string }
+        documentVersion: { type: integer, minimum: 1 }
+        startOffset: { type: integer, minimum: 0 }
+        endOffset: { type: integer, minimum: 1 }
+        content: { type: string }
+    AdminEvaluationSummaryResponse:
+      type: object
+      required: [evaluationId, answerId, questionId, status, failureCode, modelName, evaluatorVersion, occurredAt]
+      properties:
+        evaluationId: { type: integer, format: int64 }
+        answerId: { type: integer, format: int64 }
+        questionId: { type: integer, format: int64 }
+        status: { type: string, enum: [FAILED, NEEDS_REVIEW] }
+        failureCode: { type: [string, 'null'] }
+        modelName: { type: [string, 'null'] }
+        evaluatorVersion: { type: [string, 'null'] }
+        occurredAt: { type: [string, 'null'] }
+    AdminEvaluationDetailResponse:
+      allOf:
+        - $ref: '#/components/schemas/AdminEvaluationSummaryResponse'
+        - type: object
+          required: [questionContent, answerContent, evidence]
+          properties:
+            questionContent: { type: string }
+            answerContent: { type: string }
+            evidence:
+              type: array
+              items: { $ref: '#/components/schemas/EvaluationEvidenceResponse' }
+    AdminEvaluationPageResponse:
+      allOf:
+        - $ref: '#/components/schemas/PageMetadata'
+        - type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              items: { $ref: '#/components/schemas/AdminEvaluationSummaryResponse' }
     PageMetadata:
       type: object
       required: [page, size, totalElements, totalPages]

@@ -8,10 +8,11 @@ import com.example.crackcs.auth.service.AuthService;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberStatus;
 import com.example.crackcs.member.repository.MemberRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
@@ -19,6 +20,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import tools.jackson.databind.JsonNode;
@@ -34,6 +36,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(OutputCaptureExtension.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class AuthenticationFlowTest {
 
     private static final String PASSWORD = "correct horse battery staple";
@@ -52,12 +55,6 @@ class AuthenticationFlowTest {
 
     @Autowired
     private MemberRepository memberRepository;
-
-    @BeforeEach
-    void setUp() {
-        authAccountRepository.deleteAll();
-        memberRepository.deleteAll();
-    }
 
     @Test
     @DisplayName("로그인하면 세션에 인증 상태를 저장하고 현재 회원과 로그인 시각을 조회한다")
@@ -115,11 +112,13 @@ class AuthenticationFlowTest {
                 .andExpect(jsonPath("$.message").value("이메일 또는 비밀번호가 올바르지 않습니다."));
     }
 
-    @Test
-    @DisplayName("BLOCKED 회원은 올바른 비밀번호로도 로그인할 수 없다")
-    void rejectsBlockedMemberLogin() throws Exception {
-        Member member = authService.register("blocked@example.com", PASSWORD, "차단 회원");
-        member.changeStatus(MemberStatus.BLOCKED);
+    @ParameterizedTest
+    @EnumSource(value = MemberStatus.class, names = {"BLOCKED", "WITHDRAWN"})
+    @DisplayName("비활성 회원은 올바른 비밀번호로도 로그인할 수 없다")
+    void rejectsInactiveMemberLogin(MemberStatus memberStatus) throws Exception {
+        String email = memberStatus.name().toLowerCase() + "@example.com";
+        Member member = authService.register(email, PASSWORD, "비활성 회원");
+        member.changeStatus(memberStatus);
         memberRepository.save(member);
         CsrfFixture csrf = issueCsrfToken();
 
@@ -127,24 +126,7 @@ class AuthenticationFlowTest {
                         .session(csrf.session())
                         .header(csrf.headerName(), csrf.token())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("blocked@example.com", PASSWORD)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
-    }
-
-    @Test
-    @DisplayName("WITHDRAWN 회원은 올바른 비밀번호로도 로그인할 수 없다")
-    void rejectsWithdrawnMemberLogin() throws Exception {
-        Member member = authService.register("withdrawn@example.com", PASSWORD, "탈퇴 회원");
-        member.changeStatus(MemberStatus.WITHDRAWN);
-        memberRepository.save(member);
-        CsrfFixture csrf = issueCsrfToken();
-
-        mockMvc.perform(post("/api/auth/login")
-                        .session(csrf.session())
-                        .header(csrf.headerName(), csrf.token())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(loginJson("withdrawn@example.com", PASSWORD)))
+                        .content(loginJson(email, PASSWORD)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
     }

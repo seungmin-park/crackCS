@@ -44,6 +44,15 @@ class SecurityConfigurationTest {
     }
 
     @Test
+    @DisplayName("USER는 답변 원문이 포함될 수 있는 관리자 평가 API에 접근할 수 없다")
+    void rejectsUserRequestToAdminEvaluationApi() throws Exception {
+        mockMvc.perform(get("/api/admin/evaluations/1")
+                        .with(user("user@example.com").roles("USER")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
+    }
+
+    @Test
     @DisplayName("ADMIN은 관리자 API에 접근할 수 있다")
     void permitsAdminRequestToAdminApi() throws Exception {
         mockMvc.perform(get("/api/admin/questions")

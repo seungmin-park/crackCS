@@ -22,7 +22,8 @@ public class AuthenticatedMember implements UserDetails {
     private final MemberRole role;
     private final MemberStatus status;
 
-    private AuthenticatedMember(Long memberId, String loginId, String passwordHash, MemberRole role, MemberStatus status) {
+    private AuthenticatedMember(Long memberId, String loginId, String passwordHash, MemberRole role,
+                                MemberStatus status) {
         this.memberId = memberId;
         this.loginId = loginId;
         this.passwordHash = passwordHash;

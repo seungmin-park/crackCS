@@ -101,7 +101,8 @@ public class Question {
     private Set<QuestionConcept> questionConcepts = new LinkedHashSet<>();
 
     @Builder
-    private Question(Topic topic, Member createdByMember, QuestionDifficulty difficulty, String content, String referenceAnswer) {
+    private Question(Topic topic, Member createdByMember, QuestionDifficulty difficulty, String content,
+                     String referenceAnswer) {
         this(topic, createdByMember, difficulty, content, referenceAnswer, UUID.randomUUID().toString(), 1);
     }
 
@@ -201,10 +202,14 @@ public class Question {
         if (!validatedConcept.isActive()) {
             throw new InvalidContentStateException("비활성 Concept은 문제에 연결할 수 없습니다.");
         }
-        if (!samePersistentTopic(topic, validatedConcept.getTopic())) {
+        if (!hasSameTopicAs(validatedConcept)) {
             throw new InvalidContentStateException("문제와 같은 Topic의 Concept만 연결할 수 있습니다.");
         }
         return validatedConcept;
+    }
+
+    public boolean hasSameTopicAs(Concept concept) {
+        return concept != null && samePersistentTopic(topic, concept.getTopic());
     }
 
     public void review(Member reviewer) {

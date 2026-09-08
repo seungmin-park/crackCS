@@ -25,17 +25,30 @@ import lombok.NoArgsConstructor;
         name = "uk_evaluation_concept_evaluation_concept", columnNames = {"evaluation_id", "concept_id"}
 ))
 public class EvaluationConcept {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "evaluation_id", nullable = false) private Evaluation evaluation;
+    @JoinColumn(name = "evaluation_id", nullable = false)
+    private Evaluation evaluation;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "concept_id", nullable = false) private Concept concept;
-    @Enumerated(EnumType.STRING) @Column(nullable = false, length = 30) private Verdict verdict;
-    @Column private Integer score;
-    @Column(nullable = false, columnDefinition = "TEXT") private String feedback;
+    @JoinColumn(name = "concept_id", nullable = false)
+    private Concept concept;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private Verdict verdict;
+    @Column
+    private Integer score;
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String feedback;
 
-    public Long getConceptId() { return concept.getId(); }
-    public String getConceptName() { return concept.getName(); }
+    public Long getConceptId() {
+        return concept.getId();
+    }
+
+    public String getConceptName() {
+        return concept.getName();
+    }
 
     static EvaluationConcept from(Evaluation evaluation, ConceptResult result) {
         EvaluationConcept concept = new EvaluationConcept();

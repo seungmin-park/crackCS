@@ -38,7 +38,8 @@ public class DefaultQuestionService implements QuestionService {
 
     @Override
     @Transactional
-    public Question create(Long creatorMemberId, Long topicId, QuestionDifficulty difficulty, String content, String referenceAnswer) {
+    public Question create(Long creatorMemberId, Long topicId, QuestionDifficulty difficulty, String content,
+                           String referenceAnswer) {
         Topic topic = findActiveTopic(topicId);
         Member creator = findAdmin(creatorMemberId);
         Question question = Question.builder()
@@ -150,7 +151,7 @@ public class DefaultQuestionService implements QuestionService {
         if (!concept.isActive()) {
             throw new InvalidContentStateException("비활성 Concept은 문제에 연결할 수 없습니다.");
         }
-        if (!concept.getTopic().getId().equals(question.getTopicId())) {
+        if (!question.hasSameTopicAs(concept)) {
             throw new InvalidContentStateException("문제와 같은 Topic의 Concept만 연결할 수 있습니다.");
         }
         return new QuestionConceptAssignment(concept, data.weight(), data.required());

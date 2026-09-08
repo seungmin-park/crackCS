@@ -23,10 +23,14 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 class KnowledgeDocumentServiceTest {
 
-    @Autowired KnowledgeDocumentService documentService;
-    @Autowired KnowledgeDocumentRepository documentRepository;
-    @Autowired TopicRepository topicRepository;
-    @Autowired MemberRepository memberRepository;
+    @Autowired
+    KnowledgeDocumentService documentService;
+    @Autowired
+    KnowledgeDocumentRepository documentRepository;
+    @Autowired
+    TopicRepository topicRepository;
+    @Autowired
+    MemberRepository memberRepository;
 
     @AfterEach
     void tearDown() {
@@ -61,9 +65,6 @@ class KnowledgeDocumentServiceTest {
                 .isEqualTo(KnowledgeDocumentStatus.RETIRED);
         assertThat(documentRepository.findById(second.getId()).orElseThrow().getStatus())
                 .isEqualTo(KnowledgeDocumentStatus.PUBLISHED);
-        assertThat(documentService.findPublishedCandidates(topic.getId()))
-                .extracting(KnowledgeDocument::getId)
-                .containsExactly(second.getId());
     }
 
     @Test

@@ -1,7 +1,6 @@
 package com.example.crackcs.auth.service;
 
 import com.example.crackcs.exception.TooManyLoginAttemptsException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +9,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -20,21 +20,19 @@ import java.time.ZoneOffset;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest
+@SpringBootTest(classes = DefaultLoginAttemptService.class,
+        webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @Import(LoginAttemptServiceTest.MutableClockConfiguration.class)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class LoginAttemptServiceTest {
+
+    private static final Instant INITIAL_TIME = Instant.parse("2026-08-31T00:00:00Z");
 
     @Autowired
     private LoginAttemptService loginAttemptService;
 
     @Autowired
     private MutableClock clock;
-
-    @BeforeEach
-    void setUp() {
-        clock.set(Instant.parse("2026-08-31T00:00:00Z"));
-        loginAttemptService.recordSuccess("limit@example.com", "127.0.0.1");
-    }
 
     @Test
     @DisplayName("10분 안에 로그인에 5회 실패하면 같은 계정과 주소를 15분간 차단한다")
@@ -72,11 +70,7 @@ class LoginAttemptServiceTest {
 
     static class MutableClock extends Clock {
 
-        private Instant instant = Instant.EPOCH;
-
-        void set(Instant instant) {
-            this.instant = instant;
-        }
+        private Instant instant = INITIAL_TIME;
 
         void advance(Duration duration) {
             instant = instant.plus(duration);

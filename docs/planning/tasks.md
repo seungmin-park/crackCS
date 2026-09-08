@@ -2,7 +2,7 @@
 
 > 기준 문서: [개발 계획](plan.md)\
 > 제품 요구사항: [제품 기능 명세서](../product/spec.md)\
-> 데이터 설계: [도메인 모델 및 ERD](../architecture/domain-model-and-erd.md)\
+> 데이터 설계: [도메인 모델 및 ERD](../architecture/domain-model-and-erd.md)
 
 ## 1. 사용 방법
 
@@ -107,10 +107,10 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ### Phase 5 근거와 운영
 
-- [ ] `POST /api/admin/knowledge-documents/{documentId}/chunks` — ADMIN, Chunk 생성 접수
-- [ ] `GET /api/admin/knowledge-documents/{documentId}/chunks` — ADMIN, Chunk·작업 상태
-- [ ] `GET /api/admin/evaluations` — ADMIN, 실패·검토 평가 목록
-- [ ] `GET /api/admin/evaluations/{evaluationId}` — ADMIN, 평가 상세
+- [x] `POST /api/admin/knowledge-documents/{documentId}/chunks` — ADMIN, Chunk 동기 생성 또는 기존 결과 재사용
+- [x] `GET /api/admin/knowledge-documents/{documentId}/chunks` — ADMIN, Chunk·작업 상태
+- [x] `GET /api/admin/evaluations` — ADMIN, 실패·검토 평가 목록
+- [x] `GET /api/admin/evaluations/{evaluationId}` — ADMIN, 평가 상세
 
 ### Phase 6 개인화
 
@@ -541,94 +541,94 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 ### P5-T01 검색 기준선과 저장 기술 결정
 
 - [ ] 검색 품질을 평가할 질문·문서·정답 dataset을 준비한다.
-- [ ] 관계형 필터와 전문/키워드 검색 기준선을 구현한다.
+- [x] 관계형 필터와 전문/키워드 검색 기준선을 구현한다.
 - [ ] Recall@K와 관련 없는 Chunk 포함률을 측정한다.
-- [ ] embedding 검색 실험이 필요한 기준을 정한다.
-- [ ] H2, PostgreSQL과 pgvector 선택을 비교한다.
-- [ ] `OQ-002`를 결정하고 ADR과 환경 구성을 갱신한다.
-- [ ] PostgreSQL 선택 시 Testcontainers 통합 테스트를 추가한다.
+- [x] embedding 검색 실험이 필요한 기준을 정한다.
+- [x] H2, PostgreSQL과 pgvector 선택을 비교한다.
+- [x] `OQ-002`를 결정하고 ADR과 환경 구성을 갱신한다.
+- [ ] 최초 persistent staging 전 PostgreSQL Testcontainers 통합 테스트를 재도입한다.
 
 ### P5-T02 KnowledgeChunk 생성
 
-- [ ] Chunk 크기, overlap과 구분 기준을 문서화한다.
-- [ ] KnowledgeChunk schema와 `(document_id, sequence_no)` unique constraint를 구현한다.
-- [ ] PUBLISHED 대상 chunking 유스케이스를 구현한다.
-- [ ] checksum 또는 작업 키로 중복 분할을 방지한다.
-- [ ] embedding 생성 실패와 검색 가능 상태를 구분한다.
-- [ ] 문서 순서와 원문 추적 테스트를 작성한다.
+- [x] Chunk 크기, overlap과 구분 기준을 문서화한다.
+- [x] KnowledgeChunk schema와 `(document_id, sequence_no)` unique constraint를 구현한다.
+- [x] PUBLISHED 대상 chunking 유스케이스를 구현한다.
+- [x] checksum 또는 작업 키로 중복 분할을 방지한다.
+- [x] embedding 생성 실패와 검색 가능 상태를 구분한다.
+- [x] 문서 순서와 원문 추적 테스트를 작성한다.
 
 ### P5-T03 Retrieval pipeline
 
-- [ ] Question의 Topic과 QuestionConcept로 후보 문서를 제한한다.
-- [ ] 질문, 모범 답안과 Answer로 검색 query를 구성한다.
-- [ ] 상위 K개 Chunk와 relevance score를 반환한다.
-- [ ] RETIRED와 DRAFT 문서를 검색 대상에서 제외한다.
-- [ ] 근거 없음과 상충 근거를 감지하는 규칙을 정의한다.
-- [ ] 검색 결과 재현과 품질 측정 테스트를 작성한다.
+- [x] Question의 Topic과 QuestionConcept로 후보 문서를 제한한다.
+- [x] 질문, 모범 답안과 Answer로 검색 query를 구성한다.
+- [x] 상위 K개 Chunk와 relevance score를 반환한다.
+- [x] RETIRED와 DRAFT 문서를 검색 대상에서 제외한다.
+- [x] 근거 없음과 상충 근거를 감지하는 규칙을 정의한다.
+- [x] 검색 결과 재현과 품질 측정 테스트를 작성한다.
 
 ### P5-T04 구조화 AI 평가 계약
 
-- [ ] 전체 verdict와 Concept별 verdict JSON schema를 정의한다.
-- [ ] 강점, 누락, 오개념과 Evidence Chunk ID 필드를 정의한다.
-- [ ] 필수 Concept 누락을 검증한다.
-- [ ] 존재하지 않는 Chunk ID 인용을 거부한다.
-- [ ] 최종 점수는 AI가 아니라 서버가 계산한다.
-- [ ] 정상·누락·잘못된 타입·추가 필드 fixture로 계약 테스트를 작성한다.
+- [x] 전체 verdict와 Concept별 verdict JSON schema를 정의한다.
+- [x] 강점, 누락, 오개념과 Evidence Chunk ID 필드를 정의한다.
+- [x] 필수 Concept 누락을 검증한다.
+- [x] 존재하지 않는 Chunk ID 인용을 거부한다.
+- [x] 최종 점수는 AI가 아니라 서버가 계산한다.
+- [x] 정상·누락·잘못된 타입·추가 필드 fixture로 계약 테스트를 작성한다.
 
 ### P5-T05 외부 AI adapter
 
 - [ ] 평가 모델 후보를 골든 세트로 비교한다.
-- [ ] 모델 선택과 fallback 기준을 ADR로 기록한다.
-- [ ] 외부 AI client를 EvaluationPort adapter로 구현한다.
-- [ ] timeout, 재시도 횟수와 backoff를 설정한다.
-- [ ] provider 오류를 내부 실패 코드로 변환한다.
-- [ ] prompt에서 지식 문서와 사용자 답변을 데이터 영역으로 격리한다.
-- [ ] API key와 원문 답변을 일반 로그에 남기지 않는다.
+- [x] 모델 선택과 fallback 기준을 ADR로 기록한다.
+- [x] 외부 AI client를 EvaluationPort adapter로 구현한다.
+- [x] timeout, 재시도 횟수와 backoff를 설정한다.
+- [x] provider 오류를 내부 실패 코드로 변환한다.
+- [x] prompt에서 지식 문서와 사용자 답변을 데이터 영역으로 격리한다.
+- [x] API key와 원문 답변을 일반 로그에 남기지 않는다.
 
 ### P5-T06 비동기 평가 실행
 
-- [ ] 동기·비동기 방식을 비교하고 `OQ-005`를 결정한다.
-- [ ] Answer 저장 이후 평가 작업이 유실되지 않는 구조를 선택한다.
-- [ ] worker 재시작과 중복 실행 시나리오를 처리한다.
-- [ ] 최대 재시도 이후 FAILED와 실패 원인을 저장한다.
-- [ ] 클라이언트가 진행 상태를 안정적으로 조회할 수 있게 한다.
-- [ ] timeout, 중복 처리와 재시작 통합 테스트를 작성한다.
+- [x] 동기·비동기 방식을 비교하고 `OQ-005`를 결정한다.
+- [x] Answer 저장 이후 평가 작업이 유실되지 않는 구조를 선택한다.
+- [x] worker 재시작과 중복 실행 시나리오를 처리한다.
+- [x] 최대 재시도 이후 FAILED와 실패 원인을 저장한다.
+- [x] 클라이언트가 진행 상태를 안정적으로 조회할 수 있게 한다.
+- [x] timeout, 중복 처리와 재시작 통합 테스트를 작성한다.
 
 ### P5-T07 EvaluationEvidence와 결과 확정
 
-- [ ] EvaluationConcept와 EvaluationEvidence schema를 구현한다.
-- [ ] 평가에 실제 전달한 Chunk만 Evidence로 저장한다.
-- [ ] 평가 모델명, evaluator version과 처리 시간을 저장한다.
-- [ ] schema와 필수 Concept 검증 후에만 EVALUATED로 전환한다.
-- [ ] 근거 부족·상충은 NEEDS_REVIEW로 처리한다.
-- [ ] FAILED·NEEDS_REVIEW가 Knowledge State 후보가 되지 않게 한다.
+- [x] EvaluationConcept와 EvaluationEvidence schema를 구현한다.
+- [x] 평가에 실제 전달한 Chunk만 Evidence로 저장한다.
+- [x] 평가 모델명, evaluator version과 처리 시간을 저장한다.
+- [x] schema와 필수 Concept 검증 후에만 EVALUATED로 전환한다.
+- [x] 근거 부족·상충은 NEEDS_REVIEW로 처리한다.
+- [x] FAILED·NEEDS_REVIEW가 Knowledge State 후보가 되지 않게 한다.
 
 ### P5-T08 평가 결과·관리자 실패 화면
 
-- [ ] 학습자 결과에 전체·Concept별 판정과 근거를 표시한다.
-- [ ] 근거 문서의 제목, 버전과 인용 범위를 표시한다.
-- [ ] 관리자 FAILED·NEEDS_REVIEW 목록 API를 구현한다.
-- [ ] 모델명, 규칙 버전, 실패 코드와 발생 시각을 제공한다.
-- [ ] 관리자 실패 상세 화면과 필터를 구현한다.
-- [ ] 답변 원문 접근에 ADMIN 인가를 적용한다.
+- [x] 학습자 결과에 전체·Concept별 판정과 근거를 표시한다.
+- [x] 근거 문서의 제목, 버전과 인용 범위를 표시한다.
+- [x] 관리자 FAILED·NEEDS_REVIEW 목록 API를 구현한다.
+- [x] 모델명, 규칙 버전, 실패 코드와 발생 시각을 제공한다.
+- [x] 관리자 실패 상세 화면과 필터를 구현한다.
+- [x] 답변 원문 접근에 ADMIN 인가를 적용한다.
 
 ### P5-T09 골든 평가 세트 검증
 
-- [ ] 초기 Topic별 정답·부분 정답·오답 fixture를 작성한다.
-- [ ] 표현은 다르지만 의미가 같은 정답을 포함한다.
-- [ ] 자연스럽지만 핵심이 틀린 오답을 포함한다.
-- [ ] 근거 부족으로 NEEDS_REVIEW가 필요한 사례를 포함한다.
-- [ ] 판정 일치율과 false-correct 비율을 자동 계산한다.
+- [x] 초기 Topic별 정답·부분 정답·오답 fixture를 작성한다.
+- [x] 표현은 다르지만 의미가 같은 정답을 포함한다.
+- [x] 자연스럽지만 핵심이 틀린 오답을 포함한다.
+- [x] 근거 부족으로 NEEDS_REVIEW가 필요한 사례를 포함한다.
+- [x] 판정 일치율과 false-correct 비율을 자동 계산한다.
 - [ ] 확정된 출시 품질 기준과 측정 결과를 기록한다.
 
 ### Phase 5 Gate
 
-- [ ] EVALUATED 결과의 Evidence 연결률이 100%다.
-- [ ] schema 위반과 근거 부족이 성공 평가로 저장되지 않는다.
-- [ ] AI 장애에도 Answer가 보존된다.
+- [x] EVALUATED 결과의 Evidence 연결률이 100%다.
+- [x] schema 위반과 근거 부족이 성공 평가로 저장되지 않는다.
+- [x] AI 장애에도 Answer가 보존된다.
 - [ ] `AC-002`, `AC-003`과 `AC-007`이 통과한다.
 - [ ] 골든 평가 세트의 확정 기준을 통과한다.
-- [ ] 비밀정보와 답변 원문이 로그에 노출되지 않는다.
+- [x] 비밀정보와 답변 원문이 로그에 노출되지 않는다.
 
 ---
 
@@ -926,7 +926,7 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
 
 ## 품질 개선 작업
 
-근거: [2026-09-03 품질 진단](../reviews/2026-09-03-code-quality.md). 기존 체크 상태 유지; 이번 문서 정리에서 구현 완료 재판정 없음.
+이 목록이 현재 품질 개선 상태의 기준이다. 완료 표시는 관련 코드와 테스트 근거가 확인된 항목만 사용한다.
 
 - [x] **Question이 Concept 불변식을 최종 방어하도록 개선**
   - [x] `addConcept`가 비활성 Concept을 거부한다.

@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/crackcs}
+    username: ${DATABASE_USERNAME:crackcs}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+crackcs:
+  evaluation:
+    lease-duration: 1m
+    openai:
+      enabled: ${OPENAI_ENABLED:false}
+      api-key: ${OPENAI_API_KEY}
+      model: ${OPENAI_MODEL:gpt-5.6-terra}
+      evaluator-version: ${EVALUATOR_VERSION:os-evaluator-v1}
+      timeout: 30s
+    monthly-budget-usd: ${OPENAI_MONTHLY_BUDGET_USD:50}
+    input-usd-per-million-tokens: ${OPENAI_INPUT_USD_PER_MILLION_TOKENS:2}
+    output-usd-per-million-tokens: ${OPENAI_OUTPUT_USD_PER_MILLION_TOKENS:12}
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true

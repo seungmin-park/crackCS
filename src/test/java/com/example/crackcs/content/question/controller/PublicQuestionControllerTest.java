@@ -13,6 +13,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -20,7 +21,6 @@ import java.util.List;
 
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
@@ -44,17 +44,19 @@ class PublicQuestionControllerTest {
     void findsPublishedQuestionPage() throws Exception {
         Topic topic = createTopic();
         Question publicQuestion = createPublicQuestion(topic);
+        Pageable pageable = PageRequest.of(0, 10, Sort.by(Sort.Order.desc("createdAt")));
         given(publicQuestionService.findAll(
                 eq(topic.getId()),
                 eq(QuestionDifficulty.BASIC),
-                any(Pageable.class)
+                eq(pageable)
         )).willReturn(new PageImpl<>(List.of(publicQuestion), PageRequest.of(0, 10), 1));
 
         mockMvc.perform(get("/api/questions")
                         .param("topicId", topic.getId().toString())
                         .param("difficulty", "BASIC")
                         .param("page", "0")
-                        .param("size", "10"))
+                        .param("size", "10")
+                        .param("sort", "createdAt", "desc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].content").value("공개 질문"))
@@ -64,7 +66,7 @@ class PublicQuestionControllerTest {
         verify(publicQuestionService).findAll(
                 eq(topic.getId()),
                 eq(QuestionDifficulty.BASIC),
-                any(Pageable.class)
+                eq(pageable)
         );
     }
 

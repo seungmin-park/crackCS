@@ -1,0 +1,61 @@
+id	question	answer	expectedVerdict	caseType
+process-thread-01	프로세스와 스레드의 자원 관계를 설명하세요.	프로세스는 주소 공간을 소유하고 같은 프로세스의 스레드는 이를 공유한다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+process-thread-02	프로세스와 스레드의 자원 관계를 설명하세요.	프로세스는 주소 공간을 소유하고 같은 프로세스의 스레드는 이를 공유한다.	CORRECT	DIRECT
+process-thread-03	프로세스와 스레드의 자원 관계를 설명하세요.	프로세스는 주소 공간을 소유한다.	PARTIALLY_CORRECT	OMISSION
+process-thread-04	프로세스와 스레드의 자원 관계를 설명하세요.	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+process-thread-05	프로세스와 스레드의 자원 관계를 설명하세요.	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+process-thread-06	프로세스와 스레드의 자원 관계를 설명하세요.	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE
+context-switch-01	문맥 교환을 설명하세요.	CPU가 실행 대상을 바꾸기 위해 현재 실행 상태를 저장하고 다음 상태를 복원한다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+context-switch-02	문맥 교환을 설명하세요.	CPU가 실행 대상을 바꾸기 위해 현재 실행 상태를 저장하고 다음 상태를 복원한다.	CORRECT	DIRECT
+context-switch-03	문맥 교환을 설명하세요.	CPU가 실행 대상을 바꾸기 위해 현재 실행 상태를 저장한다.	PARTIALLY_CORRECT	OMISSION
+context-switch-04	문맥 교환을 설명하세요.	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+context-switch-05	문맥 교환을 설명하세요.	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+context-switch-06	문맥 교환을 설명하세요.	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE
+virtual-memory-01	가상 메모리의 목적을 설명하세요.	프로세스마다 연속된 주소 공간처럼 보이게 하고 물리 메모리를 격리·관리한다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+virtual-memory-02	가상 메모리의 목적을 설명하세요.	프로세스마다 연속된 주소 공간처럼 보이게 하고 물리 메모리를 격리·관리한다.	CORRECT	DIRECT
+virtual-memory-03	가상 메모리의 목적을 설명하세요.	프로세스마다 연속된 주소 공간처럼 보이게 한다.	PARTIALLY_CORRECT	OMISSION
+virtual-memory-04	가상 메모리의 목적을 설명하세요.	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+virtual-memory-05	가상 메모리의 목적을 설명하세요.	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+virtual-memory-06	가상 메모리의 목적을 설명하세요.	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE
+page-fault-01	페이지 폴트가 발생하면 어떻게 되나요?	접근한 가상 페이지의 유효 매핑이 없으면 커널이 처리하고 필요하면 저장장치에서 적재한다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+page-fault-02	페이지 폴트가 발생하면 어떻게 되나요?	접근한 가상 페이지의 유효 매핑이 없으면 커널이 처리하고 필요하면 저장장치에서 적재한다.	CORRECT	DIRECT
+page-fault-03	페이지 폴트가 발생하면 어떻게 되나요?	접근한 가상 페이지의 유효 매핑이 없으면 커널이 처리한다.	PARTIALLY_CORRECT	OMISSION
+page-fault-04	페이지 폴트가 발생하면 어떻게 되나요?	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+page-fault-05	페이지 폴트가 발생하면 어떻게 되나요?	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+page-fault-06	페이지 폴트가 발생하면 어떻게 되나요?	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE
+deadlock-01	교착상태를 설명하세요.	작업들이 서로 가진 자원을 기다려 어느 작업도 진행하지 못하는 상태다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+deadlock-02	교착상태를 설명하세요.	작업들이 서로 가진 자원을 기다려 어느 작업도 진행하지 못하는 상태다.	CORRECT	DIRECT
+deadlock-03	교착상태를 설명하세요.	작업들이 서로 가진 자원을 기다려 어느 작업도 진행하지 못하는 상태다.한다.	PARTIALLY_CORRECT	OMISSION
+deadlock-04	교착상태를 설명하세요.	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+deadlock-05	교착상태를 설명하세요.	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+deadlock-06	교착상태를 설명하세요.	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE
+scheduling-01	CPU 스케줄링의 역할은 무엇인가요?	준비된 작업 중 다음 CPU 실행 대상을 정책에 따라 선택한다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+scheduling-02	CPU 스케줄링의 역할은 무엇인가요?	준비된 작업 중 다음 CPU 실행 대상을 정책에 따라 선택한다.	CORRECT	DIRECT
+scheduling-03	CPU 스케줄링의 역할은 무엇인가요?	준비된 작업 중 다음 CPU 실행 대상을 정책에 따라 선택한다.한다.	PARTIALLY_CORRECT	OMISSION
+scheduling-04	CPU 스케줄링의 역할은 무엇인가요?	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+scheduling-05	CPU 스케줄링의 역할은 무엇인가요?	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+scheduling-06	CPU 스케줄링의 역할은 무엇인가요?	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE
+system-call-01	시스템 콜이 필요한 이유는 무엇인가요?	사용자 프로그램이 보호된 커널 기능을 통제된 경계로 요청하기 위해 필요하다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+system-call-02	시스템 콜이 필요한 이유는 무엇인가요?	사용자 프로그램이 보호된 커널 기능을 통제된 경계로 요청하기 위해 필요하다.	CORRECT	DIRECT
+system-call-03	시스템 콜이 필요한 이유는 무엇인가요?	사용자 프로그램이 보호된 커널 기능을 통제된 경계로 요청하기 위해 필요하다.한다.	PARTIALLY_CORRECT	OMISSION
+system-call-04	시스템 콜이 필요한 이유는 무엇인가요?	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+system-call-05	시스템 콜이 필요한 이유는 무엇인가요?	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+system-call-06	시스템 콜이 필요한 이유는 무엇인가요?	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE
+mutex-semaphore-01	뮤텍스와 세마포어의 차이를 설명하세요.	뮤텍스는 보통 소유권이 있는 상호 배제이고 세마포어는 카운터로 여러 허용량을 표현한다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+mutex-semaphore-02	뮤텍스와 세마포어의 차이를 설명하세요.	뮤텍스는 보통 소유권이 있는 상호 배제이고 세마포어는 카운터로 여러 허용량을 표현한다.	CORRECT	DIRECT
+mutex-semaphore-03	뮤텍스와 세마포어의 차이를 설명하세요.	뮤텍스는 보통 소유권이 있는 상호 배제이고 세마포어는 카운터로 여러 허용량을 표현한다.한다.	PARTIALLY_CORRECT	OMISSION
+mutex-semaphore-04	뮤텍스와 세마포어의 차이를 설명하세요.	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+mutex-semaphore-05	뮤텍스와 세마포어의 차이를 설명하세요.	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+mutex-semaphore-06	뮤텍스와 세마포어의 차이를 설명하세요.	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE
+user-kernel-01	사용자 모드와 커널 모드를 나누는 이유는 무엇인가요?	특권 명령과 핵심 자원 접근을 커널에 제한해 시스템을 보호한다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+user-kernel-02	사용자 모드와 커널 모드를 나누는 이유는 무엇인가요?	특권 명령과 핵심 자원 접근을 커널에 제한해 시스템을 보호한다.	CORRECT	DIRECT
+user-kernel-03	사용자 모드와 커널 모드를 나누는 이유는 무엇인가요?	특권 명령과 핵심 자원 접근을 커널에 제한해 시스템을 보호한다.한다.	PARTIALLY_CORRECT	OMISSION
+user-kernel-04	사용자 모드와 커널 모드를 나누는 이유는 무엇인가요?	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+user-kernel-05	사용자 모드와 커널 모드를 나누는 이유는 무엇인가요?	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+user-kernel-06	사용자 모드와 커널 모드를 나누는 이유는 무엇인가요?	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE
+file-descriptor-01	파일 디스크립터를 설명하세요.	프로세스가 열린 파일이나 소켓 같은 커널 자원을 가리키는 정수 핸들이다. 즉, 격리와 제어가 핵심이다.	CORRECT	PARAPHRASE
+file-descriptor-02	파일 디스크립터를 설명하세요.	프로세스가 열린 파일이나 소켓 같은 커널 자원을 가리키는 정수 핸들이다.	CORRECT	DIRECT
+file-descriptor-03	파일 디스크립터를 설명하세요.	프로세스가 열린 파일이나 소켓 같은 커널 자원을 가리키는 정수 핸들이다.한다.	PARTIALLY_CORRECT	OMISSION
+file-descriptor-04	파일 디스크립터를 설명하세요.	두 개념은 구분되지 않으며 운영체제가 별도로 관리하지 않는다.	INCORRECT	DIRECT_WRONG
+file-descriptor-05	파일 디스크립터를 설명하세요.	성능을 높이기 위해 모든 자원과 권한을 항상 제한 없이 공유하는 기능이다.	INCORRECT	FLUENT_WRONG
+file-descriptor-06	파일 디스크립터를 설명하세요.	특정 구현에서는 언제나 같은 방식이며 예외가 전혀 없다.	NEEDS_REVIEW	INSUFFICIENT_EVIDENCE

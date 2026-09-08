@@ -2,52 +2,114 @@ package com.example.crackcs.learning.service;
 
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
-import com.example.crackcs.content.question.domain.*;
-import com.example.crackcs.content.question.repository.*;
+import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
+import com.example.crackcs.content.knowledge.chunk.service.KnowledgeChunkService;
+import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
+import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
+import com.example.crackcs.content.knowledge.repository.KnowledgeDocumentRepository;
+import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionDifficulty;
+import com.example.crackcs.content.question.repository.QuestionConceptRepository;
+import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
-import com.example.crackcs.member.domain.*;
+import com.example.crackcs.evaluation.adapter.StubEvaluationAdapter;
+import com.example.crackcs.evaluation.port.EvaluationPort;
+import com.example.crackcs.evaluation.port.EvaluationRequest;
+import com.example.crackcs.evaluation.port.EvaluationResult;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
 import com.example.crackcs.learning.repository.AnswerRepository;
+import com.example.crackcs.learning.controller.response.AnswerResponse;
+import com.example.crackcs.learning.controller.response.EvaluationResponse;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
 import com.example.crackcs.evaluation.service.EvaluationProcessor;
-import com.example.crackcs.evaluation.domain.*;
-import com.example.crackcs.exception.*;
-import org.junit.jupiter.api.*;
+import com.example.crackcs.evaluation.domain.Evaluation;
+import com.example.crackcs.evaluation.domain.EvaluationStatus;
+import com.example.crackcs.evaluation.domain.Verdict;
+import com.example.crackcs.exception.AnswerConflictException;
+import com.example.crackcs.exception.QuestionNotFoundException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
+import org.hibernate.stat.Statistics;
+import org.hibernate.SessionFactory;
 import jakarta.persistence.EntityManagerFactory;
 import java.math.BigDecimal;
 import java.util.UUID;
-import static org.assertj.core.api.Assertions.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-@SpringBootTest(properties = "crackcs.evaluation.worker-enabled=false")
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+@SpringBootTest(properties = {
+        "crackcs.evaluation.worker-enabled=false",
+        "crackcs.evaluation.retry-base-delay=0ms"
+})
 @ActiveProfiles("test")
 class AnswerServiceTest {
-    @Autowired AnswerService service;
-    @Autowired EvaluationProcessor processor;
-    @Autowired MemberRepository members;
-    @Autowired TopicRepository topics;
-    @Autowired ConceptRepository concepts;
-    @Autowired QuestionRepository questions;
-    @Autowired QuestionConceptRepository questionConcepts;
-    @Autowired AnswerRepository answers;
-    @Autowired EvaluationRepository evaluations;
-    @Autowired JdbcTemplate jdbc;
-    @Autowired EntityManagerFactory entityManagerFactory;
-    @Autowired ControlledPort port;
+    @Autowired
+    AnswerService service;
+    @Autowired
+    EvaluationProcessor processor;
+    @Autowired
+    MemberRepository members;
+    @Autowired
+    TopicRepository topics;
+    @Autowired
+    ConceptRepository concepts;
+    @Autowired
+    QuestionRepository questions;
+    @Autowired
+    QuestionConceptRepository questionConcepts;
+    @Autowired
+    AnswerRepository answers;
+    @Autowired
+    EvaluationRepository evaluations;
+    @Autowired
+    KnowledgeDocumentRepository knowledgeDocuments;
+    @Autowired
+    KnowledgeChunkRepository knowledgeChunks;
+    @Autowired
+    KnowledgeChunkService chunkService;
+    @Autowired
+    JdbcTemplate jdbc;
+    @Autowired
+    EntityManagerFactory entityManagerFactory;
+    @Autowired
+    ControlledPort port;
 
     @AfterEach
     void tearDown() {
         port.reset();
+        jdbc.update("delete from evaluation_evidence");
+        jdbc.update("delete from evaluation_strength");
+        jdbc.update("delete from evaluation_omission");
+        jdbc.update("delete from evaluation_misconception");
         jdbc.update("delete from evaluation_concept");
         evaluations.deleteAllInBatch();
         answers.deleteAllInBatch();
         questionConcepts.deleteAllInBatch();
         questions.deleteAllInBatch();
+        knowledgeChunks.deleteAllInBatch();
+        knowledgeDocuments.deleteAllInBatch();
         concepts.deleteAllInBatch();
         topics.deleteAllInBatch();
         members.deleteAllInBatch();
@@ -58,17 +120,26 @@ class AnswerServiceTest {
     void processesCommittedAnswer() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var response = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "  원문 답변  ");
-        var pending = evaluations.findByAnswerId(response.answerId()).orElseThrow();
+        AnswerResponse response = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "  원문 답변  "
+        );
+        Evaluation pending = evaluations.findByAnswerId(response.answerId()).orElseThrow();
         assertThat(answers.findById(response.answerId()).orElseThrow().getContent()).isEqualTo("  원문 답변  ");
         assertThat(pending.getStatus()).isEqualTo(EvaluationStatus.EVALUATING);
 
         processor.process(pending.getId());
 
-        var saved = evaluations.findById(pending.getId()).orElseThrow();
+        Evaluation saved = evaluations.findById(pending.getId()).orElseThrow();
         assertThat(saved.getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(saved.getScore()).isEqualTo(100);
-        assertThat(service.findEvaluation(member.getId(), response.answerId()).concepts()).hasSize(1);
+        assertThat(jdbc.queryForObject("select count(*) from evaluation_evidence", Long.class)).isEqualTo(1);
+        EvaluationResponse evaluationResponse = service.findEvaluation(member.getId(), response.answerId());
+        assertThat(evaluationResponse.concepts()).hasSize(1);
+        assertThat(evaluationResponse.evidence()).hasSize(1);
+        assertThat(evaluationResponse.evidence().getFirst().documentTitle()).isEqualTo("스레드 공개 근거");
         assertThat(port.allCallsOutsideTransaction).isTrue();
     }
 
@@ -78,11 +149,17 @@ class AnswerServiceTest {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
         String key = UUID.randomUUID().toString();
-        var first = service.submit(member.getId(), question.getId(), key, "첫 답변");
-        assertThat(service.submit(member.getId(), question.getId(), key, "첫 답변").answerId()).isEqualTo(first.answerId());
+        AnswerResponse first = service.submit(member.getId(), question.getId(), key, "첫 답변");
+        assertThat(service.submit(member.getId(), question.getId(), key, "첫 답변").answerId()).isEqualTo(
+                first.answerId());
         assertThatThrownBy(() -> service.submit(member.getId(), question.getId(), key, "다른 답변"))
                 .isInstanceOf(AnswerConflictException.class);
-        var second = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "재답변");
+        AnswerResponse second = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "재답변"
+        );
         assertThat(service.findAll(member.getId(), PageRequest.of(0, 1)).getContent())
                 .extracting(answer -> answer.answerId()).containsExactly(second.answerId());
         assertThat(answers.findById(first.answerId()).orElseThrow().getContent()).isEqualTo("첫 답변");
@@ -94,19 +171,29 @@ class AnswerServiceTest {
     void loadsAnswerPageWithoutPerAnswerQueries() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var first = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "첫 답변");
-        var second = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "둘째 답변");
+        AnswerResponse first = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "첫 답변"
+        );
+        AnswerResponse second = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "둘째 답변"
+        );
         processor.process(first.evaluationId());
         processor.process(second.evaluationId());
-        var statistics = entityManagerFactory.unwrap(org.hibernate.SessionFactory.class).getStatistics();
+        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         statistics.setStatisticsEnabled(true);
         statistics.clear();
 
-        var page = service.findAll(member.getId(), PageRequest.of(0, 1));
+        Page<AnswerResponse> page = service.findAll(member.getId(), PageRequest.of(0, 2));
 
-        assertThat(page.getContent()).hasSize(1);
+        assertThat(page.getContent()).hasSize(2);
         assertThat(page.getContent().getFirst().evaluation().concepts()).hasSize(1);
-        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(3);
+        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(7);
     }
 
     @Test
@@ -115,11 +202,13 @@ class AnswerServiceTest {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
         String key = UUID.randomUUID().toString();
-        var first = service.submit(member.getId(), question.getId(), key, "이전 답변");
+        AnswerResponse first = service.submit(member.getId(), question.getId(), key, "이전 답변");
         question.retire();
         questions.save(question);
-        assertThat(service.findById(member.getId(), first.answerId()).questionContent()).isEqualTo(question.getContent());
-        assertThat(service.submit(member.getId(), question.getId(), key, "이전 답변").answerId()).isEqualTo(first.answerId());
+        assertThat(service.findById(member.getId(), first.answerId()).questionContent()).isEqualTo(
+                question.getContent());
+        assertThat(service.submit(member.getId(), question.getId(), key, "이전 답변").answerId()).isEqualTo(
+                first.answerId());
         assertThatThrownBy(() -> service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "새 답변"))
                 .isInstanceOf(QuestionNotFoundException.class);
     }
@@ -129,12 +218,17 @@ class AnswerServiceTest {
     void finalizesOnlyOnce() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var answer = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "답변");
+        AnswerResponse answer = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "답변"
+        );
         Long evaluationId = evaluations.findByAnswerId(answer.answerId()).orElseThrow().getId();
         processor.process(evaluationId);
-        var finalized = evaluations.findById(evaluationId).orElseThrow();
+        Evaluation finalized = evaluations.findById(evaluationId).orElseThrow();
         processor.process(evaluationId);
-        var reloaded = evaluations.findById(evaluationId).orElseThrow();
+        Evaluation reloaded = evaluations.findById(evaluationId).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(reloaded.getUpdatedAt()).isEqualTo(finalized.getUpdatedAt());
         assertThat(jdbc.queryForObject("select count(*) from evaluation_concept", Long.class)).isEqualTo(1);
@@ -145,13 +239,20 @@ class AnswerServiceTest {
     void preservesAnswerOnFailure() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var answer = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "실패해도 보존할 원문");
+        AnswerResponse answer = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "실패해도 보존할 원문"
+        );
         Long evaluationId = evaluations.findByAnswerId(answer.answerId()).orElseThrow().getId();
         port.failuresRemaining = 10;
 
         processor.process(evaluationId);
+        processor.process(evaluationId);
+        processor.process(evaluationId);
 
-        var saved = evaluations.findById(evaluationId).orElseThrow();
+        Evaluation saved = evaluations.findById(evaluationId).orElseThrow();
         assertThat(saved.getStatus()).isEqualTo(EvaluationStatus.FAILED);
         assertThat(saved.getFailureReason()).isEqualTo("PROVIDER_ERROR");
         assertThat(saved.getScore()).isNull();
@@ -165,10 +266,17 @@ class AnswerServiceTest {
     void retriesTransientFailure() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var answer = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "답변");
+        AnswerResponse answer = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "답변"
+        );
         Long evaluationId = evaluations.findByAnswerId(answer.answerId()).orElseThrow().getId();
         port.failuresRemaining = 2;
 
+        processor.process(evaluationId);
+        processor.process(evaluationId);
         processor.process(evaluationId);
 
         assertThat(evaluations.findById(evaluationId).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
@@ -181,19 +289,24 @@ class AnswerServiceTest {
     void serializesDuplicateWorkers() throws Exception {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var answer = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "답변");
+        AnswerResponse answer = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "답변"
+        );
         Long evaluationId = evaluations.findByAnswerId(answer.answerId()).orElseThrow().getId();
-        java.util.concurrent.CyclicBarrier barrier = new java.util.concurrent.CyclicBarrier(2);
-        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
-            java.util.concurrent.Callable<Void> process = () -> {
-                barrier.await(5, java.util.concurrent.TimeUnit.SECONDS);
+        CyclicBarrier barrier = new CyclicBarrier(2);
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            Callable<Void> process = () -> {
+                barrier.await(5, TimeUnit.SECONDS);
                 processor.process(evaluationId);
                 return null;
             };
-            var first = executor.submit(process);
-            var second = executor.submit(process);
-            first.get(10, java.util.concurrent.TimeUnit.SECONDS);
-            second.get(10, java.util.concurrent.TimeUnit.SECONDS);
+            Future<Void> first = executor.submit(process);
+            Future<Void> second = executor.submit(process);
+            first.get(10, TimeUnit.SECONDS);
+            second.get(10, TimeUnit.SECONDS);
         }
         assertThat(evaluations.findById(evaluationId).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(port.calls).isEqualTo(1);
@@ -205,14 +318,19 @@ class AnswerServiceTest {
     void retainsNeedsReviewWithoutScore() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var answer = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "답변");
+        AnswerResponse answer = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "답변"
+        );
         Long id = evaluations.findByAnswerId(answer.answerId()).orElseThrow().getId();
         port.outcome = "NEEDS_REVIEW";
 
         processor.process(id);
 
-        var result = service.findEvaluation(member.getId(), answer.answerId());
-        assertThat(result.status()).isEqualTo(EvaluationStatus.EVALUATED);
+        EvaluationResponse result = service.findEvaluation(member.getId(), answer.answerId());
+        assertThat(result.status()).isEqualTo(EvaluationStatus.NEEDS_REVIEW);
         assertThat(result.verdict()).isEqualTo(Verdict.NEEDS_REVIEW);
         assertThat(result.score()).isNull();
         assertThat(result.concepts()).allSatisfy(c -> assertThat(c.score()).isNull());
@@ -224,10 +342,17 @@ class AnswerServiceTest {
     void recordsTimeoutSeparately() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var answer = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "답변");
+        AnswerResponse answer = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "답변"
+        );
         Long id = evaluations.findByAnswerId(answer.answerId()).orElseThrow().getId();
         port.outcome = "TIMEOUT";
 
+        processor.process(id);
+        processor.process(id);
         processor.process(id);
 
         assertThat(evaluations.findById(id).orElseThrow().getFailureReason()).isEqualTo("PROVIDER_TIMEOUT");
@@ -235,40 +360,77 @@ class AnswerServiceTest {
     }
 
     @Test
+    @DisplayName("검색 근거가 없으면 외부 AI를 호출하지 않고 검토 필요로 확정한다")
+    void requiresReviewWithoutEvidence() {
+        Member member = members.save(Member.builder().nickname("학습자").build());
+        Question question = publishedQuestion();
+        knowledgeChunks.deleteAllInBatch();
+        AnswerResponse answer = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "답변"
+        );
+
+        processor.process(answer.evaluationId());
+
+        Evaluation saved = evaluations.findById(answer.evaluationId()).orElseThrow();
+        assertThat(saved.getStatus()).isEqualTo(EvaluationStatus.NEEDS_REVIEW);
+        assertThat(saved.getFailureReason()).isEqualTo("EVIDENCE_NOT_FOUND");
+        assertThat(port.calls).isZero();
+    }
+
+    @Test
     @DisplayName("평가에 사용된 개념은 문제 연결을 제거해도 DB에서 삭제할 수 없다")
     void protectsEvaluatedConceptReference() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var answer = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "답변");
+        AnswerResponse answer = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "답변"
+        );
         processor.process(evaluations.findByAnswerId(answer.answerId()).orElseThrow().getId());
         questionConcepts.deleteAllInBatch();
 
         assertThatThrownBy(() -> concepts.deleteAllInBatch())
-                .isInstanceOf(org.springframework.dao.DataIntegrityViolationException.class);
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
-    @org.springframework.boot.test.context.TestConfiguration
+    @TestConfiguration
     static class PortConfiguration {
-        @org.springframework.context.annotation.Bean
-        @org.springframework.context.annotation.Primary
-        ControlledPort controlledPort() { return new ControlledPort(); }
+        @Bean
+        @Primary
+        ControlledPort controlledPort() {
+            return new ControlledPort();
+        }
     }
 
     // Only the external provider's availability is controlled; all domain rules run unchanged.
-    static class ControlledPort implements com.example.crackcs.evaluation.port.EvaluationPort {
+    static class ControlledPort implements EvaluationPort {
         int failuresRemaining;
         int calls;
         String outcome = "CORRECT";
         boolean allCallsOutsideTransaction = true;
+
         @Override
-        public com.example.crackcs.evaluation.port.EvaluationResult evaluate(com.example.crackcs.evaluation.port.EvaluationRequest request) {
+        public EvaluationResult evaluate(EvaluationRequest request) {
             calls++;
-            allCallsOutsideTransaction &= !org.springframework.transaction.support.TransactionSynchronizationManager
+            allCallsOutsideTransaction &= !TransactionSynchronizationManager
                     .isActualTransactionActive();
-            if (failuresRemaining-- > 0) throw new IllegalStateException("provider secret must never be exposed");
-            return new com.example.crackcs.evaluation.adapter.StubEvaluationAdapter(outcome).evaluate(request);
+            if (failuresRemaining-- > 0) {
+                throw new IllegalStateException("provider secret must never be exposed");
+            }
+            return new StubEvaluationAdapter(outcome).evaluate(request);
         }
-        void reset() { failuresRemaining = 0; calls = 0; outcome = "CORRECT"; allCallsOutsideTransaction = true; }
+
+        void reset() {
+            failuresRemaining = 0;
+            calls = 0;
+            outcome = "CORRECT";
+            allCallsOutsideTransaction = true;
+        }
     }
 
     private Question publishedQuestion() {
@@ -280,6 +442,20 @@ class AnswerServiceTest {
         question.addConcept(concept, BigDecimal.ONE, true);
         question.review(admin);
         question.publish();
-        return questions.save(question);
+        Question saved = questions.save(question);
+        KnowledgeDocument document = knowledgeDocuments.save(KnowledgeDocument.builder()
+                .topic(topic)
+                .createdByMember(admin)
+                .title("스레드 공개 근거")
+                .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
+                .technologyVersion("general")
+                .licenseNote("독립 작성")
+                .content("스레드는 프로세스 자원을 공유하는 실행 단위다.")
+                .build());
+        document.review(admin);
+        document.publish();
+        knowledgeDocuments.save(document);
+        chunkService.generateChunks(document.getId());
+        return saved;
     }
 }

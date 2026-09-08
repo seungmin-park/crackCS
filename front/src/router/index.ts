@@ -41,6 +41,7 @@ const router = createRouter({
         { path: "taxonomy", name: "admin-taxonomy", component: () => import("@/views/admin/AdminTaxonomyView.vue") },
         { path: "knowledge-documents", name: "admin-knowledge", component: () => import("@/views/admin/AdminKnowledgeDocumentView.vue") },
         { path: "questions", name: "admin-questions", component: () => import("@/views/admin/AdminQuestionView.vue") },
+        { path: "evaluations", name: "admin-evaluations", component: () => import("@/views/admin/AdminEvaluationView.vue") },
         { path: "members", name: "admin-members", component: () => import("@/views/admin/AdminMembersView.vue") },
       ],
     },

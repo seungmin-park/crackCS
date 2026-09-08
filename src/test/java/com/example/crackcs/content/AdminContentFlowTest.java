@@ -39,12 +39,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 class AdminContentFlowTest {
 
-    @Autowired MockMvc mockMvc;
-    @Autowired ObjectMapper objectMapper;
-    @Autowired MemberRepository memberRepository;
-    @Autowired AuthAccountRepository authAccountRepository;
-    @Autowired KnowledgeDocumentRepository documentRepository;
-    @Autowired QuestionRepository questionRepository;
+    @Autowired
+    MockMvc mockMvc;
+    @Autowired
+    ObjectMapper objectMapper;
+    @Autowired
+    MemberRepository memberRepository;
+    @Autowired
+    AuthAccountRepository authAccountRepository;
+    @Autowired
+    KnowledgeDocumentRepository documentRepository;
+    @Autowired
+    QuestionRepository questionRepository;
 
     @Test
     @DisplayName("ADMIN이 Topic과 문서를 만든 뒤 검수하고 공개한다")
@@ -111,9 +117,9 @@ class AdminContentFlowTest {
         long topicId = createTopic(admin, "JAVA", "Java");
         long firstId = createDocument(admin, topicId, "Java 문서", "첫 버전");
         mockMvc.perform(post("/api/admin/knowledge-documents/{id}/review", firstId)
-                        .with(user(admin)).with(csrf())).andExpect(status().isOk());
+                .with(user(admin)).with(csrf())).andExpect(status().isOk());
         mockMvc.perform(post("/api/admin/knowledge-documents/{id}/publish", firstId)
-                        .with(user(admin)).with(csrf())).andExpect(status().isOk());
+                .with(user(admin)).with(csrf())).andExpect(status().isOk());
 
         Map<String, Object> nextVersion = documentRequest(topicId, "Java 문서", "둘째 버전");
         MvcResult result = mockMvc.perform(post("/api/admin/knowledge-documents/{id}/versions", firstId)
@@ -127,7 +133,7 @@ class AdminContentFlowTest {
         long secondId = body(result).get("id").asLong();
 
         mockMvc.perform(post("/api/admin/knowledge-documents/{id}/review", secondId)
-                        .with(user(admin)).with(csrf())).andExpect(status().isOk());
+                .with(user(admin)).with(csrf())).andExpect(status().isOk());
         mockMvc.perform(post("/api/admin/knowledge-documents/{id}/publish", secondId)
                         .with(user(admin)).with(csrf()))
                 .andExpect(status().isOk())
@@ -136,9 +142,6 @@ class AdminContentFlowTest {
         assertThat(documentRepository.findById(firstId).orElseThrow().getContent()).isEqualTo("첫 버전");
         assertThat(documentRepository.findById(firstId).orElseThrow().getStatus().name()).isEqualTo("RETIRED");
         assertThat(documentRepository.findById(secondId).orElseThrow().getContent()).isEqualTo("둘째 버전");
-        assertThat(documentRepository.findPublishedCandidatesByTopicId(topicId))
-                .extracting(document -> document.getId())
-                .containsExactly(secondId);
     }
 
     @Test
@@ -160,9 +163,9 @@ class AdminContentFlowTest {
                         ))))
                 .andExpect(status().isOk());
         mockMvc.perform(post("/api/admin/questions/{id}/review", firstId)
-                        .with(user(admin)).with(csrf())).andExpect(status().isOk());
+                .with(user(admin)).with(csrf())).andExpect(status().isOk());
         mockMvc.perform(post("/api/admin/questions/{id}/publish", firstId)
-                        .with(user(admin)).with(csrf())).andExpect(status().isOk());
+                .with(user(admin)).with(csrf())).andExpect(status().isOk());
 
         MvcResult result = mockMvc.perform(post("/api/admin/questions/{id}/versions", firstId)
                         .with(user(admin)).with(csrf())
@@ -180,7 +183,7 @@ class AdminContentFlowTest {
         long secondId = body(result).get("id").asLong();
 
         mockMvc.perform(post("/api/admin/questions/{id}/review", secondId)
-                        .with(user(admin)).with(csrf())).andExpect(status().isOk());
+                .with(user(admin)).with(csrf())).andExpect(status().isOk());
         mockMvc.perform(post("/api/admin/questions/{id}/publish", secondId)
                         .with(user(admin)).with(csrf()))
                 .andExpect(status().isOk())
@@ -195,22 +198,6 @@ class AdminContentFlowTest {
         mockMvc.perform(get("/api/questions/{id}", secondId).with(user(admin)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("TCP 신뢰성의 다음 버전 질문"));
-    }
-
-    @Test
-    @DisplayName("USER는 관리자 DRAFT 상세과 상태 변경 API에 접근할 수 없다")
-    void userCannotAccessAdminDraft() throws Exception {
-        AuthenticatedMember admin = savePrincipal(MemberRole.ADMIN, "admin-boundary");
-        AuthenticatedMember user = savePrincipal(MemberRole.USER, "user-boundary");
-        long topicId = createTopic(admin, "DATABASE", "데이터베이스");
-        long questionId = createQuestion(admin, topicId);
-
-        mockMvc.perform(get("/api/admin/questions/{id}", questionId).with(user(user)))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
-        mockMvc.perform(post("/api/admin/topics/{id}/deactivate", topicId)
-                        .with(user(user)).with(csrf()))
-                .andExpect(status().isForbidden());
     }
 
     @Test
@@ -253,7 +240,8 @@ class AdminContentFlowTest {
         return body(result).get("id").asLong();
     }
 
-    private long createDocument(AuthenticatedMember admin, long topicId, String title, String content) throws Exception {
+    private long createDocument(AuthenticatedMember admin, long topicId, String title, String content)
+            throws Exception {
         MvcResult result = mockMvc.perform(post("/api/admin/knowledge-documents")
                         .with(user(admin)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)

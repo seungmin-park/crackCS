@@ -10,11 +10,14 @@ import {
   retireKnowledgeDocument,
   reviewKnowledgeDocument,
   updateKnowledgeDocument,
+  fetchKnowledgeChunks,
+  generateKnowledgeChunks,
   type ContentStatus,
   type KnowledgeDocument,
   type KnowledgeDocumentInput,
   type KnowledgeSourceType,
   type Topic,
+  type KnowledgeChunk,
 } from "@/api/admin";
 import AdminFeedback from "@/components/AdminFeedback.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
@@ -25,6 +28,7 @@ const loading = ref(true);
 const statusFilter = ref<ContentStatus | "">("");
 const selected = ref<KnowledgeDocument>();
 const feedback = useAdminFeedback();
+const chunks = ref<KnowledgeChunk[]>([]);
 const form = reactive({ topicId: "", title: "", sourceType: "OFFICIAL_DOC" as KnowledgeSourceType, sourceUrl: "", technologyVersion: "", licenseNote: "", content: "" });
 
 function input(): KnowledgeDocumentInput {
@@ -53,6 +57,22 @@ function select(document?: KnowledgeDocument) {
     sourceUrl: document.sourceUrl ?? "", technologyVersion: document.technologyVersion ?? "",
     licenseNote: document.licenseNote ?? "", content: document.content,
   } : { topicId: "", title: "", sourceType: "OFFICIAL_DOC", sourceUrl: "", technologyVersion: "", licenseNote: "", content: "" });
+  chunks.value = [];
+  if (document) void loadChunks(document.id);
+}
+
+async function loadChunks(documentId: number) {
+  try { chunks.value = await fetchKnowledgeChunks(documentId); }
+  catch { chunks.value = []; }
+}
+
+async function chunkDocument() {
+  if (!selected.value) return;
+  const result = await feedback.execute(
+    () => generateKnowledgeChunks(selected.value!.id),
+    "검색용 문단을 생성했습니다. 같은 문서와 정책이면 기존 결과를 재사용합니다.",
+  );
+  if (result) chunks.value = result.chunks;
 }
 
 async function submit() {
@@ -104,9 +124,18 @@ onMounted(load);
             <button v-if="selected?.status === 'DRAFT'" type="button" @click="transition('review')">검수</button>
             <button v-if="selected?.status === 'DRAFT'" type="button" @click="transition('publish')">공개</button>
             <button v-if="selected?.status === 'PUBLISHED'" type="button" @click="transition('retire')">폐기</button>
+            <button v-if="selected?.status === 'PUBLISHED'" type="button" @click="chunkDocument">검색 문단 생성</button>
           </div>
         </form>
         <p v-if="selected" class="admin-meta">checksum {{ selected.checksum }}<br />series {{ selected.versionSeriesId }}</p>
+        <section v-if="selected?.status === 'PUBLISHED'" class="admin-chunks">
+          <h3>검색 문단 · {{ chunks.length }}개</h3>
+          <p v-if="!chunks.length">아직 생성된 검색 문단이 없습니다.</p>
+          <article v-for="chunk in chunks" :key="chunk.id">
+            <strong>#{{ chunk.sequenceNo }} · {{ chunk.searchStatus }} · {{ chunk.startOffset }}–{{ chunk.endOffset }}</strong>
+            <p>{{ chunk.content }}</p>
+          </article>
+        </section>
       </section>
     </div>
   </section>

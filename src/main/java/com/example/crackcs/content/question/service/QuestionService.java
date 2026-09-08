@@ -29,7 +29,8 @@ public interface QuestionService {
 
     Question findById(Long questionId);
 
-    Question update(Long questionId, Long topicId, QuestionDifficulty difficulty, String content, String referenceAnswer);
+    Question update(Long questionId, Long topicId, QuestionDifficulty difficulty, String content,
+                    String referenceAnswer);
 
     Question replaceConcepts(Long questionId, List<QuestionConceptData> concepts);
 

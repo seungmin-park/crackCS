@@ -7,6 +7,7 @@ import com.example.crackcs.auth.service.AuthService;
 import com.example.crackcs.auth.service.LoginAttemptService;
 import com.example.crackcs.auth.security.AuthenticationSecurityLogger;
 import com.example.crackcs.exception.InvalidCredentialsException;
+import com.example.crackcs.exception.TooManyLoginAttemptsException;
 import com.example.crackcs.member.controller.response.MemberResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -53,7 +54,7 @@ public class SessionController {
         String remoteAddress = httpRequest.getRemoteAddr();
         try {
             loginAttemptService.checkAllowed(request.email(), remoteAddress);
-        } catch (com.example.crackcs.exception.TooManyLoginAttemptsException exception) {
+        } catch (TooManyLoginAttemptsException exception) {
             authenticationSecurityLogger.loginBlocked(request.email());
             throw exception;
         }

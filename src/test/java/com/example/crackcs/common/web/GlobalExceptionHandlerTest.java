@@ -187,7 +187,8 @@ class GlobalExceptionHandlerTest {
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"))
                 .andExpect(jsonPath("$.message").value("서버에서 요청을 처리하는 중 오류가 발생했습니다."))
-                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("database password"))));
+                .andExpect(jsonPath("$.message").value(
+                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("database password"))));
     }
 
     @RestController

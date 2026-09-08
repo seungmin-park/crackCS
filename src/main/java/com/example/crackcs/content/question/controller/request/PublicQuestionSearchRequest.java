@@ -1,15 +1,13 @@
 package com.example.crackcs.content.question.controller.request;
 
+import com.example.crackcs.common.web.PageRequestFactory;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -40,32 +38,6 @@ public record PublicQuestionSearchRequest(
     }
 
     public Pageable toPageable() {
-        int pageNumber = page == null ? 0 : page;
-        int pageSize = size == null ? 20 : size;
-        return PageRequest.of(pageNumber, pageSize, toSort());
-    }
-
-    private Sort toSort() {
-        if (sort == null || sort.isEmpty()) {
-            return Sort.by(Sort.Order.asc("id"));
-        }
-
-        List<Sort.Order> orders = new ArrayList<>();
-        for (int index = 0; index < sort.size(); index++) {
-            String property = sort.get(index);
-            Sort.Direction direction = Sort.Direction.ASC;
-            if (index + 1 < sort.size() && isDirection(sort.get(index + 1))) {
-                direction = Sort.Direction.fromString(sort.get(++index));
-            }
-            if (!SORTABLE_PROPERTIES.contains(property)) {
-                throw new IllegalArgumentException("지원하지 않는 정렬 필드입니다: " + property);
-            }
-            orders.add(new Sort.Order(direction, property));
-        }
-        return Sort.by(orders);
-    }
-
-    private boolean isDirection(String value) {
-        return "asc".equalsIgnoreCase(value) || "desc".equalsIgnoreCase(value);
+        return PageRequestFactory.create(page, size, sort, SORTABLE_PROPERTIES);
     }
 }

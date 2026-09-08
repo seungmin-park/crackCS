@@ -1,8 +1,8 @@
 package com.example.crackcs.content.question.controller;
 
+import com.example.crackcs.common.web.response.PageResponse;
 import com.example.crackcs.content.question.controller.request.PublicQuestionSearchRequest;
 import com.example.crackcs.content.question.controller.request.QuestionIdRequest;
-import com.example.crackcs.content.question.controller.response.PublicQuestionPageResponse;
 import com.example.crackcs.content.question.controller.response.PublicQuestionResponse;
 import com.example.crackcs.content.question.service.PublicQuestionService;
 import jakarta.validation.Valid;
@@ -20,12 +20,15 @@ public class PublicQuestionController {
     private final PublicQuestionService publicQuestionService;
 
     @GetMapping
-    public PublicQuestionPageResponse findAll(@Valid @ModelAttribute PublicQuestionSearchRequest request) {
-        return PublicQuestionPageResponse.from(publicQuestionService.findAll(
-                request.topicId(),
-                request.difficultyValue(),
-                request.toPageable()
-        ));
+    public PageResponse<PublicQuestionResponse> findAll(@Valid @ModelAttribute PublicQuestionSearchRequest request) {
+        return PageResponse.from(
+                publicQuestionService.findAll(
+                        request.topicId(),
+                        request.difficultyValue(),
+                        request.toPageable()
+                ),
+                PublicQuestionResponse::from
+        );
     }
 
     @GetMapping("/{questionId}")

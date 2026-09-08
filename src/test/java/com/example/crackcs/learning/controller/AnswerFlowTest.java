@@ -4,40 +4,70 @@ import com.example.crackcs.auth.domain.AuthAccount;
 import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
-import com.example.crackcs.content.question.domain.*;
-import com.example.crackcs.content.question.repository.*;
+import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionDifficulty;
+import com.example.crackcs.content.question.repository.QuestionConceptRepository;
+import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
-import com.example.crackcs.member.domain.*;
+import com.example.crackcs.evaluation.repository.EvaluationRepository;
+import com.example.crackcs.learning.repository.AnswerRepository;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.UUID;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(properties = "crackcs.evaluation.worker-enabled=false")
 @AutoConfigureMockMvc
-@org.springframework.test.context.ActiveProfiles("test")
+@ActiveProfiles("test")
 class AnswerFlowTest {
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
-    @Autowired MemberRepository members;
-    @Autowired TopicRepository topics;
-    @Autowired ConceptRepository concepts;
-    @Autowired QuestionRepository questions;
-    @Autowired QuestionConceptRepository questionConcepts;
+    @Autowired
+    MockMvc mvc;
+    @Autowired
+    ObjectMapper mapper;
+    @Autowired
+    MemberRepository members;
+    @Autowired
+    TopicRepository topics;
+    @Autowired
+    ConceptRepository concepts;
+    @Autowired
+    QuestionRepository questions;
+    @Autowired
+    QuestionConceptRepository questionConcepts;
 
-    @Autowired com.example.crackcs.evaluation.repository.EvaluationRepository evaluations;
-    @Autowired com.example.crackcs.learning.repository.AnswerRepository answers;
-    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
+    @Autowired
+    EvaluationRepository evaluations;
+    @Autowired
+    AnswerRepository answers;
+    @Autowired
+    JdbcTemplate jdbc;
 
     @AfterEach
     void tearDown() {
@@ -57,10 +87,10 @@ class AnswerFlowTest {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
         mvc.perform(post("/api/questions/{id}/answers", question.getId())
-                .with(user(principal(member))).with(csrf())
-                .contentType("application/json")
-                .header("Idempotency-Key", UUID.randomUUID().toString())
-                .content(mapper.writeValueAsString(Map.of("content", "답변 원문"))))
+                        .with(user(principal(member))).with(csrf())
+                        .contentType("application/json")
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
+                        .content(mapper.writeValueAsString(Map.of("content", "답변 원문"))))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.content").value("답변 원문"))
                 .andExpect(jsonPath("$.evaluation.status").value("EVALUATING"));
@@ -73,19 +103,20 @@ class AnswerFlowTest {
         Question question = publishedQuestion();
         String key = UUID.randomUUID().toString();
         String body = mapper.writeValueAsString(Map.of("content", "같은 원문"));
-        java.util.concurrent.CyclicBarrier barrier = new java.util.concurrent.CyclicBarrier(2);
-        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
-            java.util.concurrent.Callable<Long> submit = () -> {
-                barrier.await(5, java.util.concurrent.TimeUnit.SECONDS);
+        CyclicBarrier barrier = new CyclicBarrier(2);
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            Callable<Long> submit = () -> {
+                barrier.await(5, TimeUnit.SECONDS);
                 String response = mvc.perform(post("/api/questions/{id}/answers", question.getId())
-                        .with(user(principal(member))).with(csrf()).header("Idempotency-Key", key).contentType("application/json").content(body))
+                                .with(user(principal(member))).with(csrf()).header("Idempotency-Key", key)
+                                .contentType("application/json").content(body))
                         .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
                 return mapper.readTree(response).get("answerId").asLong();
             };
-            var first = executor.submit(submit);
-            var second = executor.submit(submit);
-            org.assertj.core.api.Assertions.assertThat(first.get(10, java.util.concurrent.TimeUnit.SECONDS))
-                    .isEqualTo(second.get(10, java.util.concurrent.TimeUnit.SECONDS));
+            Future<Long> first = executor.submit(submit);
+            Future<Long> second = executor.submit(submit);
+            assertThat(first.get(10, TimeUnit.SECONDS))
+                    .isEqualTo(second.get(10, TimeUnit.SECONDS));
         }
         org.assertj.core.api.Assertions.assertThat(answers.count()).isEqualTo(1);
         org.assertj.core.api.Assertions.assertThat(evaluations.count()).isEqualTo(1);
@@ -98,9 +129,9 @@ class AnswerFlowTest {
         Member stranger = members.save(Member.builder().nickname("다른 회원").build());
         Question question = publishedQuestion();
         String response = mvc.perform(post("/api/questions/{id}/answers", question.getId())
-                .with(user(principal(owner))).with(csrf()).contentType("application/json")
-                .header("Idempotency-Key", UUID.randomUUID().toString())
-                .content(mapper.writeValueAsString(Map.of("content", "개인 답변"))))
+                        .with(user(principal(owner))).with(csrf()).contentType("application/json")
+                        .header("Idempotency-Key", UUID.randomUUID().toString())
+                        .content(mapper.writeValueAsString(Map.of("content", "개인 답변"))))
                 .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
         long id = mapper.readTree(response).get("answerId").asLong();
         mvc.perform(get("/api/answers/{id}", id).with(user(principal(stranger))))
@@ -110,7 +141,8 @@ class AnswerFlowTest {
     }
 
     private AuthenticatedMember principal(Member member) {
-        return AuthenticatedMember.from(AuthAccount.builder().member(member).loginId("learner@example.com").passwordHash("hash").build());
+        return AuthenticatedMember.from(
+                AuthAccount.builder().member(member).loginId("learner@example.com").passwordHash("hash").build());
     }
 
     private Question publishedQuestion() {

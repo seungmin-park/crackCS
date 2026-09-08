@@ -2,50 +2,95 @@ package com.example.crackcs.learning.service;
 
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
-import com.example.crackcs.content.question.domain.*;
-import com.example.crackcs.content.question.repository.*;
+import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
+import com.example.crackcs.content.knowledge.chunk.service.KnowledgeChunkService;
+import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
+import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
+import com.example.crackcs.content.knowledge.repository.KnowledgeDocumentRepository;
+import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionDifficulty;
+import com.example.crackcs.content.question.repository.QuestionConceptRepository;
+import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
-import com.example.crackcs.member.domain.*;
-import com.example.crackcs.member.repository.MemberRepository;
-import com.example.crackcs.learning.repository.AnswerRepository;
+import com.example.crackcs.evaluation.adapter.StubEvaluationAdapter;
+import com.example.crackcs.evaluation.domain.EvaluationStatus;
+import com.example.crackcs.evaluation.port.EvaluationPort;
+import com.example.crackcs.evaluation.port.EvaluationRequest;
+import com.example.crackcs.evaluation.port.EvaluationResult;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
 import com.example.crackcs.evaluation.service.EvaluationProcessor;
-import com.example.crackcs.evaluation.domain.*;
-import com.example.crackcs.exception.*;
-import org.junit.jupiter.api.*;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
+import com.example.crackcs.member.repository.MemberRepository;
+import com.example.crackcs.learning.controller.response.AnswerResponse;
+import com.example.crackcs.learning.repository.AnswerRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.UUID;
-import static org.assertj.core.api.Assertions.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {"crackcs.evaluation.worker-enabled=true", "crackcs.evaluation.poll-delay=20"})
 @ActiveProfiles("test")
-@org.springframework.test.annotation.DirtiesContext(classMode = org.springframework.test.annotation.DirtiesContext.ClassMode.AFTER_CLASS)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class EvaluationWorkerTest {
-    @Autowired AnswerService service;
-    @Autowired EvaluationProcessor processor;
-    @Autowired MemberRepository members;
-    @Autowired TopicRepository topics;
-    @Autowired ConceptRepository concepts;
-    @Autowired QuestionRepository questions;
-    @Autowired QuestionConceptRepository questionConcepts;
-    @Autowired AnswerRepository answers;
-    @Autowired EvaluationRepository evaluations;
-    @Autowired JdbcTemplate jdbc;
-    @Autowired CommitSignalPort port;
+    @Autowired
+    AnswerService service;
+    @Autowired
+    EvaluationProcessor processor;
+    @Autowired
+    MemberRepository members;
+    @Autowired
+    TopicRepository topics;
+    @Autowired
+    ConceptRepository concepts;
+    @Autowired
+    QuestionRepository questions;
+    @Autowired
+    QuestionConceptRepository questionConcepts;
+    @Autowired
+    AnswerRepository answers;
+    @Autowired
+    EvaluationRepository evaluations;
+    @Autowired
+    KnowledgeDocumentRepository knowledgeDocuments;
+    @Autowired
+    KnowledgeChunkRepository knowledgeChunks;
+    @Autowired
+    KnowledgeChunkService chunkService;
+    @Autowired
+    JdbcTemplate jdbc;
+    @Autowired
+    CommitSignalPort port;
 
     @AfterEach
     void tearDown() {
+        jdbc.update("delete from evaluation_evidence");
+        jdbc.update("delete from evaluation_strength");
+        jdbc.update("delete from evaluation_omission");
+        jdbc.update("delete from evaluation_misconception");
         jdbc.update("delete from evaluation_concept");
         evaluations.deleteAllInBatch();
         answers.deleteAllInBatch();
         questionConcepts.deleteAllInBatch();
         questions.deleteAllInBatch();
+        knowledgeChunks.deleteAllInBatch();
+        knowledgeDocuments.deleteAllInBatch();
         concepts.deleteAllInBatch();
         topics.deleteAllInBatch();
         members.deleteAllInBatch();
@@ -56,7 +101,12 @@ class EvaluationWorkerTest {
     void discoversDurablePendingWork() throws Exception {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        var response = service.submit(member.getId(), question.getId(), UUID.randomUUID().toString(), "답변");
+        AnswerResponse response = service.submit(
+                member.getId(),
+                question.getId(),
+                UUID.randomUUID().toString(),
+                "답변"
+        );
 
         awaitEvaluation(response.answerId());
 
@@ -64,27 +114,32 @@ class EvaluationWorkerTest {
         assertThat(port.calledOutsideTransaction).isTrue();
     }
 
-    @org.springframework.boot.test.context.TestConfiguration
+    @TestConfiguration
     static class PortConfiguration {
-        @org.springframework.context.annotation.Bean
-        @org.springframework.context.annotation.Primary
-        CommitSignalPort commitSignalPort() { return new CommitSignalPort(); }
+        @Bean
+        @Primary
+        CommitSignalPort commitSignalPort() {
+            return new CommitSignalPort();
+        }
     }
 
-    static class CommitSignalPort implements com.example.crackcs.evaluation.port.EvaluationPort {
+    static class CommitSignalPort implements EvaluationPort {
         volatile boolean calledOutsideTransaction;
+
         @Override
-        public com.example.crackcs.evaluation.port.EvaluationResult evaluate(com.example.crackcs.evaluation.port.EvaluationRequest request) {
-            calledOutsideTransaction = !org.springframework.transaction.support.TransactionSynchronizationManager
+        public EvaluationResult evaluate(EvaluationRequest request) {
+            calledOutsideTransaction = !TransactionSynchronizationManager
                     .isActualTransactionActive();
-            return new com.example.crackcs.evaluation.adapter.StubEvaluationAdapter("CORRECT").evaluate(request);
+            return new StubEvaluationAdapter("CORRECT").evaluate(request);
         }
     }
 
     private void awaitEvaluation(Long answerId) throws InterruptedException {
-        long deadline = System.nanoTime() + java.time.Duration.ofSeconds(5).toNanos();
+        long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
         while (System.nanoTime() < deadline) {
-            if (evaluations.findByAnswerId(answerId).orElseThrow().getStatus() == EvaluationStatus.EVALUATED) return;
+            if (evaluations.findByAnswerId(answerId).orElseThrow().getStatus() == EvaluationStatus.EVALUATED) {
+                return;
+            }
             Thread.sleep(10);
         }
         assertThat(evaluations.findByAnswerId(answerId).orElseThrow().getStatus())
@@ -100,6 +155,16 @@ class EvaluationWorkerTest {
         question.addConcept(concept, BigDecimal.ONE, true);
         question.review(admin);
         question.publish();
-        return questions.save(question);
+        Question saved = questions.save(question);
+        KnowledgeDocument document = knowledgeDocuments.save(KnowledgeDocument.builder()
+                .topic(topic).createdByMember(admin).title("스레드 공개 근거")
+                .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
+                .technologyVersion("general").licenseNote("독립 작성")
+                .content("스레드는 프로세스 자원을 공유하는 실행 단위다.").build());
+        document.review(admin);
+        document.publish();
+        knowledgeDocuments.save(document);
+        chunkService.generateChunks(document.getId());
+        return saved;
     }
 }

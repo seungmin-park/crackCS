@@ -32,7 +32,7 @@ public class DefaultLoginAttemptService implements LoginAttemptService {
         String key = key(loginId, remoteAddress);
         Instant now = clock.instant();
         AttemptState state = attempts.computeIfPresent(key, (ignored, current) -> current.activeAt(now));
-        if (state != null && state.isBlockedAt(now)) {
+        if (isLoginBlocked(state, now)) {
             throw new TooManyLoginAttemptsException(Duration.between(now, state.blockedUntil()).toSeconds());
         }
     }
@@ -50,6 +50,10 @@ public class DefaultLoginAttemptService implements LoginAttemptService {
     @Override
     public void recordSuccess(String loginId, String remoteAddress) {
         attempts.remove(key(loginId, remoteAddress));
+    }
+
+    private boolean isLoginBlocked(AttemptState state, Instant now) {
+        return state != null && state.isBlockedAt(now);
     }
 
     private String key(String loginId, String remoteAddress) {
@@ -70,7 +74,7 @@ public class DefaultLoginAttemptService implements LoginAttemptService {
         }
 
         private AttemptState activeAt(Instant now) {
-            if (blockedUntil != null && !now.isBefore(blockedUntil)) {
+            if (hasBlockExpiredAt(now)) {
                 return null;
             }
             Instant threshold = now.minus(FAILURE_WINDOW);
@@ -87,6 +91,10 @@ public class DefaultLoginAttemptService implements LoginAttemptService {
                     ? now.plus(BLOCK_DURATION)
                     : blockedUntil;
             return new AttemptState(List.copyOf(nextFailures), nextBlockedUntil);
+        }
+
+        private boolean hasBlockExpiredAt(Instant now) {
+            return blockedUntil != null && !now.isBefore(blockedUntil);
         }
 
         private boolean isBlockedAt(Instant now) {

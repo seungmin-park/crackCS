@@ -3,6 +3,7 @@ package com.example.crackcs.learning.domain;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionStatus;
 import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -55,7 +56,7 @@ public class Answer {
     @Builder
     private Answer(Member member, Question question, String requestId, String content) {
         this.member = requireNonNull(member, "member");
-        if (!member.isAuthenticatable() || member.getRole() != com.example.crackcs.member.domain.MemberRole.USER) {
+        if (!member.isAuthenticatable() || member.getRole() != MemberRole.USER) {
             throw new IllegalArgumentException("active USER member is required");
         }
         this.question = requirePublished(question);
@@ -73,10 +74,14 @@ public class Answer {
     }
 
     private static String requireCanonicalUuid(String requestId) {
-        if (requestId == null) throw new IllegalArgumentException("requestId must not be null");
+        if (requestId == null) {
+            throw new IllegalArgumentException("requestId must not be null");
+        }
         try {
             String canonical = UUID.fromString(requestId).toString();
-            if (!canonical.equals(requestId)) throw new IllegalArgumentException("requestId must be a canonical UUID");
+            if (!canonical.equals(requestId)) {
+                throw new IllegalArgumentException("requestId must be a canonical UUID");
+            }
             return canonical;
         } catch (IllegalArgumentException exception) {
             throw new IllegalArgumentException("requestId must be a canonical UUID", exception);
@@ -84,13 +89,19 @@ public class Answer {
     }
 
     private static String requireContent(String content) {
-        if (content == null || content.isBlank()) throw new IllegalArgumentException("content must not be blank");
-        if (content.length() > MAX_CONTENT_LENGTH) throw new IllegalArgumentException("content must be 10000 characters or fewer");
+        if (content == null || content.isBlank()) {
+            throw new IllegalArgumentException("content must not be blank");
+        }
+        if (content.length() > MAX_CONTENT_LENGTH) {
+            throw new IllegalArgumentException("content must be 10000 characters or fewer");
+        }
         return content;
     }
 
     private static <T> T requireNonNull(T value, String name) {
-        if (value == null) throw new IllegalArgumentException(name + " must not be null");
+        if (value == null) {
+            throw new IllegalArgumentException(name + " must not be null");
+        }
         return value;
     }
 }
