@@ -1,6 +1,5 @@
 package com.example.crackcs.evaluation.domain;
 
-import com.example.crackcs.evaluation.port.ConceptResult;
 import com.example.crackcs.content.concept.domain.Concept;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

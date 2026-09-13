@@ -1,7 +1,6 @@
 package com.example.crackcs.content.knowledge.chunk.controller.response;
 
 import com.example.crackcs.content.knowledge.chunk.service.ChunkGenerationResult;
-
 import java.util.List;
 
 public record ChunkGenerationResponse(

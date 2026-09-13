@@ -5,9 +5,8 @@ import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.domain.QuestionOrigin;
 import com.example.crackcs.content.question.domain.QuestionStatus;
 import com.example.crackcs.content.question.domain.QuestionType;
-
-import java.time.LocalDateTime;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public record QuestionResponse(

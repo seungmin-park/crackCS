@@ -1,5 +1,8 @@
 package com.example.crackcs.content.question.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.question.domain.Question;
@@ -16,6 +19,9 @@ import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,13 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 class QuestionServiceTest {

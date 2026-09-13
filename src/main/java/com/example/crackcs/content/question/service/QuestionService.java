@@ -4,10 +4,9 @@ import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.domain.QuestionOrigin;
 import com.example.crackcs.content.question.domain.QuestionStatus;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
-import java.util.List;
 
 public interface QuestionService {
 

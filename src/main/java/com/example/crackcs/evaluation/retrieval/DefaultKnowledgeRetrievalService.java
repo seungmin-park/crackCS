@@ -2,16 +2,15 @@ package com.example.crackcs.evaluation.retrieval;
 
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

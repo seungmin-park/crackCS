@@ -1,9 +1,9 @@
 package com.example.crackcs.content.knowledge.domain;
 
+import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.exception.InvalidContentStateException;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
-import com.example.crackcs.content.topic.domain.Topic;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,14 +17,13 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.net.URI;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Entity
 @Getter

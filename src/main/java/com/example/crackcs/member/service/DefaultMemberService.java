@@ -2,14 +2,14 @@ package com.example.crackcs.member.service;
 
 import com.example.crackcs.exception.MemberNotFoundException;
 import com.example.crackcs.member.domain.Member;
-import com.example.crackcs.member.repository.MemberRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.domain.MemberStatus;
+import com.example.crackcs.member.repository.MemberRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

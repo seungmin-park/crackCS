@@ -1,5 +1,7 @@
 package com.example.crackcs.content.knowledge.repository;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -12,9 +14,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.dao.DataIntegrityViolationException;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 class KnowledgeDocumentRepositoryTest {
