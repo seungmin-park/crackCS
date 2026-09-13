@@ -1,6 +1,8 @@
 package com.example.crackcs.evaluation.service;
 
+import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -8,8 +10,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Component
@@ -23,7 +23,8 @@ public class EvaluationWorker {
 
     @Scheduled(fixedDelayString = "${crackcs.evaluation.poll-delay:1000}")
     public void processPending() {
-        for (Long id : evaluations.findClaimableIds(LocalDateTime.now(), PageRequest.of(0, 20))) {
+        for (Long id : evaluations.findClaimableIds(LocalDateTime.now(), EvaluationStatus.EVALUATING,
+                EvaluationStatus.PROCESSING, PageRequest.of(0, 20))) {
             try {
                 processor.process(id);
             } catch (RuntimeException failure) {

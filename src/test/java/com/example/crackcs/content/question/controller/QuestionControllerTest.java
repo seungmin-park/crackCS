@@ -1,41 +1,11 @@
 package com.example.crackcs.content.question.controller;
 
-import com.example.crackcs.content.question.domain.Question;
-import com.example.crackcs.content.question.domain.QuestionDifficulty;
-import com.example.crackcs.content.question.domain.QuestionOrigin;
-import com.example.crackcs.content.question.domain.QuestionStatus;
-import com.example.crackcs.content.question.domain.QuestionType;
-import com.example.crackcs.exception.QuestionNotFoundException;
-import com.example.crackcs.content.question.service.QuestionService;
-import com.example.crackcs.content.topic.domain.Topic;
-import com.example.crackcs.auth.security.AuthenticatedMember;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import org.springframework.test.web.servlet.MockMvc;
-import tools.jackson.databind.ObjectMapper;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -46,10 +16,40 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.crackcs.auth.security.AuthenticatedMember;
+import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionDifficulty;
+import com.example.crackcs.content.question.domain.QuestionOrigin;
+import com.example.crackcs.content.question.domain.QuestionStatus;
+import com.example.crackcs.content.question.domain.QuestionType;
+import com.example.crackcs.content.question.service.QuestionService;
+import com.example.crackcs.content.topic.domain.Topic;
+import com.example.crackcs.exception.QuestionNotFoundException;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
+
 @WebMvcTest(QuestionController.class)
 @AutoConfigureMockMvc(addFilters = false)
 class QuestionControllerTest {
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -410,7 +410,7 @@ class QuestionControllerTest {
         given(principal.memberId()).willReturn(memberId);
         given(principal.getUsername()).willReturn("admin@example.com");
         given(principal.getPassword()).willReturn("encoded");
-        org.mockito.Mockito.doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
                 .when(principal).getAuthorities();
         given(principal.isEnabled()).willReturn(true);
         return principal;

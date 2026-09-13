@@ -2,9 +2,7 @@ package com.example.crackcs.evaluation.domain;
 
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.question.domain.QuestionConcept;
-import com.example.crackcs.evaluation.port.ConceptResult;
-import com.example.crackcs.evaluation.port.EvaluationResult;
-import com.example.crackcs.learning.domain.Answer;
+import com.example.crackcs.learning.answer.domain.Answer;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
@@ -22,12 +20,6 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import org.hibernate.annotations.BatchSize;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -39,6 +31,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
 @Entity
 @Getter
@@ -47,6 +44,8 @@ import java.util.stream.Collectors;
         name = "idx_evaluation_status_created", columnList = "status, created_at"
 ))
 public class Evaluation {
+    private static final int MAX_ATTEMPTS = 3;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -220,12 +219,20 @@ public class Evaluation {
         if (!pending && !expired) {
             return false;
         }
+        if (hasExhaustedAttempts()) {
+            fail("ATTEMPTS_EXHAUSTED");
+            return false;
+        }
         this.status = EvaluationStatus.PROCESSING;
         this.leaseOwner = workerId.trim();
         this.leaseExpiresAt = now.plus(leaseDuration);
         this.attemptCount++;
         this.updatedAt = now;
         return true;
+    }
+
+    public boolean hasExhaustedAttempts() {
+        return attemptCount >= MAX_ATTEMPTS;
     }
 
     public void scheduleRetry(String safeReason, LocalDateTime now, Duration delay) {

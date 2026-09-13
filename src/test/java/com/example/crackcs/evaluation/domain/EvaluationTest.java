@@ -1,5 +1,8 @@
 package com.example.crackcs.evaluation.domain;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
@@ -7,23 +10,17 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
-import com.example.crackcs.evaluation.port.ConceptResult;
-import com.example.crackcs.evaluation.port.EvaluationResult;
-import com.example.crackcs.learning.domain.Answer;
+import com.example.crackcs.learning.answer.domain.Answer;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.test.util.ReflectionTestUtils;
 
 class EvaluationTest {
 
@@ -213,6 +210,40 @@ class EvaluationTest {
         assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.PROCESSING);
         assertThat(evaluation.getLeaseOwner()).isEqualTo("worker-b");
         assertThat(evaluation.getAttemptCount()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("세 번째 lease까지 만료되면 네 번째 선점 대신 실패로 종료한다")
+    void failsAfterThirdLeaseExpires() {
+        Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
+        LocalDateTime now = evaluation.getCreatedAt().plusSeconds(1);
+        for (int attempt = 0; attempt < 3; attempt++) {
+            assertThat(evaluation.claim("worker", now.plusSeconds(attempt * 2), Duration.ofSeconds(1))).isTrue();
+        }
+
+        assertThat(evaluation.claim("next-worker", now.plusSeconds(6), Duration.ofSeconds(1))).isFalse();
+
+        assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.FAILED);
+        assertThat(evaluation.getAttemptCount()).isEqualTo(3);
+        assertThat(evaluation.getFailureReason()).isEqualTo("ATTEMPTS_EXHAUSTED");
+        assertThat(evaluation.getLeaseOwner()).isNull();
+        assertThat(evaluation.getLeaseExpiresAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("세 번째 시도라도 유효한 lease의 소유권은 유지한다")
+    void preservesActiveThirdLease() {
+        Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
+        LocalDateTime now = evaluation.getCreatedAt().plusSeconds(1);
+        for (int attempt = 0; attempt < 3; attempt++) {
+            evaluation.claim("worker", now.plusSeconds(attempt * 2), Duration.ofSeconds(1));
+        }
+
+        assertThat(evaluation.claim("next-worker", now.plusSeconds(4), Duration.ofSeconds(1))).isFalse();
+
+        assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.PROCESSING);
+        assertThat(evaluation.getLeaseOwner()).isEqualTo("worker");
+        assertThat(evaluation.getAttemptCount()).isEqualTo(3);
     }
 
     @Test

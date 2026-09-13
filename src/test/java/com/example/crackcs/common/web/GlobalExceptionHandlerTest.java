@@ -1,27 +1,35 @@
 package com.example.crackcs.common.web;
 
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.content.question.controller.QuestionController;
 import com.example.crackcs.content.question.controller.request.QuestionCreateRequest;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
-import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.content.question.service.QuestionService;
+import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.exception.TopicNotFoundException;
-import com.example.crackcs.auth.security.AuthenticatedMember;
 import jakarta.validation.constraints.Positive;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-
 import java.util.List;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,18 +37,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import tools.jackson.databind.ObjectMapper;
 
-import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.mockito.Mockito.mock;
-
 @WebMvcTest(QuestionController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandlerTest.FailureController.class)
 class GlobalExceptionHandlerTest {
-
     @Autowired
     private MockMvc mockMvc;
 
@@ -108,7 +108,7 @@ class GlobalExceptionHandlerTest {
         given(principal.memberId()).willReturn(77L);
         given(principal.getUsername()).willReturn("admin@example.com");
         given(principal.getPassword()).willReturn("encoded");
-        org.mockito.Mockito.doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
                 .when(principal).getAuthorities();
         given(principal.isEnabled()).willReturn(true);
         return principal;
@@ -188,7 +188,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.code").value("INTERNAL_SERVER_ERROR"))
                 .andExpect(jsonPath("$.message").value("서버에서 요청을 처리하는 중 오류가 발생했습니다."))
                 .andExpect(jsonPath("$.message").value(
-                        org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("database password"))));
+                        Matchers.not(Matchers.containsString("database password"))));
     }
 
     @RestController

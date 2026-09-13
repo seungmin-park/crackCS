@@ -1,17 +1,16 @@
 package com.example.crackcs.evaluation.adapter;
 
+import com.example.crackcs.evaluation.domain.ConceptResult;
+import com.example.crackcs.evaluation.domain.EvaluationResult;
 import com.example.crackcs.evaluation.domain.Verdict;
-import com.example.crackcs.evaluation.port.ConceptResult;
 import com.example.crackcs.evaluation.port.EvaluationPort;
 import com.example.crackcs.evaluation.port.EvaluationRequest;
-import com.example.crackcs.evaluation.port.EvaluationResult;
 import com.example.crackcs.exception.EvaluationTimeoutException;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Profile;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
-
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
+import org.springframework.stereotype.Component;
 
 @Component
 @Profile("(local | test) & !prod & !production")

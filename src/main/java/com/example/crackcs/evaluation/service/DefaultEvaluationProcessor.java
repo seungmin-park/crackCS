@@ -1,44 +1,46 @@
 package com.example.crackcs.evaluation.service;
 
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
-import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.evaluation.domain.Evaluation;
+import com.example.crackcs.evaluation.domain.EvaluationResult;
+import com.example.crackcs.evaluation.port.EvaluatedConceptApplicationPort;
 import com.example.crackcs.evaluation.port.EvaluationConceptInput;
 import com.example.crackcs.evaluation.port.EvaluationEvidenceInput;
 import com.example.crackcs.evaluation.port.EvaluationPort;
 import com.example.crackcs.evaluation.port.EvaluationRequest;
-import com.example.crackcs.evaluation.port.EvaluationResult;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
 import com.example.crackcs.evaluation.retrieval.KnowledgeRetrievalService;
 import com.example.crackcs.evaluation.retrieval.RetrievalQuery;
 import com.example.crackcs.evaluation.retrieval.RetrievalResult;
 import com.example.crackcs.exception.EvaluationTimeoutException;
-import com.example.crackcs.learning.domain.Answer;
+import com.example.crackcs.learning.answer.domain.Answer;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.ConcurrencyFailureException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.util.stream.IntStream;
-import java.util.List;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class DefaultEvaluationProcessor implements EvaluationProcessor {
-    private static final int MAX_ATTEMPTS = 3;
     private final EvaluationRepository evaluations;
     private final ObjectProvider<EvaluationPort> ports;
     private final TransactionTemplate transactions;
     private final KnowledgeRetrievalService retrievalService;
     private final KnowledgeChunkRepository chunks;
     private final EvaluationBudgetGuard budgetGuard;
+    private final EvaluatedConceptApplicationPort evaluatedConcepts;
+    private final EvaluationCompletionTransaction completionTransactions;
     private final String workerId = UUID.randomUUID().toString();
     @Value("${crackcs.evaluation.lease-duration:1m}")
     private Duration leaseDuration;
@@ -84,17 +86,30 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
             retryOrFail(evaluationId, pending.attemptCount(), "PROVIDER_UNAVAILABLE");
             return;
         }
+        EvaluationResult result;
         try {
-            EvaluationResult result = port.evaluate(request);
-            List<Long> providedChunkIds = retrieval.chunks().stream()
-                    .map(retrieved -> retrieved.chunk().getId()).toList();
-            transactions.executeWithoutResult(status -> completeIfOwned(evaluationId, result, providedChunkIds));
+            result = port.evaluate(request);
         } catch (EvaluationTimeoutException timeout) {
             retryOrFail(evaluationId, pending.attemptCount(), "PROVIDER_TIMEOUT");
+            return;
         } catch (IllegalArgumentException invalidResult) {
             retryOrFail(evaluationId, pending.attemptCount(), "INVALID_RESULT");
+            return;
         } catch (RuntimeException providerFailure) {
             retryOrFail(evaluationId, pending.attemptCount(), "PROVIDER_ERROR");
+            return;
+        }
+        List<Long> providedChunkIds = retrieval.chunks().stream()
+                .map(retrieved -> retrieved.chunk().getId()).toList();
+        try {
+            // A storage conflict retries completion using this same provider result in a fresh transaction.
+            completionTransactions.execute(() -> completeIfOwned(evaluationId, result, providedChunkIds));
+        } catch (DataIntegrityViolationException permanentStorageFailure) {
+            failIfOwned(evaluationId, "PERSISTENCE_ERROR");
+        } catch (ConcurrencyFailureException exhaustedConflict) {
+            retryOrFail(evaluationId, pending.attemptCount(), "PERSISTENCE_CONFLICT");
+        } catch (IllegalArgumentException invalidResult) {
+            retryOrFail(evaluationId, pending.attemptCount(), "INVALID_RESULT");
         }
     }
 
@@ -125,7 +140,10 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
         List<KnowledgeChunk> providedChunks = chunks.findAllById(providedChunkIds);
         evaluations.findLockedById(evaluationId)
                 .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
-                .ifPresent(evaluation -> evaluation.completeWithEvidence(result, providedChunks));
+                .ifPresent(evaluation -> {
+                    evaluation.completeWithEvidence(result, providedChunks);
+                    evaluatedConcepts.applyInCurrentTransaction(evaluationId);
+                });
     }
 
     private void requireReviewIfOwned(Long evaluationId, String safeReason) {
@@ -134,11 +152,17 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
                 .ifPresent(evaluation -> evaluation.requireReview(safeReason)));
     }
 
+    private void failIfOwned(Long evaluationId, String safeReason) {
+        transactions.executeWithoutResult(status -> evaluations.findLockedById(evaluationId)
+                .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
+                .ifPresent(evaluation -> evaluation.fail(safeReason)));
+    }
+
     private void retryOrFail(Long evaluationId, int attemptCount, String safeReason) {
         transactions.executeWithoutResult(status -> evaluations.findLockedById(evaluationId)
                 .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
                 .ifPresent(evaluation -> {
-                    if (attemptCount >= MAX_ATTEMPTS) {
+                    if (evaluation.hasExhaustedAttempts()) {
                         evaluation.fail(safeReason);
                     } else {
                         evaluation.scheduleRetry(safeReason, LocalDateTime.now(), retryDelay(attemptCount));

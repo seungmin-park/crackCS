@@ -1,11 +1,13 @@
 openapi: 3.1.0
 info:
   title: CrackCS API
-  version: 5.0.0
-  description: 세션 인증, 콘텐츠 운영, 근거 검색과 구조화 평가 API
+  version: 6.0.0
+  description: 세션 인증, 콘텐츠 운영, 근거 평가와 개인 학습 상태·추천 API
 servers:
   - url: /
 tags:
+  - name: Learning
+    description: USER 전용 학습 현황·지식 지도·다음 문제 추천
   - name: Answers
     description: 학습자 답변과 평가 상태
   - name: Authentication
@@ -25,6 +27,45 @@ tags:
   - name: Admin Evaluations
     description: 실패·검토 필요 평가 조회
 paths:
+  /api/members/me/knowledge-states:
+    get:
+      tags: [Learning]
+      operationId: findMyKnowledgeStates
+      summary: 현재 USER의 활성 주제·개념별 지식 상태
+      responses:
+        '200':
+          description: 미평가 개념은 UNKNOWN과 NULL 숙련도로 반환
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/KnowledgeStatesResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/members/me/progress:
+    get:
+      tags: [Learning]
+      operationId: findMyProgress
+      summary: 현재 USER의 풀이 현황과 추천
+      responses:
+        '200':
+          description: 전체·최근7일 풀이 수, 최신 답변5개, 주제 요약 및 추천
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LearningProgressResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /api/recommendations/next-question:
+    get:
+      tags: [Learning]
+      operationId: recommendNextQuestion
+      summary: 현재 USER의 다음 기본 문제 추천
+      responses:
+        '200':
+          description: 미평가 우선, 낮은 숙련도, 오래전에 푼 문제 순. 후보 없으면 ID NULL
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RecommendationResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
   /api/auth/csrf:
     get:
       tags: [Authentication]
@@ -1042,6 +1083,84 @@ components:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
   schemas:
+    KnowledgeStatus:
+      type: string
+      enum: [UNKNOWN, LEARNING, STABLE]
+    ConceptKnowledgeResponse:
+      type: object
+      required: [conceptId, conceptName, status, masteryScore, confidenceScore, attemptCount, lastEvaluatedAt]
+      properties:
+        conceptId: { type: integer, format: int64 }
+        conceptName: { type: string }
+        status: { $ref: '#/components/schemas/KnowledgeStatus' }
+        masteryScore:
+          type: [number, 'null']
+          minimum: 0
+          maximum: 100
+          description: 미평가 NULL, 유효 평가의 최신 가중 평균
+        confidenceScore:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 평가 관측량, AI 정답 확률 아님
+        attemptCount: { type: integer, format: int64, minimum: 0 }
+        lastEvaluatedAt: { type: [string, 'null'], description: '평가 완료 로컬 시각(ISO-8601, 시간대 오프셋 없음)' }
+    TopicKnowledgeResponse:
+      type: object
+      required: [topicId, topicName, status, masteryScore, confidenceScore, unknownCount, learningCount, stableCount, concepts]
+      properties:
+        topicId: { type: integer, format: int64 }
+        topicName: { type: string }
+        status: { $ref: '#/components/schemas/KnowledgeStatus' }
+        masteryScore: { type: [number, 'null'], minimum: 0, maximum: 100, description: 평가한 활성 개념 평균 }
+        confidenceScore: { type: number, minimum: 0, maximum: 100, description: 미평가0 포함 활성 개념 평균 }
+        unknownCount: { type: integer, format: int64, minimum: 0 }
+        learningCount: { type: integer, format: int64, minimum: 0 }
+        stableCount: { type: integer, format: int64, minimum: 0 }
+        concepts:
+          type: array
+          items: { $ref: '#/components/schemas/ConceptKnowledgeResponse' }
+    KnowledgeStatesResponse:
+      type: object
+      required: [topics]
+      properties:
+        topics:
+          type: array
+          items: { $ref: '#/components/schemas/TopicKnowledgeResponse' }
+    RecommendationResponse:
+      type: object
+      required: [questionId, title, conceptId, conceptName, reason, reasonText]
+      properties:
+        questionId: { type: [integer, 'null'], format: int64 }
+        title: { type: [string, 'null'] }
+        conceptId: { type: [integer, 'null'], format: int64 }
+        conceptName: { type: [string, 'null'] }
+        reason: { type: string, enum: [UNASSESSED_CONCEPT, LOW_MASTERY, NO_AVAILABLE_QUESTION] }
+        reasonText: { type: string }
+    RecentLearningEvaluationResponse:
+      type: object
+      required: [answerId, questionTitle, status, verdict, score, submittedAt]
+      properties:
+        answerId: { type: integer, format: int64 }
+        questionTitle: { type: string }
+        status: { type: string, enum: [EVALUATING, PROCESSING, EVALUATED, NEEDS_REVIEW, FAILED] }
+        verdict: { type: [string, 'null'], enum: [CORRECT, PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW, null] }
+        score: { type: [integer, 'null'], minimum: 0, maximum: 100 }
+        submittedAt: { type: string, description: '답변 제출 로컬 시각(ISO-8601, 시간대 오프셋 없음)' }
+    LearningProgressResponse:
+      type: object
+      required: [totalAnswers, recentAnswerCount, recentEvaluations, topics, recommendation]
+      properties:
+        totalAnswers: { type: integer, format: int64, minimum: 0 }
+        recentAnswerCount: { type: integer, format: int64, minimum: 0 }
+        recentEvaluations:
+          type: array
+          maxItems: 5
+          items: { $ref: '#/components/schemas/RecentLearningEvaluationResponse' }
+        topics:
+          type: array
+          items: { $ref: '#/components/schemas/TopicKnowledgeResponse' }
+        recommendation: { $ref: '#/components/schemas/RecommendationResponse' }
     AnswerResponse:
       type: object
       required: [answerId, evaluationId, questionId, questionContent, content, submittedAt, evaluation]
@@ -1098,7 +1217,7 @@ components:
           type: [string, 'null']
         failureReason:
           type: [string, 'null']
-          enum: [PROVIDER_ERROR, PROVIDER_TIMEOUT, INVALID_RESULT, PROVIDER_UNAVAILABLE, EVIDENCE_NOT_FOUND, EVIDENCE_CONFLICT, MONTHLY_BUDGET_EXCEEDED, null]
+          enum: [PROVIDER_ERROR, PROVIDER_TIMEOUT, INVALID_RESULT, PROVIDER_UNAVAILABLE, EVIDENCE_NOT_FOUND, EVIDENCE_CONFLICT, MONTHLY_BUDGET_EXCEEDED, PERSISTENCE_ERROR, PERSISTENCE_CONFLICT, ATTEMPTS_EXHAUSTED, null]
         concepts:
           type: array
           items:
