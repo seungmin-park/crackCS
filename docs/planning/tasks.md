@@ -43,7 +43,7 @@ Phase Gate 체크
 - [x] Phase 3 — 관리자 콘텐츠 운영
 - [x] Phase 4 — 답변과 평가 상태 골격
 - [ ] Phase 5 — Knowledge Retrieval과 실제 AI 평가
-- [ ] Phase 6 — Knowledge State와 개인 추천
+- [x] Phase 6 — Knowledge State와 개인 추천
 - [ ] Phase 7 — 후속 질문 학습 루프
 - [ ] Phase 8 — 운영 안정화와 파일럿
 
@@ -114,9 +114,9 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ### Phase 6 개인화
 
-- [ ] `GET /api/recommendations/next-question` — USER, 다음 추천 문제
-- [ ] `GET /api/members/me/knowledge-states` — USER, 지식 지도
-- [ ] `GET /api/members/me/progress` — USER, 학습 홈 요약
+- [x] `GET /api/recommendations/next-question` — USER, 다음 추천 문제
+- [x] `GET /api/members/me/knowledge-states` — USER, 지식 지도
+- [x] `GET /api/members/me/progress` — USER, 학습 홈 요약
 
 ### Phase 7 후속 질문
 
@@ -636,66 +636,69 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 대상: `FR-KNOWLEDGE-001`, `FR-KNOWLEDGE-002`, `FR-KNOWLEDGE-003`, `FR-QUESTION-001`, `FR-PROGRESS-001`, `AC-001`, `AC-004`.
 
+- 구현·Gate 증거: [2026-09-13 검증 기록](../changes/2026-09-13-phase-6/verification.md). 백엔드274개·프런트123개 성공, 실제 API→DB 흐름 검증 및 독립 코드 검토 PASS
+- 완료 범위: Phase 6 기능 Gate. 운영 PostgreSQL·실모델·골든 셋 독립 검수는 별도 미완료
+
 ### P6-T01 Knowledge State 공식 결정
 
-- [ ] PARTIALLY_CORRECT의 Concept 충족 기준인 `OQ-003`을 확정한다.
-- [ ] mastery, confidence와 STABLE 임계값인 `OQ-004`를 확정한다.
-- [ ] 최신 평가와 반복 평가의 가중 방식을 정의한다.
-- [ ] 알고리즘 버전과 변경 시 재계산 정책을 정의한다.
-- [ ] 예시 평가 이력으로 예상 상태를 계산해 문서화한다.
+- [x] PARTIALLY_CORRECT의 Concept 충족 기준인 `OQ-003`을 확정한다.
+- [x] mastery, confidence와 STABLE 임계값인 `OQ-004`를 확정한다.
+- [x] 최신 평가와 반복 평가의 가중 방식을 정의한다.
+- [x] 알고리즘 버전과 변경 시 재계산 정책을 정의한다.
+- [x] 예시 평가 이력으로 예상 상태를 계산해 문서화한다.
 
 ### P6-T02 KnowledgeState schema와 도메인
 
-- [ ] `(member_id, concept_id)` 복합 키를 구현한다.
-- [ ] masteryScore NULL과 UNKNOWN 의미를 보존한다.
-- [ ] confidenceScore, attemptCount, status와 lastEvaluatedAt을 구현한다.
-- [ ] 낙관적 잠금 version을 구현한다.
-- [ ] 허용되는 상태 전이와 범위 검증을 구현한다.
-- [ ] 상태 계산 단위 테스트를 작성한다.
+- [x] 자동 생성 PK와 `(member_id, concept_id)` 복합 UNIQUE로 회원·개념별 상태 유일성 보장.
+- [x] masteryScore NULL과 UNKNOWN 의미를 보존한다.
+- [x] confidenceScore, attemptCount, status와 lastEvaluatedAt을 구현한다.
+- [x] 낙관적 잠금 version을 구현한다.
+- [x] 허용되는 상태 전이와 범위 검증을 구현한다.
+- [x] 상태 계산 단위 테스트를 작성한다.
 
 ### P6-T03 정확히 한 번 반영
 
-- [ ] 어떤 EvaluationConcept가 반영됐는지 추적하는 구조를 결정한다.
-- [ ] 유일 제약으로 중복 반영을 차단한다.
-- [ ] 평가 완료와 상태 반영의 트랜잭션 또는 이벤트 경계를 정의한다.
-- [ ] 낙관적 잠금 충돌 재시도를 구현한다.
-- [ ] 같은 평가 재처리와 동시 다른 평가 처리 테스트를 작성한다.
-- [ ] lost update가 발생하지 않는지 최종 DB 값으로 확인한다.
+- [x] 어떤 EvaluationConcept가 반영됐는지 추적하는 구조를 결정한다.
+- [x] 유일 제약으로 중복 반영을 차단한다.
+- [x] 평가 완료와 상태 반영의 트랜잭션 또는 이벤트 경계를 정의한다.
+- [x] 낙관적 잠금 충돌 재시도를 구현한다.
+- [x] 같은 평가 재처리와 동시 다른 평가 처리 테스트를 작성한다.
+- [x] lost update가 발생하지 않는지 최종 DB 값으로 확인한다.
 
 ### P6-T04 Knowledge State 조회 API
 
-- [ ] Topic별 집계 규칙을 정의한다.
-- [ ] Concept별 상태·점수·신뢰도·횟수·최근 평가 조회를 구현한다.
-- [ ] UNKNOWN과 낮은 mastery를 다른 응답 상태로 제공한다.
-- [ ] 전체 Answer 이력을 매번 읽지 않는 query를 구현한다.
-- [ ] 다른 회원의 상태 조회를 차단한다.
-- [ ] 조회 query와 소유권 테스트를 작성한다.
+- [x] Topic별 집계 규칙을 정의한다.
+- [x] Concept별 상태·점수·신뢰도·횟수·최근 평가 조회를 구현한다.
+- [x] UNKNOWN과 낮은 mastery를 다른 응답 상태로 제공한다.
+- [x] 전체 Answer 이력을 매번 읽지 않는 query를 구현한다.
+- [x] 다른 회원의 상태 조회를 차단한다.
+- [x] 조회 query와 소유권 테스트를 작성한다.
 
 ### P6-T05 추천 규칙
 
-- [ ] 미평가 Concept 우선 규칙을 구현한다.
-- [ ] 낮은 mastery Concept 차순위 규칙을 구현한다.
-- [ ] 같은 우선순위에서 최근에 풀지 않은 Question을 선택한다.
-- [ ] RETIRED와 이미 사용할 수 없는 문제를 제외한다.
-- [ ] 후보 없음 상태와 이유를 정의한다.
-- [ ] 결정적 fixture를 사용한 추천 단위·통합 테스트를 작성한다.
+- [x] 미평가 Concept 우선 규칙을 구현한다.
+- [x] 낮은 mastery Concept 차순위 규칙을 구현한다.
+- [x] 같은 우선순위에서 최근에 풀지 않은 Question을 선택한다.
+- [x] RETIRED와 이미 사용할 수 없는 문제를 제외한다.
+- [x] 후보 없음 상태와 이유를 정의한다.
+- [x] 결정적 fixture를 사용한 추천 단위·통합 테스트를 작성한다.
 
 ### P6-T06 지식 지도와 학습 홈
 
-- [ ] Topic별 상태 요약 UI를 구현한다.
-- [ ] Concept별 UNKNOWN, LEARNING과 STABLE 표시를 구현한다.
-- [ ] 숙련도와 신뢰도를 혼동하지 않게 설명한다.
-- [ ] 최근 풀이 수와 평가 결과를 표시한다.
-- [ ] 다음 추천 문제와 추천 이유를 표시한다.
-- [ ] empty, 신규 회원과 일부 평가 상태 화면을 테스트한다.
+- [x] Topic별 상태 요약 UI를 구현한다.
+- [x] Concept별 UNKNOWN, LEARNING과 STABLE 표시를 구현한다.
+- [x] 숙련도와 신뢰도를 혼동하지 않게 설명한다.
+- [x] 최근 풀이 수와 평가 결과를 표시한다.
+- [x] 다음 추천 문제와 추천 이유를 표시한다.
+- [x] empty, 신규 회원과 일부 평가 상태 화면을 테스트한다.
 
 ### Phase 6 Gate
 
-- [ ] UNKNOWN이 0점 취약 상태와 구분된다.
-- [ ] 같은 평가가 두 번 반영되지 않는다.
-- [ ] 동시 완료된 평가가 유실되지 않는다.
-- [ ] 추천 결과와 추천 이유가 함께 제공된다.
-- [ ] `AC-001`과 `AC-004`가 통과한다.
+- [x] UNKNOWN이 0점 취약 상태와 구분된다.
+- [x] 같은 평가가 두 번 반영되지 않는다.
+- [x] 동시 완료된 평가가 유실되지 않는다.
+- [x] 추천 결과와 추천 이유가 함께 제공된다.
+- [x] `AC-001`과 `AC-004`가 통과한다.
 
 ---
 
@@ -864,7 +867,7 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
 
 ### 문제, 답변과 평가
 
-- [ ] `FR-QUESTION-001` 추천 문제 조회 — P6-T05
+- [x] `FR-QUESTION-001` 추천 문제 조회 — P6-T05
 - [x] `FR-QUESTION-002` 문제 표시 — P1-T05, P1-T06
 - [ ] `FR-ANSWER-001` Answer 제출 — P4-T01, P4-T05, P4-T06
 - [ ] `FR-ANSWER-002` 중복 제출 방지 — P4-T02
@@ -877,12 +880,12 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
 
 ### 개인화와 후속 학습
 
-- [ ] `FR-KNOWLEDGE-001` Concept별 상태 갱신 — P6-T02, P6-T03
-- [ ] `FR-KNOWLEDGE-002` 상태 구분 — P6-T01, P6-T02
-- [ ] `FR-KNOWLEDGE-003` 지식 지도 조회 — P6-T04, P6-T06
+- [x] `FR-KNOWLEDGE-001` Concept별 상태 갱신 — P6-T02, P6-T03
+- [x] `FR-KNOWLEDGE-002` 상태 구분 — P6-T01, P6-T02
+- [x] `FR-KNOWLEDGE-003` 지식 지도 조회 — P6-T04, P6-T06
 - [ ] `FR-FOLLOWUP-001` 후속 질문 생성 — P7-T01, P7-T02, P7-T03
 - [ ] `FR-FOLLOWUP-002` 후속 답변 — P7-T04, P7-T05
-- [ ] `FR-PROGRESS-001` 학습 홈 — P6-T04, P6-T06
+- [x] `FR-PROGRESS-001` 학습 홈 — P6-T04, P6-T06
 
 ## 공통 검증 체크리스트
 

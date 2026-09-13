@@ -324,7 +324,7 @@ flowchart TD
 - LEARNING: 평가 이력이 있지만 숙련 또는 신뢰 기준을 충족하지 못함
 - STABLE: 숙련과 신뢰 기준을 충족함
 
-LEARNING과 STABLE의 정확한 임계값은 구현 전 확정하고 알고리즘 버전으로 관리한다.
+`knowledge-v1`: 숙련도 80 이상·신뢰도 75 이상이면 STABLE. 공식·판정 기준·재계산 정책은 [콘텐츠·AI 정책](content-and-ai-policy.md#지식-상태-공식--oq-004) 참조.
 
 #### FR-KNOWLEDGE-003 지식 지도 조회
 
@@ -736,8 +736,8 @@ And 새로운 Evaluation만 새 문서 버전을 사용할 수 있다.
 |---|---|---|---|
 | OQ-001 | 서버 세션과 토큰 중 인증 상태 유지 방식 | 결정 | 동일 출처 웹의 HttpOnly 서버 세션과 CSRF token 사용 ([ADR-0001](../adr/0001-session-based-authentication.md)) |
 | OQ-002 | Production DB와 벡터 저장 방식 | 결정 | PostgreSQL + 키워드 기준선, 품질 미달 시 pgvector 비교 ([ADR-0005](../adr/0005-phase-5-evaluation-runtime.md)) |
-| OQ-003 | PARTIALLY_CORRECT Concept 충족 기준 | 골든 세트 작성 후 | 필수 Concept 누락과 오개념을 분리해 판정 |
-| OQ-004 | Knowledge State 갱신 공식과 STABLE 임계값 | Phase 3 전 | 버전 필드를 두고 초기에는 단순 가중 평균 |
+| OQ-003 | PARTIALLY_CORRECT Concept 충족 기준 | 결정 | [개념별 기준](content-and-ai-policy.md#개념별-판정-기준--oq-003), 누락 50점·핵심 모순 0점·근거 부족 제외 |
+| OQ-004 | Knowledge State 갱신 공식과 STABLE 임계값 | 결정 | [knowledge-v1](content-and-ai-policy.md#지식-상태-공식--oq-004), 최신 가중 평균·숙련도80/신뢰도75 |
 | OQ-005 | AI 평가 동기·비동기 실행 방식 | 결정 | Answer 저장 후 DB lease worker 평가 ([ADR-0005](../adr/0005-phase-5-evaluation-runtime.md)) |
 | OQ-006 | 초기 Topic별 문제·문서 최소 수 | 콘텐츠 입력 전 | 하위 Topic별 공개 문제 5개 이상으로 파일럿 |
 | OQ-007 | AI 생성 문제 기능 도입 시점 | P0 출시 후 | 골든 세트와 관리자 검수 처리량 확인 후 결정 |

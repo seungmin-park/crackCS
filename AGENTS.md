@@ -62,6 +62,10 @@ REFACTOR 중복·이름·책임 개선
 
 ## 도메인과 엔티티
 
+- Java 타입: 운영·테스트 모두 명시적 타입 사용. `var` 금지
+- 타입 이름: 본문에서 완전 수식 패키지명 사용 금지. import로 이동
+- JPQL enum 조건: 완전 수식 enum 리터럴 대신 파라미터 전달
+
 - 도메인 규칙의 위치: 상태를 소유한 도메인 객체
 - 최종 방어: DTO·Service를 우회해도 불변식 유지
 - 상태 변경: `update`, `publish`, `retire` 같은 의도 기반 메서드
@@ -137,6 +141,9 @@ update(...)
 - `@BeforeEach`에 이전 테스트 데이터 정리 금지
 - bulk 삭제 순서 예시: 연결 엔티티 → 본 엔티티 → 참조 엔티티
 - `deleteAllInBatch()`: cascade를 실행하지 않으므로 연결 테이블을 먼저 삭제
+- 테스트 정리 선택: 소유 자식·element collection 삭제가 필요한 aggregate는 `deleteAll()`, cascade/callback 불필요한 단순 테이블은 FK 역순 `deleteAllInBatch()`
+- bulk 후 같은 영속성 컨텍스트의 엔티티 재사용 금지. 정리를 위해 test-level transaction·EntityManager 의존성 추가 금지
+- 공통 테스트 부모에 Repository·fixture·teardown 일괄 상속 금지. 각 클래스가 필요한 의존성과 정리 직접 소유
 - teardown: assertion 실패와 부분 fixture 생성 후에도 실행 가능한 순서
 - 공유 DB 병렬 실행: 전체 `deleteAll*()` 금지. 테스트별 데이터·schema 격리 또는 직렬화 필요
 - DB 밖 공유 상태: static, singleton, `ThreadLocal`, 보안 컨텍스트, 시스템 속성, 파일을 원래 상태로 복원

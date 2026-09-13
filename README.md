@@ -33,7 +33,7 @@ npm install
 npm run dev
 ```
 
-접속: `http://127.0.0.1:5173/questions`.
+접속: `http://127.0.0.1:5173/`. USER 로그인 후 학습 홈, `/knowledge-map`에서 지식 지도 확인.
 
 ```text
 Browser :5173

@@ -102,6 +102,34 @@ EvaluationConcept = 그 시점의 평가 기록
 KnowledgeState    = 여러 평가를 누적한 현재 상태
 ```
 
+- `content.knowledge`: 평가 근거 문서·검색 조각
+- `learning.answer`: 답변 제출·이력·평가 결과 조회
+- `learning.mastery`: 회원×개념별 숙련 상태·판정 반영 기록·조회
+- `learning.recommendation`: 다음 문제 후보·우선순위·선택
+- `learning.progress`: 답변 통계·최근 평가·학습 현황 조립
+- 공식: [knowledge-v1](../product/content-and-ai-policy.md#지식-상태-공식--oq-004)
+- 적용 기록: `AppliedEvaluationConcept`가 EvaluationConcept 연관관계의 UNIQUE로 중복 차단. 자체 ID는 자동 생성
+- 완료·상태·적용 기록: 동일 트랜잭션. 충돌 시 AI 재호출 없이 저장 재시도
+- HTTP 응답: Controller에서 Service 결과를 response로 변환. Service는 controller 패키지에 의존하지 않음
+- 평가 결과: EvaluationResult / ConceptResult는 evaluation.domain 소유. Port·Adapter가 도메인 결과 사용
+- 완료 조정: EvaluationProcessor가 평가 완료 후 EvaluatedConceptApplicationPort 호출. mastery Adapter가 KnowledgeStateService로 연결, 기존 transaction 참여
+
+```text
+평가 Processor → evaluation.port.EvaluatedConceptApplicationPort
+                              ↑ 구현
+                  learning.mastery.adapter
+                              ↓
+                  KnowledgeStateService
+```
+
+- 의존 범위: evaluation → mastery Service 직접 참조 제거. Answer·Evaluation 등 기존 엔티티 간 참조는 유지하며, 독립 배포 모듈 분리 아님
+
+```text
+EvaluationConcept ── AppliedEvaluationConcept (판정별 최대 1행)
+          ↓
+회원 × 개념 ── KnowledgeState (@Version)
+```
+
 ### 도메인 서비스
 
 여러 객체의 정보가 함께 필요한 결정은 한 엔티티에 억지로 넣지 않고 서비스가 조율한다.
@@ -114,7 +142,9 @@ KnowledgeState    = 여러 평가를 누적한 현재 상태
 | AnswerEvaluationService       | 검색 근거와 QuestionConcept 기준으로 Evaluation 생성    |
 | KnowledgeStateService         | 성공한 EvaluationConcept를 해당 KnowledgeState에 반영 |
 | FollowUpQuestionService       | 취약 또는 심화 Concept을 골라 후속 Question 생성          |
-| QuestionRecommendationService | 회원의 KnowledgeState를 비교해 다음 Question 선택       |
+| KnowledgeQueryService         | 현재 회원 상태와 Topic 집계 조회 |
+| RecommendationService         | 다음 Question과 우선 학습 Concept 선택 |
+| LearningProgressService       | 답변 통계·최근 평가·상태·추천 조합 |
 
 ```text
 Learning use case
@@ -122,7 +152,7 @@ Learning use case
       ├─ 검색은 KnowledgeRetrievalService에게
       ├─ 평가는 AnswerEvaluationService에게
       ├─ 현재 상태 변경은 KnowledgeState에게
-      └─ 다음 문제 결정은 QuestionRecommendationService에게 요청
+      └─ 다음 문제 결정은 RecommendationService에게 요청
 ```
 
 평가, 상태 계산, 추천을 한 객체에 모두 넣으면 평가 모델 변경이 추천 코드까지 흔든다. 서로 다른 변경 이유를 가진 책임을 분리하면 각 규칙을 독립적으로 시험하고 교체할 수 있다.
@@ -131,16 +161,43 @@ Learning use case
 
 ![CrackCS ERD](images/crackcs-erd-illustrated.png)
 
-Cardinality 표기는 관계선 가까이에 있는 엔티티가 아니라 반대편 엔티티 한 건을 기준으로 읽는다.
+- 기준: 2026-09-13 현재 Java 엔티티의 FK·nullable·UNIQUE 매핑. 운영 DB introspection 결과 아님
+- 이미지: 14개 엔티티 테이블과 주요 관계선 18개. 각 끝의 숫자로 다중성 표시: 1 / 0..1 / 0..*. 교차점은 연결점이 아님
+- `KNOWLEDGE_APPLICATION`: AppliedEvaluationConcept의 실제 테이블 이름. 평가 개념 한 건당 적용 기록 최대 한 건
+- `KNOWLEDGE_STATE.latest_evaluation_concept_id`: 현재 scalar 컬럼으로 FK 매핑 없음. 직접 관계선 생략
+- 현재 미구현: `QUESTION.source_answer_id` 및 후속 답변 연결. 아래 후속 질문 관련 설계는 계획으로 구분
+- 이미지 생략: 문서·문제의 생성/검수 회원 FK 4개와 ElementCollection 테이블 3개. 아래 Mermaid 관계도에는 포함
 
-```text
-ANSWER |o--o| QUESTION
-       ▲      ▲
-       │      └─ Answer 하나는 후속 Question을 0개 또는 1개 만들 수 있음
-       └─ Question 하나의 source Answer는 0개 또는 1개
+```mermaid
+erDiagram
+    MEMBER ||--o{ AUTH_ACCOUNT : member_id
+    TOPIC |o--o{ TOPIC : parent_id
+    TOPIC ||--o{ CONCEPT : topic_id
+    TOPIC ||--o{ KNOWLEDGE_DOCUMENT : topic_id
+    MEMBER ||--o{ KNOWLEDGE_DOCUMENT : created_by_member_id
+    MEMBER |o--o{ KNOWLEDGE_DOCUMENT : reviewed_by_member_id
+    KNOWLEDGE_DOCUMENT ||--o{ KNOWLEDGE_CHUNK : document_id
+    TOPIC ||--o{ QUESTION : topic_id
+    MEMBER |o--o{ QUESTION : created_by_member_id
+    MEMBER |o--o{ QUESTION : reviewed_by_member_id
+    QUESTION ||--o{ QUESTION_CONCEPT : question_id
+    CONCEPT ||--o{ QUESTION_CONCEPT : concept_id
+    MEMBER ||--o{ ANSWER : member_id
+    QUESTION ||--o{ ANSWER : question_id
+    ANSWER ||--o| EVALUATION : answer_id_unique
+    EVALUATION ||--o{ EVALUATION_CONCEPT : evaluation_id
+    CONCEPT ||--o{ EVALUATION_CONCEPT : concept_id
+    EVALUATION ||--o{ EVALUATION_EVIDENCE : evaluation_id
+    KNOWLEDGE_CHUNK ||--o{ EVALUATION_EVIDENCE : chunk_id
+    MEMBER ||--o{ KNOWLEDGE_STATE : member_id
+    CONCEPT ||--o{ KNOWLEDGE_STATE : concept_id
+    EVALUATION_CONCEPT ||--o| KNOWLEDGE_APPLICATION : evaluation_concept_id_unique
+    EVALUATION ||--o{ EVALUATION_STRENGTH : evaluation_id
+    EVALUATION ||--o{ EVALUATION_OMISSION : evaluation_id
+    EVALUATION ||--o{ EVALUATION_MISCONCEPTION : evaluation_id
 ```
 
-일반 Question은 `source_answer_id = NULL`, 후속 Question은 `source_answer_id = Answer.id`이므로 왼쪽은 `|o`다. 답변 하나당 후속 질문을 최대 한 개만 허용하므로 오른쪽도 `o|`이며, 이 규칙은 `QUESTION.source_answer_id`의 UNIQUE 제약으로 DB에서도 보장한다.
+- 관계선의 표시는 해당 끝의 개수: `MEMBER ||--o{ ANSWER`는 답변 한 건의 회원 1명, 회원 한 명의 답변 0개 이상
 
 `QUESTION`과 `EVALUATION`은 생명주기에 따라 하위 행의 최소 개수가 달라진다. Mermaid ERD에는 저장 가능한 전체 상태를 표현하기 위해 `o{`를 사용하고, 공개·평가 완료 시점의 더 강한 조건은 도메인 불변식으로 강제한다.
 
@@ -247,7 +304,7 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 |------------------|-------------|----------------------|-------------------------------|
 | id               | BIGINT      | PK                   | 문제 ID                         |
 | topic_id         | BIGINT      | FK → TOPIC, NOT NULL | 소속 주제                         |
-| source_answer_id | BIGINT      | UNIQUE, FK → ANSWER, NULL | 후속 질문의 원본 답변; 답변당 최대 한 개 |
+| source_answer_id | BIGINT      | 계획: UNIQUE, FK → ANSWER, NULL | 현재 엔티티에 없음. 후속 질문 구현 시 추가 검토 |
 | created_by_member_id | BIGINT | FK → MEMBER, NULL | 일반 문제 등록 관리자; 시스템 후속 질문은 NULL |
 | reviewed_by_member_id | BIGINT | FK → MEMBER, NULL | 문제 검수 관리자 |
 | origin | VARCHAR(30) | NOT NULL | ADMIN, SYSTEM_FOLLOW_UP |
@@ -264,14 +321,14 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 
 관리자가 등록한 일반 문제는 검수 후 PUBLISHED가 된다. `SYSTEM_FOLLOW_UP` 문제는 이미 검수된 원문 문제와 KnowledgeDocument를 바탕으로 특정 Answer에 대해서만 생성되므로 `created_by_member_id`와 `reviewed_by_member_id`가 NULL일 수 있다.
 
-Question 유형과 원본 Answer는 함께 검증한다.
+다음 원본 Answer 연결 규칙은 후속 질문 구현 계획이며, 현재 schema·동작에 반영되지 않음.
 
 ```text
 NORMAL    → source_answer_id IS NULL
 FOLLOW_UP → source_answer_id IS NOT NULL
 ```
 
-`source_answer_id`의 UNIQUE 제약은 같은 Answer에 대한 후속 Question 중복 생성을 차단한다. 애플리케이션의 사전 조회만으로는 동시 요청 두 개가 모두 “없음”을 확인한 뒤 각각 생성할 수 있으므로, 최종 보장은 DB 제약이 맡아야 한다.
+- 계획: `source_answer_id` UNIQUE로 답변당 후속 Question 중복 방지. 현재 제약 아님
 
 ### QUESTION_CONCEPT
 
@@ -377,17 +434,39 @@ Phase 4 구현 기준.
 
 | 컬럼                | 타입           | 제약               | 설명                        |
 |-------------------|--------------|------------------|---------------------------|
-| member_id         | BIGINT       | PK, FK → MEMBER  | 회원 ID                     |
-| concept_id        | BIGINT       | PK, FK → CONCEPT | 개념 ID                     |
-| mastery_score     | DECIMAL(5,2) | NULL             | 누적 숙련도; 미평가는 NULL         |
-| confidence_score  | DECIMAL(5,2) | NOT NULL         | 평가 신뢰도                    |
-| attempt_count     | INTEGER      | NOT NULL         | 반영된 평가 수                  |
+| id                | BIGINT       | PK, IDENTITY     | 상태 ID |
+| member_id         | BIGINT       | FK → MEMBER, NOT NULL | 회원 ID |
+| concept_id        | BIGINT       | FK → CONCEPT, NOT NULL | 개념 ID |
+| mastery_score     | DOUBLE       | NULL             | 누적 숙련도; 미평가는 NULL         |
+| confidence_score  | INTEGER      | NOT NULL         | 평가 관측량, 0~100              |
+| attempt_count     | BIGINT       | NOT NULL         | 반영된 평가 수                  |
 | status            | VARCHAR(20)  | NOT NULL         | UNKNOWN, LEARNING, STABLE |
 | version           | BIGINT       | NOT NULL         | 동시 갱신 제어용 버전              |
 | last_evaluated_at | TIMESTAMP    | NULL             | 마지막 평가 일시                 |
+| score_sum         | BIGINT       | NOT NULL         | 유효 판정 점수 합                 |
+| latest_score      | INTEGER      | NOT NULL         | 최신 판정 점수, 미평가 초기값0         |
+| latest_evaluation_concept_id | BIGINT | NULL       | 같은 시각 최신 판정의 ID 기준         |
+| algorithm_version | VARCHAR(30)  | NOT NULL         | knowledge-v1                   |
+| created_at        | TIMESTAMP    | NOT NULL         | 최초 상태 생성 시각               |
 | updated_at        | TIMESTAMP    | NOT NULL         | 상태 수정 일시                  |
 
-복합 기본 키는 `(member_id, concept_id)`이다.
+- 자동 생성 PK: `id`
+- 업무 유일성: `UNIQUE(member_id, concept_id)`
+- 일반 ManyToOne 연관관계가 FK 소유. 복합 ID·읽기 전용 중복 컬럼 매핑 없음
+
+### KNOWLEDGE_APPLICATION
+
+| 컬럼 | 타입 | 제약 | 설명 |
+|---|---|---|---|
+| id | BIGINT | PK, IDENTITY | 적용 기록 ID |
+| evaluation_concept_id | BIGINT | FK → EVALUATION_CONCEPT, UNIQUE, NOT NULL | 중복 반영 방지 대상 |
+| applied_at | TIMESTAMP | NOT NULL | 적용 기록 생성 시각 |
+
+- 상태·적용 기록 모두 rollback 대상. 적용 기록만 저장된 중간 상태 금지
+- 동일 평가 재처리: 적용 기록이 있는 개념 건너뛰기
+- 서로 다른 평가 경쟁: 상태 version/최초 생성 유일성 충돌 후 새 트랜잭션 재조회
+- schema: test는 create-drop. 기존 local DB 복합 PK 전환은 ddl-auto=update에 맡기지 않음. 백업·명시적 schema 전환 또는 승인된 개발 DB 재생성 필요
+- 운영 migration과 기존 평가 재구축은 별도 배포 과제. 이번 작업에서 기존 DB 데이터 삭제 없음
 
 ## 5. 핵심 관계 설명
 
@@ -407,9 +486,9 @@ Phase 4 구현 기준.
 ### EvaluationConcept와 KnowledgeState는 목적이 다르다
 
 ```text
-답변 A의 TCP 점수 40 ─┐
-답변 B의 TCP 점수 70 ─┼─▶ 현재 TCP KnowledgeState 61
-답변 C의 TCP 점수 80 ─┘
+답변 A의 TCP 점수 100 ─┐
+답변 B의 TCP 점수  50 ─┼─▶ 현재 TCP KnowledgeState 37.5
+답변 C의 TCP 점수   0 ─┘   (100 + 50 + 0 + 최신0) / (3 + 1)
 ```
 
 - `EVALUATION_CONCEPT`: 변경하지 않는 과거 사실
@@ -417,11 +496,11 @@ Phase 4 구현 기준.
 
 둘을 하나로 합치면 과거 평가 이력이 사라지거나, 현재 상태 조회 때 매번 전체 이력을 다시 계산해야 한다.
 
-### 후속 질문도 Question이다
+### 후속 질문도 Question이다 — 구현 계획
 
 일반 문제와 후속 질문은 답변을 받고 평가된다는 동작이 같다. 별도 테이블로 분리하지 않고 `QUESTION.type`으로 구분한다.
 
-후속 질문만 `source_answer_id`를 가지므로 어느 답변의 취약점을 확인하기 위해 생성되었는지 추적할 수 있다.
+- 계획: 후속 질문의 `source_answer_id`로 원본 답변 추적. 현재 Question에는 해당 컬럼 없음
 
 ## 6. 초기 인덱스 후보
 
@@ -430,7 +509,7 @@ Phase 4 구현 기준.
 | AUTH_ACCOUNT    | `UNIQUE(provider, login_id)`         | 로그인 계정 중복 방지와 인증 조회 |
 | ANSWER          | `(member_id, submitted_at DESC)`     | 회원별 최근 풀이 이력 |
 | ANSWER          | `(question_id)`                      | 문제별 답변 조회    |
-| QUESTION        | `UNIQUE(source_answer_id)`           | 답변당 후속 질문 최대 한 개 보장 |
+| QUESTION        | 계획: `UNIQUE(source_answer_id)`           | 후속 질문 구현 시 답변당 최대 한 개 보장 검토 |
 | QUESTION        | `(topic_id, status, difficulty)`     | 추천 문제 후보 조회  |
 | KNOWLEDGE_DOCUMENT | `(topic_id, status, technology_version)` | Topic별 공개 Retrieval 후보와 관리자 문서 필터 조회 |
 | KNOWLEDGE_STATE | `(member_id, status, mastery_score)` | 회원별 취약 개념 조회 |

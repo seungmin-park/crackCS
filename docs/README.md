@@ -41,6 +41,9 @@
 | 출시 이후 확장 후보 | 있음 | 초안 | [docs/planning/extension-features.md](planning/extension-features.md) | 확장 채택·보류·폐기 |
 | Phase 4 결정·실행·검증 | 있음 | 구현·코드 리뷰 개선 완료·Gate 통과 | [docs/changes/2026-09-07-phase-4/verification.md](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 또는 검증 변경 |
 | Phase 5 구현·검증 | 있음 | 구현 기반 완료·출시 측정 대기 | [docs/changes/2026-09-08-phase-5/verification.md](changes/2026-09-08-phase-5/verification.md) | 검색·평가·검증 결과 변경 |
+| Phase 6 구현 범위·계약·검증 순서 | 있음 | 실행 완료 기록 | [구현 계획](changes/2026-09-13-phase-6/plan.md) | 상태·추천·화면 요구 변경 |
+| Phase 6 구현·Gate 증거 | 있음 | 구현 완료·기능 Gate 통과 | [검증 기록](changes/2026-09-13-phase-6/verification.md) | 구현·테스트·검토 결과 변경 |
+| Phase 6 구조·테스트 정리 | 있음 | answer/mastery 패키지·HTTP 결과 경계 정리 및 검증 완료 | [리팩터링 계획](changes/2026-09-13-phase-6/refactoring.md) | 이름·패키지·매핑·트랜잭션·테스트 책임 변경 |
 | UI 개편 선택지·제품 분석 | 있음 | 제안 당시 기록 | [docs/changes/2026-09-06-ui/proposal.md](changes/2026-09-06-ui/proposal.md) | 제안 정정·후속 결정 연결 |
 | UI·테마 구현 범위 | 있음 | 작업 계획 기록 | [docs/changes/2026-09-06-ui/plan.md](changes/2026-09-06-ui/plan.md) | 후속 검증 연결 |
 | UI 변경·검증 증거 | 있음 | 검증 당시 기록 | [docs/changes/2026-09-06-ui/verification.md](changes/2026-09-06-ui/verification.md) | 검증 정정·후속 검증 추가 |
@@ -54,10 +57,12 @@
 
 회고 경로: 로컬 파일 위치만 기록. 저장소 체크아웃에는 미포함.
 
+- Phase 6 질문·인사이트·트레이드오프: `docs/retrospectives/phase-6-decisions-and-insights.md` (로컬 작성 완료, 커밋 제외). Phase 6 설계 판단 변경 시 갱신
+
 ## 이미지 자료
 
 - [Phase 4 평가 화면](changes/2026-09-07-phase-4/assets/): 데스크톱·모바일 검증 증거
-- [ERD 이미지](architecture/images/crackcs-erd-illustrated.png): 도메인 문서 부속 자료. 모델 변경 시 함께 확인
+- [ERD 이미지](architecture/images/crackcs-erd-illustrated.png): 2026-09-13 구현 기준 14개 엔티티·주요 관계선·숫자 다중성. 생성/검수 회원 FK와 컬렉션 테이블은 도메인 문서의 Mermaid 참조. 매핑 변경 시 함께 갱신
 - [UI 시안·검증 화면](changes/2026-09-06-ui/assets/): 해당 UI 변경 기록 부속 자료
 
 ## 통합·제거 이력

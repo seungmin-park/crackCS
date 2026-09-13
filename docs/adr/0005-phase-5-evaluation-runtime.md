@@ -85,7 +85,8 @@ Terra 선택 이유:
 - 방식: DB 상태 + lease 기반 단일 서버 worker
 - 작업 원본: Answer와 Evaluation row
 - claim: pessimistic lock, lease owner·만료 시각·시도 횟수 저장
-- 재시도: 최대 3회, 지수 backoff
+- 평가 시도: 최초 실행 포함 최대 3회, 지수 backoff. 만료 lease 복구도 시도 횟수에 포함
+- 세 번째 lease 만료 후 복구: 추가 AI 호출 없이 FAILED / ATTEMPTS_EXHAUSTED. 유효한 lease는 유지
 - 재시작: 만료된 PROCESSING lease 재수령
 
 DB lease 선택 이유:
