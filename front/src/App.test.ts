@@ -87,6 +87,16 @@ describe("화면 테마", () => {
 });
 
 describe("애플리케이션 헤더", () => {
+  it("USER가 학습 홈과 문제집 및 지식 지도로 이동할 수 있다", () => {
+    member.value = { nickname: "학습자", role: "USER" };
+    const wrapper = mount(App, { global: { stubs: {
+      RouterLink: { props: ["to"], template: '<a :href="to"><slot /></a>' }, RouterView: true,
+    } } });
+    expect(wrapper.get('nav a[href="/"]').text()).toBe("학습 홈");
+    expect(wrapper.get("nav").attributes("aria-label")).toBe("주요 메뉴");
+    expect(wrapper.get('nav a[href="/questions"]').text()).toBe("문제집");
+    expect(wrapper.get('nav a[href="/knowledge-map"]').text()).toBe("지식 지도");
+  });
   beforeEach(() => {
     member.value = null;
     restoreAuthentication.mockReset();

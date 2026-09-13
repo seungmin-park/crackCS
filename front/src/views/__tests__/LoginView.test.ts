@@ -14,6 +14,23 @@ vi.mock("vue-router", () => ({
 }));
 
 describe("로그인 화면", () => {
+  it("지정한 경로가 없으면 학습 홈으로 이동한다", async () => {
+    login.mockResolvedValue({ id: 1, nickname: "학습자", role: "USER", status: "ACTIVE" });
+    const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } });
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(push).toHaveBeenCalledWith("/");
+    wrapper.unmount();
+  });
+
+  it("ADMIN 로그인 기본 경로는 관리자 홈이다", async () => {
+    login.mockResolvedValue({ id: 2, nickname: "관리자", role: "ADMIN", status: "ACTIVE" });
+    const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } });
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(push).toHaveBeenCalledWith("/admin");
+    wrapper.unmount();
+  });
   beforeEach(() => {
     login.mockReset();
     push.mockReset();

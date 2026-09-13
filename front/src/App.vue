@@ -19,15 +19,20 @@ async function handleLogout() {
 <template>
   <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
   <header class="app-header">
-    <RouterLink class="brand" to="/questions">
+    <RouterLink class="brand" :to="currentMember?.role === 'ADMIN' ? '/admin' : '/'">
       <span>crackCS</span>
       <span class="brand-caption">설명하며 배우는 CS</span>
     </RouterLink>
     <div class="header-tools">
     <ThemeSwitch />
-    <nav class="header-actions" aria-label="계정 메뉴">
+    <nav class="header-actions" aria-label="주요 메뉴">
       <template v-if="currentMember">
         <span class="member-caption">{{ currentMember.nickname }}</span>
+        <template v-if="currentMember.role === 'USER'">
+          <RouterLink to="/">학습 홈</RouterLink>
+          <RouterLink to="/questions">문제집</RouterLink>
+          <RouterLink to="/knowledge-map">지식 지도</RouterLink>
+        </template>
         <RouterLink v-if="currentMember.role === 'USER'" to="/answers">답변 이력</RouterLink>
         <RouterLink v-if="currentMember.role === 'ADMIN'" to="/admin">관리</RouterLink>
         <button class="header-text-button" type="button" @click="handleLogout">로그아웃</button>

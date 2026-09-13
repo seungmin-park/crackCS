@@ -18,8 +18,8 @@ async function submit() {
   submitting.value = true;
 
   try {
-    await login({ ...form });
-    const redirect = typeof route.query.redirect === "string" ? route.query.redirect : "/questions";
+    const member = await login({ ...form });
+    const redirect = typeof route.query.redirect === "string" ? route.query.redirect : member.role === "ADMIN" ? "/admin" : "/";
     await router.push(redirect);
   } catch (error) {
     errorMessage.value = error instanceof ApiClientError

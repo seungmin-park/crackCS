@@ -5,7 +5,8 @@ import { useAuth } from "@/composables/useAuth";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
-    { path: "/", redirect: "/questions" },
+    { path: "/", name: "learning-home", component: () => import("@/views/LearningHomeView.vue"), meta: { requiresAuth: true, requiresUser: true } },
+    { path: "/knowledge-map", name: "knowledge-map", component: () => import("@/views/KnowledgeMapView.vue"), meta: { requiresAuth: true, requiresUser: true } },
     {
       path: "/sign-up",
       name: "sign-up",
@@ -59,13 +60,16 @@ export async function authorizationGuard(to: RouteLocationNormalized) {
   await auth.restoreAuthentication();
 
   if (to.meta.guestOnly && auth.currentMember.value) {
-    return { name: "questions" };
+    return { name: auth.currentMember.value.role === "ADMIN" ? "admin" : "learning-home" };
   }
   if (to.meta.requiresAuth && !auth.currentMember.value) {
     return { name: "login", query: { redirect: to.fullPath } };
   }
   if (to.meta.requiresAdmin && auth.currentMember.value?.role !== "ADMIN") {
     return { name: "admin-forbidden" };
+  }
+  if (to.meta.requiresUser && auth.currentMember.value?.role === "ADMIN") {
+    return { name: "admin" };
   }
   return true;
 }

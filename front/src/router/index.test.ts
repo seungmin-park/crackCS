@@ -8,9 +8,20 @@ vi.mock("@/composables/useAuth", () => ({
   useAuth: () => ({ currentMember, restoreAuthentication }),
 }));
 
-import { authorizationGuard } from "@/router";
+import router, { authorizationGuard } from "@/router";
 
 describe("인증 라우트 가드", () => {
+  it("학습 홈과 지식 지도는 로그인한 학습자 화면이다", () => {
+    expect(router.resolve("/").name).toBe("learning-home");
+    expect(router.resolve("/").meta).toMatchObject({ requiresAuth: true, requiresUser: true });
+    expect(router.resolve("/knowledge-map").meta).toMatchObject({ requiresAuth: true, requiresUser: true });
+  });
+
+  it("ADMIN이 학습자 전용 화면에 접근하면 관리자 홈으로 이동한다", async () => {
+    currentMember.value = { role: "ADMIN" };
+    expect(await authorizationGuard({ meta: { requiresAuth: true, requiresUser: true }, fullPath: "/" } as never))
+      .toEqual({ name: "admin" });
+  });
   beforeEach(() => {
     currentMember.value = null;
     restoreAuthentication.mockReset();
