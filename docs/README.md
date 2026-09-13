@@ -32,6 +32,9 @@
 | 문서 탐색·책임·위치 | 있음 | 현재 안내 | [docs/README.md](README.md) | 문서 생성·이동·통합·삭제 |
 | 제품 범위·요구사항·인수 조건 | 있음 | 목표 명세 | [docs/product/spec.md](product/spec.md) | 제품 요구 변경 |
 | 콘텐츠 검수·평가 정책 | 있음 | 정책·일부 도입 계획 | [docs/product/content-and-ai-policy.md](product/content-and-ai-policy.md) | 검수·평가 정책 변경 |
+| 문제·골든 셋 활용과 출처 | 있음 | AI 작성 초안·독립 검수 대기 | [활용 안내](content/2026-09-09-market-and-golden-set/report.md), [출처](content/2026-09-09-market-and-golden-set/sources.json) | 자료·출처·활용 조건 변경 |
+| 문제·판정 사례·근거 원본 | 있음 | 초안·운영 공개 전 검수 필요 | [문제](content/2026-09-09-market-and-golden-set/questions.jsonl), [골든 셋](content/2026-09-09-market-and-golden-set/golden-set.jsonl), [근거 문서](content/2026-09-09-market-and-golden-set/knowledge-documents.jsonl) | 문제·기대 판정·근거 변경 |
+| 자료 검수본·무결성 검사 | 있음 | 원본 기반 출력·초안 묶음 전용 검사 | [검수본](content/2026-09-09-market-and-golden-set/questions.md), [검사 도구](content/2026-09-09-market-and-golden-set/bundle.py) | 원본 수정 후 검사·검수본 재생성 |
 | 도메인 관계·불변식·테이블 | 있음 | 설계·구현 여부는 tasks 참조 | [docs/architecture/domain-model-and-erd.md](architecture/domain-model-and-erd.md) | 도메인·schema 변경 |
 | 개발 순서·의존성·실패 신호 | 있음 | 개발 계획 | [docs/planning/plan.md](planning/plan.md) | 순서·의존성 변경 |
 | 구현·검증·품질 개선 진행 | 있음 | 작업 현황 | [docs/planning/tasks.md](planning/tasks.md) | 작업 시작·완료·검증 결과 |
