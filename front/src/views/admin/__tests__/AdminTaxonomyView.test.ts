@@ -6,7 +6,20 @@ const api = vi.hoisted(() => ({
   deactivateTopic: vi.fn(), createConcept: vi.fn(), updateConcept: vi.fn(), deactivateConcept: vi.fn(),
 }));
 
-vi.mock("@/api/admin", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/api/admin")>()), ...api }));
+vi.mock("@/api/admin/topics", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/admin/topics")>()),
+  fetchTopics: api.fetchTopics,
+  createTopic: api.createTopic,
+  updateTopic: api.updateTopic,
+  deactivateTopic: api.deactivateTopic,
+}));
+vi.mock("@/api/admin/concepts", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/admin/concepts")>()),
+  fetchConcepts: api.fetchConcepts,
+  createConcept: api.createConcept,
+  updateConcept: api.updateConcept,
+  deactivateConcept: api.deactivateConcept,
+}));
 
 import AdminTaxonomyView from "@/views/admin/AdminTaxonomyView.vue";
 

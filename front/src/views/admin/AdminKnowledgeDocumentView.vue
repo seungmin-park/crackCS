@@ -5,20 +5,19 @@ import {
   createKnowledgeDocument,
   createKnowledgeDocumentVersion,
   fetchKnowledgeDocuments,
-  fetchTopics,
   publishKnowledgeDocument,
   retireKnowledgeDocument,
   reviewKnowledgeDocument,
   updateKnowledgeDocument,
   fetchKnowledgeChunks,
   generateKnowledgeChunks,
-  type ContentStatus,
   type KnowledgeDocument,
   type KnowledgeDocumentInput,
   type KnowledgeSourceType,
-  type Topic,
   type KnowledgeChunk,
-} from "@/api/admin";
+} from "@/api/admin/knowledgeDocuments";
+import { fetchTopics, type Topic } from "@/api/admin/topics";
+import type { ContentStatus } from "@/api/admin/types";
 import AdminFeedback from "@/components/AdminFeedback.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
 

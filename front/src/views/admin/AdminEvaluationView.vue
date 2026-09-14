@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAdminEvaluation, fetchAdminEvaluations, type AdminEvaluationDetail,
-  type AdminEvaluationStatus, type AdminEvaluationSummary } from "@/api/admin";
+  type AdminEvaluationStatus, type AdminEvaluationSummary } from "@/api/admin/evaluations";
 
 const status = ref<AdminEvaluationStatus | "">("");
 const evaluations = ref<AdminEvaluationSummary[]>([]);

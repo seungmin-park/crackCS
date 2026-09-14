@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const { fetchAdminEvaluations, fetchAdminEvaluation } = vi.hoisted(() => ({
   fetchAdminEvaluations: vi.fn(), fetchAdminEvaluation: vi.fn(),
 }));
-vi.mock("@/api/admin", () => ({ fetchAdminEvaluations, fetchAdminEvaluation }));
+vi.mock("@/api/admin/evaluations", () => ({ fetchAdminEvaluations, fetchAdminEvaluation }));
 
 import AdminEvaluationView from "@/views/admin/AdminEvaluationView.vue";
 

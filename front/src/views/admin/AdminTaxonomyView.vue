@@ -3,16 +3,18 @@ import { onBeforeUnmount, onMounted, reactive, ref } from "vue";
 
 import {
   createConcept,
-  createTopic,
   deactivateConcept,
-  deactivateTopic,
   fetchConcepts,
-  fetchTopics,
   updateConcept,
-  updateTopic,
   type Concept,
+} from "@/api/admin/concepts";
+import {
+  createTopic,
+  deactivateTopic,
+  fetchTopics,
+  updateTopic,
   type Topic,
-} from "@/api/admin";
+} from "@/api/admin/topics";
 import AdminFeedback from "@/components/AdminFeedback.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
 

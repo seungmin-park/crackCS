@@ -6,8 +6,6 @@ import {
   createQuestionVersion,
   fetchAdminQuestion,
   fetchAdminQuestions,
-  fetchConcepts,
-  fetchTopics,
   publishQuestion,
   replaceQuestionConcepts,
   retireQuestion,
@@ -16,11 +14,11 @@ import {
   type AdminQuestion,
   type AdminQuestionInput,
   type AdminQuestionSummary,
-  type Concept,
-  type ContentStatus,
   type QuestionDifficulty,
-  type Topic,
-} from "@/api/admin";
+} from "@/api/admin/questions";
+import { fetchConcepts, type Concept } from "@/api/admin/concepts";
+import { fetchTopics, type Topic } from "@/api/admin/topics";
+import type { ContentStatus } from "@/api/admin/types";
 import AdminFeedback from "@/components/AdminFeedback.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
 

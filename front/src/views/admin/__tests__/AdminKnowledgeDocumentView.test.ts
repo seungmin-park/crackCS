@@ -6,7 +6,11 @@ const api = vi.hoisted(() => ({
   updateKnowledgeDocument: vi.fn(), createKnowledgeDocument: vi.fn(), createKnowledgeDocumentVersion: vi.fn(),
   reviewKnowledgeDocument: vi.fn(), publishKnowledgeDocument: vi.fn(), retireKnowledgeDocument: vi.fn(), generateKnowledgeChunks: vi.fn(),
 }));
-vi.mock("@/api/admin", async importOriginal => ({ ...(await importOriginal<typeof import("@/api/admin")>()), ...api }));
+vi.mock("@/api/admin/topics", () => ({ fetchTopics: api.fetchTopics }));
+vi.mock("@/api/admin/knowledgeDocuments", async importOriginal => ({
+  ...(await importOriginal<typeof import("@/api/admin/knowledgeDocuments")>()),
+  ...api,
+}));
 import AdminKnowledgeDocumentView from "@/views/admin/AdminKnowledgeDocumentView.vue";
 
 const document = { id: 1, topicId: 2, title: "기존 문서", sourceType: "OFFICIAL_DOC", sourceUrl: null, technologyVersion: null, licenseNote: null, content: "본문", status: "PUBLISHED", checksum: "sum", versionSeriesId: "series", documentVersion: 1 };

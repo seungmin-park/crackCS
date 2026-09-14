@@ -11,8 +11,10 @@ const api = vi.hoisted(() => ({
   updateAdminQuestion: vi.fn(),
 }));
 
-vi.mock("@/api/admin", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/api/admin")>()),
+vi.mock("@/api/admin/topics", () => ({ fetchTopics: api.fetchTopics }));
+vi.mock("@/api/admin/concepts", () => ({ fetchConcepts: api.fetchConcepts }));
+vi.mock("@/api/admin/questions", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/api/admin/questions")>()),
   ...api,
 }));
 

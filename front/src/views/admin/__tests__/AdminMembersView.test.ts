@@ -2,7 +2,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const api = vi.hoisted(() => ({ fetchAdminMembers: vi.fn(), updateMemberStatus: vi.fn() }));
-vi.mock("@/api/admin", async importOriginal => ({ ...(await importOriginal<typeof import("@/api/admin")>()), ...api }));
+vi.mock("@/api/admin/members", async importOriginal => ({ ...(await importOriginal<typeof import("@/api/admin/members")>()), ...api }));
 import AdminMembersView from "@/views/admin/AdminMembersView.vue";
 
 describe("관리자 회원 화면", () => {

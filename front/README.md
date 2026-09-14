@@ -10,7 +10,9 @@ Vue 기반 학습자·관리자 화면.
 |---|---|
 | `src/views/` | 페이지·관리자 화면 |
 | `src/components/` | 공유 UI |
-| `src/api/` | 서버 API 호출 |
+| `src/api/` | 학습자 API 호출과 공용 HTTP client |
+| `src/api/admin/` | Topic·Concept·KnowledgeDocument·Question·Member·Evaluation별 관리자 API와 wire type |
+| `src/presentation/` | 여러 화면이 공유하는 서버 상태의 표시 의미 |
 | `src/styles/` | 공통 스타일·테마 |
 | `src/router/` | 화면 경로·접근 제어 |
 | `vite.config.ts` | 개발 서버·`/api` proxy·`@` 경로 별칭 |

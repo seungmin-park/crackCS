@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref } from "vue";
 
-import { fetchAdminMembers, updateMemberStatus, type AdminMember, type MemberStatus } from "@/api/admin";
+import { fetchAdminMembers, updateMemberStatus, type AdminMember, type MemberStatus } from "@/api/admin/members";
 import AdminFeedback from "@/components/AdminFeedback.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
 
