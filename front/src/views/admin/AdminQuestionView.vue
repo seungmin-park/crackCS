@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
 
 import {
   createAdminQuestion,
@@ -28,6 +28,7 @@ const topics = ref<Topic[]>([]);
 const concepts = ref<Concept[]>([]);
 const questions = ref<AdminQuestionSummary[]>([]);
 const selected = ref<AdminQuestion>();
+let selectionGeneration = 0;
 const statusFilter = ref<ContentStatus | "">("");
 const loading = ref(true);
 const feedback = useAdminFeedback();
@@ -60,13 +61,16 @@ async function load() {
 }
 
 function clearSelection() {
+  selectionGeneration++;
   selected.value = undefined;
   Object.assign(form, { topicId: "", difficulty: "BASIC", content: "", referenceAnswer: "" });
   criteria.value = [];
 }
 
 async function select(question: AdminQuestionSummary) {
+  const activeGeneration = ++selectionGeneration;
   const detail = await fetchAdminQuestion(question.id);
+  if (activeGeneration !== selectionGeneration) return;
   selected.value = detail;
   Object.assign(form, { topicId: String(detail.topicId), difficulty: detail.difficulty, content: detail.content, referenceAnswer: detail.referenceAnswer });
   criteria.value = detail.concepts.map(item => ({ conceptId: item.conceptId, weight: item.weight, required: item.required }));
@@ -112,6 +116,7 @@ async function newVersion() {
 }
 
 onMounted(load);
+onBeforeUnmount(() => { selectionGeneration++; });
 </script>
 
 <template>

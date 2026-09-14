@@ -7,6 +7,8 @@ const api = vi.hoisted(() => ({
   fetchAdminQuestions: vi.fn(),
   fetchAdminQuestion: vi.fn(),
   replaceQuestionConcepts: vi.fn(),
+  createAdminQuestion: vi.fn(),
+  updateAdminQuestion: vi.fn(),
 }));
 
 vi.mock("@/api/admin", async (importOriginal) => ({
@@ -60,6 +62,30 @@ describe("관리자 Question 화면", () => {
       ...networkQuestion,
       concepts: [{ conceptId: 12, code: "TCP", name: "TCP 신뢰성", weight: 1, required: true }],
     });
+  });
+
+  it("늦은 상세 응답이 새 문제 입력과 생성 대상을 바꾸지 않는다", async () => {
+    let resolveDetail!: (value: typeof networkQuestion) => void;
+    api.fetchAdminQuestion.mockReturnValue(new Promise<typeof networkQuestion>(resolve => { resolveDetail = resolve; }));
+    api.createAdminQuestion.mockResolvedValue({ ...networkQuestion, id: 20, content: "새 문제" });
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    await wrapper.find(".admin-list li").trigger("click");
+    await wrapper.findAll("button").find(button => button.text() === "새 문제")!.trigger("click");
+    await wrapper.find(".admin-form select").setValue("2");
+    await wrapper.findAll("textarea")[0]!.setValue("새 문제");
+    await wrapper.findAll("textarea")[1]!.setValue("새 답안");
+
+    resolveDetail(networkQuestion);
+    await flushPromises();
+
+    expect(wrapper.find("h2").text()).toBe("새 문제");
+    expect(wrapper.findAll("textarea")[0]!.element.value).toBe("새 문제");
+    await wrapper.find("form").trigger("submit");
+    await flushPromises();
+    expect(api.createAdminQuestion).toHaveBeenCalledWith({ topicId: 2, difficulty: "BASIC", content: "새 문제", referenceAnswer: "새 답안" });
+    expect(api.updateAdminQuestion).not.toHaveBeenCalled();
+    wrapper.unmount();
   });
 
   it("선택한 문제와 같은 Topic의 Concept만 평가 기준 후보로 표시한다", async () => {
