@@ -11,6 +11,7 @@ export function useAdminFeedback() {
   const hasFeedback = computed(() => Boolean(successMessage.value || formError.value));
 
   async function execute<T>(action: () => Promise<T>, success: string): Promise<T | undefined> {
+    if (submitting.value) return undefined;
     successMessage.value = "";
     formError.value = "";
     fieldErrors.value = {};

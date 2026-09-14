@@ -70,7 +70,7 @@ describe("관리자 Question 화면", () => {
     api.createAdminQuestion.mockResolvedValue({ ...networkQuestion, id: 20, content: "새 문제" });
     const wrapper = mount(AdminQuestionView);
     await flushPromises();
-    await wrapper.find(".admin-list li").trigger("click");
+    await wrapper.get("button[data-question-id='10']").trigger("click");
     await wrapper.findAll("button").find(button => button.text() === "새 문제")!.trigger("click");
     await wrapper.find(".admin-form select").setValue("2");
     await wrapper.findAll("textarea")[0]!.setValue("새 문제");
@@ -88,10 +88,49 @@ describe("관리자 Question 화면", () => {
     wrapper.unmount();
   });
 
+  it("초기 목록 실패 뒤 재시도하면 로딩을 끝내고 목록을 표시한다", async () => {
+    api.fetchAdminQuestions.mockRejectedValueOnce(new Error("temporary"));
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    expect(wrapper.text()).toContain("문제 목록을 불러오지 못했습니다.");
+    expect(wrapper.text()).not.toContain("문제를 불러오는 중");
+
+    await wrapper.get("button[data-retry='list']").trigger("click");
+    await flushPromises();
+    expect(wrapper.get("button[data-question-id='10']").text()).toContain("TCP 질문");
+  });
+
+  it("선택 항목을 native button과 aria-pressed로 표현한다", async () => {
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    const button = wrapper.get("button[data-question-id='10']");
+    expect(button.attributes("aria-pressed")).toBe("false");
+    await button.trigger("click");
+    await flushPromises();
+    expect(button.attributes("aria-pressed")).toBe("true");
+  });
+
+  it("저장 중 새 문제로 전환해도 완료 응답이 새 입력을 덮지 않는다", async () => {
+    let resolveUpdate!: (value: typeof networkQuestion) => void;
+    api.updateAdminQuestion.mockReturnValue(new Promise(resolve => { resolveUpdate = resolve; }));
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    await wrapper.get("button[data-question-id='10']").trigger("click");
+    await flushPromises();
+    await wrapper.find("form").trigger("submit");
+    await wrapper.findAll("button").find(button => button.text() === "새 문제")!.trigger("click");
+    await wrapper.findAll("textarea")[0]!.setValue("새 입력");
+    resolveUpdate({ ...networkQuestion, content: "서버 수정본" });
+    await flushPromises();
+
+    expect(wrapper.find("h2").text()).toBe("새 문제");
+    expect(wrapper.findAll("textarea")[0]!.element.value).toBe("새 입력");
+  });
+
   it("선택한 문제와 같은 Topic의 Concept만 평가 기준 후보로 표시한다", async () => {
     const wrapper = mount(AdminQuestionView);
     await flushPromises();
-    await wrapper.find(".admin-list li").trigger("click");
+    await wrapper.get("button[data-question-id='10']").trigger("click");
     await flushPromises();
 
     const options = wrapper.find('select[aria-label="추가할 Concept"]').findAll("option");
@@ -102,7 +141,7 @@ describe("관리자 Question 화면", () => {
   it("명시적으로 고른 Concept과 기본 평가 정책을 저장한다", async () => {
     const wrapper = mount(AdminQuestionView);
     await flushPromises();
-    await wrapper.find(".admin-list li").trigger("click");
+    await wrapper.get("button[data-question-id='10']").trigger("click");
     await flushPromises();
 
     const addButton = wrapper.findAll("button").find(button => button.text() === "Concept 추가")!;

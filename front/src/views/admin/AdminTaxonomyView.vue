@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { onBeforeUnmount, onMounted, reactive, ref } from "vue";
 
 import {
   createConcept,
@@ -24,13 +24,23 @@ const conceptEditingId = ref<number>();
 const topicForm = reactive({ parentId: "", code: "", name: "" });
 const conceptForm = reactive({ topicId: "", code: "", name: "", description: "" });
 const feedback = useAdminFeedback();
+const loadError = ref(false);
+let loadGeneration = 0;
 
 async function load() {
+  const generation = ++loadGeneration;
   loading.value = true;
-  const [topicPage, conceptPage] = await Promise.all([fetchTopics({ size: 100 }), fetchConcepts({ size: 100 })]);
-  topics.value = topicPage.content;
-  concepts.value = conceptPage.content;
-  loading.value = false;
+  loadError.value = false;
+  try {
+    const [topicPage, conceptPage] = await Promise.all([fetchTopics({ size: 100 }), fetchConcepts({ size: 100 })]);
+    if (generation !== loadGeneration) return;
+    topics.value = topicPage.content;
+    concepts.value = conceptPage.content;
+  } catch {
+    if (generation === loadGeneration) loadError.value = true;
+  } finally {
+    if (generation === loadGeneration) loading.value = false;
+  }
 }
 
 function editTopic(topic: Topic) {
@@ -77,12 +87,14 @@ async function deactivate(kind: "topic" | "concept", id: number) {
 }
 
 onMounted(load);
+onBeforeUnmount(() => { loadGeneration++; });
 </script>
 
 <template>
   <section>
     <header class="admin-page-heading"><div><p class="eyebrow">TAXONOMY</p><h1>분류와 개념</h1></div><p>비활성 분류는 기존 이력을 보존하지만 새 콘텐츠에는 연결할 수 없습니다.</p></header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
+    <p v-if="loadError" class="admin-error">분류 체계를 불러오지 못했습니다. <button type="button" data-retry="list" @click="load">다시 시도</button></p>
     <p v-if="loading" class="admin-loading">분류 체계를 불러오는 중…</p>
     <div v-else class="admin-two-column">
       <section class="admin-panel">
@@ -93,7 +105,7 @@ onMounted(load);
           <label>이름<input v-model="topicForm.name" required /><small>{{ feedback.fieldErrors.value.name }}</small></label>
           <button class="admin-primary" :disabled="feedback.submitting.value">{{ topicEditingId ? "Topic 수정" : "Topic 등록" }}</button>
         </form>
-        <ul class="admin-list"><li v-for="item in topics" :key="item.id" :class="{ inactive: !item.active }"><div><strong>{{ item.name }}</strong><small>{{ item.code }} · {{ item.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button @click="editTopic(item)">편집</button><button v-if="item.active" @click="deactivate('topic', item.id)">비활성화</button></div></li></ul>
+        <ul class="admin-list"><li v-for="item in topics" :key="item.id" :class="{ inactive: !item.active }"><div><strong>{{ item.name }}</strong><small>{{ item.code }} · {{ item.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editTopic(item)">편집</button><button v-if="item.active" :disabled="feedback.submitting.value" @click="deactivate('topic', item.id)">비활성화</button></div></li></ul>
       </section>
       <section class="admin-panel">
         <h2>Concept</h2>
@@ -103,7 +115,7 @@ onMounted(load);
           <label>설명<textarea v-model="conceptForm.description" rows="3" /></label>
           <button class="admin-primary" :disabled="feedback.submitting.value">{{ conceptEditingId ? "Concept 수정" : "Concept 등록" }}</button>
         </form>
-        <ul class="admin-list"><li v-for="item in concepts" :key="item.id" :class="{ inactive: !item.active }"><div><strong>{{ item.name }}</strong><small>{{ item.code }} · {{ item.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button @click="editConcept(item)">편집</button><button v-if="item.active" @click="deactivate('concept', item.id)">비활성화</button></div></li></ul>
+        <ul class="admin-list"><li v-for="item in concepts" :key="item.id" :class="{ inactive: !item.active }"><div><strong>{{ item.name }}</strong><small>{{ item.code }} · {{ item.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editConcept(item)">편집</button><button v-if="item.active" :disabled="feedback.submitting.value" @click="deactivate('concept', item.id)">비활성화</button></div></li></ul>
       </section>
     </div>
   </section>

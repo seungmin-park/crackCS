@@ -243,7 +243,8 @@ button.admin-primary { padding: 11px 16px; color: var(--on-primary); background:
 .admin-list li > select { width: auto; max-width: 150px; }
 .admin-list li.inactive { border-style: dashed; background: var(--subtle); }
 .admin-list.selectable { align-content: start; max-height: 760px; margin: 0; padding: 4px; overflow: auto; }
-.admin-list.selectable li { cursor: pointer; }
+.admin-list.selectable li { padding: 0; }
+.admin-list.selectable li > button { display: grid; width: 100%; padding: 16px; text-align: left; border: 0; background: transparent; }
 .admin-list.selectable li.selected { border: 2px solid var(--accent); background: var(--subtle); }
 .admin-editor-layout { display: grid; grid-template-columns: minmax(220px, .7fr) minmax(0, 1.4fr); gap: 20px; }
 .admin-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }

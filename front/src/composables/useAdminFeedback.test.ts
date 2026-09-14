@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { ApiClientError } from "@/api/client";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
@@ -19,5 +19,21 @@ describe("관리자 폼 피드백", () => {
     );
     expect(feedback.formError.value).toBe("요청 값이 올바르지 않습니다.");
     expect(feedback.fieldErrors.value.code).toBe("code는 필수입니다.");
+  });
+
+  it("명령이 진행 중이면 두 번째 명령을 실행하지 않는다", async () => {
+    let resolve!: () => void;
+    const firstAction = vi.fn(() => new Promise<void>(done => { resolve = done; }));
+    const secondAction = vi.fn(async () => undefined);
+    const feedback = useAdminFeedback();
+
+    const first = feedback.execute(firstAction, "완료했습니다.");
+    const second = await feedback.execute(secondAction, "중복 완료");
+
+    expect(second).toBeUndefined();
+    expect(secondAction).not.toHaveBeenCalled();
+    expect(feedback.submitting.value).toBe(true);
+    resolve();
+    await first;
   });
 });
