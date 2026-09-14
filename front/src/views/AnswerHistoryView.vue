@@ -39,17 +39,55 @@ function goToPage(next: number) {
   void router.push({ query: { ...route.query, page: String(next) } });
 }
 watch(page, loadAnswers, { immediate: true });
-onBeforeUnmount(() => { disposed = true; generation++; });
+onBeforeUnmount(() => {
+  disposed = true;
+  generation++;
+});
 </script>
 
 <template>
   <main class="page-shell history-shell">
-    <header class="page-intro"><p class="eyebrow">학습 기록</p><h1>내 답변 이력</h1><p>제출한 설명과 평가 결과를 다시 확인하세요.</p></header>
+    <header class="page-intro">
+      <p class="eyebrow">학습 기록</p>
+      <h1>내 답변 이력</h1>
+      <p>제출한 설명과 평가 결과를 다시 확인하세요.</p>
+    </header>
     <p v-if="loading" class="admin-loading">답변 이력을 불러오는 중…</p>
-    <QuestionState v-else-if="error" kind="error" title="답변 이력을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswers" />
-    <QuestionState v-else-if="!answers.length" kind="empty" title="아직 제출한 답변이 없어요" description="문제 하나를 골라 내 언어로 설명해 보세요." action-label="문제 보러 가기" @action="$router.push('/questions')" />
-    <ol v-else class="answer-history-list"><li v-for="answer in answers" :key="answer.answerId"><RouterLink :to="{ name: 'answer-detail', params: { answerId: answer.answerId } }"><div><span>{{ new Date(answer.submittedAt).toLocaleDateString('ko-KR') }}</span><strong>{{ answer.questionContent }}</strong><p>{{ answer.content }}</p></div><span class="evaluation-badge" :data-status="answer.evaluation.status">{{ evaluationLabel(answer) }}</span></RouterLink></li></ol>
-    <nav v-if="!loading && !error && (totalPages > 1 || page > 0)" class="pagination" aria-label="답변 이력 페이지">
+    <QuestionState
+      v-else-if="error"
+      kind="error"
+      title="답변 이력을 불러오지 못했어요"
+      description="잠시 후 다시 시도해 주세요."
+      action-label="다시 불러오기"
+      @action="loadAnswers"
+    />
+    <QuestionState
+      v-else-if="!answers.length"
+      kind="empty"
+      title="아직 제출한 답변이 없어요"
+      description="문제 하나를 골라 내 언어로 설명해 보세요."
+      action-label="문제 보러 가기"
+      @action="$router.push('/questions')"
+    />
+    <ol v-else class="answer-history-list">
+      <li v-for="answer in answers" :key="answer.answerId">
+        <RouterLink :to="{ name: 'answer-detail', params: { answerId: answer.answerId } }">
+          <div>
+            <span>{{ new Date(answer.submittedAt).toLocaleDateString('ko-KR') }}</span>
+            <strong>{{ answer.questionContent }}</strong>
+            <p>{{ answer.content }}</p>
+          </div>
+          <span class="evaluation-badge" :data-status="answer.evaluation.status">
+            {{ evaluationLabel(answer) }}
+          </span>
+        </RouterLink>
+      </li>
+    </ol>
+    <nav
+      v-if="!loading && !error && (totalPages > 1 || page > 0)"
+      class="pagination"
+      aria-label="답변 이력 페이지"
+    >
       <button type="button" aria-label="이전 페이지" :disabled="page === 0" @click="goToPage(page - 1)">← 이전</button>
       <span>{{ page + 1 }} / {{ Math.max(1, totalPages) }}</span>
       <button type="button" aria-label="다음 페이지" :disabled="page + 1 >= totalPages" @click="goToPage(page + 1)">다음 →</button>

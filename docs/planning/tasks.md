@@ -966,7 +966,7 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
     - 검증: Question·KnowledgeDocument·Evaluation·Member 실패 후 재시도 복구 테스트 (2026-09-15)
   - [ ] Question 폼과 criteria 상태를 composable 또는 하위 컴포넌트로 분리한다.
   - [x] 관리자 API를 Topic, Concept, KnowledgeDocument, Question, Member, Evaluation 단위로 나눈다.
-    - 검증: 새 모듈 import 실패 RED → 6개 목록 query 계약 포함 관리자 테스트 29개 성공, 전체 프런트 테스트·type-check·production build 성공 (2026-09-15)
+    - 검증: 새 모듈 import 실패 RED → 6개 리소스·7개 query 사례 포함 관리자 테스트 29개 성공, 전체 프런트 테스트·type-check·production build 성공 (2026-09-15)
     - 계약 정합성: OpenAPI에 맞춰 평가 `occurredAt`을 nullable wire type으로 표현
   - [ ] 생성·수정·검수·공개·폐기·새 버전의 실패 흐름을 테스트한다.
   - [x] 관리자 쓰기 명령의 중복 실행을 막고 완료 응답이 새 선택을 덮지 않는다.
