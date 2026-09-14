@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { fetchMyAnswers, type AnswerResponse, type EvaluationVerdict } from "@/api/answers";
+import { fetchMyAnswers, type AnswerResponse } from "@/api/answers";
 import QuestionState from "@/components/QuestionState.vue";
+import { presentEvaluation } from "@/presentation/evaluationPresentation";
 
 const route = useRoute();
 const router = useRouter();
@@ -16,9 +17,8 @@ const page = computed(() => {
 });
 let generation = 0;
 let disposed = false;
-const labels: Record<EvaluationVerdict, string> = { CORRECT: "정답", PARTIALLY_CORRECT: "부분 정답", INCORRECT: "오답", NEEDS_REVIEW: "검토 필요" };
 function evaluationLabel(answer: AnswerResponse) {
-  return answer.evaluation.status === "EVALUATING" ? "평가 중" : answer.evaluation.status === "FAILED" ? "평가 실패" : answer.evaluation.verdict ? labels[answer.evaluation.verdict] : "평가 결과 없음";
+  return presentEvaluation(answer.evaluation.status, answer.evaluation.verdict).label;
 }
 async function loadAnswers() {
   const activeGeneration = ++generation;
@@ -46,8 +46,8 @@ onBeforeUnmount(() => { disposed = true; generation++; });
   <main class="page-shell history-shell">
     <header class="page-intro"><p class="eyebrow">학습 기록</p><h1>내 답변 이력</h1><p>제출한 설명과 평가 결과를 다시 확인하세요.</p></header>
     <p v-if="loading" class="admin-loading">답변 이력을 불러오는 중…</p>
-    <QuestionState v-else-if="error" title="답변 이력을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswers" />
-    <QuestionState v-else-if="!answers.length" title="아직 제출한 답변이 없어요" description="문제 하나를 골라 내 언어로 설명해 보세요." action-label="문제 보러 가기" @action="$router.push('/questions')" />
+    <QuestionState v-else-if="error" kind="error" title="답변 이력을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswers" />
+    <QuestionState v-else-if="!answers.length" kind="empty" title="아직 제출한 답변이 없어요" description="문제 하나를 골라 내 언어로 설명해 보세요." action-label="문제 보러 가기" @action="$router.push('/questions')" />
     <ol v-else class="answer-history-list"><li v-for="answer in answers" :key="answer.answerId"><RouterLink :to="{ name: 'answer-detail', params: { answerId: answer.answerId } }"><div><span>{{ new Date(answer.submittedAt).toLocaleDateString('ko-KR') }}</span><strong>{{ answer.questionContent }}</strong><p>{{ answer.content }}</p></div><span class="evaluation-badge" :data-status="answer.evaluation.status">{{ evaluationLabel(answer) }}</span></RouterLink></li></ol>
     <nav v-if="!loading && !error && (totalPages > 1 || page > 0)" class="pagination" aria-label="답변 이력 페이지">
       <button type="button" aria-label="이전 페이지" :disabled="page === 0" @click="goToPage(page - 1)">← 이전</button>

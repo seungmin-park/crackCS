@@ -66,7 +66,7 @@ onBeforeUnmount(() => { disposed = true; generation++; cancelTimer(); });
 <template>
   <main class="page-shell answer-detail-shell">
     <RouterLink class="back-link" to="/answers">← 답변 이력</RouterLink>
-    <QuestionState v-if="error" title="답변을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswer" />
+    <QuestionState v-if="error" kind="error" title="답변을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswer" />
     <article v-else-if="answer" class="answer-detail-grid">
       <section class="answer-copy"><p class="eyebrow">질문</p><h1>{{ answer.questionContent }}</h1><p class="submitted-at">{{ new Date(answer.submittedAt).toLocaleString('ko-KR') }}</p><h2>내 답변</h2><p class="answer-content">{{ answer.content }}</p></section>
       <EvaluationPanel :evaluation="answer.evaluation" />

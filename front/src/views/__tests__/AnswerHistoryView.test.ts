@@ -27,6 +27,45 @@ describe("답변 이력 화면", () => {
     expect(wrapper.text()).toContain("부분 정답");
     expect(wrapper.get("a").attributes("data-to")).toContain("answer-detail");
   });
+
+  it("처리 중인 평가는 결과 없음이 아니라 평가 중으로 표시한다", async () => {
+    fetchMyAnswers.mockResolvedValue({
+      content: [{
+        answerId: 32,
+        questionId: 8,
+        questionContent: "DNS 캐시는 왜 필요한가요?",
+        content: "답변",
+        submittedAt: "2026-09-07T10:00:00Z",
+        evaluation: {
+          status: "PROCESSING",
+          verdict: null,
+          score: null,
+          feedback: null,
+          failureReason: null,
+          concepts: [],
+        },
+      }],
+      page: 0,
+      size: 20,
+      totalElements: 1,
+      totalPages: 1,
+    });
+    const wrapper = mount(AnswerHistoryView, {
+      global: {
+        stubs: {
+          RouterLink: {
+            props: ["to"],
+            template: "<a><slot /></a>",
+          },
+        },
+      },
+    });
+    await flushPromises();
+
+    expect(wrapper.get(".evaluation-badge").text()).toBe("평가 중");
+    expect(wrapper.text()).not.toContain("평가 결과 없음");
+  });
+
   it("다음 페이지로 이동하면 이전 답변 이력을 불러온다", async () => {
     fetchMyAnswers.mockResolvedValue({ content: [], page: 0, size: 20, totalElements: 21, totalPages: 2 });
     const wrapper = mount(AnswerHistoryView, { global: { stubs: { RouterLink: true } } });

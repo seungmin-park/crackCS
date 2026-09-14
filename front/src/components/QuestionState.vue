@@ -1,9 +1,12 @@
 <script setup lang="ts">
-defineProps<{
+type QuestionStateKind = "loading" | "error" | "empty";
+
+const props = withDefaults(defineProps<{
+  kind?: QuestionStateKind;
   title: string;
   description: string;
   actionLabel?: string;
-}>();
+}>(), { kind: "empty" });
 
 defineEmits<{
   action: [];
@@ -11,7 +14,12 @@ defineEmits<{
 </script>
 
 <template>
-  <section class="state-panel" role="status">
+  <section
+    class="state-panel"
+    :data-kind="props.kind"
+    :role="props.kind === 'error' ? 'alert' : 'status'"
+    :aria-busy="props.kind === 'loading' ? true : undefined"
+  >
     <span class="state-symbol" aria-hidden="true">?</span>
     <h2>{{ title }}</h2>
     <p>{{ description }}</p>

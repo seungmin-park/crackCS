@@ -74,9 +74,9 @@ watch([page, difficulty], loadQuestions, { immediate: true });
       <section v-if="loading" class="question-skeletons" aria-label="문제 목록을 불러오는 중" aria-busy="true">
         <div v-for="index in 5" :key="index" class="skeleton-line" />
       </section>
-      <QuestionState v-else-if="failed" title="문제를 불러오지 못했어요"
+      <QuestionState v-else-if="failed" kind="error" title="문제를 불러오지 못했어요"
         description="서버 연결을 확인한 뒤 다시 시도해 주세요." action-label="다시 불러오기" @action="loadQuestions" />
-      <QuestionState v-else-if="!result?.content.length"
+      <QuestionState v-else-if="!result?.content.length" kind="empty"
         :title="difficulty ? '이 난이도에는 아직 문제가 없어요' : '아직 공개된 문제가 없어요'"
         :description="difficulty ? '다른 난이도를 선택해 문제를 둘러보세요.' : '새로운 문제가 준비되면 이곳에 표시됩니다.'" />
       <template v-else>

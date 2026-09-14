@@ -9,7 +9,7 @@ const date = (value: string) => value.replace("T", " ").slice(0, 16);
 </script>
 
 <template>
-  <QuestionState v-if="!topics.length" title="아직 학습할 개념이 없어요" description="학습 자료가 준비되면 이곳에 표시됩니다." />
+  <QuestionState v-if="!topics.length" kind="empty" title="아직 학습할 개념이 없어요" description="학습 자료가 준비되면 이곳에 표시됩니다." />
   <div v-else class="knowledge-topics">
     <article v-for="topic in topics" :key="topic.topicId" class="knowledge-topic">
       <header class="section-heading">

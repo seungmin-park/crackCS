@@ -4,6 +4,32 @@ import { describe, expect, it } from "vitest";
 import EvaluationPanel from "./EvaluationPanel.vue";
 
 describe("평가 결과 패널", () => {
+  it.each(["EVALUATING", "PROCESSING"] as const)(
+    "%s 상태는 평가 결과 없음이 아니라 진행 중 안내를 표시한다",
+    (status) => {
+      const wrapper = mount(EvaluationPanel, {
+        props: {
+          evaluation: {
+            status,
+            verdict: null,
+            score: null,
+            feedback: null,
+            failureReason: null,
+            concepts: [],
+            strengths: [],
+            omissions: [],
+            misconceptions: [],
+            evidence: [],
+          },
+        },
+      });
+
+      expect(wrapper.text()).toContain("평가 중");
+      expect(wrapper.text()).toContain("답변을 살펴보고 있어요");
+      expect(wrapper.text()).not.toContain("평가 결과 없음");
+    },
+  );
+
   it("강점과 누락 및 평가 근거의 문서 버전과 범위를 표시한다", () => {
     const wrapper = mount(EvaluationPanel, { props: { evaluation: {
       status: "EVALUATED", verdict: "PARTIALLY_CORRECT", score: 50, feedback: "핵심은 맞습니다.",

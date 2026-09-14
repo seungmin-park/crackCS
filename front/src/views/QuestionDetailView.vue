@@ -60,12 +60,14 @@ onBeforeUnmount(() => { disposed = true; generation++; });
 
     <QuestionState
       v-else-if="error === 'not-found'"
+      kind="empty"
       title="문제를 찾을 수 없어요"
       description="존재하지 않거나 지금은 공개되지 않은 문제입니다."
     />
 
     <QuestionState
       v-else-if="error === 'server'"
+      kind="error"
       title="문제를 불러오지 못했어요"
       description="잠시 후 다시 시도해 주세요."
       action-label="다시 불러오기"
