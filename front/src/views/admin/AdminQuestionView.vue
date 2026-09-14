@@ -71,6 +71,11 @@ async function load() {
   }
 }
 
+function changeFilter() {
+  clearSelection();
+  void load();
+}
+
 function clearSelection() {
   selectionGeneration++;
   selected.value = undefined;
@@ -159,7 +164,7 @@ onBeforeUnmount(() => { selectionGeneration++; loadGeneration++; });
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
     <p v-if="loadError" class="admin-error">문제 목록을 불러오지 못했습니다. <button type="button" data-retry="list" @click="load">다시 시도</button></p>
     <p v-if="detailError" class="admin-error">문제 상세를 불러오지 못했습니다.</p>
-    <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="load"><option value="">전체</option><option>DRAFT</option><option>PUBLISHED</option><option>RETIRED</option></select></label><button @click="clearSelection">새 문제</button></div>
+    <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter"><option value="">전체</option><option>DRAFT</option><option>PUBLISHED</option><option>RETIRED</option></select></label><button @click="clearSelection">새 문제</button></div>
     <p v-if="loading" class="admin-loading">문제를 불러오는 중…</p>
     <div v-else class="admin-editor-layout">
       <ul class="admin-list selectable"><li v-for="question in questions" :key="question.id" :class="{ selected: selected?.id === question.id }"><button type="button" :data-question-id="question.id" :aria-pressed="selected?.id === question.id" @click="select(question)"><strong>{{ question.content }}</strong><small>v{{ question.questionVersion }} · {{ question.status }} · {{ question.difficulty }}</small></button></li></ul>

@@ -127,6 +127,22 @@ describe("관리자 Question 화면", () => {
     expect(wrapper.findAll("textarea")[0]!.element.value).toBe("새 입력");
   });
 
+  it("필터 변경 전에 시작한 상세 응답을 무시한다", async () => {
+    let resolveDetail!: (value: typeof networkQuestion) => void;
+    api.fetchAdminQuestion.mockReturnValue(new Promise(resolve => { resolveDetail = resolve; }));
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    await wrapper.get("button[data-question-id='10']").trigger("click");
+    await wrapper.get(".admin-toolbar select").setValue("PUBLISHED");
+    await flushPromises();
+
+    resolveDetail(networkQuestion);
+    await flushPromises();
+
+    expect(wrapper.find("h2").text()).toBe("새 문제");
+    expect(wrapper.findAll("textarea")[0]!.element.value).toBe("");
+  });
+
   it("선택한 문제와 같은 Topic의 Concept만 평가 기준 후보로 표시한다", async () => {
     const wrapper = mount(AdminQuestionView);
     await flushPromises();

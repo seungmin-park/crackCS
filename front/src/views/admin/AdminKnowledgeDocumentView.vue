@@ -61,6 +61,11 @@ async function load() {
   }
 }
 
+function changeFilter() {
+  select();
+  void load();
+}
+
 function select(document?: KnowledgeDocument) {
   selectionGeneration++;
   selected.value = document;
@@ -77,6 +82,7 @@ function select(document?: KnowledgeDocument) {
 async function loadChunks(documentId: number) {
   const generation = selectionGeneration;
   chunksLoading.value = true;
+  chunkError.value = false;
   try {
     const result = await fetchKnowledgeChunks(documentId);
     if (generation === selectionGeneration && selected.value?.id === documentId) chunks.value = result;
@@ -140,7 +146,7 @@ onBeforeUnmount(() => { listGeneration++; selectionGeneration++; });
     <header class="admin-page-heading"><div><p class="eyebrow">KNOWLEDGE</p><h1>근거 문서</h1></div><p>공개본은 수정하지 않고 같은 계열의 새 버전을 만듭니다.</p></header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
     <p v-if="loadError" class="admin-error">문서 목록을 불러오지 못했습니다. <button type="button" data-retry="list" @click="load">다시 시도</button></p>
-    <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="load"><option value="">전체</option><option>DRAFT</option><option>PUBLISHED</option><option>RETIRED</option></select></label><button @click="select()">새 문서</button></div>
+    <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter"><option value="">전체</option><option>DRAFT</option><option>PUBLISHED</option><option>RETIRED</option></select></label><button @click="select()">새 문서</button></div>
     <p v-if="loading" class="admin-loading">문서를 불러오는 중…</p>
     <div v-else class="admin-editor-layout">
       <ul class="admin-list selectable"><li v-for="document in documents" :key="document.id" :class="{ selected: selected?.id === document.id }"><button type="button" :data-document-id="document.id" :aria-pressed="selected?.id === document.id" @click="select(document)"><strong>{{ document.title }}</strong><small>v{{ document.documentVersion }} · {{ document.status }} · {{ document.technologyVersion || "버전 미입력" }}</small></button></li></ul>
@@ -168,7 +174,7 @@ onBeforeUnmount(() => { listGeneration++; selectionGeneration++; });
           <h3>검색 문단 · {{ chunks.length }}개</h3>
           <p v-if="chunksLoading" class="admin-loading">검색 문단을 불러오는 중…</p>
           <p v-if="chunkError" class="admin-error">검색 문단을 불러오지 못했습니다. <button type="button" @click="loadChunks(selected.id)">다시 시도</button></p>
-          <p v-if="!chunks.length">아직 생성된 검색 문단이 없습니다.</p>
+          <p v-if="!chunksLoading && !chunkError && !chunks.length">아직 생성된 검색 문단이 없습니다.</p>
           <article v-for="chunk in chunks" :key="chunk.id">
             <strong>#{{ chunk.sequenceNo }} · {{ chunk.searchStatus }} · {{ chunk.startOffset }}–{{ chunk.endOffset }}</strong>
             <p>{{ chunk.content }}</p>

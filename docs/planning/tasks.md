@@ -963,7 +963,7 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
   - [x] 평가 목록·상세·필터 변경에서 오래된 성공·실패·완료 응답 무시
     - 검증: 필터 변경 전 목록 완료와 이전 상세 실패 경쟁 테스트 RED → GREEN (2026-09-15)
   - [x] 초기 로드가 실패해도 loading 상태가 종료된다.
-    - 검증: Question·KnowledgeDocument·Evaluation·Member 실패 후 재시도 복구 테스트, Taxonomy 동일 요청 세대 처리 (2026-09-15)
+    - 검증: Question·KnowledgeDocument·Evaluation·Member 실패 후 재시도 복구 테스트 (2026-09-15)
   - [ ] Question 폼과 criteria 상태를 composable 또는 하위 컴포넌트로 분리한다.
   - [ ] 관리자 API를 Topic, Concept, KnowledgeDocument, Question, Member 단위로 나눈다.
   - [ ] 생성·수정·검수·공개·폐기·새 버전의 실패 흐름을 테스트한다.

@@ -50,4 +50,38 @@ describe("관리자 근거 문서 화면", () => {
     await button.trigger("click");
     expect(button.attributes("aria-pressed")).toBe("true");
   });
+
+  it("필터 변경 전에 시작한 chunk 응답을 무시하고 선택을 초기화한다", async () => {
+    let resolveChunks!: (value: object[]) => void;
+    api.fetchKnowledgeChunks.mockReturnValue(new Promise(resolve => { resolveChunks = resolve; }));
+    const wrapper = mount(AdminKnowledgeDocumentView);
+    await flushPromises();
+    await wrapper.get("button[data-document-id='1']").trigger("click");
+    await wrapper.get(".admin-toolbar select").setValue("DRAFT");
+    await flushPromises();
+    resolveChunks([{ id: 9, sequenceNo: 0, searchStatus: "INDEXED", startOffset: 0, endOffset: 2, content: "오래된 문단" }]);
+    await flushPromises();
+
+    expect(wrapper.find("h2").text()).toBe("새 문서");
+    expect(wrapper.text()).not.toContain("오래된 문단");
+  });
+
+  it("chunk 재시도를 시작하면 이전 오류와 빈 상태를 숨기고 성공 시 복구한다", async () => {
+    let resolveRetry!: (value: object[]) => void;
+    api.fetchKnowledgeChunks
+      .mockRejectedValueOnce(new Error("temporary"))
+      .mockReturnValueOnce(new Promise(resolve => { resolveRetry = resolve; }));
+    const wrapper = mount(AdminKnowledgeDocumentView);
+    await flushPromises();
+    await wrapper.get("button[data-document-id='1']").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("검색 문단을 불러오지 못했습니다.");
+    await wrapper.find(".admin-chunks .admin-error button").trigger("click");
+
+    expect(wrapper.text()).not.toContain("검색 문단을 불러오지 못했습니다.");
+    expect(wrapper.text()).not.toContain("아직 생성된 검색 문단이 없습니다.");
+    resolveRetry([{ id: 10, sequenceNo: 0, searchStatus: "INDEXED", startOffset: 0, endOffset: 2, content: "복구 문단" }]);
+    await flushPromises();
+    expect(wrapper.text()).toContain("복구 문단");
+  });
 });
