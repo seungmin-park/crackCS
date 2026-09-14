@@ -21,6 +21,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -57,10 +59,13 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
     }
 
     private void processSerially(Long evaluationId) {
-        PendingEvaluation pending = transactions.execute(status -> claim(evaluationId));
-        if (pending == null) {
+        Optional<PendingEvaluation> claimed = Objects.requireNonNull(
+                transactions.execute(status -> claim(evaluationId)),
+                "claim transaction must return an Optional");
+        if (claimed.isEmpty()) {
             return;
         }
+        PendingEvaluation pending = claimed.orElseThrow();
         RetrievalResult retrieval = retrievalService.retrieve(pending.retrievalQuery(), 5);
         if (retrieval.insufficientEvidence()) {
             requireReviewIfOwned(evaluationId, "EVIDENCE_NOT_FOUND");
@@ -113,13 +118,20 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
         }
     }
 
-    private PendingEvaluation claim(Long evaluationId) {
-        Evaluation evaluation = evaluations.findLockedById(evaluationId)
-                .orElse(null);
-        LocalDateTime now = LocalDateTime.now();
-        if (evaluation == null || !evaluation.claim(workerId, now, leaseDuration)) {
-            return null;
+    private Optional<PendingEvaluation> claim(Long evaluationId) {
+        Optional<Evaluation> found = evaluations.findLockedById(evaluationId);
+        if (found.isEmpty()) {
+            return Optional.empty();
         }
+        Evaluation evaluation = found.orElseThrow();
+        LocalDateTime now = LocalDateTime.now();
+        if (!evaluation.claim(workerId, now, leaseDuration)) {
+            return Optional.empty();
+        }
+        return Optional.of(toPendingEvaluation(evaluation));
+    }
+
+    private PendingEvaluation toPendingEvaluation(Evaluation evaluation) {
         Answer answer = evaluation.getAnswer();
         Question question = answer.getQuestion();
         List<EvaluationConceptInput> concepts = question.getQuestionConcepts().stream()

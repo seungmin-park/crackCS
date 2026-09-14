@@ -248,8 +248,8 @@ class QuestionServiceTest {
                 .isEqualTo(QuestionStatus.RETIRED);
         assertThat(questionRepository.findById(second.getId()).orElseThrow().getStatus())
                 .isEqualTo(QuestionStatus.PUBLISHED);
-        assertThat(questionRepository.findPublishedById(first.getId())).isEmpty();
-        assertThat(questionRepository.findPublishedById(second.getId())).isPresent();
+        assertThat(questionRepository.findPublishedNormalById(first.getId())).isEmpty();
+        assertThat(questionRepository.findPublishedNormalById(second.getId())).isPresent();
     }
 
     private Topic saveTopic(String code, String name) {

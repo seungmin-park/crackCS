@@ -1,0 +1,6 @@
+package com.example.crackcs.learning.followup.domain;
+
+public enum FollowUpReason {
+    EVALUATION_NOT_ELIGIBLE, FOLLOW_UP_LIMIT, CONTENT_UNAVAILABLE,
+    PROVIDER_TIMEOUT, INVALID_RESULT, PROVIDER_ERROR, ATTEMPTS_EXHAUSTED, PERSISTENCE_ERROR
+}

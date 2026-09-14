@@ -60,7 +60,7 @@ public class DefaultQuestionService implements QuestionService {
             QuestionOrigin origin,
             Pageable pageable
     ) {
-        return questionRepository.findAllByConditions(topicId, status, difficulty, origin, pageable);
+        return questionRepository.findNormalByConditions(topicId, status, difficulty, origin, pageable);
     }
 
     @Override
@@ -157,7 +157,7 @@ public class DefaultQuestionService implements QuestionService {
     }
 
     private Question findQuestion(Long questionId) {
-        return questionRepository.findAdminById(questionId)
+        return questionRepository.findNormalWithConceptsById(questionId)
                 .orElseThrow(() -> new QuestionNotFoundException(questionId));
     }
 

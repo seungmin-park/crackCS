@@ -59,9 +59,24 @@ public class Answer {
             throw new IllegalArgumentException("active USER member is required");
         }
         this.question = requirePublished(question);
+        if (!question.isUnrestrictedOrOwnedBy(member)) {
+            throw new IllegalArgumentException("follow-up question belongs to another member");
+        }
         this.requestId = requireCanonicalUuid(requestId);
         this.content = requireContent(content);
         this.submittedAt = LocalDateTime.now();
+    }
+
+    public boolean isOwnedBy(Member candidate) {
+        if (candidate == null) {
+            return false;
+        }
+        // 저장 전에는 같은 객체인지, 저장 후에는 영속 식별자가 같은지 비교한다.
+        return member == candidate || hasSameMemberId(candidate);
+    }
+
+    private boolean hasSameMemberId(Member candidate) {
+        return member.getId() != null && member.getId().equals(candidate.getId());
     }
 
     private static Question requirePublished(Question question) {

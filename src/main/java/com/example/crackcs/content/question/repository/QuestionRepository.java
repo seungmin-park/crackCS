@@ -28,8 +28,12 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
                                                   @Param("origin") QuestionOrigin origin);
 
     @EntityGraph(attributePaths = {"questionConcepts", "questionConcepts.concept"})
-    @Query("SELECT question FROM Question question WHERE question.id = :questionId")
-    Optional<Question> findAdminById(@Param("questionId") Long questionId);
+    @Query("SELECT question FROM Question question WHERE question.id = :questionId AND question.type = :type")
+    Optional<Question> findWithConceptsByIdAndType(@Param("questionId") Long questionId, @Param("type") QuestionType type);
+
+    default Optional<Question> findNormalWithConceptsById(Long questionId) {
+        return findWithConceptsByIdAndType(questionId, QuestionType.NORMAL);
+    }
 
     @Query("""
             SELECT COALESCE(MAX(question.questionVersion), 0)
@@ -43,18 +47,25 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     @Query("""
             SELECT question
             FROM Question question
-            WHERE (:topicId IS NULL OR question.topic.id = :topicId)
+            WHERE question.type = :type
+              AND (:topicId IS NULL OR question.topic.id = :topicId)
               AND (:status IS NULL OR question.status = :status)
               AND (:difficulty IS NULL OR question.difficulty = :difficulty)
               AND (:origin IS NULL OR question.origin = :origin)
             """)
-    Page<Question> findAllByConditions(
+    Page<Question> findByTypeAndConditions(
             @Param("topicId") Long topicId,
             @Param("status") QuestionStatus status,
             @Param("difficulty") QuestionDifficulty difficulty,
             @Param("origin") QuestionOrigin origin,
+            @Param("type") QuestionType type,
             Pageable pageable
     );
+
+    default Page<Question> findNormalByConditions(Long topicId, QuestionStatus status, QuestionDifficulty difficulty,
+                                               QuestionOrigin origin, Pageable pageable) {
+        return findByTypeAndConditions(topicId, status, difficulty, origin, QuestionType.NORMAL, pageable);
+    }
 
     @Query(
             value = """
@@ -62,6 +73,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
                     FROM Question question
                     JOIN FETCH question.topic
                     WHERE question.status = :status
+                      AND question.type = :type
                       AND (:topicId IS NULL OR question.topic.id = :topicId)
                       AND (:difficulty IS NULL OR question.difficulty = :difficulty)
                     """,
@@ -69,19 +81,21 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
                     SELECT COUNT(question)
                     FROM Question question
                     WHERE question.status = :status
+                      AND question.type = :type
                       AND (:topicId IS NULL OR question.topic.id = :topicId)
                       AND (:difficulty IS NULL OR question.difficulty = :difficulty)
                     """
     )
-    Page<Question> findQuestionsByStatus(
+    Page<Question> findByStatusAndType(
             @Param("topicId") Long topicId,
             @Param("difficulty") QuestionDifficulty difficulty,
             @Param("status") QuestionStatus status,
+            @Param("type") QuestionType type,
             Pageable pageable
     );
 
-    default Page<Question> findPublishedQuestions(Long topicId, QuestionDifficulty difficulty, Pageable pageable) {
-        return findQuestionsByStatus(topicId, difficulty, QuestionStatus.PUBLISHED, pageable);
+    default Page<Question> findPublishedNormalQuestions(Long topicId, QuestionDifficulty difficulty, Pageable pageable) {
+        return findByStatusAndType(topicId, difficulty, QuestionStatus.PUBLISHED, QuestionType.NORMAL, pageable);
     }
 
     @Query("""
@@ -90,10 +104,12 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             JOIN FETCH question.topic
             WHERE question.id = :questionId
               AND question.status = :status
+              AND question.type = :type
             """)
-    Optional<Question> findByIdAndStatus(@Param("questionId") Long questionId, @Param("status") QuestionStatus status);
+    Optional<Question> findByIdAndStatusAndType(@Param("questionId") Long questionId, @Param("status") QuestionStatus status,
+                                        @Param("type") QuestionType type);
 
-    default Optional<Question> findPublishedById(Long questionId) {
-        return findByIdAndStatus(questionId, QuestionStatus.PUBLISHED);
+    default Optional<Question> findPublishedNormalById(Long questionId) {
+        return findByIdAndStatusAndType(questionId, QuestionStatus.PUBLISHED, QuestionType.NORMAL);
     }
 }

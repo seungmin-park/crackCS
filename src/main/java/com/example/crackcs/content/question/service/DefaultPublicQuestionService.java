@@ -19,12 +19,12 @@ public class DefaultPublicQuestionService implements PublicQuestionService {
 
     @Override
     public Page<Question> findAll(Long topicId, QuestionDifficulty difficulty, Pageable pageable) {
-        return questionRepository.findPublishedQuestions(topicId, difficulty, pageable);
+        return questionRepository.findPublishedNormalQuestions(topicId, difficulty, pageable);
     }
 
     @Override
     public Question findById(Long questionId) {
-        return questionRepository.findPublishedById(questionId)
+        return questionRepository.findPublishedNormalById(questionId)
                 .orElseThrow(() -> new QuestionNotFoundException(questionId));
     }
 }

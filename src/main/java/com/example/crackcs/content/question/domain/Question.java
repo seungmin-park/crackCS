@@ -5,6 +5,7 @@ import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.exception.InvalidContentStateException;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
+import com.example.crackcs.learning.answer.domain.Answer;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +20,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -36,16 +38,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
         name = "question",
+        uniqueConstraints = @UniqueConstraint(name = "uk_question_source_answer", columnNames = "source_answer_id"),
         indexes = @Index(
                 name = "idx_question_topic_status_difficulty",
                 columnList = "topic_id, status, difficulty"
         )
 )
 public class Question {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "source_answer_id")
+    private Answer sourceAnswer;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "topic_id", nullable = false)
@@ -99,6 +105,29 @@ public class Question {
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<QuestionConcept> questionConcepts = new LinkedHashSet<>();
 
+    @Builder(builderMethodName = "followUpBuilder", builderClassName = "FollowUpBuilder")
+    private Question(Answer sourceAnswer, Concept concept, String content, String referenceAnswer) {
+        Answer source = requireNonNull(sourceAnswer, "sourceAnswer");
+        Question original = source.getQuestion();
+        requireFollowUpSource(original);
+        this.topic = original.getTopic();
+        Concept selected = requireAssignableConcept(concept);
+        requireOriginalConcept(original, selected);
+        this.content = requireText(content, "content");
+        this.referenceAnswer = requireText(referenceAnswer, "referenceAnswer");
+        this.sourceAnswer = source;
+        this.type = QuestionType.FOLLOW_UP;
+        this.origin = QuestionOrigin.SYSTEM_FOLLOW_UP;
+        this.difficulty = original.getDifficulty();
+        this.versionSeriesId = UUID.randomUUID().toString();
+        this.questionVersion = 1;
+        this.status = QuestionStatus.PUBLISHED;
+        this.questionConcepts.add(QuestionConcept.create(this, selected, BigDecimal.ONE, true));
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
     @Builder
     private Question(Topic topic, Member createdByMember, QuestionDifficulty difficulty, String content,
                      String referenceAnswer) {
@@ -131,6 +160,27 @@ public class Question {
         LocalDateTime now = LocalDateTime.now();
         this.createdAt = now;
         this.updatedAt = now;
+    }
+
+    /** 게시 상태와 별개로, 개인 후속 질문의 원본 답변 소유자 제한만 검사한다. */
+    public boolean isUnrestrictedOrOwnedBy(Member member) {
+        return type == QuestionType.NORMAL || sourceAnswer.isOwnedBy(member);
+    }
+
+    private static void requireFollowUpSource(Question original) {
+        if (!isPublishedNormalQuestion(original) || !original.getTopic().isActive()) {
+            throw new InvalidContentStateException("공개된 기본 문제의 답변에서만 후속 질문을 만들 수 있습니다.");
+        }
+    }
+
+    private static boolean isPublishedNormalQuestion(Question question) {
+        return question.getType() == QuestionType.NORMAL && question.getStatus() == QuestionStatus.PUBLISHED;
+    }
+
+    private static void requireOriginalConcept(Question original, Concept selected) {
+        if (!original.hasConcept(selected)) {
+            throw new InvalidContentStateException("원본 문제의 Concept만 선택할 수 있습니다.");
+        }
     }
 
     public void update(
@@ -270,8 +320,8 @@ public class Question {
             String content,
             String referenceAnswer
     ) {
-        if (status != QuestionStatus.PUBLISHED) {
-            throw new InvalidContentStateException("PUBLISHED 문제에서만 새 버전을 만들 수 있습니다.");
+        if (status != QuestionStatus.PUBLISHED || type != QuestionType.NORMAL) {
+            throw new InvalidContentStateException("PUBLISHED 기본 문제에서만 새 버전을 만들 수 있습니다.");
         }
         Question next = new Question(
                 topic,
@@ -297,7 +347,7 @@ public class Question {
     }
 
     private boolean hasConcept(Concept concept) {
-        return questionConcepts.stream()
+        return getQuestionConcepts().stream()
                 .map(QuestionConcept::getConcept)
                 .anyMatch(existing -> existing == concept || samePersistentConcept(existing, concept));
     }

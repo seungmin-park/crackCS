@@ -1,6 +1,8 @@
 package com.example.crackcs.learning.answer.repository;
 
 import com.example.crackcs.learning.answer.domain.Answer;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -12,6 +14,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface AnswerRepository extends JpaRepository<Answer, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Answer a where a.id = :id")
+    Optional<Answer> findLockedById(@Param("id") Long id);
     @Query("""
             select a.question.id as questionId, max(a.submittedAt) as lastAnsweredAt from Answer a
             where a.member.id = :memberId group by a.question.id

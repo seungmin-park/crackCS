@@ -24,10 +24,12 @@ public class DefaultKnowledgeStateService implements KnowledgeStateService {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void applyInCurrentTransaction(Long evaluationId) {
-        Evaluation evaluation = evaluations.findLockedById(evaluationId).orElse(null);
-        if (evaluation == null || !evaluation.isKnowledgeStateEligible()) {
-            return;
-        }
+        evaluations.findLockedById(evaluationId)
+                .filter(Evaluation::isKnowledgeStateEligible)
+                .ifPresent(this::applyEligibleEvaluation);
+    }
+
+    private void applyEligibleEvaluation(Evaluation evaluation) {
         // Completing an evaluation cascades new concept rows; their generated IDs are the delivery keys.
         evaluations.flush();
         evaluation.getConcepts().stream().sorted(Comparator.comparing(EvaluationConcept::getConceptId))

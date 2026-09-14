@@ -56,6 +56,7 @@ public class DefaultAnswerService implements AnswerService {
         }
         Question question = questions.findById(questionId)
                 .filter(candidate -> candidate.getStatus() == QuestionStatus.PUBLISHED)
+                .filter(candidate -> candidate.isUnrestrictedOrOwnedBy(member))
                 .orElseThrow(() -> new QuestionNotFoundException(questionId));
         Answer answer = answers.save(Answer.builder()
                 .member(member)

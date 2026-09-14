@@ -9,11 +9,11 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty(name = "crackcs.evaluation.openai.enabled", havingValue = "true")
+@ConditionalOnExpression("${crackcs.evaluation.openai.enabled:false} or ${crackcs.followup.openai.enabled:false}")
 public class JdkOpenAiResponsesClient implements OpenAiResponsesClient {
 
     private final HttpClient client;

@@ -726,7 +726,7 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ### P7-T03 후속 질문 생성 adapter
 
-- [ ] 외부 모델과 무관한 FollowUpQuestionPort를 정의한다.
+- [ ] 외부 모델과 무관한 FollowUpQuestionGenerator 계약을 port 패키지에 정의한다.
 - [ ] 개발·테스트용 Stub을 구현한다.
 - [ ] 실제 AI adapter에 structured output 검증을 적용한다.
 - [ ] 원본 질문, 평가 결과와 승인된 근거만 입력으로 사용한다.
