@@ -5,11 +5,6 @@ import com.example.crackcs.evaluation.domain.EvaluationResult;
 import com.example.crackcs.evaluation.domain.Verdict;
 import com.example.crackcs.evaluation.port.EvaluationPort;
 import com.example.crackcs.evaluation.port.EvaluationRequest;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -17,6 +12,12 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
+
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Component
 @ConditionalOnProperty(name = "crackcs.evaluation.openai.enabled", havingValue = "true")

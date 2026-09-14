@@ -1,8 +1,5 @@
 package com.example.crackcs.learning.answer.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
@@ -35,16 +32,6 @@ import com.example.crackcs.learning.mastery.repository.KnowledgeStateRepository;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,6 +47,15 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.UUID;
+import java.util.concurrent.*;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(properties = {
         "crackcs.evaluation.worker-enabled=false",
@@ -430,6 +426,32 @@ class AnswerServiceTest {
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
+    private Question publishedQuestion() {
+        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topics.save(Topic.builder().code("OS").name("운영체제").build());
+        Concept concept = concepts.save(Concept.builder().topic(topic).code("THREAD").name("스레드").build());
+        Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
+                .content("스레드를 설명하세요").referenceAnswer("프로세스 자원을 공유하는 실행 단위").build();
+        question.addConcept(concept, BigDecimal.ONE, true);
+        question.review(admin);
+        question.publish();
+        Question saved = questions.save(question);
+        KnowledgeDocument document = knowledgeDocuments.save(KnowledgeDocument.builder()
+                .topic(topic)
+                .createdByMember(admin)
+                .title("스레드 공개 근거")
+                .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
+                .technologyVersion("general")
+                .licenseNote("독립 작성")
+                .content("스레드는 프로세스 자원을 공유하는 실행 단위다.")
+                .build());
+        document.review(admin);
+        document.publish();
+        knowledgeDocuments.save(document);
+        chunkService.generateChunks(document.getId());
+        return saved;
+    }
+
     @TestConfiguration
     static class PortConfiguration {
         @Bean
@@ -463,31 +485,5 @@ class AnswerServiceTest {
             outcome = "CORRECT";
             allCallsOutsideTransaction = true;
         }
-    }
-
-    private Question publishedQuestion() {
-        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topics.save(Topic.builder().code("OS").name("운영체제").build());
-        Concept concept = concepts.save(Concept.builder().topic(topic).code("THREAD").name("스레드").build());
-        Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
-                .content("스레드를 설명하세요").referenceAnswer("프로세스 자원을 공유하는 실행 단위").build();
-        question.addConcept(concept, BigDecimal.ONE, true);
-        question.review(admin);
-        question.publish();
-        Question saved = questions.save(question);
-        KnowledgeDocument document = knowledgeDocuments.save(KnowledgeDocument.builder()
-                .topic(topic)
-                .createdByMember(admin)
-                .title("스레드 공개 근거")
-                .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
-                .technologyVersion("general")
-                .licenseNote("독립 작성")
-                .content("스레드는 프로세스 자원을 공유하는 실행 단위다.")
-                .build());
-        document.review(admin);
-        document.publish();
-        knowledgeDocuments.save(document);
-        chunkService.generateChunks(document.getId());
-        return saved;
     }
 }

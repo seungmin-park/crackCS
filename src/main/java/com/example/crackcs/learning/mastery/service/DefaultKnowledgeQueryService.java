@@ -7,16 +7,17 @@ import com.example.crackcs.content.topic.repository.TopicRepository;
 import com.example.crackcs.learning.mastery.domain.KnowledgeState;
 import com.example.crackcs.learning.mastery.domain.TopicKnowledgeSummary;
 import com.example.crackcs.learning.mastery.repository.KnowledgeStateRepository;
+import com.example.crackcs.learning.mastery.service.result.KnowledgeStatesResult;
 import com.example.crackcs.learning.mastery.service.result.KnowledgeStatesResult.ConceptState;
 import com.example.crackcs.learning.mastery.service.result.KnowledgeStatesResult.TopicState;
-import com.example.crackcs.learning.mastery.service.result.KnowledgeStatesResult;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

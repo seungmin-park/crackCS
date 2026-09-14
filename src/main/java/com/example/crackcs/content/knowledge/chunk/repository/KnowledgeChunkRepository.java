@@ -3,10 +3,11 @@ package com.example.crackcs.content.knowledge.chunk.repository;
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunkSearchStatus;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocumentStatus;
-import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.util.List;
 
 public interface KnowledgeChunkRepository extends JpaRepository<KnowledgeChunk, Long> {
 

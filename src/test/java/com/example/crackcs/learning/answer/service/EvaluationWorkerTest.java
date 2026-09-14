@@ -1,7 +1,5 @@
 package com.example.crackcs.learning.answer.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
@@ -27,9 +25,6 @@ import com.example.crackcs.learning.mastery.repository.KnowledgeStateRepository;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -41,6 +36,12 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {"crackcs.evaluation.worker-enabled=true", "crackcs.evaluation.poll-delay=20"})
 @ActiveProfiles("test")
@@ -121,26 +122,6 @@ class EvaluationWorkerTest {
         assertThat(port.calledOutsideTransaction).isTrue();
     }
 
-    @TestConfiguration
-    static class PortConfiguration {
-        @Bean
-        @Primary
-        CommitSignalPort commitSignalPort() {
-            return new CommitSignalPort();
-        }
-    }
-
-    static class CommitSignalPort implements EvaluationPort {
-        volatile boolean calledOutsideTransaction;
-
-        @Override
-        public EvaluationResult evaluate(EvaluationRequest request) {
-            calledOutsideTransaction = !TransactionSynchronizationManager
-                    .isActualTransactionActive();
-            return new StubEvaluationAdapter("CORRECT").evaluate(request);
-        }
-    }
-
     private void awaitEvaluation(Long answerId) throws InterruptedException {
         long deadline = System.nanoTime() + Duration.ofSeconds(5).toNanos();
         while (System.nanoTime() < deadline) {
@@ -173,5 +154,25 @@ class EvaluationWorkerTest {
         knowledgeDocuments.save(document);
         chunkService.generateChunks(document.getId());
         return saved;
+    }
+
+    @TestConfiguration
+    static class PortConfiguration {
+        @Bean
+        @Primary
+        CommitSignalPort commitSignalPort() {
+            return new CommitSignalPort();
+        }
+    }
+
+    static class CommitSignalPort implements EvaluationPort {
+        volatile boolean calledOutsideTransaction;
+
+        @Override
+        public EvaluationResult evaluate(EvaluationRequest request) {
+            calledOutsideTransaction = !TransactionSynchronizationManager
+                    .isActualTransactionActive();
+            return new StubEvaluationAdapter("CORRECT").evaluate(request);
+        }
     }
 }

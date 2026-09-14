@@ -19,20 +19,6 @@ public record FollowUpResult(String content, String referenceAnswer, Long concep
         evidenceChunkIds = List.copyOf(evidenceChunkIds);
     }
 
-    public void validateAgainst(Long selectedConceptId, List<Long> allowedEvidenceIds) {
-        if (!usesSelectedConcept(selectedConceptId) || !usesOnlyAllowedEvidence(allowedEvidenceIds)) {
-            throw new IllegalArgumentException("follow-up result exceeds approved evidence or concept");
-        }
-    }
-
-    private boolean usesSelectedConcept(Long selectedConceptId) {
-        return conceptId.equals(selectedConceptId);
-    }
-
-    private boolean usesOnlyAllowedEvidence(List<Long> allowedEvidenceIds) {
-        return allowedEvidenceIds.containsAll(evidenceChunkIds);
-    }
-
     private static void requireValidQuestion(String content, String referenceAnswer, Long conceptId) {
         if (!isValidText(content, MAX_CONTENT_LENGTH) || !isValidText(referenceAnswer, MAX_CONTENT_LENGTH)
                 || !isPositiveId(conceptId)) {
@@ -79,5 +65,19 @@ public record FollowUpResult(String content, String referenceAnswer, Long concep
 
     private static IllegalArgumentException invalidResult() {
         return new IllegalArgumentException("invalid follow-up result");
+    }
+
+    public void validateAgainst(Long selectedConceptId, List<Long> allowedEvidenceIds) {
+        if (!usesSelectedConcept(selectedConceptId) || !usesOnlyAllowedEvidence(allowedEvidenceIds)) {
+            throw new IllegalArgumentException("follow-up result exceeds approved evidence or concept");
+        }
+    }
+
+    private boolean usesSelectedConcept(Long selectedConceptId) {
+        return conceptId.equals(selectedConceptId);
+    }
+
+    private boolean usesOnlyAllowedEvidence(List<Long> allowedEvidenceIds) {
+        return allowedEvidenceIds.containsAll(evidenceChunkIds);
     }
 }

@@ -20,6 +20,13 @@ public final class EvaluationCostPolicy {
         this.outputUsdPerMillionTokens = requireNonNegative(outputUsdPerMillionTokens, "outputUsdPerMillionTokens");
     }
 
+    private static BigDecimal requireNonNegative(BigDecimal value, String name) {
+        if (value == null || value.signum() < 0) {
+            throw new IllegalArgumentException(name + " must not be negative");
+        }
+        return value;
+    }
+
     public boolean canEvaluate(long usedInputTokens, long usedOutputTokens) {
         if (usedInputTokens < 0 || usedOutputTokens < 0) {
             throw new IllegalArgumentException("used tokens must not be negative");
@@ -33,12 +40,5 @@ public final class EvaluationCostPolicy {
         BigDecimal outputCost = BigDecimal.valueOf(outputTokens)
                 .multiply(outputUsdPerMillionTokens).divide(ONE_MILLION, 8, RoundingMode.HALF_UP);
         return inputCost.add(outputCost);
-    }
-
-    private static BigDecimal requireNonNegative(BigDecimal value, String name) {
-        if (value == null || value.signum() < 0) {
-            throw new IllegalArgumentException(name + " must not be negative");
-        }
-        return value;
     }
 }

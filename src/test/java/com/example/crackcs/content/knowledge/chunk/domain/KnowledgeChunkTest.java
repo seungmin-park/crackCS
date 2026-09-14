@@ -1,8 +1,5 @@
 package com.example.crackcs.content.knowledge.chunk.domain;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -11,6 +8,9 @@ import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class KnowledgeChunkTest {
 

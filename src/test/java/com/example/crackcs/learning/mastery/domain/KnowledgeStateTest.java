@@ -1,17 +1,20 @@
 package com.example.crackcs.learning.mastery.domain;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
-
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.evaluation.domain.Verdict;
 import com.example.crackcs.member.domain.Member;
-import java.time.LocalDateTime;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+
 class KnowledgeStateTest {
+    private final LocalDateTime now = LocalDateTime.of(2026, 9, 13, 12, 0);
+
     @Test
     @DisplayName("회원과 개념 연관관계 없이 학습 상태를 생성할 수 없다")
     void rejectsMissingAssociations() {
@@ -23,8 +26,6 @@ class KnowledgeStateTest {
     void rejectsMissingEvaluationConcept() {
         assertThatIllegalArgumentException().isThrownBy(() -> AppliedEvaluationConcept.builder().build());
     }
-
-    private final LocalDateTime now = LocalDateTime.of(2026, 9, 13, 12, 0);
 
     @Test
     @DisplayName("미평가 상태는 점수 없음과 신뢰도 0으로 시작한다")

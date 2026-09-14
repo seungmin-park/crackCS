@@ -4,26 +4,15 @@ import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.exception.InvalidContentStateException;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import java.net.URI;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.net.URI;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -156,6 +145,79 @@ public class KnowledgeDocument {
         this.updatedAt = now;
     }
 
+    private static String normalizeSourceUrl(String sourceUrl) {
+        String normalized = normalizeOptionalText(sourceUrl, "sourceUrl", 1000);
+        if (normalized == null) {
+            return null;
+        }
+        URI uri;
+        try {
+            uri = URI.create(normalized);
+        } catch (IllegalArgumentException exception) {
+            throw new IllegalArgumentException("sourceUrl must be a valid HTTP URL");
+        }
+        if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
+                || uri.getHost() == null) {
+            throw new IllegalArgumentException("sourceUrl must be a valid HTTP URL");
+        }
+        return normalized;
+    }
+
+    private static String normalizeContent(String content) {
+        String normalized = requireText(content, "content", Integer.MAX_VALUE)
+                .replace("\r\n", "\n")
+                .replace('\r', '\n')
+                .strip();
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("content must not be blank");
+        }
+        return normalized;
+    }
+
+    private static String normalizeOptionalText(String value, String fieldName, int maxLength) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        String normalized = value.trim();
+        if (normalized.length() > maxLength) {
+            throw new IllegalArgumentException(fieldName + " must be " + maxLength + " characters or fewer");
+        }
+        return normalized;
+    }
+
+    private static String requireText(String value, String fieldName, int maxLength) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        String normalized = value.trim();
+        if (normalized.length() > maxLength) {
+            throw new IllegalArgumentException(fieldName + " must be " + maxLength + " characters or fewer");
+        }
+        return normalized;
+    }
+
+    private static int requirePositiveVersion(int version) {
+        if (version < 1) {
+            throw new IllegalArgumentException("documentVersion must be positive");
+        }
+        return version;
+    }
+
+    private static Member requireAdmin(Member member, String fieldName) {
+        requireNonNull(member, fieldName);
+        if (member.getRole() != MemberRole.ADMIN) {
+            throw new IllegalArgumentException(fieldName + " must be an ADMIN member");
+        }
+        return member;
+    }
+
+    private static <T> T requireNonNull(T value, String fieldName) {
+        if (value == null) {
+            throw new IllegalArgumentException(fieldName + " must not be null");
+        }
+        return value;
+    }
+
     public KnowledgeDocument createNextVersion(
             int nextVersion,
             Topic topic,
@@ -276,78 +338,5 @@ public class KnowledgeDocument {
     private void clearReview() {
         reviewedByMember = null;
         reviewedAt = null;
-    }
-
-    private static String normalizeSourceUrl(String sourceUrl) {
-        String normalized = normalizeOptionalText(sourceUrl, "sourceUrl", 1000);
-        if (normalized == null) {
-            return null;
-        }
-        URI uri;
-        try {
-            uri = URI.create(normalized);
-        } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("sourceUrl must be a valid HTTP URL");
-        }
-        if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
-                || uri.getHost() == null) {
-            throw new IllegalArgumentException("sourceUrl must be a valid HTTP URL");
-        }
-        return normalized;
-    }
-
-    private static String normalizeContent(String content) {
-        String normalized = requireText(content, "content", Integer.MAX_VALUE)
-                .replace("\r\n", "\n")
-                .replace('\r', '\n')
-                .strip();
-        if (normalized.isBlank()) {
-            throw new IllegalArgumentException("content must not be blank");
-        }
-        return normalized;
-    }
-
-    private static String normalizeOptionalText(String value, String fieldName, int maxLength) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        String normalized = value.trim();
-        if (normalized.length() > maxLength) {
-            throw new IllegalArgumentException(fieldName + " must be " + maxLength + " characters or fewer");
-        }
-        return normalized;
-    }
-
-    private static String requireText(String value, String fieldName, int maxLength) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
-        }
-        String normalized = value.trim();
-        if (normalized.length() > maxLength) {
-            throw new IllegalArgumentException(fieldName + " must be " + maxLength + " characters or fewer");
-        }
-        return normalized;
-    }
-
-    private static int requirePositiveVersion(int version) {
-        if (version < 1) {
-            throw new IllegalArgumentException("documentVersion must be positive");
-        }
-        return version;
-    }
-
-    private static Member requireAdmin(Member member, String fieldName) {
-        requireNonNull(member, fieldName);
-        if (member.getRole() != MemberRole.ADMIN) {
-            throw new IllegalArgumentException(fieldName + " must be an ADMIN member");
-        }
-        return member;
-    }
-
-    private static <T> T requireNonNull(T value, String fieldName) {
-        if (value == null) {
-            throw new IllegalArgumentException(fieldName + " must not be null");
-        }
-        return value;
     }
 }

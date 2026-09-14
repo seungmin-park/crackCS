@@ -1,13 +1,15 @@
 package com.example.crackcs.learning.followup.adapter;
-import static org.assertj.core.api.Assertions.assertThat;
+
 import com.example.crackcs.evaluation.adapter.openai.JdkOpenAiResponsesClient;
 import com.example.crackcs.evaluation.adapter.openai.OpenAiResponsesClient;
 import com.example.crackcs.learning.followup.port.FollowUpQuestionGenerator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.convert.ApplicationConversionService;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import tools.jackson.databind.ObjectMapper;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class FollowUpAdapterConfigurationTest {
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
@@ -19,7 +21,7 @@ class FollowUpAdapterConfigurationTest {
     @DisplayName("후속 생성만 명시적으로 켜도 기존 키 설정으로 실제 client를 구성한다")
     void followUpOptInConfiguresSharedClient() {
         runner.withPropertyValues("crackcs.followup.openai.enabled=true", "crackcs.evaluation.openai.enabled=false",
-                "crackcs.evaluation.openai.api-key=test-only-never-used")
+                        "crackcs.evaluation.openai.api-key=test-only-never-used")
                 .run(context -> {
                     assertThat(context).hasNotFailed();
                     assertThat(context).hasSingleBean(OpenAiResponsesClient.class);

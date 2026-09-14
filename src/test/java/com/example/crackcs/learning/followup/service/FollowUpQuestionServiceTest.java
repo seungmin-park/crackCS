@@ -1,7 +1,5 @@
 package com.example.crackcs.learning.followup.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
@@ -19,38 +17,26 @@ import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
 import com.example.crackcs.evaluation.service.EvaluationProcessor;
 import com.example.crackcs.exception.AnswerNotFoundException;
+import com.example.crackcs.exception.EvaluationTimeoutException;
 import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.learning.answer.domain.Answer;
 import com.example.crackcs.learning.answer.repository.AnswerRepository;
 import com.example.crackcs.learning.answer.service.AnswerService;
 import com.example.crackcs.learning.answer.service.result.AnswerResult;
-import com.example.crackcs.learning.followup.domain.FollowUpStatus;
-import com.example.crackcs.learning.followup.domain.FollowUpReason;
-import com.example.crackcs.learning.followup.repository.FollowUpGenerationRepository;
+import com.example.crackcs.learning.followup.adapter.StubFollowUpQuestionAdapter;
 import com.example.crackcs.learning.followup.domain.FollowUpGeneration;
+import com.example.crackcs.learning.followup.domain.FollowUpReason;
+import com.example.crackcs.learning.followup.domain.FollowUpResult;
+import com.example.crackcs.learning.followup.domain.FollowUpStatus;
 import com.example.crackcs.learning.followup.port.FollowUpQuestionGenerator;
 import com.example.crackcs.learning.followup.port.FollowUpRequest;
-import com.example.crackcs.learning.followup.domain.FollowUpResult;
-import com.example.crackcs.learning.followup.adapter.StubFollowUpQuestionAdapter;
-import com.example.crackcs.exception.EvaluationTimeoutException;
+import com.example.crackcs.learning.followup.repository.FollowUpGenerationRepository;
 import com.example.crackcs.learning.mastery.repository.AppliedEvaluationConceptRepository;
 import com.example.crackcs.learning.mastery.repository.KnowledgeStateRepository;
 import com.example.crackcs.learning.recommendation.service.RecommendationService;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
-import java.math.BigDecimal;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.UUID;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -62,36 +48,68 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest(properties = {"crackcs.evaluation.worker-enabled=false", "crackcs.followup.worker-enabled=false",
         "crackcs.followup.retry-delay=0ms"})
 @ActiveProfiles("test")
 class FollowUpQuestionServiceTest {
-    @Autowired private FollowUpGenerationRepository generations;
-    @Autowired private ControlledPort port;
-    @Autowired private JdbcTemplate jdbc;
-    @Autowired private FollowUpQuestionService service;
-    @Autowired private FollowUpQuestionProcessor processor;
-    @Autowired private AnswerService answerService;
-    @Autowired private EvaluationProcessor evaluationProcessor;
-    @Autowired private AnswerRepository answers;
-    @Autowired private EvaluationRepository evaluations;
-    @Autowired private QuestionRepository questions;
-    @Autowired private ConceptRepository concepts;
-    @Autowired private TopicRepository topics;
-    @Autowired private MemberRepository members;
-    @Autowired private KnowledgeDocumentRepository documents;
-    @Autowired private KnowledgeChunkRepository chunks;
-    @Autowired private KnowledgeChunkService chunkService;
-    @Autowired private AppliedEvaluationConceptRepository applied;
-    @Autowired private KnowledgeStateRepository states;
-    @Autowired private RecommendationService recommendations;
-    @Autowired private TransactionTemplate transactions;
+    @Autowired
+    private FollowUpGenerationRepository generations;
+    @Autowired
+    private ControlledPort port;
+    @Autowired
+    private JdbcTemplate jdbc;
+    @Autowired
+    private FollowUpQuestionService service;
+    @Autowired
+    private FollowUpQuestionProcessor processor;
+    @Autowired
+    private AnswerService answerService;
+    @Autowired
+    private EvaluationProcessor evaluationProcessor;
+    @Autowired
+    private AnswerRepository answers;
+    @Autowired
+    private EvaluationRepository evaluations;
+    @Autowired
+    private QuestionRepository questions;
+    @Autowired
+    private ConceptRepository concepts;
+    @Autowired
+    private TopicRepository topics;
+    @Autowired
+    private MemberRepository members;
+    @Autowired
+    private KnowledgeDocumentRepository documents;
+    @Autowired
+    private KnowledgeChunkRepository chunks;
+    @Autowired
+    private KnowledgeChunkService chunkService;
+    @Autowired
+    private AppliedEvaluationConceptRepository applied;
+    @Autowired
+    private KnowledgeStateRepository states;
+    @Autowired
+    private RecommendationService recommendations;
+    @Autowired
+    private TransactionTemplate transactions;
 
     @AfterEach
     void tearDown() {
@@ -207,7 +225,9 @@ class FollowUpQuestionServiceTest {
     void timeoutPreservesEvaluation() {
         AnswerResult source = source();
         evaluate(source.answerId());
-        port.behavior = request -> { throw new EvaluationTimeoutException(); };
+        port.behavior = request -> {
+            throw new EvaluationTimeoutException();
+        };
         for (int attempt = 0; attempt < 4; attempt++) {
             processor.process(source.answerId());
         }
@@ -399,13 +419,22 @@ class FollowUpQuestionServiceTest {
 
     @TestConfiguration
     static class PortConfiguration {
-        @Bean @Primary
-        ControlledPort controlledPort() { return new ControlledPort(); }
+        @Bean
+        @Primary
+        ControlledPort controlledPort() {
+            return new ControlledPort();
+        }
     }
 
     static class ControlledPort implements FollowUpQuestionGenerator {
         private Function<FollowUpRequest, FollowUpResult> behavior = new StubFollowUpQuestionAdapter()::generate;
-        public FollowUpResult generate(FollowUpRequest request) { return behavior.apply(request); }
-        void reset() { behavior = new StubFollowUpQuestionAdapter()::generate; }
+
+        public FollowUpResult generate(FollowUpRequest request) {
+            return behavior.apply(request);
+        }
+
+        void reset() {
+            behavior = new StubFollowUpQuestionAdapter()::generate;
+        }
     }
 }

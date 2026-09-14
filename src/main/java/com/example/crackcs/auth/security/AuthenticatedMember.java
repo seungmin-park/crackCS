@@ -3,12 +3,13 @@ package com.example.crackcs.auth.security;
 import com.example.crackcs.auth.domain.AuthAccount;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.domain.MemberStatus;
-import java.io.Serial;
-import java.util.Collection;
-import java.util.List;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.io.Serial;
+import java.util.Collection;
+import java.util.List;
 
 public class AuthenticatedMember implements UserDetails {
 

@@ -1,9 +1,5 @@
 package com.example.crackcs.learning.mastery.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.assertj.core.api.Assertions.within;
-
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
@@ -16,12 +12,7 @@ import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
-import com.example.crackcs.evaluation.domain.ConceptResult;
-import com.example.crackcs.evaluation.domain.Evaluation;
-import com.example.crackcs.evaluation.domain.EvaluationConcept;
-import com.example.crackcs.evaluation.domain.EvaluationResult;
-import com.example.crackcs.evaluation.domain.EvaluationStatus;
-import com.example.crackcs.evaluation.domain.Verdict;
+import com.example.crackcs.evaluation.domain.*;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
 import com.example.crackcs.evaluation.service.EvaluationCompletionTransaction;
 import com.example.crackcs.learning.answer.domain.Answer;
@@ -33,19 +24,6 @@ import com.example.crackcs.learning.mastery.repository.KnowledgeStateRepository;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -57,6 +35,16 @@ import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -99,6 +87,73 @@ class KnowledgeStateServiceTest {
 
     @Autowired
     private EvaluationCompletionTransaction retry;
+
+    private static void concurrently(Runnable first, Runnable second) throws Exception {
+        concurrently(first, second, 15);
+    }
+
+    private static void concurrently(Runnable first, Runnable second, long timeoutSeconds) throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        ExecutorCompletionService<Void> completed = new ExecutorCompletionService<>(pool);
+        CountDownLatch start = new CountDownLatch(1);
+        Future<Void> firstTask = completed.submit(() -> {
+            await(start);
+            first.run();
+            return null;
+        });
+        Future<Void> secondTask = completed.submit(() -> {
+            await(start);
+            second.run();
+            return null;
+        });
+        Throwable taskFailure = null;
+        try {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
+            start.countDown();
+            for (int finished = 0; finished < 2; finished++) {
+                Future<Void> result = completed.poll(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                if (result == null) {
+                    throw new TimeoutException("Concurrent tasks exceeded the shared deadline");
+                }
+                result.get();
+            }
+        } catch (Exception | Error failure) {
+            taskFailure = failure;
+            throw failure;
+        } finally {
+            firstTask.cancel(true);
+            secondTask.cancel(true);
+            pool.shutdownNow();
+            try {
+                if (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException(
+                            "Concurrent tasks did not terminate; database cleanup may be unsafe");
+                }
+            } catch (InterruptedException | IllegalStateException cleanupFailure) {
+                if (cleanupFailure instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+                if (taskFailure != null) {
+                    taskFailure.addSuppressed(cleanupFailure);
+                } else {
+                    throw cleanupFailure;
+                }
+            } finally {
+                if (taskFailure instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        }
+    }
+
+    private static void await(CountDownLatch start) {
+        try {
+            start.await();
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(exception);
+        }
+    }
 
     @AfterEach
     void cleanUp() {
@@ -307,73 +362,6 @@ class KnowledgeStateServiceTest {
         }, 1)).isInstanceOf(TimeoutException.class);
 
         assertThat(interrupted).isTrue();
-    }
-
-    private static void concurrently(Runnable first, Runnable second) throws Exception {
-        concurrently(first, second, 15);
-    }
-
-    private static void concurrently(Runnable first, Runnable second, long timeoutSeconds) throws Exception {
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        ExecutorCompletionService<Void> completed = new ExecutorCompletionService<>(pool);
-        CountDownLatch start = new CountDownLatch(1);
-        Future<Void> firstTask = completed.submit(() -> {
-            await(start);
-            first.run();
-            return null;
-        });
-        Future<Void> secondTask = completed.submit(() -> {
-            await(start);
-            second.run();
-            return null;
-        });
-        Throwable taskFailure = null;
-        try {
-            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
-            start.countDown();
-            for (int finished = 0; finished < 2; finished++) {
-                Future<Void> result = completed.poll(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
-                if (result == null) {
-                    throw new TimeoutException("Concurrent tasks exceeded the shared deadline");
-                }
-                result.get();
-            }
-        } catch (Exception | Error failure) {
-            taskFailure = failure;
-            throw failure;
-        } finally {
-            firstTask.cancel(true);
-            secondTask.cancel(true);
-            pool.shutdownNow();
-            try {
-                if (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
-                    throw new IllegalStateException(
-                            "Concurrent tasks did not terminate; database cleanup may be unsafe");
-                }
-            } catch (InterruptedException | IllegalStateException cleanupFailure) {
-                if (cleanupFailure instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
-                if (taskFailure != null) {
-                    taskFailure.addSuppressed(cleanupFailure);
-                } else {
-                    throw cleanupFailure;
-                }
-            } finally {
-                if (taskFailure instanceof InterruptedException) {
-                    Thread.currentThread().interrupt();
-                }
-            }
-        }
-    }
-
-    private static void await(CountDownLatch start) {
-        try {
-            start.await();
-        } catch (InterruptedException exception) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(exception);
-        }
     }
 
     private Fixture fixture() {

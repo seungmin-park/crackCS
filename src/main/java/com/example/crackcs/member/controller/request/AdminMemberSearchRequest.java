@@ -5,9 +5,10 @@ import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.domain.MemberStatus;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Set;
-import org.springframework.data.domain.Pageable;
 
 public record AdminMemberSearchRequest(
         MemberRole role,

@@ -1,6 +1,7 @@
 package com.example.crackcs.evaluation.repository;
 
 import com.example.crackcs.evaluation.domain.Evaluation;
+
 import java.util.List;
 
 public interface EvaluationDetailsRepository {

@@ -3,39 +3,18 @@ package com.example.crackcs.evaluation.domain;
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.question.domain.QuestionConcept;
 import com.example.crackcs.learning.answer.domain.Answer;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.Version;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Entity
 @Getter
@@ -144,6 +123,33 @@ public class Evaluation {
         this.createdAt = now;
         this.updatedAt = now;
         this.nextAttemptAt = now;
+    }
+
+    private static void requireFeedback(String feedback, String fieldName) {
+        if (feedback == null || feedback.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+    }
+
+    private static void requireText(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+    }
+
+    private static void requireList(List<String> values, String fieldName) {
+        if (values == null || values.stream().anyMatch(value -> value == null || value.isBlank())) {
+            throw new IllegalArgumentException(fieldName + " must contain only non-blank values");
+        }
+    }
+
+    private static void validateSafeReason(String safeReason) {
+        if (safeReason == null || safeReason.isBlank()) {
+            throw new IllegalArgumentException("failureReason must not be blank");
+        }
+        if (safeReason.length() > 1000) {
+            throw new IllegalArgumentException("failureReason must be 1000 characters or fewer");
+        }
     }
 
     void complete(EvaluationResult result) {
@@ -360,33 +366,6 @@ public class Evaluation {
             throw new IllegalArgumentException("concept result fields must not be null");
         }
         requireFeedback(result.feedback(), "concept feedback");
-    }
-
-    private static void requireFeedback(String feedback, String fieldName) {
-        if (feedback == null || feedback.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
-        }
-    }
-
-    private static void requireText(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
-        }
-    }
-
-    private static void requireList(List<String> values, String fieldName) {
-        if (values == null || values.stream().anyMatch(value -> value == null || value.isBlank())) {
-            throw new IllegalArgumentException(fieldName + " must contain only non-blank values");
-        }
-    }
-
-    private static void validateSafeReason(String safeReason) {
-        if (safeReason == null || safeReason.isBlank()) {
-            throw new IllegalArgumentException("failureReason must not be blank");
-        }
-        if (safeReason.length() > 1000) {
-            throw new IllegalArgumentException("failureReason must be 1000 characters or fewer");
-        }
     }
 
     private void ensureActive() {

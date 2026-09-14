@@ -1,16 +1,7 @@
 package com.example.crackcs.content.concept.domain;
 
 import com.example.crackcs.content.topic.domain.Topic;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -54,22 +45,6 @@ public class Concept {
         this.active = true;
     }
 
-    public void update(Topic topic, String code, String name, String description) {
-        Topic validatedTopic = requireNonNull(topic, "topic");
-        String validatedCode = requireText(code, "code", 100);
-        String validatedName = requireText(name, "name", 150);
-        String validatedDescription = normalizeDescription(description);
-
-        this.topic = validatedTopic;
-        this.code = validatedCode;
-        this.name = validatedName;
-        this.description = validatedDescription;
-    }
-
-    public void deactivate() {
-        this.active = false;
-    }
-
     private static <T> T requireNonNull(T value, String fieldName) {
         if (value == null) {
             throw new IllegalArgumentException(fieldName + " must not be null");
@@ -90,5 +65,21 @@ public class Concept {
 
     private static String normalizeDescription(String description) {
         return description == null || description.isBlank() ? null : description.trim();
+    }
+
+    public void update(Topic topic, String code, String name, String description) {
+        Topic validatedTopic = requireNonNull(topic, "topic");
+        String validatedCode = requireText(code, "code", 100);
+        String validatedName = requireText(name, "name", 150);
+        String validatedDescription = normalizeDescription(description);
+
+        this.topic = validatedTopic;
+        this.code = validatedCode;
+        this.name = validatedName;
+        this.description = validatedDescription;
+    }
+
+    public void deactivate() {
+        this.active = false;
     }
 }

@@ -5,22 +5,13 @@ import com.example.crackcs.content.question.domain.QuestionStatus;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.evaluation.domain.Evaluation;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
-import com.example.crackcs.exception.AnswerConflictException;
-import com.example.crackcs.exception.AnswerNotFoundException;
-import com.example.crackcs.exception.InvalidContentStateException;
-import com.example.crackcs.exception.MemberNotFoundException;
-import com.example.crackcs.exception.QuestionNotFoundException;
+import com.example.crackcs.exception.*;
 import com.example.crackcs.learning.answer.domain.Answer;
 import com.example.crackcs.learning.answer.repository.AnswerRepository;
 import com.example.crackcs.learning.answer.service.result.AnswerEvaluationResult;
 import com.example.crackcs.learning.answer.service.result.AnswerResult;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.repository.MemberRepository;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -28,6 +19,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

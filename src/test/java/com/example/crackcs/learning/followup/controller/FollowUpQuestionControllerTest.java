@@ -1,10 +1,5 @@
 package com.example.crackcs.learning.followup.controller;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 import com.example.crackcs.auth.config.SecurityConfiguration;
 import com.example.crackcs.auth.security.ApiAccessDeniedHandler;
 import com.example.crackcs.auth.security.ApiAuthenticationEntryPoint;
@@ -12,13 +7,12 @@ import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.auth.security.SecurityErrorResponseWriter;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.exception.AnswerNotFoundException;
-import com.example.crackcs.learning.followup.domain.FollowUpStatus;
 import com.example.crackcs.learning.followup.domain.FollowUpReason;
+import com.example.crackcs.learning.followup.domain.FollowUpStatus;
 import com.example.crackcs.learning.followup.service.FollowUpQuestionResult;
 import com.example.crackcs.learning.followup.service.FollowUpQuestionResult.QuestionResult;
 import com.example.crackcs.learning.followup.service.FollowUpQuestionResult.TopicResult;
 import com.example.crackcs.learning.followup.service.FollowUpQuestionService;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,15 +27,28 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @WebMvcTest(FollowUpQuestionController.class)
 @ImportAutoConfiguration({SecurityAutoConfiguration.class, ServletWebSecurityAutoConfiguration.class})
 @Import({SecurityConfiguration.class, ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class,
         SecurityErrorResponseWriter.class})
 class FollowUpQuestionControllerTest {
-    @Autowired private MockMvc mvc;
-    @MockitoBean private FollowUpQuestionService service;
-    @MockitoBean private UserDetailsService users;
-    @MockitoBean private PasswordEncoder encoder;
+    @Autowired
+    private MockMvc mvc;
+    @MockitoBean
+    private FollowUpQuestionService service;
+    @MockitoBean
+    private UserDetailsService users;
+    @MockitoBean
+    private PasswordEncoder encoder;
 
     @Test
     @DisplayName("본인 후속 질문은 공개 질문 형태로 반환하고 모범 답안을 숨긴다")

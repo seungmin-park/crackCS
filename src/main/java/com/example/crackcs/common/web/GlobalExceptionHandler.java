@@ -1,23 +1,8 @@
 package com.example.crackcs.common.web;
 
 import com.example.crackcs.common.web.response.ApiErrorResponse;
-import com.example.crackcs.exception.AnswerConflictException;
-import com.example.crackcs.exception.AnswerNotFoundException;
-import com.example.crackcs.exception.ConceptNotFoundException;
-import com.example.crackcs.exception.DuplicateAuthAccountException;
-import com.example.crackcs.exception.DuplicateContentCodeException;
-import com.example.crackcs.exception.DuplicateKnowledgeDocumentException;
-import com.example.crackcs.exception.EvaluationNotFoundException;
-import com.example.crackcs.exception.InvalidContentStateException;
-import com.example.crackcs.exception.InvalidCredentialsException;
-import com.example.crackcs.exception.KnowledgeDocumentNotFoundException;
-import com.example.crackcs.exception.MemberNotFoundException;
-import com.example.crackcs.exception.QuestionNotFoundException;
-import com.example.crackcs.exception.TooManyLoginAttemptsException;
-import com.example.crackcs.exception.TopicNotFoundException;
+import com.example.crackcs.exception.*;
 import jakarta.validation.ConstraintViolationException;
-import java.util.List;
-import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -27,6 +12,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.util.List;
+import java.util.UUID;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {

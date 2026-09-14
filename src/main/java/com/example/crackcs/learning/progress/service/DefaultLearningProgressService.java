@@ -2,15 +2,16 @@ package com.example.crackcs.learning.progress.service;
 
 import com.example.crackcs.learning.answer.repository.AnswerRepository;
 import com.example.crackcs.learning.mastery.service.KnowledgeQueryService;
-import com.example.crackcs.learning.progress.service.result.LearningProgressResult.RecentEvaluation;
 import com.example.crackcs.learning.progress.service.result.LearningProgressResult;
+import com.example.crackcs.learning.progress.service.result.LearningProgressResult.RecentEvaluation;
 import com.example.crackcs.learning.recommendation.service.RecommendationService;
-import java.time.LocalDateTime;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor

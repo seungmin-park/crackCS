@@ -1,6 +1,7 @@
 package com.example.crackcs.learning.mastery.domain;
 
 import com.example.crackcs.content.concept.domain.Concept;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -53,8 +54,8 @@ public record TopicKnowledgeSummary(List<ConceptKnowledge> concepts) {
                     ? new ConceptKnowledge(concept.getId(), concept.getName(), KnowledgeStatus.UNKNOWN, null, 0, 0,
                     null)
                     : new ConceptKnowledge(concept.getId(), concept.getName(), state.getStatus(),
-                            state.getMasteryScore(), state.getConfidenceScore(), state.getAttemptCount(),
-                            state.getLastEvaluatedAt());
+                    state.getMasteryScore(), state.getConfidenceScore(), state.getAttemptCount(),
+                    state.getLastEvaluatedAt());
         }
     }
 }

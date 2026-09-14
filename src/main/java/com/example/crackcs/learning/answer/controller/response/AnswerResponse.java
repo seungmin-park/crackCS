@@ -1,6 +1,7 @@
 package com.example.crackcs.learning.answer.controller.response;
 
 import com.example.crackcs.learning.answer.service.result.AnswerResult;
+
 import java.time.LocalDateTime;
 
 public record AnswerResponse(Long answerId, Long questionId, String questionContent, String content,

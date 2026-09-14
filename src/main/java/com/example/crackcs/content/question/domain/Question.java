@@ -3,35 +3,18 @@ package com.example.crackcs.content.question.domain;
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.exception.InvalidContentStateException;
+import com.example.crackcs.learning.answer.domain.Answer;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
-import com.example.crackcs.learning.answer.domain.Answer;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Entity
 @Getter
@@ -162,11 +145,6 @@ public class Question {
         this.updatedAt = now;
     }
 
-    /** 게시 상태와 별개로, 개인 후속 질문의 원본 답변 소유자 제한만 검사한다. */
-    public boolean isUnrestrictedOrOwnedBy(Member member) {
-        return type == QuestionType.NORMAL || sourceAnswer.isOwnedBy(member);
-    }
-
     private static void requireFollowUpSource(Question original) {
         if (!isPublishedNormalQuestion(original) || !original.getTopic().isActive()) {
             throw new InvalidContentStateException("공개된 기본 문제의 답변에서만 후속 질문을 만들 수 있습니다.");
@@ -181,6 +159,35 @@ public class Question {
         if (!original.hasConcept(selected)) {
             throw new InvalidContentStateException("원본 문제의 Concept만 선택할 수 있습니다.");
         }
+    }
+
+    private static <T> T requireNonNull(T value, String fieldName) {
+        if (value == null) {
+            throw new IllegalArgumentException(fieldName + " must not be null");
+        }
+        return value;
+    }
+
+    private static String requireText(String value, String fieldName) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        return value.trim();
+    }
+
+    private static Member requireAdmin(Member member, String fieldName) {
+        requireNonNull(member, fieldName);
+        if (member.getRole() != MemberRole.ADMIN) {
+            throw new IllegalArgumentException(fieldName + " must be an ADMIN member");
+        }
+        return member;
+    }
+
+    /**
+     * 게시 상태와 별개로, 개인 후속 질문의 원본 답변 소유자 제한만 검사한다.
+     */
+    public boolean isUnrestrictedOrOwnedBy(Member member) {
+        return type == QuestionType.NORMAL || sourceAnswer.isOwnedBy(member);
     }
 
     public void update(
@@ -370,27 +377,5 @@ public class Question {
     private void clearReview() {
         reviewedByMember = null;
         reviewedAt = null;
-    }
-
-    private static <T> T requireNonNull(T value, String fieldName) {
-        if (value == null) {
-            throw new IllegalArgumentException(fieldName + " must not be null");
-        }
-        return value;
-    }
-
-    private static String requireText(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
-        }
-        return value.trim();
-    }
-
-    private static Member requireAdmin(Member member, String fieldName) {
-        requireNonNull(member, fieldName);
-        if (member.getRole() != MemberRole.ADMIN) {
-            throw new IllegalArgumentException(fieldName + " must be an ADMIN member");
-        }
-        return member;
     }
 }

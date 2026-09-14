@@ -8,9 +8,10 @@ import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Set;
-import org.springframework.data.domain.Pageable;
 
 public record QuestionSearchRequest(
         @Positive(message = "topicId는 양수여야 합니다.")

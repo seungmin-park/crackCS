@@ -2,6 +2,7 @@ package com.example.crackcs.auth.controller.request.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+
 import java.nio.charset.StandardCharsets;
 
 public class PasswordValidator implements ConstraintValidator<ValidPassword, String> {

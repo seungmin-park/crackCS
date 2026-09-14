@@ -1,6 +1,7 @@
 package com.example.crackcs.evaluation.quality;
 
 import com.example.crackcs.evaluation.domain.Verdict;
+
 import java.util.List;
 
 public final class GoldenSetMetrics {

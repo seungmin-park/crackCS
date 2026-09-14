@@ -1,7 +1,5 @@
 package com.example.crackcs.evaluation.retrieval;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
 import com.example.crackcs.content.knowledge.chunk.service.KnowledgeChunkService;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
@@ -12,12 +10,15 @@ import com.example.crackcs.content.topic.repository.TopicRepository;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
-import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 class KnowledgeRetrievalServiceTest {

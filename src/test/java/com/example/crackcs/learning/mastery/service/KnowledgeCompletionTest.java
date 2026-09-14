@@ -1,8 +1,5 @@
 package com.example.crackcs.learning.mastery.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
@@ -16,11 +13,7 @@ import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
 import com.example.crackcs.evaluation.adapter.StubEvaluationAdapter;
-import com.example.crackcs.evaluation.domain.ConceptResult;
-import com.example.crackcs.evaluation.domain.Evaluation;
-import com.example.crackcs.evaluation.domain.EvaluationResult;
-import com.example.crackcs.evaluation.domain.EvaluationStatus;
-import com.example.crackcs.evaluation.domain.Verdict;
+import com.example.crackcs.evaluation.domain.*;
 import com.example.crackcs.evaluation.port.EvaluationPort;
 import com.example.crackcs.evaluation.port.EvaluationRequest;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
@@ -34,19 +27,6 @@ import com.example.crackcs.learning.mastery.repository.KnowledgeStateRepository;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.CyclicBarrier;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -59,6 +39,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -107,119 +97,6 @@ class KnowledgeCompletionTest {
 
     @Autowired
     private ConcurrentPort port;
-
-    @AfterEach
-    void cleanUp() {
-        try {
-            appliedConcepts.deleteAllInBatch();
-            states.deleteAllInBatch();
-            evaluations.deleteAll();
-            answers.deleteAllInBatch();
-            questions.deleteAll();
-            chunks.deleteAllInBatch();
-            documents.deleteAllInBatch();
-            concepts.deleteAllInBatch();
-            topics.deleteAllInBatch();
-            members.deleteAllInBatch();
-        } finally {
-            port.reset();
-        }
-    }
-
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    @DisplayName("동시에 완료하는 두 평가는 AI 재호출 없이 신규 또는 기존 학습 상태에 모두 반영된다")
-    void completesConcurrentEvaluationsAtomically(boolean existingState) throws Exception {
-        Fixture fixture = fixture();
-        if (existingState) {
-            completionTransaction.execute(
-                    () -> knowledge.applyInCurrentTransaction(completed(fixture, Verdict.CORRECT)));
-        }
-        Long first = pending(fixture).getId();
-        Long second = pending(fixture).getId();
-        concurrently(() -> processor.process(first), () -> processor.process(second));
-        KnowledgeState state = states.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
-                .orElseThrow();
-        assertThat(state.getAttemptCount()).isEqualTo(existingState ? 3 : 2);
-        assertThat(appliedConcepts.count()).isEqualTo(existingState ? 3 : 2);
-        assertThat(evaluations.findById(first).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
-        assertThat(evaluations.findById(second).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
-        assertThat(port.calls.get()).isEqualTo(2);
-    }
-
-    @TestConfiguration
-    static class PortConfiguration {
-        @Bean
-        @Primary
-        ConcurrentPort concurrentPort() {
-            return new ConcurrentPort();
-        }
-    }
-
-    static class ConcurrentPort implements EvaluationPort {
-        private CyclicBarrier barrier = new CyclicBarrier(2);
-        final AtomicInteger calls = new AtomicInteger();
-
-        @Override
-        public EvaluationResult evaluate(EvaluationRequest request) {
-            calls.incrementAndGet();
-            try {
-                barrier.await(10, TimeUnit.SECONDS);
-            } catch (InterruptedException exception) {
-                Thread.currentThread().interrupt();
-                throw new IllegalStateException(exception);
-            } catch (Exception exception) {
-                throw new IllegalStateException(exception);
-            }
-            return new StubEvaluationAdapter("CORRECT").evaluate(request);
-        }
-
-        void reset() {
-            barrier = new CyclicBarrier(2);
-            calls.set(0);
-        }
-    }
-
-    @Test
-    @DisplayName("동시 작업 하나가 실패하면 대기 중인 다른 작업을 취소하고 종료한다")
-    void cancelsOtherTaskOnFailure() {
-        CountDownLatch waiting = new CountDownLatch(1);
-        AtomicBoolean interrupted = new AtomicBoolean();
-
-        assertThatThrownBy(() -> concurrently(() -> {
-            await(waiting);
-            throw new IllegalStateException("task failed");
-        }, () -> {
-            waiting.countDown();
-            try {
-                // 이전 구현에서도 테스트가 무한 대기하지 않도록 안전장치 설정
-                new CountDownLatch(1).await(2, TimeUnit.SECONDS);
-            } catch (InterruptedException exception) {
-                interrupted.set(true);
-                Thread.currentThread().interrupt();
-            }
-        })).hasCauseInstanceOf(IllegalStateException.class);
-
-        assertThat(interrupted).isTrue();
-    }
-
-    @Test
-    @DisplayName("동시 작업의 제한 시간이 지나면 남은 작업을 취소한다")
-    void cancelsTasksOnTimeout() {
-        AtomicBoolean interrupted = new AtomicBoolean();
-
-        assertThatThrownBy(() -> concurrently(() -> {
-            try {
-                new CountDownLatch(1).await(3, TimeUnit.SECONDS);
-            } catch (InterruptedException exception) {
-                interrupted.set(true);
-                Thread.currentThread().interrupt();
-            }
-        }, () -> {
-        }, 1)).isInstanceOf(TimeoutException.class);
-
-        assertThat(interrupted).isTrue();
-    }
 
     private static void concurrently(Runnable first, Runnable second) throws Exception {
         concurrently(first, second, 15);
@@ -288,6 +165,86 @@ class KnowledgeCompletionTest {
         }
     }
 
+    @AfterEach
+    void cleanUp() {
+        try {
+            appliedConcepts.deleteAllInBatch();
+            states.deleteAllInBatch();
+            evaluations.deleteAll();
+            answers.deleteAllInBatch();
+            questions.deleteAll();
+            chunks.deleteAllInBatch();
+            documents.deleteAllInBatch();
+            concepts.deleteAllInBatch();
+            topics.deleteAllInBatch();
+            members.deleteAllInBatch();
+        } finally {
+            port.reset();
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    @DisplayName("동시에 완료하는 두 평가는 AI 재호출 없이 신규 또는 기존 학습 상태에 모두 반영된다")
+    void completesConcurrentEvaluationsAtomically(boolean existingState) throws Exception {
+        Fixture fixture = fixture();
+        if (existingState) {
+            completionTransaction.execute(
+                    () -> knowledge.applyInCurrentTransaction(completed(fixture, Verdict.CORRECT)));
+        }
+        Long first = pending(fixture).getId();
+        Long second = pending(fixture).getId();
+        concurrently(() -> processor.process(first), () -> processor.process(second));
+        KnowledgeState state = states.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
+                .orElseThrow();
+        assertThat(state.getAttemptCount()).isEqualTo(existingState ? 3 : 2);
+        assertThat(appliedConcepts.count()).isEqualTo(existingState ? 3 : 2);
+        assertThat(evaluations.findById(first).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
+        assertThat(evaluations.findById(second).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
+        assertThat(port.calls.get()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("동시 작업 하나가 실패하면 대기 중인 다른 작업을 취소하고 종료한다")
+    void cancelsOtherTaskOnFailure() {
+        CountDownLatch waiting = new CountDownLatch(1);
+        AtomicBoolean interrupted = new AtomicBoolean();
+
+        assertThatThrownBy(() -> concurrently(() -> {
+            await(waiting);
+            throw new IllegalStateException("task failed");
+        }, () -> {
+            waiting.countDown();
+            try {
+                // 이전 구현에서도 테스트가 무한 대기하지 않도록 안전장치 설정
+                new CountDownLatch(1).await(2, TimeUnit.SECONDS);
+            } catch (InterruptedException exception) {
+                interrupted.set(true);
+                Thread.currentThread().interrupt();
+            }
+        })).hasCauseInstanceOf(IllegalStateException.class);
+
+        assertThat(interrupted).isTrue();
+    }
+
+    @Test
+    @DisplayName("동시 작업의 제한 시간이 지나면 남은 작업을 취소한다")
+    void cancelsTasksOnTimeout() {
+        AtomicBoolean interrupted = new AtomicBoolean();
+
+        assertThatThrownBy(() -> concurrently(() -> {
+            try {
+                new CountDownLatch(1).await(3, TimeUnit.SECONDS);
+            } catch (InterruptedException exception) {
+                interrupted.set(true);
+                Thread.currentThread().interrupt();
+            }
+        }, () -> {
+        }, 1)).isInstanceOf(TimeoutException.class);
+
+        assertThat(interrupted).isTrue();
+    }
+
     private Fixture fixture() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
@@ -347,6 +304,39 @@ class KnowledgeCompletionTest {
         return new EvaluationResult(verdict, "평가 완료",
                 List.of(new ConceptResult(fixture.concept().getId(), verdict, "개념 평가")),
                 List.of(), List.of(), List.of(), List.of(fixture.chunk().getId()), "test", "v1", 1, 1, 1);
+    }
+
+    @TestConfiguration
+    static class PortConfiguration {
+        @Bean
+        @Primary
+        ConcurrentPort concurrentPort() {
+            return new ConcurrentPort();
+        }
+    }
+
+    static class ConcurrentPort implements EvaluationPort {
+        final AtomicInteger calls = new AtomicInteger();
+        private CyclicBarrier barrier = new CyclicBarrier(2);
+
+        @Override
+        public EvaluationResult evaluate(EvaluationRequest request) {
+            calls.incrementAndGet();
+            try {
+                barrier.await(10, TimeUnit.SECONDS);
+            } catch (InterruptedException exception) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(exception);
+            } catch (Exception exception) {
+                throw new IllegalStateException(exception);
+            }
+            return new StubEvaluationAdapter("CORRECT").evaluate(request);
+        }
+
+        void reset() {
+            barrier = new CyclicBarrier(2);
+            calls.set(0);
+        }
     }
 
     private record Fixture(Member member, Member admin, Topic topic, Concept concept, Question question,

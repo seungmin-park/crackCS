@@ -20,7 +20,9 @@ import java.util.Optional;
 
 @Component
 public class FollowUpSourcePolicy {
-    /** 첫 번째 제한 사유를 반환하며, 제한이 없으면 Optional.empty()를 반환한다. */
+    /**
+     * 첫 번째 제한 사유를 반환하며, 제한이 없으면 Optional.empty()를 반환한다.
+     */
     public Optional<FollowUpReason> findUnavailabilityReason(Evaluation evaluation) {
         if (evaluation == null) {
             throw new IllegalArgumentException("evaluation is required before checking follow-up eligibility");
@@ -60,6 +62,7 @@ public class FollowUpSourcePolicy {
                 .filter(chunk -> isAvailableEvidenceForTopic(chunk, topicId))
                 .sorted(Comparator.comparing(KnowledgeChunk::getId)).toList();
     }
+
     private boolean hasUnusableEvaluation(Evaluation evaluation) {
         return evaluation.getStatus() == EvaluationStatus.FAILED
                 || evaluation.getStatus() == EvaluationStatus.NEEDS_REVIEW;

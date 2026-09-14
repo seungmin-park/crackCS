@@ -3,6 +3,7 @@ package com.example.crackcs.content.knowledge.controller.response;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocumentStatus;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
+
 import java.time.LocalDateTime;
 
 public record KnowledgeDocumentResponse(

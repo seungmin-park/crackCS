@@ -1,15 +1,5 @@
 package com.example.crackcs.learning.mastery.controller;
 
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.example.crackcs.auth.config.SecurityConfiguration;
 import com.example.crackcs.auth.security.ApiAccessDeniedHandler;
 import com.example.crackcs.auth.security.ApiAuthenticationEntryPoint;
@@ -19,19 +9,17 @@ import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.evaluation.domain.Verdict;
 import com.example.crackcs.learning.mastery.domain.KnowledgeStatus;
 import com.example.crackcs.learning.mastery.service.KnowledgeQueryService;
+import com.example.crackcs.learning.mastery.service.result.KnowledgeStatesResult;
 import com.example.crackcs.learning.mastery.service.result.KnowledgeStatesResult.ConceptState;
 import com.example.crackcs.learning.mastery.service.result.KnowledgeStatesResult.TopicState;
-import com.example.crackcs.learning.mastery.service.result.KnowledgeStatesResult;
 import com.example.crackcs.learning.progress.controller.LearningProgressController;
 import com.example.crackcs.learning.progress.service.LearningProgressService;
-import com.example.crackcs.learning.progress.service.result.LearningProgressResult.RecentEvaluation;
 import com.example.crackcs.learning.progress.service.result.LearningProgressResult;
+import com.example.crackcs.learning.progress.service.result.LearningProgressResult.RecentEvaluation;
 import com.example.crackcs.learning.recommendation.controller.RecommendationController;
 import com.example.crackcs.learning.recommendation.service.RecommendationService;
-import com.example.crackcs.learning.recommendation.service.result.RecommendationResult.Reason;
 import com.example.crackcs.learning.recommendation.service.result.RecommendationResult;
-import java.time.LocalDateTime;
-import java.util.List;
+import com.example.crackcs.learning.recommendation.service.result.RecommendationResult.Reason;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,13 +36,21 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
 @WebMvcTest({KnowledgeController.class, RecommendationController.class, LearningProgressController.class})
 @ImportAutoConfiguration({SecurityAutoConfiguration.class, ServletWebSecurityAutoConfiguration.class})
 @Import({SecurityConfiguration.class, ApiAuthenticationEntryPoint.class, ApiAccessDeniedHandler.class,
         SecurityErrorResponseWriter.class})
 class KnowledgeControllerTest {
-    @Autowired
-    private MockMvc mvc;
     @MockitoBean
     KnowledgeQueryService service;
     @MockitoBean
@@ -65,6 +61,8 @@ class KnowledgeControllerTest {
     UserDetailsService userDetailsService;
     @MockitoBean
     PasswordEncoder passwordEncoder;
+    @Autowired
+    private MockMvc mvc;
 
     @Test
     @DisplayName("지식 지도는 요청의 회원 ID를 무시하고 인증 회원의 미평가와 0점을 구분해 직렬화한다")

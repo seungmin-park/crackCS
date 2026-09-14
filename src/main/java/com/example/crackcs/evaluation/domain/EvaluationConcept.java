@@ -1,18 +1,7 @@
 package com.example.crackcs.evaluation.domain;
 
 import com.example.crackcs.content.concept.domain.Concept;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -41,14 +30,6 @@ public class EvaluationConcept {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String feedback;
 
-    public Long getConceptId() {
-        return concept.getId();
-    }
-
-    public String getConceptName() {
-        return concept.getName();
-    }
-
     static EvaluationConcept from(Evaluation evaluation, ConceptResult result) {
         EvaluationConcept concept = new EvaluationConcept();
         concept.evaluation = evaluation;
@@ -60,5 +41,13 @@ public class EvaluationConcept {
         concept.score = result.verdict().getScore();
         concept.feedback = result.feedback();
         return concept;
+    }
+
+    public Long getConceptId() {
+        return concept.getId();
+    }
+
+    public String getConceptName() {
+        return concept.getName();
     }
 }

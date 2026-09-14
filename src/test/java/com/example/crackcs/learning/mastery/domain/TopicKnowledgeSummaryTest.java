@@ -1,11 +1,12 @@
 package com.example.crackcs.learning.mastery.domain;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.example.crackcs.learning.mastery.domain.TopicKnowledgeSummary.ConceptKnowledge;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class TopicKnowledgeSummaryTest {
     @Test

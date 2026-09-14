@@ -1,9 +1,6 @@
 package com.example.crackcs.evaluation.service;
 
 import com.example.crackcs.exception.EvaluationCompletionConflictException;
-import java.sql.SQLException;
-import java.util.Locale;
-import java.util.Set;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.OptimisticLockingFailureException;
@@ -12,6 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.sql.SQLException;
+import java.util.Locale;
+import java.util.Set;
 
 @Service
 public class DefaultEvaluationCompletionTransaction implements EvaluationCompletionTransaction {

@@ -1,18 +1,12 @@
 package com.example.crackcs.member.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -52,20 +46,6 @@ public class Member {
         this.updatedAt = now;
     }
 
-    public void updateNickname(String nickname) {
-        this.nickname = requireNickname(nickname);
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public void changeStatus(MemberStatus status) {
-        this.status = requireNonNull(status, "status");
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public boolean isAuthenticatable() {
-        return status == MemberStatus.ACTIVE;
-    }
-
     private static String requireNickname(String nickname) {
         if (nickname == null || nickname.isBlank()) {
             throw new IllegalArgumentException("nickname must not be blank");
@@ -82,5 +62,19 @@ public class Member {
             throw new IllegalArgumentException(fieldName + " must not be null");
         }
         return value;
+    }
+
+    public void updateNickname(String nickname) {
+        this.nickname = requireNickname(nickname);
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void changeStatus(MemberStatus status) {
+        this.status = requireNonNull(status, "status");
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public boolean isAuthenticatable() {
+        return status == MemberStatus.ACTIVE;
     }
 }

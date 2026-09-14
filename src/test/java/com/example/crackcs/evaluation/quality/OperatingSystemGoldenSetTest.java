@@ -1,15 +1,16 @@
 package com.example.crackcs.evaluation.quality;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.example.crackcs.evaluation.domain.Verdict;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class OperatingSystemGoldenSetTest {
 

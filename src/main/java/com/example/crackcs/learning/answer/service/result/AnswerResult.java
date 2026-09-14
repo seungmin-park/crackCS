@@ -2,6 +2,7 @@ package com.example.crackcs.learning.answer.service.result;
 
 import com.example.crackcs.evaluation.domain.Evaluation;
 import com.example.crackcs.learning.answer.domain.Answer;
+
 import java.time.LocalDateTime;
 
 public record AnswerResult(Long answerId, Long questionId, String questionContent, String content,

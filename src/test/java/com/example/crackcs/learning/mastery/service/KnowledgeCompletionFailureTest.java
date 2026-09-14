@@ -1,7 +1,5 @@
 package com.example.crackcs.learning.mastery.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
@@ -15,11 +13,7 @@ import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
 import com.example.crackcs.evaluation.adapter.StubEvaluationAdapter;
-import com.example.crackcs.evaluation.domain.ConceptResult;
-import com.example.crackcs.evaluation.domain.Evaluation;
-import com.example.crackcs.evaluation.domain.EvaluationResult;
-import com.example.crackcs.evaluation.domain.EvaluationStatus;
-import com.example.crackcs.evaluation.domain.Verdict;
+import com.example.crackcs.evaluation.domain.*;
 import com.example.crackcs.evaluation.port.EvaluationPort;
 import com.example.crackcs.evaluation.port.EvaluationRequest;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
@@ -32,15 +26,6 @@ import com.example.crackcs.learning.mastery.repository.KnowledgeStateRepository;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.repository.MemberRepository;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -53,6 +38,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
         "crackcs.evaluation.retry-base-delay=0ms",
@@ -108,6 +101,17 @@ class KnowledgeCompletionFailureTest {
 
     @Autowired
     private ControlledPort port;
+
+    private static void await(CountDownLatch signal) {
+        try {
+            if (!signal.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("lock release timed out");
+            }
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException(interrupted);
+        }
+    }
 
     @AfterEach
     void cleanUp() {
@@ -218,45 +222,6 @@ class KnowledgeCompletionFailureTest {
         assertThat(appliedConcepts.count()).isZero();
     }
 
-    private static void await(CountDownLatch signal) {
-        try {
-            if (!signal.await(5, TimeUnit.SECONDS)) {
-                throw new IllegalStateException("lock release timed out");
-            }
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw new IllegalStateException(interrupted);
-        }
-    }
-
-    @TestConfiguration
-    static class PortConfiguration {
-        @Bean
-        @Primary
-        ControlledPort controlledPort() {
-            return new ControlledPort();
-        }
-    }
-
-    static class ControlledPort implements EvaluationPort {
-        private final AtomicInteger calls = new AtomicInteger();
-        private boolean unavailable;
-
-        @Override
-        public EvaluationResult evaluate(EvaluationRequest request) {
-            calls.incrementAndGet();
-            if (unavailable) {
-                throw new IllegalStateException("provider detail must not escape");
-            }
-            return new StubEvaluationAdapter("CORRECT").evaluate(request);
-        }
-
-        void reset() {
-            calls.set(0);
-            unavailable = false;
-        }
-    }
-
     private Fixture fixture() {
         Member member = members.save(Member.builder().nickname("학습자").build());
         Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
@@ -316,6 +281,34 @@ class KnowledgeCompletionFailureTest {
         return new EvaluationResult(verdict, "평가 완료",
                 List.of(new ConceptResult(fixture.concept().getId(), verdict, "개념 평가")),
                 List.of(), List.of(), List.of(), List.of(fixture.chunk().getId()), "test", "v1", 1, 1, 1);
+    }
+
+    @TestConfiguration
+    static class PortConfiguration {
+        @Bean
+        @Primary
+        ControlledPort controlledPort() {
+            return new ControlledPort();
+        }
+    }
+
+    static class ControlledPort implements EvaluationPort {
+        private final AtomicInteger calls = new AtomicInteger();
+        private boolean unavailable;
+
+        @Override
+        public EvaluationResult evaluate(EvaluationRequest request) {
+            calls.incrementAndGet();
+            if (unavailable) {
+                throw new IllegalStateException("provider detail must not escape");
+            }
+            return new StubEvaluationAdapter("CORRECT").evaluate(request);
+        }
+
+        void reset() {
+            calls.set(0);
+            unavailable = false;
+        }
     }
 
     private record Fixture(Member member, Member admin, Topic topic, Concept concept, Question question,

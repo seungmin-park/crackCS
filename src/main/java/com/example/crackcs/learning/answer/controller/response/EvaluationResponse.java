@@ -3,6 +3,7 @@ package com.example.crackcs.learning.answer.controller.response;
 import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.evaluation.domain.Verdict;
 import com.example.crackcs.learning.answer.service.result.AnswerEvaluationResult;
+
 import java.util.List;
 
 public record EvaluationResponse(

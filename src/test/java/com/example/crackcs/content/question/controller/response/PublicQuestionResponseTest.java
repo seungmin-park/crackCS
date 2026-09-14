@@ -1,16 +1,17 @@
 package com.example.crackcs.content.question.controller.response;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
-import java.lang.reflect.RecordComponent;
-import java.util.Arrays;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.RecordComponent;
+import java.util.Arrays;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class PublicQuestionResponseTest {
 

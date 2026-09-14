@@ -3,9 +3,6 @@ package com.example.crackcs.evaluation.repository;
 import com.example.crackcs.evaluation.domain.Evaluation;
 import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import jakarta.persistence.LockModeType;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -13,6 +10,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
 public interface EvaluationRepository extends JpaRepository<Evaluation, Long>, EvaluationDetailsRepository {
     @EntityGraph(attributePaths = {

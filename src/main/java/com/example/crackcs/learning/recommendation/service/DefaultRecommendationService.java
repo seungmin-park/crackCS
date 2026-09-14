@@ -10,17 +10,18 @@ import com.example.crackcs.learning.answer.repository.LastAnsweredQuestion;
 import com.example.crackcs.learning.mastery.domain.KnowledgeState;
 import com.example.crackcs.learning.mastery.repository.KnowledgeStateRepository;
 import com.example.crackcs.learning.recommendation.domain.RecommendationCandidate;
-import com.example.crackcs.learning.recommendation.service.result.RecommendationResult.Reason;
 import com.example.crackcs.learning.recommendation.service.result.RecommendationResult;
+import com.example.crackcs.learning.recommendation.service.result.RecommendationResult.Reason;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor

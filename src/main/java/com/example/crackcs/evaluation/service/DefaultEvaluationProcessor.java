@@ -6,24 +6,13 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.evaluation.domain.Evaluation;
 import com.example.crackcs.evaluation.domain.EvaluationResult;
-import com.example.crackcs.evaluation.port.EvaluatedConceptApplicationPort;
-import com.example.crackcs.evaluation.port.EvaluationConceptInput;
-import com.example.crackcs.evaluation.port.EvaluationEvidenceInput;
-import com.example.crackcs.evaluation.port.EvaluationPort;
-import com.example.crackcs.evaluation.port.EvaluationRequest;
+import com.example.crackcs.evaluation.port.*;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
 import com.example.crackcs.evaluation.retrieval.KnowledgeRetrievalService;
 import com.example.crackcs.evaluation.retrieval.RetrievalQuery;
 import com.example.crackcs.evaluation.retrieval.RetrievalResult;
 import com.example.crackcs.exception.EvaluationTimeoutException;
 import com.example.crackcs.learning.answer.domain.Answer;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
-import java.util.Optional;
-import java.util.Objects;
-import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +20,14 @@ import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -44,11 +41,11 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
     private final EvaluatedConceptApplicationPort evaluatedConcepts;
     private final EvaluationCompletionTransaction completionTransactions;
     private final String workerId = UUID.randomUUID().toString();
+    private final Object[] localLocks = IntStream.range(0, 64).mapToObj(ignored -> new Object()).toArray();
     @Value("${crackcs.evaluation.lease-duration:1m}")
     private Duration leaseDuration;
     @Value("${crackcs.evaluation.retry-base-delay:1s}")
     private Duration retryBaseDelay;
-    private final Object[] localLocks = IntStream.range(0, 64).mapToObj(ignored -> new Object()).toArray();
 
     @Override
     public void process(Long evaluationId) {

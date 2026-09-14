@@ -2,11 +2,7 @@ package com.example.crackcs.content.knowledge.controller.request;
 
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.knowledge.service.KnowledgeDocumentData;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 
 public record KnowledgeDocumentRequest(
         @NotNull(message = "topicId는 필수입니다.")

@@ -1,20 +1,12 @@
 package com.example.crackcs.content.question.domain;
 
 import com.example.crackcs.content.concept.domain.Concept;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import java.math.BigDecimal;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 @Entity
 @Getter
@@ -49,15 +41,15 @@ public class QuestionConcept {
     @Column(name = "is_required", nullable = false)
     private boolean required;
 
-    static QuestionConcept create(Question question, Concept concept, BigDecimal weight, boolean required) {
-        return new QuestionConcept(question, concept, weight, required);
-    }
-
     private QuestionConcept(Question question, Concept concept, BigDecimal weight, boolean required) {
         this.question = requireNonNull(question, "question");
         this.concept = requireNonNull(concept, "concept");
         this.weight = requireValidWeight(weight);
         this.required = required;
+    }
+
+    static QuestionConcept create(Question question, Concept concept, BigDecimal weight, boolean required) {
+        return new QuestionConcept(question, concept, weight, required);
     }
 
     private static BigDecimal requireValidWeight(BigDecimal weight) {

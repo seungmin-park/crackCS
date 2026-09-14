@@ -1,6 +1,5 @@
 package com.example.crackcs.learning.followup.service;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
@@ -16,10 +15,6 @@ import com.example.crackcs.learning.answer.domain.Answer;
 import com.example.crackcs.learning.followup.port.FollowUpRequest;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -27,7 +22,25 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 class FollowUpSourcePolicyTest {
+    static Stream<Arguments> selectionCases() {
+        return Stream.of(
+                Arguments.of(Verdict.INCORRECT, Verdict.INCORRECT, Verdict.CORRECT, false, "0.40", 10L),
+                Arguments.of(Verdict.PARTIALLY_CORRECT, Verdict.CORRECT, Verdict.PARTIALLY_CORRECT, false, "0.40", 30L),
+                Arguments.of(Verdict.CORRECT, Verdict.CORRECT, Verdict.CORRECT, false, "0.40", 20L),
+                Arguments.of(Verdict.CORRECT, Verdict.CORRECT, Verdict.CORRECT, true, "0.40", 10L),
+                Arguments.of(Verdict.CORRECT, Verdict.CORRECT, Verdict.CORRECT, false, "0.30", 30L),
+                Arguments.of(Verdict.INCORRECT, Verdict.CORRECT, Verdict.CORRECT, false, "0.40", 20L));
+    }
+
     @Test
     @DisplayName("평가 존재 여부가 확인되지 않은 정책 호출을 거부한다")
     void rejectsMissingEvaluation() {
@@ -80,16 +93,6 @@ class FollowUpSourcePolicyTest {
         assertThat(request.evidence()).containsExactly(new FollowUpRequest.Evidence(7L, "공개 근거 원문"));
         assertThat(request.omissions()).containsExactly("누락");
         assertThat(request.misconceptions()).containsExactly("오개념");
-    }
-
-    static Stream<Arguments> selectionCases() {
-        return Stream.of(
-                Arguments.of(Verdict.INCORRECT, Verdict.INCORRECT, Verdict.CORRECT, false, "0.40", 10L),
-                Arguments.of(Verdict.PARTIALLY_CORRECT, Verdict.CORRECT, Verdict.PARTIALLY_CORRECT, false, "0.40", 30L),
-                Arguments.of(Verdict.CORRECT, Verdict.CORRECT, Verdict.CORRECT, false, "0.40", 20L),
-                Arguments.of(Verdict.CORRECT, Verdict.CORRECT, Verdict.CORRECT, true, "0.40", 10L),
-                Arguments.of(Verdict.CORRECT, Verdict.CORRECT, Verdict.CORRECT, false, "0.30", 30L),
-                Arguments.of(Verdict.INCORRECT, Verdict.CORRECT, Verdict.CORRECT, false, "0.40", 20L));
     }
 
     private Concept concept(Topic topic, Long id) {

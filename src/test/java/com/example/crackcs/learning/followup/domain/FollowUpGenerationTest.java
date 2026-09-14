@@ -1,12 +1,15 @@
 package com.example.crackcs.learning.followup.domain;
+
+import com.example.crackcs.learning.answer.domain.Answer;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
-import com.example.crackcs.learning.answer.domain.Answer;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 
 class FollowUpGenerationTest {
     @Test

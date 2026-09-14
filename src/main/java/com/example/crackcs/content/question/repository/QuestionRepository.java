@@ -1,18 +1,15 @@
 package com.example.crackcs.content.question.repository;
 
-import com.example.crackcs.content.question.domain.Question;
-import com.example.crackcs.content.question.domain.QuestionDifficulty;
-import com.example.crackcs.content.question.domain.QuestionOrigin;
-import com.example.crackcs.content.question.domain.QuestionStatus;
-import com.example.crackcs.content.question.domain.QuestionType;
-import java.util.List;
-import java.util.Optional;
+import com.example.crackcs.content.question.domain.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+import java.util.Optional;
 
 public interface QuestionRepository extends JpaRepository<Question, Long> {
     @Query("""
@@ -63,7 +60,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     );
 
     default Page<Question> findNormalByConditions(Long topicId, QuestionStatus status, QuestionDifficulty difficulty,
-                                               QuestionOrigin origin, Pageable pageable) {
+                                                  QuestionOrigin origin, Pageable pageable) {
         return findByTypeAndConditions(topicId, status, difficulty, origin, QuestionType.NORMAL, pageable);
     }
 
@@ -107,7 +104,7 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
               AND question.type = :type
             """)
     Optional<Question> findByIdAndStatusAndType(@Param("questionId") Long questionId, @Param("status") QuestionStatus status,
-                                        @Param("type") QuestionType type);
+                                                @Param("type") QuestionType type);
 
     default Optional<Question> findPublishedNormalById(Long questionId) {
         return findByIdAndStatusAndType(questionId, QuestionStatus.PUBLISHED, QuestionType.NORMAL);

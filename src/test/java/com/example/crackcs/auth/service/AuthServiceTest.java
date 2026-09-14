@@ -1,8 +1,5 @@
 package com.example.crackcs.auth.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.example.crackcs.auth.domain.AuthAccount;
 import com.example.crackcs.auth.domain.AuthProvider;
 import com.example.crackcs.auth.repository.AuthAccountRepository;
@@ -20,6 +17,9 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 @Import(AuthServiceTest.FailingPasswordEncoderConfiguration.class)

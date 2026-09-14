@@ -1,14 +1,9 @@
 package com.example.crackcs.learning.followup.adapter;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 import com.example.crackcs.evaluation.adapter.openai.OpenAiResponsesClient;
 import com.example.crackcs.evaluation.domain.Verdict;
-import com.example.crackcs.learning.followup.port.FollowUpRequest;
 import com.example.crackcs.learning.followup.domain.FollowUpResult;
-import java.time.Duration;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
+import com.example.crackcs.learning.followup.port.FollowUpRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,8 +13,34 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
 class OpenAiFollowUpQuestionAdapterTest {
     private final ObjectMapper mapper = new ObjectMapper();
+
+    static Stream<String> invalidResults() {
+        return Stream.of(
+                "{\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7]}",
+                "{\"content\":null,\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":null,\"conceptId\":11,\"evidenceChunkIds\":[7]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":null,\"evidenceChunkIds\":[7]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":null}",
+                "{\"content\":\"\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":12,\"conceptId\":11,\"evidenceChunkIds\":[7]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":\"11\",\"evidenceChunkIds\":[7]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":12,\"evidenceChunkIds\":[7]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[8]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7,7]}",
+                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7],\"extra\":true}",
+                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":9223372036854775808,\"evidenceChunkIds\":[7]}");
+    }
 
     @Test
     @DisplayName("질문 응답 스키마는 네 필드의 필수 여부와 문자열 및 식별자 범위를 선언한다")
@@ -42,6 +63,7 @@ class OpenAiFollowUpQuestionAdapterTest {
 
         adapter(client).generate(request());
     }
+
     @Test
     @DisplayName("판정과 승인 근거를 strict schema로 전달하고 검증된 결과와 사용량을 반환한다")
     void sendsStrictRequestAndParsesResult() {
@@ -88,36 +110,21 @@ class OpenAiFollowUpQuestionAdapterTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
-    static Stream<String> invalidResults() {
-        return Stream.of(
-                "{\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7]}",
-                "{\"content\":null,\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":null,\"conceptId\":11,\"evidenceChunkIds\":[7]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":null,\"evidenceChunkIds\":[7]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":null}",
-                "{\"content\":\"\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":12,\"conceptId\":11,\"evidenceChunkIds\":[7]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":\"11\",\"evidenceChunkIds\":[7]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":12,\"evidenceChunkIds\":[7]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[8]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7,7]}",
-                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":11,\"evidenceChunkIds\":[7],\"extra\":true}",
-                "{\"content\":\"질문\",\"referenceAnswer\":\"정답\",\"conceptId\":9223372036854775808,\"evidenceChunkIds\":[7]}");
-    }
-
     private OpenAiFollowUpQuestionAdapter adapter(OpenAiResponsesClient client) {
         return new OpenAiFollowUpQuestionAdapter(client, mapper, "test-model", Duration.ofSeconds(3));
     }
+
     private FollowUpRequest request() {
         return new FollowUpRequest("원본 질문", 11L, "개념", Verdict.CORRECT, "피드백", List.of(), List.of(),
                 List.of(new FollowUpRequest.Evidence(7L, "근거")));
     }
+
     private ObjectNode valid() {
         ObjectNode result = mapper.createObjectNode().put("content", "질문").put("referenceAnswer", "정답").put("conceptId", 11);
         result.putArray("evidenceChunkIds").add(7);
         return result;
     }
+
     private String response(JsonNode result) {
         return mapper.writeValueAsString(Map.of("usage", Map.of("input_tokens", 10, "output_tokens", 5),
                 "output", List.of(Map.of("content", List.of(Map.of("type", "output_text", "text", mapper.writeValueAsString(result)))))));

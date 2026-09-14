@@ -16,11 +16,11 @@ public record RetrievalQuery(
         conceptNames = conceptNames == null ? List.of() : List.copyOf(conceptNames);
     }
 
-    public String searchText() {
-        return String.join(" ", safe(question), safe(referenceAnswer), safe(answer));
-    }
-
     private static String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    public String searchText() {
+        return String.join(" ", safe(question), safe(referenceAnswer), safe(answer));
     }
 }

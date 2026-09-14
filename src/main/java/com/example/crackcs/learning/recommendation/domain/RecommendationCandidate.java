@@ -3,6 +3,7 @@ package com.example.crackcs.learning.recommendation.domain;
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.learning.mastery.domain.KnowledgeState;
+
 import java.time.LocalDateTime;
 
 public record RecommendationCandidate(Question question, Concept concept, Double mastery, LocalDateTime lastAnswered)

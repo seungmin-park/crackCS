@@ -1,19 +1,20 @@
 package com.example.crackcs.evaluation.adapter.openai;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-
 import com.example.crackcs.evaluation.domain.EvaluationResult;
 import com.example.crackcs.evaluation.domain.Verdict;
 import com.example.crackcs.evaluation.port.EvaluationConceptInput;
 import com.example.crackcs.evaluation.port.EvaluationEvidenceInput;
 import com.example.crackcs.evaluation.port.EvaluationRequest;
-import java.time.Duration;
-import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+
+import java.time.Duration;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class OpenAiEvaluationAdapterTest {
 

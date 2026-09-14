@@ -1,15 +1,6 @@
 package com.example.crackcs.content.topic.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -49,6 +40,17 @@ public class Topic {
         this.active = true;
     }
 
+    private static String requireText(String value, String fieldName, int maxLength) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        String normalized = value.trim();
+        if (normalized.length() > maxLength) {
+            throw new IllegalArgumentException(fieldName + " must be " + maxLength + " characters or fewer");
+        }
+        return normalized;
+    }
+
     public void update(Topic parent, String code, String name) {
         Topic validatedParent = requireDifferentParent(parent);
         String validatedCode = requireText(code, "code", 50);
@@ -68,16 +70,5 @@ public class Topic {
             throw new IllegalArgumentException("parent must not be self");
         }
         return parent;
-    }
-
-    private static String requireText(String value, String fieldName, int maxLength) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalArgumentException(fieldName + " must not be blank");
-        }
-        String normalized = value.trim();
-        if (normalized.length() > maxLength) {
-            throw new IllegalArgumentException(fieldName + " must be " + maxLength + " characters or fewer");
-        }
-        return normalized;
     }
 }

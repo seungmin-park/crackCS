@@ -4,23 +4,14 @@ import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionStatus;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Getter
@@ -67,18 +58,6 @@ public class Answer {
         this.submittedAt = LocalDateTime.now();
     }
 
-    public boolean isOwnedBy(Member candidate) {
-        if (candidate == null) {
-            return false;
-        }
-        // 저장 전에는 같은 객체인지, 저장 후에는 영속 식별자가 같은지 비교한다.
-        return member == candidate || hasSameMemberId(candidate);
-    }
-
-    private boolean hasSameMemberId(Member candidate) {
-        return member.getId() != null && member.getId().equals(candidate.getId());
-    }
-
     private static Question requirePublished(Question question) {
         requireNonNull(question, "question");
         if (question.getStatus() != QuestionStatus.PUBLISHED) {
@@ -117,5 +96,17 @@ public class Answer {
             throw new IllegalArgumentException(name + " must not be null");
         }
         return value;
+    }
+
+    public boolean isOwnedBy(Member candidate) {
+        if (candidate == null) {
+            return false;
+        }
+        // 저장 전에는 같은 객체인지, 저장 후에는 영속 식별자가 같은지 비교한다.
+        return member == candidate || hasSameMemberId(candidate);
+    }
+
+    private boolean hasSameMemberId(Member candidate) {
+        return member.getId() != null && member.getId().equals(candidate.getId());
     }
 }
