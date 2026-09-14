@@ -13,7 +13,7 @@ import java.util.*;
 @Transactional(readOnly = true)
 public class DefaultKnowledgeRetrievalService implements KnowledgeRetrievalService {
 
-    private final KnowledgeChunkRepository chunks;
+    private final KnowledgeChunkRepository knowledgeChunkRepository;
 
     @Override
     public RetrievalResult retrieve(RetrievalQuery query, int limit) {
@@ -22,7 +22,7 @@ public class DefaultKnowledgeRetrievalService implements KnowledgeRetrievalServi
         }
         Set<String> concepts = tokens(String.join(" ", query.conceptNames()));
         Set<String> searchTokens = tokens(query.searchText());
-        List<RetrievedChunk> selected = chunks.findPublishedSearchableByTopicId(query.topicId()).stream()
+        List<RetrievedChunk> selected = knowledgeChunkRepository.findPublishedSearchableByTopicId(query.topicId()).stream()
                 .filter(chunk -> sharesAnyToken(chunk.getContent(), concepts))
                 .map(chunk -> new RetrievedChunk(chunk, score(chunk, concepts, searchTokens)))
                 .filter(result -> result.relevanceScore() > 0)

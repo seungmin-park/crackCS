@@ -5,6 +5,7 @@ import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.evaluation.domain.ConceptResult;
@@ -63,9 +64,11 @@ class FollowUpSourcePolicyTest {
         Concept third = concept(topic, 30L);
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
                 .content("원본 문제").referenceAnswer("모범 답안").build();
-        question.addConcept(first, new BigDecimal("0.20"), firstRequired);
-        question.addConcept(second, new BigDecimal(secondWeight), !firstRequired);
-        question.addConcept(third, new BigDecimal("0.80").subtract(new BigDecimal(secondWeight)), !firstRequired);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(first, new BigDecimal("0.20"), firstRequired),
+                new QuestionConceptAssignment(second, new BigDecimal(secondWeight), !firstRequired),
+                new QuestionConceptAssignment(third, new BigDecimal("0.80").subtract(new BigDecimal(secondWeight)), !firstRequired)
+        ));
         question.review(admin);
         question.publish();
         Answer answer = Answer.builder().member(Member.builder().nickname("학습자").build()).question(question)

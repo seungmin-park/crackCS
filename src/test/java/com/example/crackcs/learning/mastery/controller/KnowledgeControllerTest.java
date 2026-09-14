@@ -52,17 +52,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         SecurityErrorResponseWriter.class})
 class KnowledgeControllerTest {
     @MockitoBean
-    KnowledgeQueryService service;
+    KnowledgeQueryService knowledgeQueryService;
     @MockitoBean
-    RecommendationService recommendations;
+    RecommendationService recommendationService;
     @MockitoBean
-    LearningProgressService progress;
+    LearningProgressService learningProgressService;
     @MockitoBean
     UserDetailsService userDetailsService;
     @MockitoBean
     PasswordEncoder passwordEncoder;
     @Autowired
-    private MockMvc mvc;
+    private MockMvc mockMvc;
 
     @Test
     @DisplayName("지식 지도는 요청의 회원 ID를 무시하고 인증 회원의 미평가와 0점을 구분해 직렬화한다")
@@ -70,26 +70,26 @@ class KnowledgeControllerTest {
         TopicState topic = new TopicState(1L, "운영체제", KnowledgeStatus.LEARNING, 0.0, 12.5, 1, 1, 0,
                 List.of(new ConceptState(2L, "스레드", KnowledgeStatus.UNKNOWN, null, 0, 0, null),
                         new ConceptState(3L, "프로세스", KnowledgeStatus.LEARNING, 0.0, 25, 1, null)));
-        given(service.knowledgeStates(41L)).willReturn(new KnowledgeStatesResult(List.of(topic)));
-        mvc.perform(get("/api/members/me/knowledge-states").param("memberId", "99").with(user(principal("USER"))))
+        given(knowledgeQueryService.knowledgeStates(41L)).willReturn(new KnowledgeStatesResult(List.of(topic)));
+        mockMvc.perform(get("/api/members/me/knowledge-states").param("memberId", "99").with(user(principal("USER"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.topics[0].topicId").value(1))
                 .andExpect(jsonPath("$.topics[0].confidenceScore").value(12.5))
                 .andExpect(jsonPath("$.topics[0].concepts[0].masteryScore").isEmpty())
                 .andExpect(jsonPath("$.topics[0].concepts[1].masteryScore").value(0));
-        verify(service).knowledgeStates(41L);
+        verify(knowledgeQueryService).knowledgeStates(41L);
     }
 
     @Test
     @DisplayName("추천 문제 응답은 인증 회원의 추천과 한국어 이유를 반환한다")
     void returnsRecommendationForPrincipalOnly() throws Exception {
-        given(recommendations.recommendation(41L)).willReturn(recommendation());
-        mvc.perform(get("/api/recommendations/next-question").param("memberId", "99").with(user(principal("USER"))))
+        given(recommendationService.recommendation(41L)).willReturn(recommendation());
+        mockMvc.perform(get("/api/recommendations/next-question").param("memberId", "99").with(user(principal("USER"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.questionId").value(5))
                 .andExpect(jsonPath("$.title").value("문제"))
                 .andExpect(jsonPath("$.conceptName").value("스레드"))
                 .andExpect(jsonPath("$.reason").value("UNASSESSED_CONCEPT"))
                 .andExpect(jsonPath("$.reasonText").value("미평가 개념을 확인하세요."));
-        verify(recommendations).recommendation(41L);
+        verify(recommendationService).recommendation(41L);
     }
 
     @Test
@@ -99,9 +99,9 @@ class KnowledgeControllerTest {
                 Verdict.CORRECT, 100, LocalDateTime.of(2026, 9, 13, 12, 0));
         TopicState topic = new TopicState(1L, "운영체제", KnowledgeStatus.LEARNING, 50.0, 25.0, 0, 1, 0,
                 List.of(new ConceptState(2L, "스레드", KnowledgeStatus.LEARNING, 50.0, 25, 1, null)));
-        given(progress.progress(41L)).willReturn(
+        given(learningProgressService.progress(41L)).willReturn(
                 new LearningProgressResult(8, 3, List.of(recent), List.of(topic), recommendation()));
-        mvc.perform(get("/api/members/me/progress").param("memberId", "99").with(user(principal("USER"))))
+        mockMvc.perform(get("/api/members/me/progress").param("memberId", "99").with(user(principal("USER"))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalAnswers").value(8))
                 .andExpect(jsonPath("$.recentAnswerCount").value(3))
                 .andExpect(jsonPath("$.recentEvaluations[0].answerId").value(7))
@@ -113,7 +113,7 @@ class KnowledgeControllerTest {
                 .andExpect(jsonPath("$.topics[0].topicId").value(1))
                 .andExpect(jsonPath("$.topics[0].concepts[0].conceptId").value(2))
                 .andExpect(jsonPath("$.recommendation.questionId").value(5));
-        verify(progress).progress(41L);
+        verify(learningProgressService).progress(41L);
     }
 
     @ParameterizedTest
@@ -121,8 +121,8 @@ class KnowledgeControllerTest {
             "/api/recommendations/next-question"})
     @DisplayName("학습 API는 비로그인 요청을 401로 거부한다")
     void rejectsAnonymous(String path) throws Exception {
-        mvc.perform(get(path)).andExpect(status().isUnauthorized());
-        verifyNoInteractions(service, recommendations, progress);
+        mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
+        verifyNoInteractions(knowledgeQueryService, recommendationService, learningProgressService);
     }
 
     @ParameterizedTest
@@ -130,8 +130,8 @@ class KnowledgeControllerTest {
             "/api/recommendations/next-question"})
     @DisplayName("학습 API는 관리자 요청을 403으로 거부한다")
     void rejectsAdmin(String path) throws Exception {
-        mvc.perform(get(path).with(user(principal("ADMIN")))).andExpect(status().isForbidden());
-        verifyNoInteractions(service, recommendations, progress);
+        mockMvc.perform(get(path).with(user(principal("ADMIN")))).andExpect(status().isForbidden());
+        verifyNoInteractions(knowledgeQueryService, recommendationService, learningProgressService);
     }
 
     private RecommendationResult recommendation() {

@@ -4,6 +4,7 @@ import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionConcept;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
@@ -62,7 +63,9 @@ class QuestionConceptMappingTest {
                 .content("프로세스와 스레드의 차이를 설명하세요.")
                 .referenceAnswer("모범 답안")
                 .build();
-        question.addConcept(concept, new BigDecimal("0.75"), true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, new BigDecimal("0.75"), true)
+        ));
         Question savedQuestion = questionRepository.save(question);
         // 영속성 컨텍스트의 객체가 아니라 DB에서 복원한 매핑 값을 검증한다.
         entityManager.flush();
@@ -96,7 +99,9 @@ class QuestionConceptMappingTest {
                 .content("프로세스와 스레드의 차이를 설명하세요.")
                 .referenceAnswer("모범 답안")
                 .build();
-        question.addConcept(concept, new BigDecimal("0.75"), true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, new BigDecimal("0.75"), true)
+        ));
         Question savedQuestion = questionRepository.save(question);
 
         // 도메인의 중복 방어를 우회해 DB UNIQUE 제약 자체를 검증한다.

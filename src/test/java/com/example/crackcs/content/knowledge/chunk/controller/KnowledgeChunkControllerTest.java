@@ -30,15 +30,15 @@ class KnowledgeChunkControllerTest {
     @Autowired
     MockMvc mockMvc;
     @MockitoBean
-    KnowledgeDocumentService documentService;
+    KnowledgeDocumentService knowledgeDocumentService;
     @MockitoBean
-    KnowledgeChunkService chunkService;
+    KnowledgeChunkService knowledgeChunkService;
 
     @Test
     @DisplayName("Chunk를 동기로 생성하면 작업 키와 생성된 Chunk 상태를 반환한다")
     void generatesChunksSynchronously() throws Exception {
         KnowledgeChunk chunk = chunk(7L, 0, "프로세스 설명");
-        given(chunkService.generateChunks(3L))
+        given(knowledgeChunkService.generateChunks(3L))
                 .willReturn(new ChunkGenerationResult("generation-key", false, List.of(chunk)));
 
         mockMvc.perform(post("/api/admin/knowledge-documents/{documentId}/chunks", 3L))
@@ -53,7 +53,7 @@ class KnowledgeChunkControllerTest {
     @DisplayName("문서의 Chunk 목록은 원문 순서와 인용 범위를 반환한다")
     void findsChunksInSourceOrder() throws Exception {
         KnowledgeChunk chunk = chunk(8L, 1, "스레드 설명");
-        given(chunkService.findByDocumentId(3L)).willReturn(List.of(chunk));
+        given(knowledgeChunkService.findByDocumentId(3L)).willReturn(List.of(chunk));
 
         mockMvc.perform(get("/api/admin/knowledge-documents/{documentId}/chunks", 3L))
                 .andExpect(status().isOk())

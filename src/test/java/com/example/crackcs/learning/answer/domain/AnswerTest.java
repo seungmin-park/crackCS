@@ -2,6 +2,7 @@ package com.example.crackcs.learning.answer.domain;
 
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.member.domain.Member;
@@ -11,6 +12,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,7 +99,9 @@ class AnswerTest {
         Concept concept = Concept.builder().topic(topic).code("PROCESS").name("프로세스").build();
         Question question = Question.builder().topic(topic).createdByMember(admin("작성자"))
                 .difficulty(QuestionDifficulty.BASIC).content("문제").referenceAnswer("모범 답안").build();
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true)
+        ));
         return question;
     }
 

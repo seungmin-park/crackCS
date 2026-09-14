@@ -18,39 +18,39 @@ import java.util.Comparator;
 @Service
 @RequiredArgsConstructor
 public class DefaultKnowledgeStateService implements KnowledgeStateService {
-    private final EvaluationRepository evaluations;
-    private final KnowledgeStateRepository states;
-    private final AppliedEvaluationConceptRepository appliedConcepts;
+    private final EvaluationRepository evaluationRepository;
+    private final KnowledgeStateRepository knowledgeStateRepository;
+    private final AppliedEvaluationConceptRepository appliedEvaluationConceptRepository;
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void applyInCurrentTransaction(Long evaluationId) {
-        evaluations.findLockedById(evaluationId)
+        evaluationRepository.findLockedById(evaluationId)
                 .filter(Evaluation::isKnowledgeStateEligible)
                 .ifPresent(this::applyEligibleEvaluation);
     }
 
     private void applyEligibleEvaluation(Evaluation evaluation) {
         // Completing an evaluation cascades new concept rows; their generated IDs are the delivery keys.
-        evaluations.flush();
+        evaluationRepository.flush();
         evaluation.getConcepts().stream().sorted(Comparator.comparing(EvaluationConcept::getConceptId))
                 .filter(concept -> concept.getVerdict() != Verdict.NEEDS_REVIEW)
                 .forEach(concept -> applyOnce(evaluation, concept));
     }
 
     private void applyOnce(Evaluation evaluation, EvaluationConcept concept) {
-        if (appliedConcepts.existsByEvaluationConceptId(concept.getId())) {
+        if (appliedEvaluationConceptRepository.existsByEvaluationConceptId(concept.getId())) {
             return;
         }
         KnowledgeState state = findOrCreateState(evaluation, concept);
         state.observe(concept.getId(), concept.getVerdict(), evaluation.getEvaluatedAt());
-        states.save(state);
-        appliedConcepts.save(AppliedEvaluationConcept.builder().evaluationConcept(concept).build());
+        knowledgeStateRepository.save(state);
+        appliedEvaluationConceptRepository.save(AppliedEvaluationConcept.builder().evaluationConcept(concept).build());
     }
 
     private KnowledgeState findOrCreateState(Evaluation evaluation, EvaluationConcept concept) {
         Long memberId = evaluation.getAnswer().getMember().getId();
-        return states.findByMemberIdAndConceptId(memberId, concept.getConceptId())
+        return knowledgeStateRepository.findByMemberIdAndConceptId(memberId, concept.getConceptId())
                 .orElseGet(() -> KnowledgeState.builder()
                         .member(evaluation.getAnswer().getMember()).concept(concept.getConcept()).build());
     }

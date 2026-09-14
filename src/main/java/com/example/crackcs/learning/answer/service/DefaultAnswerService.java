@@ -30,20 +30,20 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DefaultAnswerService implements AnswerService {
-    private final AnswerRepository answers;
-    private final EvaluationRepository evaluations;
-    private final MemberRepository members;
-    private final QuestionRepository questions;
+    private final AnswerRepository answerRepository;
+    private final EvaluationRepository evaluationRepository;
+    private final MemberRepository memberRepository;
+    private final QuestionRepository questionRepository;
 
     @Override
     @Transactional
     public AnswerResult submit(Long memberId, Long questionId, String requestId, String content) {
-        Member member = members.findLockedById(memberId)
+        Member member = memberRepository.findLockedById(memberId)
                 .orElseThrow(() -> new MemberNotFoundException(memberId));
         if (!member.isAuthenticatable()) {
             throw new InvalidContentStateException("활성 회원만 답변할 수 있습니다.");
         }
-        Optional<Answer> existing = answers.findByMemberIdAndRequestId(memberId, requestId);
+        Optional<Answer> existing = answerRepository.findByMemberIdAndRequestId(memberId, requestId);
         if (existing.isPresent()) {
             Answer answer = existing.get();
             if (!answer.getQuestion().getId().equals(questionId) || !answer.getContent().equals(content)) {
@@ -51,17 +51,17 @@ public class DefaultAnswerService implements AnswerService {
             }
             return response(answer);
         }
-        Question question = questions.findById(questionId)
+        Question question = questionRepository.findById(questionId)
                 .filter(candidate -> candidate.getStatus() == QuestionStatus.PUBLISHED)
                 .filter(candidate -> candidate.isUnrestrictedOrOwnedBy(member))
                 .orElseThrow(() -> new QuestionNotFoundException(questionId));
-        Answer answer = answers.save(Answer.builder()
+        Answer answer = answerRepository.save(Answer.builder()
                 .member(member)
                 .question(question)
                 .requestId(requestId)
                 .content(content)
                 .build());
-        Evaluation evaluation = evaluations.save(Evaluation.builder().answer(answer).build());
+        Evaluation evaluation = evaluationRepository.save(Evaluation.builder().answer(answer).build());
         return AnswerResult.from(answer, evaluation);
     }
 
@@ -73,25 +73,25 @@ public class DefaultAnswerService implements AnswerService {
     @Override
     public AnswerEvaluationResult findEvaluation(Long memberId, Long answerId) {
         ownedAnswer(memberId, answerId);
-        return AnswerEvaluationResult.from(evaluations.findByAnswerId(answerId).orElseThrow());
+        return AnswerEvaluationResult.from(evaluationRepository.findByAnswerId(answerId).orElseThrow());
     }
 
     @Override
     public Page<AnswerResult> findAll(Long memberId, Pageable pageable) {
         Pageable latest = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(),
                 Sort.by(Sort.Order.desc("submittedAt"), Sort.Order.desc("id")));
-        Page<Answer> answerPage = answers.findByMemberId(memberId, latest);
+        Page<Answer> answerPage = answerRepository.findByMemberId(memberId, latest);
         List<Long> answerIds = answerPage.getContent().stream().map(Answer::getId).toList();
-        Map<Long, Evaluation> evaluationByAnswerId = evaluations.findAllDetailsByAnswerIds(answerIds).stream()
+        Map<Long, Evaluation> evaluationByAnswerId = evaluationRepository.findAllDetailsByAnswerIds(answerIds).stream()
                 .collect(Collectors.toMap(evaluation -> evaluation.getAnswer().getId(), Function.identity()));
         return answerPage.map(answer -> AnswerResult.from(answer, evaluationByAnswerId.get(answer.getId())));
     }
 
     private Answer ownedAnswer(Long memberId, Long answerId) {
-        return answers.findByIdAndMemberId(answerId, memberId).orElseThrow(() -> new AnswerNotFoundException(answerId));
+        return answerRepository.findByIdAndMemberId(answerId, memberId).orElseThrow(() -> new AnswerNotFoundException(answerId));
     }
 
     private AnswerResult response(Answer answer) {
-        return AnswerResult.from(answer, evaluations.findByAnswerId(answer.getId()).orElseThrow());
+        return AnswerResult.from(answer, evaluationRepository.findByAnswerId(answer.getId()).orElseThrow());
     }
 }

@@ -19,7 +19,11 @@ import com.example.crackcs.learning.followup.repository.FollowUpGenerationReposi
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
@@ -31,23 +35,25 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor
 public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcessor {
-    private final AnswerRepository answers;
-    private final EvaluationRepository evaluations;
-    private final FollowUpGenerationRepository generations;
-    private final QuestionRepository questions;
+    private static final int MAX_COMPLETION_ATTEMPTS = 3;
+    private final AnswerRepository answerRepository;
+    private final EvaluationRepository evaluationRepository;
+    private final FollowUpGenerationRepository followUpGenerationRepository;
+    private final QuestionRepository questionRepository;
     private final FollowUpSourcePolicy policy;
     private final ObjectProvider<FollowUpQuestionGenerator> generators;
-    private final TransactionTemplate transactions;
+    private final TransactionTemplate transactionTemplate;
     @Value("${crackcs.followup.lease-duration:1m}")
     private Duration leaseDuration;
     @Value("${crackcs.followup.retry-delay:5s}")
     private Duration retryDelay;
 
+    @Transactional(propagation = Propagation.NEVER)
     public void process(Long answerId) {
         String token = UUID.randomUUID().toString();
         // 선점 transaction을 끝낸 뒤 AI를 호출해, 외부 응답 대기 중에는 DB 잠금을 잡지 않는다.
         Optional<FollowUpRequest> claimed = Objects.requireNonNull(
-                transactions.execute(status -> claim(answerId, token)),
+                transactionTemplate.execute(status -> claim(answerId, token)),
                 "claim transaction must return an Optional");
         if (claimed.isEmpty()) {
             return;
@@ -76,18 +82,32 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
             return;
         }
         try {
-            transactions.executeWithoutResult(status -> complete(answerId, token, result));
+            completeWithRetry(answerId, token, result);
         } catch (RuntimeException storageFailure) {
             failed(answerId, token, FollowUpReason.PERSISTENCE_ERROR, false);
         }
     }
 
+    private void completeWithRetry(Long answerId, String token, FollowUpResult result) {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                // process의 NEVER 계약으로 각 시도는 별도 transaction이다. AI 결과는 재사용한다.
+                transactionTemplate.executeWithoutResult(status -> complete(answerId, token, result));
+                return;
+            } catch (OptimisticLockingFailureException | PessimisticLockingFailureException conflict) {
+                if (attempt == MAX_COMPLETION_ATTEMPTS) {
+                    throw conflict;
+                }
+            }
+        }
+    }
+
     private Optional<FollowUpRequest> claim(Long answerId, String token) {
-        Optional<Answer> answer = answers.findLockedById(answerId).filter(this::isNormalQuestionAnswer);
+        Optional<Answer> answer = answerRepository.findLockedById(answerId).filter(this::isNormalQuestionAnswer);
         if (answer.isEmpty()) {
             return Optional.empty();
         }
-        Optional<Evaluation> evaluation = evaluations.findByAnswerId(answerId).filter(this::hasCompletedEvaluation);
+        Optional<Evaluation> evaluation = evaluationRepository.findByAnswerId(answerId).filter(this::hasCompletedEvaluation);
         if (evaluation.isEmpty()) {
             return Optional.empty();
         }
@@ -95,8 +115,8 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
     }
 
     private Optional<FollowUpRequest> claimGeneration(Answer answer, Evaluation evaluation, String token) {
-        FollowUpGeneration job = generations.findByAnswerId(answer.getId())
-                .orElseGet(() -> generations.save(FollowUpGeneration.builder().answer(answer).build()));
+        FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(answer.getId())
+                .orElseGet(() -> followUpGenerationRepository.save(FollowUpGeneration.builder().answer(answer).build()));
         LocalDateTime now = LocalDateTime.now();
         if (!job.claim(token, now, leaseDuration)) {
             return Optional.empty();
@@ -110,13 +130,13 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
     }
 
     private void complete(Long answerId, String token, FollowUpResult result) {
-        answers.findLockedById(answerId).orElseThrow();
-        FollowUpGeneration job = generations.findByAnswerId(answerId).orElseThrow();
+        answerRepository.findLockedById(answerId).orElseThrow();
+        FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(answerId).orElseThrow();
         LocalDateTime now = LocalDateTime.now();
         if (!job.hasActiveLease(token, now)) {
             return;
         }
-        Evaluation evaluation = evaluations.findByAnswerId(answerId).orElseThrow();
+        Evaluation evaluation = evaluationRepository.findByAnswerId(answerId).orElseThrow();
         Optional<FollowUpReason> reason = policy.findUnavailabilityReason(evaluation);
         if (reason.isPresent()) {
             job.unavailable(token, now, reason.orElseThrow());
@@ -133,7 +153,7 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
 
     private Question createGeneratedQuestion(FollowUpGeneration job, Evaluation evaluation, FollowUpResult result) {
         Concept concept = findGeneratedConcept(evaluation, result.conceptId());
-        return questions.save(Question.followUpBuilder().sourceAnswer(job.getAnswer())
+        return questionRepository.save(Question.followUpBuilder().sourceAnswer(job.getAnswer())
                 .concept(concept).content(result.content()).referenceAnswer(result.referenceAnswer()).build());
     }
 
@@ -159,9 +179,9 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
     }
 
     private void failed(Long answerId, String token, FollowUpReason reason, boolean retry) {
-        transactions.executeWithoutResult(status -> {
-            answers.findLockedById(answerId).orElseThrow();
-            FollowUpGeneration job = generations.findByAnswerId(answerId).orElseThrow();
+        transactionTemplate.executeWithoutResult(status -> {
+            answerRepository.findLockedById(answerId).orElseThrow();
+            FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(answerId).orElseThrow();
             LocalDateTime now = LocalDateTime.now();
             if (job.hasActiveLease(token, now)) {
                 if (retry) {

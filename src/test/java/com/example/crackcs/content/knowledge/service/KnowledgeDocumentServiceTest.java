@@ -24,9 +24,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class KnowledgeDocumentServiceTest {
 
     @Autowired
-    KnowledgeDocumentService documentService;
+    KnowledgeDocumentService knowledgeDocumentService;
     @Autowired
-    KnowledgeDocumentRepository documentRepository;
+    KnowledgeDocumentRepository knowledgeDocumentRepository;
     @Autowired
     TopicRepository topicRepository;
     @Autowired
@@ -34,7 +34,7 @@ class KnowledgeDocumentServiceTest {
 
     @AfterEach
     void tearDown() {
-        documentRepository.deleteAllInBatch();
+        knowledgeDocumentRepository.deleteAllInBatch();
         topicRepository.deleteAllInBatch();
         memberRepository.deleteAllInBatch();
     }
@@ -44,26 +44,26 @@ class KnowledgeDocumentServiceTest {
     void preservesPublishedVersionWhenCreatingNextVersion() {
         Topic topic = saveTopic();
         Member admin = saveAdmin();
-        KnowledgeDocument first = documentService.create(admin.getId(), data(topic, "첫 버전 원문"));
-        documentService.review(first.getId(), admin.getId());
-        documentService.publish(first.getId());
+        KnowledgeDocument first = knowledgeDocumentService.create(admin.getId(), data(topic, "첫 버전 원문"));
+        knowledgeDocumentService.review(first.getId(), admin.getId());
+        knowledgeDocumentService.publish(first.getId());
 
-        KnowledgeDocument second = documentService.createNextVersion(
+        KnowledgeDocument second = knowledgeDocumentService.createNextVersion(
                 first.getId(), admin.getId(), data(topic, "둘째 버전 원문")
         );
 
         assertThat(second.getDocumentVersion()).isEqualTo(2);
         assertThat(second.getStatus()).isEqualTo(KnowledgeDocumentStatus.DRAFT);
         assertThat(second.getVersionSeriesId()).isEqualTo(first.getVersionSeriesId());
-        assertThat(documentRepository.findById(first.getId()).orElseThrow().getContent()).isEqualTo("첫 버전 원문");
-        assertThat(documentRepository.findAll()).hasSize(2);
+        assertThat(knowledgeDocumentRepository.findById(first.getId()).orElseThrow().getContent()).isEqualTo("첫 버전 원문");
+        assertThat(knowledgeDocumentRepository.findAll()).hasSize(2);
 
-        documentService.review(second.getId(), admin.getId());
-        documentService.publish(second.getId());
+        knowledgeDocumentService.review(second.getId(), admin.getId());
+        knowledgeDocumentService.publish(second.getId());
 
-        assertThat(documentRepository.findById(first.getId()).orElseThrow().getStatus())
+        assertThat(knowledgeDocumentRepository.findById(first.getId()).orElseThrow().getStatus())
                 .isEqualTo(KnowledgeDocumentStatus.RETIRED);
-        assertThat(documentRepository.findById(second.getId()).orElseThrow().getStatus())
+        assertThat(knowledgeDocumentRepository.findById(second.getId()).orElseThrow().getStatus())
                 .isEqualTo(KnowledgeDocumentStatus.PUBLISHED);
     }
 
@@ -72,9 +72,9 @@ class KnowledgeDocumentServiceTest {
     void detectsDuplicateNormalizedContent() {
         Topic topic = saveTopic();
         Member admin = saveAdmin();
-        documentService.create(admin.getId(), data(topic, "첫 줄\r\n둘째 줄"));
+        knowledgeDocumentService.create(admin.getId(), data(topic, "첫 줄\r\n둘째 줄"));
 
-        assertThatThrownBy(() -> documentService.create(admin.getId(), data(topic, "첫 줄\n둘째 줄")))
+        assertThatThrownBy(() -> knowledgeDocumentService.create(admin.getId(), data(topic, "첫 줄\n둘째 줄")))
                 .isInstanceOf(DuplicateKnowledgeDocumentException.class);
     }
 
@@ -86,7 +86,7 @@ class KnowledgeDocumentServiceTest {
         topic.deactivate();
         topicRepository.save(topic);
 
-        assertThatThrownBy(() -> documentService.create(admin.getId(), data(topic, "원문")))
+        assertThatThrownBy(() -> knowledgeDocumentService.create(admin.getId(), data(topic, "원문")))
                 .isInstanceOf(InvalidContentStateException.class)
                 .hasMessage("비활성 Topic에는 KnowledgeDocument를 연결할 수 없습니다.");
     }

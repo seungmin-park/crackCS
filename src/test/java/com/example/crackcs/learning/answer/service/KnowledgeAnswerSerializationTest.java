@@ -8,6 +8,7 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.knowledge.repository.KnowledgeDocumentRepository;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -43,48 +44,48 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class KnowledgeAnswerSerializationTest {
     @Autowired
-    private MemberRepository members;
+    private MemberRepository memberRepository;
 
     @Autowired
-    private TopicRepository topics;
+    private TopicRepository topicRepository;
 
     @Autowired
-    private ConceptRepository concepts;
+    private ConceptRepository conceptRepository;
 
     @Autowired
-    private QuestionRepository questions;
+    private QuestionRepository questionRepository;
 
     @Autowired
-    private AnswerRepository answers;
+    private AnswerRepository answerRepository;
 
     @Autowired
-    private EvaluationRepository evaluations;
+    private EvaluationRepository evaluationRepository;
 
     @Autowired
-    private KnowledgeDocumentRepository documents;
+    private KnowledgeDocumentRepository knowledgeDocumentRepository;
 
     @Autowired
-    private KnowledgeChunkRepository chunks;
+    private KnowledgeChunkRepository knowledgeChunkRepository;
 
     @Autowired
-    private TransactionTemplate transactions;
+    private TransactionTemplate transactionTemplate;
 
     @Autowired
-    private AnswerService answersService;
+    private AnswerService answerService;
 
     @Autowired
     private ObjectMapper mapper;
 
     @AfterEach
     void cleanUp() {
-        evaluations.deleteAll();
-        answers.deleteAllInBatch();
-        questions.deleteAll();
-        chunks.deleteAllInBatch();
-        documents.deleteAllInBatch();
-        concepts.deleteAllInBatch();
-        topics.deleteAllInBatch();
-        members.deleteAllInBatch();
+        evaluationRepository.deleteAll();
+        answerRepository.deleteAllInBatch();
+        questionRepository.deleteAll();
+        knowledgeChunkRepository.deleteAllInBatch();
+        knowledgeDocumentRepository.deleteAllInBatch();
+        conceptRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @Test
@@ -92,16 +93,16 @@ class KnowledgeAnswerSerializationTest {
     void serializesFeedbackOutsideTransaction() {
         Fixture f = fixture();
         Long id = completed(f, Verdict.CORRECT);
-        Long answerId = evaluations.findById(id).orElseThrow().getAnswer().getId();
-        AnswerEvaluationResult result = answersService.findEvaluation(f.member().getId(), answerId);
+        Long answerId = evaluationRepository.findById(id).orElseThrow().getAnswer().getId();
+        AnswerEvaluationResult result = answerService.findEvaluation(f.member().getId(), answerId);
         String json = mapper.writeValueAsString(EvaluationResponse.from(result));
         assertThat(json).contains("\"strengths\":[]", "\"omissions\":[]", "\"misconceptions\":[]", "\"evidence\":[{");
     }
 
     private Fixture fixture() {
-        Member member = members.save(Member.builder().nickname("학습자").build());
-        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topics.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
@@ -110,23 +111,25 @@ class KnowledgeAnswerSerializationTest {
                 .content("스레드는 프로세스 자원을 공유하는 실행 단위다.").build();
         document.review(admin);
         document.publish();
-        document = documents.save(document);
-        KnowledgeChunk chunk = chunks.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
+        document = knowledgeDocumentRepository.save(document);
+        KnowledgeChunk chunk = knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
                 document.getContent(), "test-v1"));
         return new Fixture(member, admin, topic, concept, question, chunk);
     }
 
     private Concept concept(Topic topic, String name) {
-        return concepts.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
+        return conceptRepository.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
     }
 
     private Question question(Member admin, Topic topic, Concept concept, String content) {
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
                 .content(content).referenceAnswer("프로세스 자원을 공유하는 실행 단위").build();
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true)
+        ));
         question.review(admin);
         question.publish();
-        return questions.save(question);
+        return questionRepository.save(question);
     }
 
     private Long completed(Fixture fixture, Verdict verdict) {
@@ -136,10 +139,10 @@ class KnowledgeAnswerSerializationTest {
     }
 
     private void complete(Long id, Fixture fixture, Verdict verdict) {
-        transactions.executeWithoutResult(status -> {
-            Evaluation evaluation = evaluations.findById(id).orElseThrow();
+        transactionTemplate.executeWithoutResult(status -> {
+            Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
             evaluation.completeWithEvidence(result(fixture, verdict),
-                    List.of(chunks.findById(fixture.chunk().getId()).orElseThrow()));
+                    List.of(knowledgeChunkRepository.findById(fixture.chunk().getId()).orElseThrow()));
         });
     }
 
@@ -154,9 +157,9 @@ class KnowledgeAnswerSerializationTest {
     }
 
     private Evaluation pending(Member member, Question question) {
-        Answer answer = answers.save(Answer.builder().member(member).question(question)
+        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
                 .requestId(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
-        return evaluations.save(Evaluation.builder().answer(answer).build());
+        return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
     private record Fixture(Member member, Member admin, Topic topic, Concept concept, Question question,

@@ -19,18 +19,18 @@ public class DefaultEvaluationCompletionTransaction implements EvaluationComplet
     private static final int MAX_ATTEMPTS = 8;
     private static final Set<String> KNOWLEDGE_CONSTRAINTS = Set.of(
             "uk_knowledge_state_member_concept", "uk_knowledge_application_evaluation_concept");
-    private final TransactionTemplate transactions;
+    private final TransactionTemplate transactionTemplate;
 
     public DefaultEvaluationCompletionTransaction(PlatformTransactionManager manager) {
-        transactions = new TransactionTemplate(manager);
-        transactions.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        transactionTemplate = new TransactionTemplate(manager);
+        transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     @Override
     public void execute(Runnable completion) {
         for (int attempt = 1; ; attempt++) {
             try {
-                transactions.executeWithoutResult(status -> completion.run());
+                transactionTemplate.executeWithoutResult(status -> completion.run());
                 return;
             } catch (OptimisticLockingFailureException | PessimisticLockingFailureException conflict) {
                 if (attempt == MAX_ATTEMPTS) {

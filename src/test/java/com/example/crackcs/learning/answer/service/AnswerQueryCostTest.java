@@ -8,6 +8,7 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.knowledge.repository.KnowledgeDocumentRepository;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -34,6 +35,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,84 +47,84 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class AnswerQueryCostTest {
     @Autowired
-    private AnswerService service;
+    private AnswerService answerService;
 
     @Autowired
-    private EvaluationProcessor processor;
+    private EvaluationProcessor evaluationProcessor;
 
     @Autowired
-    private MemberRepository members;
+    private MemberRepository memberRepository;
 
     @Autowired
-    private TopicRepository topics;
+    private TopicRepository topicRepository;
 
     @Autowired
-    private ConceptRepository concepts;
+    private ConceptRepository conceptRepository;
 
     @Autowired
-    private QuestionRepository questions;
+    private QuestionRepository questionRepository;
 
     @Autowired
-    private AnswerRepository answers;
+    private AnswerRepository answerRepository;
 
     @Autowired
-    private EvaluationRepository evaluations;
+    private EvaluationRepository evaluationRepository;
 
     @Autowired
-    private KnowledgeDocumentRepository knowledgeDocuments;
+    private KnowledgeDocumentRepository knowledgeDocumentRepository;
 
     @Autowired
-    private KnowledgeChunkRepository knowledgeChunks;
+    private KnowledgeChunkRepository knowledgeChunkRepository;
 
     @Autowired
-    private KnowledgeChunkService chunkService;
+    private KnowledgeChunkService knowledgeChunkService;
 
     @Autowired
     private EntityManagerFactory entityManagerFactory;
 
     @Autowired
-    private AppliedEvaluationConceptRepository appliedConcepts;
+    private AppliedEvaluationConceptRepository appliedEvaluationConceptRepository;
 
     @Autowired
-    private KnowledgeStateRepository states;
+    private KnowledgeStateRepository knowledgeStateRepository;
 
     @AfterEach
     void cleanUp() {
-        appliedConcepts.deleteAllInBatch();
-        states.deleteAllInBatch();
-        evaluations.deleteAll();
-        answers.deleteAllInBatch();
-        questions.deleteAll();
-        knowledgeChunks.deleteAllInBatch();
-        knowledgeDocuments.deleteAllInBatch();
-        concepts.deleteAllInBatch();
-        topics.deleteAllInBatch();
-        members.deleteAllInBatch();
+        appliedEvaluationConceptRepository.deleteAllInBatch();
+        knowledgeStateRepository.deleteAllInBatch();
+        evaluationRepository.deleteAll();
+        answerRepository.deleteAllInBatch();
+        questionRepository.deleteAll();
+        knowledgeChunkRepository.deleteAllInBatch();
+        knowledgeDocumentRepository.deleteAllInBatch();
+        conceptRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @Test
     @DisplayName("답변 목록은 질문과 평가 및 Concept을 페이지 단위로 일괄 조회한다")
     void loadsAnswerPageWithoutPerAnswerQueries() {
-        Member member = members.save(Member.builder().nickname("학습자").build());
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        AnswerResult first = service.submit(
+        AnswerResult first = answerService.submit(
                 member.getId(),
                 question.getId(),
                 UUID.randomUUID().toString(),
                 "첫 답변"
         );
-        AnswerResult second = service.submit(
+        AnswerResult second = answerService.submit(
                 member.getId(),
                 question.getId(),
                 UUID.randomUUID().toString(),
                 "둘째 답변"
         );
-        processor.process(first.evaluationId());
-        processor.process(second.evaluationId());
+        evaluationProcessor.process(first.evaluationId());
+        evaluationProcessor.process(second.evaluationId());
         Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         statistics.clear();
 
-        Page<AnswerResult> page = service.findAll(member.getId(), PageRequest.of(0, 2));
+        Page<AnswerResult> page = answerService.findAll(member.getId(), PageRequest.of(0, 2));
 
         assertThat(page.getContent()).hasSize(2);
         assertThat(page.getContent().getFirst().evaluation().concepts()).hasSize(1);
@@ -130,16 +132,18 @@ class AnswerQueryCostTest {
     }
 
     private Question publishedQuestion() {
-        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topics.save(Topic.builder().code("OS").name("운영체제").build());
-        Concept concept = concepts.save(Concept.builder().topic(topic).code("THREAD").name("스레드").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code("OS").name("운영체제").build());
+        Concept concept = conceptRepository.save(Concept.builder().topic(topic).code("THREAD").name("스레드").build());
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
                 .content("스레드를 설명하세요").referenceAnswer("프로세스 자원을 공유하는 실행 단위").build();
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true)
+        ));
         question.review(admin);
         question.publish();
-        Question saved = questions.save(question);
-        KnowledgeDocument document = knowledgeDocuments.save(KnowledgeDocument.builder()
+        Question saved = questionRepository.save(question);
+        KnowledgeDocument document = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
                 .topic(topic)
                 .createdByMember(admin)
                 .title("스레드 공개 근거")
@@ -150,8 +154,8 @@ class AnswerQueryCostTest {
                 .build());
         document.review(admin);
         document.publish();
-        knowledgeDocuments.save(document);
-        chunkService.generateChunks(document.getId());
+        knowledgeDocumentRepository.save(document);
+        knowledgeChunkService.generateChunks(document.getId());
         return saved;
     }
 }

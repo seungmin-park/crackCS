@@ -7,6 +7,7 @@ import com.example.crackcs.learning.followup.port.FollowUpRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -53,8 +54,8 @@ public class OpenAiFollowUpQuestionAdapter implements FollowUpQuestionGenerator 
             FollowUpResult generated = toGenerationResult(result, root, started);
             generated.validateAgainst(request.conceptId(), allowedEvidenceIds(request));
             return generated;
-        } catch (RuntimeException invalidOutput) {
-            throw new IllegalArgumentException("invalid follow-up provider result");
+        } catch (JacksonException | IllegalArgumentException invalidOutput) {
+            throw new IllegalArgumentException("invalid follow-up provider result", invalidOutput);
         }
     }
 

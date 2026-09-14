@@ -27,27 +27,27 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DefaultRecommendationService implements RecommendationService {
-    private final KnowledgeStateRepository states;
-    private final QuestionRepository questions;
-    private final AnswerRepository answers;
+    private final KnowledgeStateRepository knowledgeStateRepository;
+    private final QuestionRepository questionRepository;
+    private final AnswerRepository answerRepository;
 
     @Override
     public RecommendationResult recommendation(Long memberId) {
-        Map<Long, KnowledgeState> memberStates = states.findByMemberId(memberId).stream()
+        Map<Long, KnowledgeState> memberStates = knowledgeStateRepository.findByMemberId(memberId).stream()
                 .collect(Collectors.toMap(state -> state.getConcept().getId(), Function.identity()));
-        Map<Long, LocalDateTime> lastAnswered = answers.findLastAnsweredByQuestion(memberId).stream()
+        Map<Long, LocalDateTime> lastAnswered = answerRepository.findLastAnsweredByQuestion(memberId).stream()
                 .collect(
                         Collectors.toMap(LastAnsweredQuestion::getQuestionId, LastAnsweredQuestion::getLastAnsweredAt));
-        return questions.findAvailableForRecommendation(QuestionStatus.PUBLISHED, QuestionType.NORMAL,
+        return questionRepository.findAvailableForRecommendation(QuestionStatus.PUBLISHED, QuestionType.NORMAL,
                         QuestionOrigin.ADMIN)
                 .stream().flatMap(question -> candidates(question, memberStates, lastAnswered))
                 .min(Comparator.naturalOrder()).map(this::response).orElseGet(this::unavailable);
     }
 
-    private Stream<RecommendationCandidate> candidates(Question question, Map<Long, KnowledgeState> states,
+    private Stream<RecommendationCandidate> candidates(Question question, Map<Long, KnowledgeState> statesByConceptId,
                                                        Map<Long, LocalDateTime> lastAnswered) {
         return question.getQuestionConcepts().stream().map(link -> RecommendationCandidate.from(
-                question, link.getConcept(), states.get(link.getConcept().getId()),
+                question, link.getConcept(), statesByConceptId.get(link.getConcept().getId()),
                 lastAnswered.get(question.getId())));
     }
 

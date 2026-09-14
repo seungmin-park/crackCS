@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 public class AnswerController {
-    private final AnswerService answers;
+    private final AnswerService answerService;
 
     @PostMapping("/api/questions/{questionId}/answers")
     @ResponseStatus(HttpStatus.ACCEPTED)
@@ -27,25 +27,25 @@ public class AnswerController {
                                  @Valid @RequestBody AnswerSubmitRequest request,
                                  @RequestHeader("Idempotency-Key") String idempotencyKey) {
         return AnswerResponse.from(
-                answers.submit(member.memberId(), path.questionId(), request.validatedRequestId(idempotencyKey),
+                answerService.submit(member.memberId(), path.questionId(), request.validatedRequestId(idempotencyKey),
                         request.content()));
     }
 
     @GetMapping("/api/members/me/answers")
     public PageResponse<AnswerResponse> findAll(@AuthenticationPrincipal AuthenticatedMember member,
                                                 @Valid @ModelAttribute AnswerSearchRequest request) {
-        return PageResponse.from(answers.findAll(member.memberId(), request.toPageable()), AnswerResponse::from);
+        return PageResponse.from(answerService.findAll(member.memberId(), request.toPageable()), AnswerResponse::from);
     }
 
     @GetMapping("/api/answers/{answerId}")
     public AnswerResponse findById(@AuthenticationPrincipal AuthenticatedMember member,
                                    @Valid @ModelAttribute AnswerIdRequest path) {
-        return AnswerResponse.from(answers.findById(member.memberId(), path.answerId()));
+        return AnswerResponse.from(answerService.findById(member.memberId(), path.answerId()));
     }
 
     @GetMapping("/api/answers/{answerId}/evaluation")
     public EvaluationResponse findEvaluation(@AuthenticationPrincipal AuthenticatedMember member,
                                              @Valid @ModelAttribute AnswerIdRequest path) {
-        return EvaluationResponse.from(answers.findEvaluation(member.memberId(), path.answerId()));
+        return EvaluationResponse.from(answerService.findEvaluation(member.memberId(), path.answerId()));
     }
 }

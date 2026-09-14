@@ -2,14 +2,13 @@ package com.example.crackcs.evaluation.repository;
 
 import com.example.crackcs.evaluation.domain.Evaluation;
 import jakarta.persistence.EntityManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import lombok.RequiredArgsConstructor;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 @RequiredArgsConstructor
 public class EvaluationDetailsRepositoryImpl implements EvaluationDetailsRepository {

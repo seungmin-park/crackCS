@@ -23,17 +23,17 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DefaultKnowledgeQueryService implements KnowledgeQueryService {
-    private final KnowledgeStateRepository states;
-    private final ConceptRepository concepts;
-    private final TopicRepository topics;
+    private final KnowledgeStateRepository knowledgeStateRepository;
+    private final ConceptRepository conceptRepository;
+    private final TopicRepository topicRepository;
 
     @Override
     public KnowledgeStatesResult knowledgeStates(Long memberId) {
-        Map<Long, KnowledgeState> memberStates = states.findByMemberId(memberId).stream()
+        Map<Long, KnowledgeState> memberStates = knowledgeStateRepository.findByMemberId(memberId).stream()
                 .collect(Collectors.toMap(state -> state.getConcept().getId(), Function.identity()));
-        Map<Long, List<Concept>> byTopic = concepts.findActiveWithActiveTopic().stream()
+        Map<Long, List<Concept>> byTopic = conceptRepository.findActiveWithActiveTopic().stream()
                 .collect(Collectors.groupingBy(concept -> concept.getTopic().getId()));
-        return new KnowledgeStatesResult(topics.findActiveOrderedById().stream()
+        return new KnowledgeStatesResult(topicRepository.findActiveOrderedById().stream()
                 .map(topic -> response(topic, TopicKnowledgeSummary.from(
                         byTopic.getOrDefault(topic.getId(), List.of()), memberStates))).toList());
     }

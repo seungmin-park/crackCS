@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class LearningProgressController {
-    private final LearningProgressService service;
+    private final LearningProgressService learningProgressService;
 
     @GetMapping("/api/members/me/progress")
     public ProgressResponse progress(@AuthenticationPrincipal AuthenticatedMember member) {
-        return ProgressResponse.from(service.progress(member.memberId()));
+        return ProgressResponse.from(learningProgressService.progress(member.memberId()));
     }
 }

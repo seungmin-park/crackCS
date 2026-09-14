@@ -31,8 +31,8 @@ public class SecurityConfiguration {
             ApiAccessDeniedHandler accessDeniedHandler,
             SecurityContextRepository securityContextRepository
     ) throws Exception {
-        HttpSessionCsrfTokenRepository csrfTokenRepository = new HttpSessionCsrfTokenRepository();
-        csrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
+        HttpSessionCsrfTokenRepository httpSessionCsrfTokenRepository = new HttpSessionCsrfTokenRepository();
+        httpSessionCsrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
 
         http
                 .authorizeHttpRequests(authorize -> authorize
@@ -47,7 +47,7 @@ public class SecurityConfiguration {
                         .authenticated()
                         .anyRequest().denyAll()
                 )
-                .csrf(csrf -> csrf.csrfTokenRepository(csrfTokenRepository))
+                .csrf(csrf -> csrf.csrfTokenRepository(httpSessionCsrfTokenRepository))
                 .securityContext(context -> context
                         .requireExplicitSave(true)
                         .securityContextRepository(securityContextRepository)

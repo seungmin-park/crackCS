@@ -213,7 +213,7 @@ public class Question {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public QuestionConcept addConcept(Concept concept, BigDecimal weight, boolean required) {
+    private void copyConcept(Concept concept, BigDecimal weight, boolean required) {
         ensureDraft("DRAFT 문제에만 Concept을 연결할 수 있습니다.");
         Concept validatedConcept = requireAssignableConcept(concept);
         if (hasConcept(validatedConcept)) {
@@ -222,7 +222,6 @@ public class Question {
 
         QuestionConcept questionConcept = QuestionConcept.create(this, validatedConcept, weight, required);
         questionConcepts.add(questionConcept);
-        return questionConcept;
     }
 
     public void replaceConcepts(List<QuestionConceptAssignment> assignments) {
@@ -340,7 +339,7 @@ public class Question {
                 nextVersion
         );
         for (QuestionConcept questionConcept : questionConcepts) {
-            next.addConcept(
+            next.copyConcept(
                     questionConcept.getConcept(),
                     questionConcept.getWeight(),
                     questionConcept.isRequired()

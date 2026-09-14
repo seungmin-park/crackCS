@@ -18,6 +18,24 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class QuestionTest {
 
     @Test
+    @DisplayName("검수 후 평가 개념을 변경하면 재검수 전에는 공개할 수 없다")
+    void conceptChangeRequiresAnotherReview() {
+        Topic topic = createTopic();
+        Question question = createQuestion(topic, "질문", "모범 답안");
+        question.review(createAdmin());
+        LocalDateTime createdAt = question.getCreatedAt();
+        LocalDateTime beforeChange = LocalDateTime.now();
+
+        question.replaceConcepts(List.of(new QuestionConceptAssignment(createConcept(topic, "PROCESS", "프로세스"), BigDecimal.ONE, true)));
+
+        assertThat(question.getReviewedByMember()).isNull();
+        assertThat(question.getReviewedAt()).isNull();
+        assertThat(question.getCreatedAt()).isEqualTo(createdAt);
+        assertThat(question.getUpdatedAt()).isBetween(beforeChange, LocalDateTime.now());
+        assertThatThrownBy(question::publish).isInstanceOf(InvalidContentStateException.class);
+    }
+
+    @Test
     @DisplayName("빌더로 관리자 초안 일반 문제를 생성한다")
     void builderCreatesNormalQuestionAsAdminDraft() {
         Topic topic = createTopic("OPERATING_SYSTEM", "운영체제");
@@ -131,7 +149,8 @@ class QuestionTest {
         Concept concept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
         Question question = createQuestion(topic, "질문", "모범 답안");
 
-        QuestionConcept questionConcept = question.addConcept(concept, new BigDecimal("0.70"), true);
+        question.replaceConcepts(List.of(new QuestionConceptAssignment(concept, new BigDecimal("0.70"), true)));
+        QuestionConcept questionConcept = question.getQuestionConcepts().iterator().next();
 
         assertThat(questionConcept.getQuestion()).isSameAs(question);
         assertThat(questionConcept.getConcept()).isSameAs(concept);
@@ -157,7 +176,7 @@ class QuestionTest {
         inactiveConcept.deactivate();
         Question question = createQuestion(topic, "질문", "모범 답안");
 
-        assertThatThrownBy(() -> question.addConcept(inactiveConcept, BigDecimal.ONE, true))
+        assertThatThrownBy(() -> question.replaceConcepts(List.of(new QuestionConceptAssignment(inactiveConcept, BigDecimal.ONE, true))))
                 .isInstanceOf(InvalidContentStateException.class)
                 .hasMessage("비활성 Concept은 문제에 연결할 수 없습니다.");
     }
@@ -173,7 +192,7 @@ class QuestionTest {
         );
         Question question = createQuestion(questionTopic, "질문", "모범 답안");
 
-        assertThatThrownBy(() -> question.addConcept(concept, BigDecimal.ONE, true))
+        assertThatThrownBy(() -> question.replaceConcepts(List.of(new QuestionConceptAssignment(concept, BigDecimal.ONE, true))))
                 .isInstanceOf(InvalidContentStateException.class)
                 .hasMessage("문제와 같은 Topic의 Concept만 연결할 수 있습니다.");
     }
@@ -183,11 +202,12 @@ class QuestionTest {
     void failedConceptReplacementDoesNotChangeQuestion() {
         Topic topic = createTopic();
         Question question = createQuestion(topic, "질문", "모범 답안");
-        QuestionConcept original = question.addConcept(
+        question.replaceConcepts(List.of(new QuestionConceptAssignment(
                 createConcept(topic, "PROCESS", "프로세스"),
                 BigDecimal.ONE,
                 true
-        );
+        )));
+        QuestionConcept original = question.getQuestionConcepts().iterator().next();
         LocalDateTime updatedAt = question.getUpdatedAt();
         Concept validReplacement = createConcept(topic, "THREAD", "스레드");
         Concept inactiveReplacement = createConcept(topic, "SCHEDULER", "스케줄러");
@@ -227,7 +247,7 @@ class QuestionTest {
     void rejectsPublishWithoutReview() {
         Topic topic = createTopic();
         Question question = createQuestion(topic, "질문", "모범 답안");
-        question.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(new QuestionConceptAssignment(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true)));
 
         assertThatThrownBy(question::publish)
                 .isInstanceOf(InvalidContentStateException.class)
@@ -250,8 +270,10 @@ class QuestionTest {
     void rejectsPublishWhenWeightsDoNotSumToOne() {
         Topic topic = createTopic();
         Question question = createQuestion(topic, "질문", "모범 답안");
-        question.addConcept(createConcept(topic, "PROCESS", "프로세스"), new BigDecimal("0.60"), true);
-        question.addConcept(createConcept(topic, "THREAD", "스레드"), new BigDecimal("0.30"), false);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(createConcept(topic, "PROCESS", "프로세스"), new BigDecimal("0.60"), true),
+                new QuestionConceptAssignment(createConcept(topic, "THREAD", "스레드"), new BigDecimal("0.30"), false)
+        ));
         question.review(createAdmin());
 
         assertThatThrownBy(question::publish)
@@ -264,7 +286,7 @@ class QuestionTest {
     void rejectsDirectUpdateOfPublishedQuestion() {
         Topic topic = createTopic();
         Question published = createQuestion(topic, "기존 질문", "기존 답안");
-        published.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true);
+        published.replaceConcepts(List.of(new QuestionConceptAssignment(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true)));
         published.review(createAdmin());
         published.publish();
 
@@ -277,7 +299,7 @@ class QuestionTest {
     void createsNextVersionFromPublishedQuestion() {
         Topic topic = createTopic();
         Question published = createQuestion(topic, "기존 질문", "기존 답안");
-        published.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true);
+        published.replaceConcepts(List.of(new QuestionConceptAssignment(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true)));
         published.review(createAdmin());
         published.publish();
 
@@ -291,6 +313,14 @@ class QuestionTest {
         assertThat(next.getQuestionVersion()).isEqualTo(2);
         assertThat(next.getVersionSeriesId()).isEqualTo(published.getVersionSeriesId());
         assertThat(next.getQuestionConcepts()).hasSize(1);
+        assertThat(next.getQuestionConcepts()).allSatisfy(copied -> {
+            assertThat(copied.getQuestion()).isSameAs(next);
+            assertThat(copied.getWeight()).isEqualByComparingTo("1.00");
+            assertThat(copied.isRequired()).isTrue();
+        });
+        assertThat(next.getReviewedByMember()).isNull();
+        assertThat(next.getReviewedAt()).isNull();
+        assertThat(next.getUpdatedAt()).isEqualTo(next.getCreatedAt());
     }
 
     @Test
@@ -298,7 +328,7 @@ class QuestionTest {
     void rejectsPublishWithoutRequiredConcept() {
         Topic topic = createTopic();
         Question question = createQuestion(topic, "질문", "모범 답안");
-        question.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, false);
+        question.replaceConcepts(List.of(new QuestionConceptAssignment(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, false)));
         question.review(createAdmin());
 
         assertThatThrownBy(question::publish)
@@ -311,7 +341,7 @@ class QuestionTest {
     void publishesQuestionWithRequiredConcept() {
         Topic topic = createTopic();
         Question question = createQuestion(topic, "질문", "모범 답안");
-        question.addConcept(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(new QuestionConceptAssignment(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true)));
         question.review(createAdmin());
 
         question.publish();
@@ -325,9 +355,12 @@ class QuestionTest {
         Topic topic = createTopic();
         Concept concept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
         Question question = createQuestion(topic, "질문", "모범 답안");
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(new QuestionConceptAssignment(concept, BigDecimal.ONE, true)));
 
-        assertThatThrownBy(() -> question.addConcept(concept, new BigDecimal("0.50"), false))
+        assertThatThrownBy(() -> question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true),
+                new QuestionConceptAssignment(concept, new BigDecimal("0.50"), false)
+        )))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("concept must not be duplicated");
     }
@@ -339,7 +372,7 @@ class QuestionTest {
         Concept concept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
         Question question = createQuestion(topic, "질문", "모범 답안");
 
-        assertThatThrownBy(() -> question.addConcept(concept, BigDecimal.ZERO, true))
+        assertThatThrownBy(() -> question.replaceConcepts(List.of(new QuestionConceptAssignment(concept, BigDecimal.ZERO, true))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("weight must be greater than 0 and less than or equal to 1");
     }
@@ -351,7 +384,8 @@ class QuestionTest {
         Concept concept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
         Question question = createQuestion(topic, "질문", "모범 답안");
 
-        QuestionConcept questionConcept = question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(new QuestionConceptAssignment(concept, BigDecimal.ONE, true)));
+        QuestionConcept questionConcept = question.getQuestionConcepts().iterator().next();
 
         assertThat(questionConcept.getWeight()).isEqualByComparingTo("1.00");
     }
@@ -363,7 +397,7 @@ class QuestionTest {
         Concept concept = createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드");
         Question question = createQuestion(topic, "질문", "모범 답안");
 
-        assertThatThrownBy(() -> question.addConcept(concept, new BigDecimal("1.01"), true))
+        assertThatThrownBy(() -> question.replaceConcepts(List.of(new QuestionConceptAssignment(concept, new BigDecimal("1.01"), true))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("weight must be greater than 0 and less than or equal to 1");
     }

@@ -10,6 +10,7 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.knowledge.repository.KnowledgeDocumentRepository;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -34,6 +35,7 @@ import org.springframework.test.web.servlet.MvcResult;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -50,56 +52,56 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class KnowledgeFlowTest {
     @Autowired
-    private MemberRepository members;
+    private MemberRepository memberRepository;
 
     @Autowired
-    private TopicRepository topics;
+    private TopicRepository topicRepository;
 
     @Autowired
-    private ConceptRepository concepts;
+    private ConceptRepository conceptRepository;
 
     @Autowired
-    private QuestionRepository questions;
+    private QuestionRepository questionRepository;
 
     @Autowired
-    private AnswerRepository answers;
+    private AnswerRepository answerRepository;
 
     @Autowired
-    private EvaluationRepository evaluations;
+    private EvaluationRepository evaluationRepository;
 
     @Autowired
-    private KnowledgeDocumentRepository documents;
+    private KnowledgeDocumentRepository knowledgeDocumentRepository;
 
     @Autowired
-    private KnowledgeChunkRepository chunks;
+    private KnowledgeChunkRepository knowledgeChunkRepository;
 
     @Autowired
-    private KnowledgeStateRepository states;
+    private KnowledgeStateRepository knowledgeStateRepository;
 
     @Autowired
-    private AppliedEvaluationConceptRepository appliedConcepts;
+    private AppliedEvaluationConceptRepository appliedEvaluationConceptRepository;
 
     @Autowired
-    private MockMvc mvc;
+    private MockMvc mockMvc;
 
     @Autowired
     private ObjectMapper mapper;
 
     @Autowired
-    private EvaluationProcessor processor;
+    private EvaluationProcessor evaluationProcessor;
 
     @AfterEach
     void cleanUp() {
-        appliedConcepts.deleteAllInBatch();
-        states.deleteAllInBatch();
-        evaluations.deleteAll();
-        answers.deleteAllInBatch();
-        questions.deleteAll();
-        chunks.deleteAllInBatch();
-        documents.deleteAllInBatch();
-        concepts.deleteAllInBatch();
-        topics.deleteAllInBatch();
-        members.deleteAllInBatch();
+        appliedEvaluationConceptRepository.deleteAllInBatch();
+        knowledgeStateRepository.deleteAllInBatch();
+        evaluationRepository.deleteAll();
+        answerRepository.deleteAllInBatch();
+        questionRepository.deleteAll();
+        knowledgeChunkRepository.deleteAllInBatch();
+        knowledgeDocumentRepository.deleteAllInBatch();
+        conceptRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @Test
@@ -107,31 +109,31 @@ class KnowledgeFlowTest {
     void progressesFromRecommendationThroughCommittedEvaluation() throws Exception {
         Fixture f = fixture();
         AuthenticatedMember principal = principal(f.member());
-        mvc.perform(get("/api/recommendations/next-question").with(user(principal)))
+        mockMvc.perform(get("/api/recommendations/next-question").with(user(principal)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.questionId").value(f.question().getId()))
                 .andExpect(jsonPath("$.reason").value("UNASSESSED_CONCEPT"));
-        mvc.perform(get("/api/members/me/knowledge-states").with(user(principal)))
+        mockMvc.perform(get("/api/members/me/knowledge-states").with(user(principal)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.topics[0].concepts[0].status").value("UNKNOWN"))
                 .andExpect(jsonPath("$.topics[0].concepts[0].masteryScore").isEmpty());
-        MvcResult submission = mvc.perform(post("/api/questions/{id}/answers", f.question().getId())
+        MvcResult submission = mockMvc.perform(post("/api/questions/{id}/answers", f.question().getId())
                         .with(user(principal)).with(csrf()).header("Idempotency-Key", UUID.randomUUID().toString())
                         .contentType("application/json")
                         .content(mapper.writeValueAsString(Map.of("content", "스레드는 프로세스 자원을 공유하는 실행 단위다."))))
                 .andExpect(status().isAccepted()).andReturn();
         Long evaluationId = mapper.readTree(submission.getResponse().getContentAsString()).get("evaluationId").asLong();
-        processor.process(evaluationId);
-        assertThat(states.findByMemberIdAndConceptId(f.member().getId(), f.concept().getId()).orElseThrow()
+        evaluationProcessor.process(evaluationId);
+        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(f.member().getId(), f.concept().getId()).orElseThrow()
                 .getAttemptCount()).isEqualTo(1);
-        mvc.perform(get("/api/members/me/knowledge-states").with(user(principal)))
+        mockMvc.perform(get("/api/members/me/knowledge-states").with(user(principal)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.topics[0].concepts[0].status").value("LEARNING"))
                 .andExpect(jsonPath("$.topics[0].concepts[0].attemptCount").value(1))
                 .andExpect(jsonPath("$.topics[0].concepts[0].lastEvaluatedAt").isNotEmpty());
-        mvc.perform(get("/api/members/me/progress").with(user(principal)))
+        mockMvc.perform(get("/api/members/me/progress").with(user(principal)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalAnswers").value(1))
                 .andExpect(jsonPath("$.recentEvaluations[0].status").value("EVALUATED"))
                 .andExpect(jsonPath("$.recommendation.reason").value("LOW_MASTERY"));
-        Member other = members.save(Member.builder().nickname("다른 학습자").build());
-        mvc.perform(get("/api/members/me/progress").param("memberId", f.member().getId().toString())
+        Member other = memberRepository.save(Member.builder().nickname("다른 학습자").build());
+        mockMvc.perform(get("/api/members/me/progress").param("memberId", f.member().getId().toString())
                         .with(user(principal(other))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalAnswers").value(0))
                 .andExpect(jsonPath("$.topics[0].concepts[0].status").value("UNKNOWN"));
@@ -143,9 +145,9 @@ class KnowledgeFlowTest {
     }
 
     private Fixture fixture() {
-        Member member = members.save(Member.builder().nickname("학습자").build());
-        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topics.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
@@ -154,23 +156,25 @@ class KnowledgeFlowTest {
                 .content("스레드는 프로세스 자원을 공유하는 실행 단위다.").build();
         document.review(admin);
         document.publish();
-        document = documents.save(document);
-        KnowledgeChunk chunk = chunks.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
+        document = knowledgeDocumentRepository.save(document);
+        KnowledgeChunk chunk = knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
                 document.getContent(), "test-v1"));
         return new Fixture(member, admin, topic, concept, question, chunk);
     }
 
     private Concept concept(Topic topic, String name) {
-        return concepts.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
+        return conceptRepository.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
     }
 
     private Question question(Member admin, Topic topic, Concept concept, String content) {
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
                 .content(content).referenceAnswer("프로세스 자원을 공유하는 실행 단위").build();
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true)
+        ));
         question.review(admin);
         question.publish();
-        return questions.save(question);
+        return questionRepository.save(question);
     }
 
     private record Fixture(Member member, Member admin, Topic topic, Concept concept, Question question,

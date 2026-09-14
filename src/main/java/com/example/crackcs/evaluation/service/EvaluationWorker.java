@@ -19,15 +19,15 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class EvaluationWorker {
 
-    private final EvaluationRepository evaluations;
-    private final EvaluationProcessor processor;
+    private final EvaluationRepository evaluationRepository;
+    private final EvaluationProcessor evaluationProcessor;
 
     @Scheduled(fixedDelayString = "${crackcs.evaluation.poll-delay:1000}")
     public void processPending() {
-        for (Long id : evaluations.findClaimableIds(LocalDateTime.now(), EvaluationStatus.EVALUATING,
+        for (Long id : evaluationRepository.findClaimableIds(LocalDateTime.now(), EvaluationStatus.EVALUATING,
                 EvaluationStatus.PROCESSING, PageRequest.of(0, 20))) {
             try {
-                processor.process(id);
+                evaluationProcessor.process(id);
             } catch (RuntimeException failure) {
                 // A rolled-back transaction leaves durable EVALUATING work for the next scan.
                 log.warn(

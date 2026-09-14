@@ -114,7 +114,9 @@ class FollowUpQuestionTest {
                 .difficulty(QuestionDifficulty.BASIC).content("원본").referenceAnswer("정답").build();
         Concept concept = Concept.builder().topic(topic).code("THREAD").name("스레드").build();
         ReflectionTestUtils.setField(concept, "id", 1L);
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true)
+        ));
         question.review(admin());
         question.publish();
         return answer(Member.builder().nickname("학습자").build(), question);

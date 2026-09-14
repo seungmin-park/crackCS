@@ -5,6 +5,7 @@ import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.learning.answer.domain.Answer;
@@ -315,8 +316,10 @@ class EvaluationTest {
         Member admin = Member.builder().nickname("관리자").role(MemberRole.ADMIN).build();
         Question question = Question.builder().topic(topic).createdByMember(admin)
                 .difficulty(QuestionDifficulty.BASIC).content("차이를 설명하세요").referenceAnswer("모범 답안").build();
-        question.addConcept(required, new BigDecimal("0.70"), true);
-        question.addConcept(optional, new BigDecimal("0.30"), false);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(required, new BigDecimal("0.70"), true),
+                new QuestionConceptAssignment(optional, new BigDecimal("0.30"), false)
+        ));
         question.review(admin);
         question.publish();
         return Answer.builder().member(Member.builder().nickname("학습자").build()).question(question)

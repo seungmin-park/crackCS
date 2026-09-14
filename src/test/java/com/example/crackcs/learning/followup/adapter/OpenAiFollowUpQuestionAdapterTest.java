@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import tools.jackson.core.JacksonException;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.node.ObjectNode;
@@ -20,6 +21,8 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 class OpenAiFollowUpQuestionAdapterTest {
     private final ObjectMapper mapper = new ObjectMapper();
@@ -108,6 +111,28 @@ class OpenAiFollowUpQuestionAdapterTest {
         String response = response(valid()).replace("\"input_tokens\":10", "\"input_tokens\":\"10\"");
         assertThatThrownBy(() -> adapter((body, timeout) -> response).generate(request()))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("잘못된 JSON을 거부할 때 파싱 실패 원인을 보존한다")
+    void preservesJsonParsingFailureCause() {
+        assertThatThrownBy(() -> adapter((body, timeout) -> "invalid-json").generate(request()))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("invalid follow-up provider result")
+                .hasCauseInstanceOf(JacksonException.class);
+    }
+
+    @Test
+    @DisplayName("예상하지 못한 내부 오류는 잘못된 생성 결과로 변환하지 않는다")
+    void propagatesUnexpectedRuntimeFailure() {
+        String providerResponse = response(valid());
+        ObjectMapper failingMapper = spy(mapper);
+        IllegalStateException failure = new IllegalStateException("unexpected internal failure");
+        doThrow(failure).when(failingMapper).readTree(providerResponse);
+        OpenAiFollowUpQuestionAdapter adapter = new OpenAiFollowUpQuestionAdapter(
+                (body, timeout) -> providerResponse, failingMapper, "test-model", Duration.ofSeconds(3));
+
+        assertThatThrownBy(() -> adapter.generate(request())).isSameAs(failure);
     }
 
     private OpenAiFollowUpQuestionAdapter adapter(OpenAiResponsesClient client) {

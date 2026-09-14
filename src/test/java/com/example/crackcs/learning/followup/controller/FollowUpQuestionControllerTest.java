@@ -42,20 +42,20 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         SecurityErrorResponseWriter.class})
 class FollowUpQuestionControllerTest {
     @Autowired
-    private MockMvc mvc;
+    private MockMvc mockMvc;
     @MockitoBean
-    private FollowUpQuestionService service;
+    private FollowUpQuestionService followUpQuestionService;
     @MockitoBean
-    private UserDetailsService users;
+    private UserDetailsService userDetailsService;
     @MockitoBean
     private PasswordEncoder encoder;
 
     @Test
     @DisplayName("본인 후속 질문은 공개 질문 형태로 반환하고 모범 답안을 숨긴다")
     void returnsReadyWithoutReferenceAnswer() throws Exception {
-        given(service.findByAnswerId(41L, 7L)).willReturn(new FollowUpQuestionResult(FollowUpStatus.READY, null,
+        given(followUpQuestionService.findByAnswerId(41L, 7L)).willReturn(new FollowUpQuestionResult(FollowUpStatus.READY, null,
                 new QuestionResult(8L, new TopicResult(1L, "OS", "운영체제"), QuestionDifficulty.BASIC, "후속 질문")));
-        mvc.perform(get("/api/answers/7/follow-up-question").with(user(principal())))
+        mockMvc.perform(get("/api/answers/7/follow-up-question").with(user(principal())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("READY"))
                 .andExpect(jsonPath("$.question.id").value(8))
                 .andExpect(jsonPath("$.question.topic.code").value("OS"))
@@ -65,9 +65,9 @@ class FollowUpQuestionControllerTest {
     @Test
     @DisplayName("준비되지 않은 상태는 질문 없이 반환한다")
     void returnsUnavailableReason() throws Exception {
-        given(service.findByAnswerId(41L, 7L)).willReturn(new FollowUpQuestionResult(
+        given(followUpQuestionService.findByAnswerId(41L, 7L)).willReturn(new FollowUpQuestionResult(
                 FollowUpStatus.UNAVAILABLE, FollowUpReason.FOLLOW_UP_LIMIT, null));
-        mvc.perform(get("/api/answers/7/follow-up-question").with(user(principal())))
+        mockMvc.perform(get("/api/answers/7/follow-up-question").with(user(principal())))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.reason").value("FOLLOW_UP_LIMIT"))
                 .andExpect(jsonPath("$.question").doesNotExist());
     }
@@ -75,27 +75,27 @@ class FollowUpQuestionControllerTest {
     @Test
     @DisplayName("인증하지 않은 조회는 401이다")
     void requiresAuthentication() throws Exception {
-        mvc.perform(get("/api/answers/7/follow-up-question")).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/answers/7/follow-up-question")).andExpect(status().isUnauthorized());
     }
 
     @Test
     @DisplayName("ADMIN 권한만으로는 개인 후속 질문에 접근하지 못한다")
     void rejectsAdmin() throws Exception {
-        mvc.perform(get("/api/answers/7/follow-up-question").with(user("admin").roles("ADMIN")))
+        mockMvc.perform(get("/api/answers/7/follow-up-question").with(user("admin").roles("ADMIN")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     @DisplayName("없는 답변이나 타인의 답변은 404이다")
     void hidesOtherAnswers() throws Exception {
-        given(service.findByAnswerId(41L, 7L)).willThrow(new AnswerNotFoundException(7L));
-        mvc.perform(get("/api/answers/7/follow-up-question").with(user(principal()))).andExpect(status().isNotFound());
+        given(followUpQuestionService.findByAnswerId(41L, 7L)).willThrow(new AnswerNotFoundException(7L));
+        mockMvc.perform(get("/api/answers/7/follow-up-question").with(user(principal()))).andExpect(status().isNotFound());
     }
 
     @Test
     @DisplayName("답변 식별자는 양수여야 한다")
     void validatesPositiveId() throws Exception {
-        mvc.perform(get("/api/answers/0/follow-up-question").with(user(principal()))).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/api/answers/0/follow-up-question").with(user(principal()))).andExpect(status().isBadRequest());
     }
 
     private AuthenticatedMember principal() {

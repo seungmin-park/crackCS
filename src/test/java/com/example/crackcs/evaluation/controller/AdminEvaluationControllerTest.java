@@ -31,7 +31,7 @@ class AdminEvaluationControllerTest {
     @Autowired
     MockMvc mockMvc;
     @MockitoBean
-    AdminEvaluationService service;
+    AdminEvaluationService adminEvaluationService;
 
     @Test
     @DisplayName("관리자는 검토 필요 평가를 상태로 필터링해 조회한다")
@@ -39,7 +39,7 @@ class AdminEvaluationControllerTest {
         LocalDateTime occurredAt = LocalDateTime.of(2026, 9, 8, 10, 0);
         PageRequest pageable = PageRequest.of(0, 20,
                 Sort.by(Sort.Order.desc("evaluatedAt"), Sort.Order.desc("id")));
-        given(service.findFailures(EvaluationStatus.NEEDS_REVIEW, pageable))
+        given(adminEvaluationService.findFailures(EvaluationStatus.NEEDS_REVIEW, pageable))
                 .willReturn(new PageImpl<>(List.of(new AdminEvaluationSummary(
                         5L, 7L, 9L, EvaluationStatus.NEEDS_REVIEW,
                         "EVIDENCE_NOT_FOUND", "gpt-5.6-terra", "os-evaluator-v1", occurredAt
@@ -51,13 +51,13 @@ class AdminEvaluationControllerTest {
                 .andExpect(jsonPath("$.content[0].failureCode").value("EVIDENCE_NOT_FOUND"))
                 .andExpect(jsonPath("$.content[0].evaluatorVersion").value("os-evaluator-v1"));
 
-        verify(service).findFailures(EvaluationStatus.NEEDS_REVIEW, pageable);
+        verify(adminEvaluationService).findFailures(EvaluationStatus.NEEDS_REVIEW, pageable);
     }
 
     @Test
     @DisplayName("관리자 평가 상세는 답변 원문과 근거 범위를 반환한다")
     void findsEvaluationDetailWithOriginalAnswer() throws Exception {
-        given(service.findFailureById(5L)).willReturn(new AdminEvaluationDetail(
+        given(adminEvaluationService.findFailureById(5L)).willReturn(new AdminEvaluationDetail(
                 5L, 7L, 9L, "프로세스를 설명하세요", "사용자 원문",
                 EvaluationStatus.FAILED, "PROVIDER_TIMEOUT", "gpt-5.6-terra", "os-evaluator-v1",
                 LocalDateTime.of(2026, 9, 8, 10, 0), List.of()

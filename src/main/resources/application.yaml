@@ -1,6 +1,10 @@
 spring:
   application:
     name: crackCS
+  task:
+    scheduling:
+      pool:
+        size: 2
   data:
     web:
       pageable:

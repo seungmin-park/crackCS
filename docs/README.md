@@ -58,6 +58,7 @@
 회고 경로: 로컬 파일 위치만 기록. 저장소 체크아웃에는 미포함.
 
 - Phase 6 질문·인사이트·트레이드오프: `docs/retrospectives/phase-6-decisions-and-insights.md` (로컬 작성 완료, 커밋 제외). Phase 6 설계 판단 변경 시 갱신
+- Phase 7 질문·인사이트·트레이드오프: `docs/retrospectives/phase-7-decisions-and-insights.md` (백엔드 구현·리뷰 회고 작성 완료, 화면·전체 Gate 미완료, 커밋 제외). 후속 생성·null 계약·작업 인계 판단 또는 남은 검증 상태 변경 시 갱신
 
 ## 이미지 자료
 

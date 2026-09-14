@@ -24,22 +24,22 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class KnowledgeChunkServiceTest {
 
     @Autowired
-    KnowledgeChunkService service;
+    KnowledgeChunkService knowledgeChunkService;
     @Autowired
-    KnowledgeChunkRepository chunks;
+    KnowledgeChunkRepository knowledgeChunkRepository;
     @Autowired
-    KnowledgeDocumentRepository documents;
+    KnowledgeDocumentRepository knowledgeDocumentRepository;
     @Autowired
-    TopicRepository topics;
+    TopicRepository topicRepository;
     @Autowired
-    MemberRepository members;
+    MemberRepository memberRepository;
 
     @AfterEach
     void tearDown() {
-        chunks.deleteAllInBatch();
-        documents.deleteAllInBatch();
-        topics.deleteAllInBatch();
-        members.deleteAllInBatch();
+        knowledgeChunkRepository.deleteAllInBatch();
+        knowledgeDocumentRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @Test
@@ -47,10 +47,10 @@ class KnowledgeChunkServiceTest {
     void chunksPublishedDocumentInSourceOrder() {
         KnowledgeDocument document = saveDocument("프로세스 설명.\n\n스레드 설명.", true);
 
-        ChunkGenerationResult result = service.generateChunks(document.getId());
+        ChunkGenerationResult result = knowledgeChunkService.generateChunks(document.getId());
 
         assertThat(result.reused()).isFalse();
-        assertThat(chunks.findAllByDocument_IdOrderBySequenceNo(document.getId()))
+        assertThat(knowledgeChunkRepository.findAllByDocument_IdOrderBySequenceNo(document.getId()))
                 .extracting(KnowledgeChunk::getContent)
                 .containsExactly("프로세스 설명.", "스레드 설명.");
     }
@@ -59,12 +59,12 @@ class KnowledgeChunkServiceTest {
     @DisplayName("같은 공개 문서의 Chunk 생성 요청은 기존 근거 보존을 위해 결과를 재사용한다")
     void reusesSameChunkingJob() {
         KnowledgeDocument document = saveDocument("프로세스 설명.", true);
-        service.generateChunks(document.getId());
+        knowledgeChunkService.generateChunks(document.getId());
 
-        ChunkGenerationResult second = service.generateChunks(document.getId());
+        ChunkGenerationResult second = knowledgeChunkService.generateChunks(document.getId());
 
         assertThat(second.reused()).isTrue();
-        assertThat(chunks.count()).isEqualTo(1);
+        assertThat(knowledgeChunkRepository.count()).isEqualTo(1);
     }
 
     @Test
@@ -72,21 +72,21 @@ class KnowledgeChunkServiceTest {
     void rejectsDraftDocument() {
         KnowledgeDocument document = saveDocument("초안", false);
 
-        assertThatThrownBy(() -> service.generateChunks(document.getId()))
+        assertThatThrownBy(() -> knowledgeChunkService.generateChunks(document.getId()))
                 .isInstanceOf(InvalidContentStateException.class);
     }
 
     private KnowledgeDocument saveDocument(String content, boolean publish) {
-        Topic topic = topics.save(Topic.builder().code("OS" + System.nanoTime()).name("운영체제").build());
-        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        KnowledgeDocument document = documents.save(KnowledgeDocument.builder()
+        Topic topic = topicRepository.save(Topic.builder().code("OS" + System.nanoTime()).name("운영체제").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        KnowledgeDocument document = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
                 .topic(topic).createdByMember(admin).title("운영체제")
                 .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
                 .technologyVersion("general").licenseNote("독립 작성").content(content).build());
         if (publish) {
             document.review(admin);
             document.publish();
-            documents.save(document);
+            knowledgeDocumentRepository.save(document);
         }
         return document;
     }

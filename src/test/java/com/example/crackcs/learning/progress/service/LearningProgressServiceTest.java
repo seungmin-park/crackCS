@@ -8,6 +8,7 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.knowledge.repository.KnowledgeDocumentRepository;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -40,48 +41,48 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class LearningProgressServiceTest {
     @Autowired
-    private MemberRepository members;
+    private MemberRepository memberRepository;
 
     @Autowired
-    private TopicRepository topics;
+    private TopicRepository topicRepository;
 
     @Autowired
-    private ConceptRepository concepts;
+    private ConceptRepository conceptRepository;
 
     @Autowired
-    private QuestionRepository questions;
+    private QuestionRepository questionRepository;
 
     @Autowired
-    private AnswerRepository answers;
+    private AnswerRepository answerRepository;
 
     @Autowired
-    private EvaluationRepository evaluations;
+    private EvaluationRepository evaluationRepository;
 
     @Autowired
-    private KnowledgeDocumentRepository documents;
+    private KnowledgeDocumentRepository knowledgeDocumentRepository;
 
     @Autowired
-    private KnowledgeChunkRepository chunks;
+    private KnowledgeChunkRepository knowledgeChunkRepository;
 
     @Autowired
-    private TransactionTemplate transactions;
+    private TransactionTemplate transactionTemplate;
 
     @Autowired
-    private JdbcTemplate jdbc;
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private LearningProgressService progressService;
+    private LearningProgressService learningProgressService;
 
     @AfterEach
     void cleanUp() {
-        evaluations.deleteAll();
-        answers.deleteAllInBatch();
-        questions.deleteAll();
-        chunks.deleteAllInBatch();
-        documents.deleteAllInBatch();
-        concepts.deleteAllInBatch();
-        topics.deleteAllInBatch();
-        members.deleteAllInBatch();
+        evaluationRepository.deleteAll();
+        answerRepository.deleteAllInBatch();
+        questionRepository.deleteAll();
+        knowledgeChunkRepository.deleteAllInBatch();
+        knowledgeDocumentRepository.deleteAllInBatch();
+        conceptRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @Test
@@ -90,20 +91,20 @@ class LearningProgressServiceTest {
         Fixture f = fixture();
         Long old = completed(f, Verdict.INCORRECT);
         // submittedAt은 생성 시 확정되는 불변 값이므로 과거 풀이 이력의 시간 경계만 SQL로 준비한다.
-        jdbc.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(8),
-                evaluations.findById(old).orElseThrow().getAnswer().getId());
+        jdbcTemplate.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(8),
+                evaluationRepository.findById(old).orElseThrow().getAnswer().getId());
         for (int i = 0; i < 4; i++) {
             pending(f);
         }
         Long latest = completed(f, Verdict.CORRECT);
-        Member other = members.save(Member.builder().nickname("다른 학습자").build());
+        Member other = memberRepository.save(Member.builder().nickname("다른 학습자").build());
         pending(other, f.question());
-        LearningProgressResult progress = progressService.progress(f.member().getId());
+        LearningProgressResult progress = learningProgressService.progress(f.member().getId());
         assertThat(progress.totalAnswers()).isEqualTo(6);
         assertThat(progress.recentAnswerCount()).isEqualTo(5);
         assertThat(progress.recentEvaluations()).hasSize(5);
         assertThat(progress.recentEvaluations().getFirst().answerId()).isEqualTo(
-                evaluations.findById(latest).orElseThrow().getAnswer().getId());
+                evaluationRepository.findById(latest).orElseThrow().getAnswer().getId());
         assertThat(progress.recentEvaluations().getFirst().status()).isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(progress.recentEvaluations().getFirst().score()).isEqualTo(100);
         assertThat(progress.recentEvaluations().getLast().status()).isEqualTo(EvaluationStatus.EVALUATING);
@@ -112,9 +113,9 @@ class LearningProgressServiceTest {
     }
 
     private Fixture fixture() {
-        Member member = members.save(Member.builder().nickname("학습자").build());
-        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topics.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
@@ -123,23 +124,25 @@ class LearningProgressServiceTest {
                 .content("스레드는 프로세스 자원을 공유하는 실행 단위다.").build();
         document.review(admin);
         document.publish();
-        document = documents.save(document);
-        KnowledgeChunk chunk = chunks.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
+        document = knowledgeDocumentRepository.save(document);
+        KnowledgeChunk chunk = knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
                 document.getContent(), "test-v1"));
         return new Fixture(member, admin, topic, concept, question, chunk);
     }
 
     private Concept concept(Topic topic, String name) {
-        return concepts.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
+        return conceptRepository.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
     }
 
     private Question question(Member admin, Topic topic, Concept concept, String content) {
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
                 .content(content).referenceAnswer("프로세스 자원을 공유하는 실행 단위").build();
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true)
+        ));
         question.review(admin);
         question.publish();
-        return questions.save(question);
+        return questionRepository.save(question);
     }
 
     private Evaluation pending(Fixture fixture) {
@@ -147,9 +150,9 @@ class LearningProgressServiceTest {
     }
 
     private Evaluation pending(Member member, Question question) {
-        Answer answer = answers.save(Answer.builder().member(member).question(question)
+        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
                 .requestId(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
-        return evaluations.save(Evaluation.builder().answer(answer).build());
+        return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
     private Long completed(Fixture fixture, Verdict verdict) {
@@ -159,10 +162,10 @@ class LearningProgressServiceTest {
     }
 
     private void complete(Long id, Fixture fixture, Verdict verdict) {
-        transactions.executeWithoutResult(status -> {
-            Evaluation evaluation = evaluations.findById(id).orElseThrow();
+        transactionTemplate.executeWithoutResult(status -> {
+            Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
             evaluation.completeWithEvidence(result(fixture, verdict),
-                    List.of(chunks.findById(fixture.chunk().getId()).orElseThrow()));
+                    List.of(knowledgeChunkRepository.findById(fixture.chunk().getId()).orElseThrow()));
         });
     }
 

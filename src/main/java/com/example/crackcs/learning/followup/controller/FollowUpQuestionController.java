@@ -14,11 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class FollowUpQuestionController {
-    private final FollowUpQuestionService service;
+    private final FollowUpQuestionService followUpQuestionService;
 
     @GetMapping("/api/answers/{answerId}/follow-up-question")
     public FollowUpQuestionResponse find(@AuthenticationPrincipal AuthenticatedMember member,
                                          @Valid @ModelAttribute FollowUpAnswerIdRequest path) {
-        return FollowUpQuestionResponse.from(service.findByAnswerId(member.memberId(), path.answerId()));
+        return FollowUpQuestionResponse.from(followUpQuestionService.findByAnswerId(member.memberId(), path.answerId()));
     }
 }

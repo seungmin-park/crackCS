@@ -8,6 +8,7 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.knowledge.repository.KnowledgeDocumentRepository;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -50,40 +51,40 @@ import static org.assertj.core.api.Assertions.*;
 @ActiveProfiles("test")
 class KnowledgeStateServiceTest {
     @Autowired
-    private MemberRepository members;
+    private MemberRepository memberRepository;
 
     @Autowired
-    private TopicRepository topics;
+    private TopicRepository topicRepository;
 
     @Autowired
-    private ConceptRepository concepts;
+    private ConceptRepository conceptRepository;
 
     @Autowired
-    private QuestionRepository questions;
+    private QuestionRepository questionRepository;
 
     @Autowired
-    private AnswerRepository answers;
+    private AnswerRepository answerRepository;
 
     @Autowired
-    private EvaluationRepository evaluations;
+    private EvaluationRepository evaluationRepository;
 
     @Autowired
-    private KnowledgeDocumentRepository documents;
+    private KnowledgeDocumentRepository knowledgeDocumentRepository;
 
     @Autowired
-    private KnowledgeChunkRepository chunks;
+    private KnowledgeChunkRepository knowledgeChunkRepository;
 
     @Autowired
-    private KnowledgeStateRepository states;
+    private KnowledgeStateRepository knowledgeStateRepository;
 
     @Autowired
-    private AppliedEvaluationConceptRepository appliedConcepts;
+    private AppliedEvaluationConceptRepository appliedEvaluationConceptRepository;
 
     @Autowired
-    private TransactionTemplate transactions;
+    private TransactionTemplate transactionTemplate;
 
     @Autowired
-    private KnowledgeStateService service;
+    private KnowledgeStateService knowledgeStateService;
 
     @Autowired
     private EvaluationCompletionTransaction retry;
@@ -93,8 +94,8 @@ class KnowledgeStateServiceTest {
     }
 
     private static void concurrently(Runnable first, Runnable second, long timeoutSeconds) throws Exception {
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        ExecutorCompletionService<Void> completed = new ExecutorCompletionService<>(pool);
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
+        ExecutorCompletionService<Void> completed = new ExecutorCompletionService<>(executorService);
         CountDownLatch start = new CountDownLatch(1);
         Future<Void> firstTask = completed.submit(() -> {
             await(start);
@@ -123,9 +124,9 @@ class KnowledgeStateServiceTest {
         } finally {
             firstTask.cancel(true);
             secondTask.cancel(true);
-            pool.shutdownNow();
+            executorService.shutdownNow();
             try {
-                if (!pool.awaitTermination(5, TimeUnit.SECONDS)) {
+                if (!executorService.awaitTermination(5, TimeUnit.SECONDS)) {
                     throw new IllegalStateException(
                             "Concurrent tasks did not terminate; database cleanup may be unsafe");
                 }
@@ -157,16 +158,16 @@ class KnowledgeStateServiceTest {
 
     @AfterEach
     void cleanUp() {
-        appliedConcepts.deleteAllInBatch();
-        states.deleteAllInBatch();
-        evaluations.deleteAll();
-        answers.deleteAllInBatch();
-        questions.deleteAll();
-        chunks.deleteAllInBatch();
-        documents.deleteAllInBatch();
-        concepts.deleteAllInBatch();
-        topics.deleteAllInBatch();
-        members.deleteAllInBatch();
+        appliedEvaluationConceptRepository.deleteAllInBatch();
+        knowledgeStateRepository.deleteAllInBatch();
+        evaluationRepository.deleteAll();
+        answerRepository.deleteAllInBatch();
+        questionRepository.deleteAll();
+        knowledgeChunkRepository.deleteAllInBatch();
+        knowledgeDocumentRepository.deleteAllInBatch();
+        conceptRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @ParameterizedTest
@@ -179,33 +180,33 @@ class KnowledgeStateServiceTest {
 
         assertThatThrownBy(() -> retry.execute(() -> {
             attempts.incrementAndGet();
-            service.applyInCurrentTransaction(evaluationId);
+            knowledgeStateService.applyInCurrentTransaction(evaluationId);
             if (duplicateAppliedConcept) {
-                EvaluationConcept concept = evaluations.findById(evaluationId).orElseThrow().getConcepts().getFirst();
-                appliedConcepts.save(AppliedEvaluationConcept.builder().evaluationConcept(concept).build());
+                EvaluationConcept concept = evaluationRepository.findById(evaluationId).orElseThrow().getConcepts().getFirst();
+                appliedEvaluationConceptRepository.save(AppliedEvaluationConcept.builder().evaluationConcept(concept).build());
             } else {
-                states.save(KnowledgeState.builder().member(fixture.member()).concept(fixture.concept()).build());
+                knowledgeStateRepository.save(KnowledgeState.builder().member(fixture.member()).concept(fixture.concept()).build());
             }
         })).isInstanceOf(ConcurrencyFailureException.class).hasCauseInstanceOf(DataIntegrityViolationException.class);
 
         assertThat(attempts.get()).isEqualTo(8);
-        assertThat(states.count()).isZero();
-        assertThat(appliedConcepts.count()).isZero();
+        assertThat(knowledgeStateRepository.count()).isZero();
+        assertThat(appliedEvaluationConceptRepository.count()).isZero();
     }
 
     @Test
     @DisplayName("다른 트랜잭션이 먼저 상태를 변경하면 오래된 버전을 거부하고 새 트랜잭션으로 재시도한다")
     void retriesARealStaleVersionInANewTransaction() {
         Fixture fixture = fixture();
-        retry.execute(() -> service.applyInCurrentTransaction(completed(fixture, Verdict.CORRECT)));
+        retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(fixture, Verdict.CORRECT)));
         AtomicInteger attempts = new AtomicInteger();
         LocalDateTime now = LocalDateTime.now();
         retry.execute(() -> {
-            KnowledgeState stale = states.findByMemberIdAndConceptId(fixture.member().getId(),
+            KnowledgeState stale = knowledgeStateRepository.findByMemberIdAndConceptId(fixture.member().getId(),
                     fixture.concept().getId()).orElseThrow();
             if (attempts.incrementAndGet() == 1) {
                 retry.execute(() -> {
-                    KnowledgeState concurrent = states.findByMemberIdAndConceptId(fixture.member().getId(),
+                    KnowledgeState concurrent = knowledgeStateRepository.findByMemberIdAndConceptId(fixture.member().getId(),
                             fixture.concept().getId()).orElseThrow();
                     concurrent.observe(1001L, Verdict.INCORRECT, now);
                 });
@@ -213,7 +214,7 @@ class KnowledgeStateServiceTest {
             stale.observe(1002L, Verdict.PARTIALLY_CORRECT, now.plusSeconds(1));
         });
         assertThat(attempts.get()).isEqualTo(2);
-        KnowledgeState saved = states.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
+        KnowledgeState saved = knowledgeStateRepository.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
                 .orElseThrow();
         assertThat(saved.getAttemptCount()).isEqualTo(3);
         assertThat(saved.getMasteryScore()).isEqualTo(50);
@@ -227,22 +228,24 @@ class KnowledgeStateServiceTest {
         Question question = Question.builder().topic(fixture.topic()).createdByMember(fixture.admin())
                 .difficulty(QuestionDifficulty.BASIC)
                 .content("필수와 선택 개념").referenceAnswer("답").build();
-        question.addConcept(fixture.concept(), new BigDecimal("0.5"), true);
-        question.addConcept(optional, new BigDecimal("0.5"), false);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(fixture.concept(), new BigDecimal("0.5"), true),
+                new QuestionConceptAssignment(optional, new BigDecimal("0.5"), false)
+        ));
         question.review(fixture.admin());
         question.publish();
-        question = questions.save(question);
+        question = questionRepository.save(question);
         Long id = pending(fixture.member(), question).getId();
-        transactions.executeWithoutResult(status -> evaluations.findById(id).orElseThrow().completeWithEvidence(
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findById(id).orElseThrow().completeWithEvidence(
                 new EvaluationResult(Verdict.CORRECT, "평가 완료",
                         List.of(new ConceptResult(fixture.concept().getId(), Verdict.CORRECT, "정확"),
                                 new ConceptResult(optional.getId(), Verdict.NEEDS_REVIEW, "검토 필요")),
                         List.of(), List.of(), List.of(), List.of(fixture.chunk().getId()), "test", "v1", 1, 1, 1),
-                List.of(chunks.findById(fixture.chunk().getId()).orElseThrow())));
-        retry.execute(() -> service.applyInCurrentTransaction(id));
-        assertThat(states.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())).isPresent();
-        assertThat(states.findByMemberIdAndConceptId(fixture.member().getId(), optional.getId())).isEmpty();
-        assertThat(appliedConcepts.count()).isEqualTo(1);
+                List.of(knowledgeChunkRepository.findById(fixture.chunk().getId()).orElseThrow())));
+        retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(id));
+        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())).isPresent();
+        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(fixture.member().getId(), optional.getId())).isEmpty();
+        assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(1);
     }
 
     @Test
@@ -250,13 +253,13 @@ class KnowledgeStateServiceTest {
     void appliesExactlyOnce() {
         Fixture fixture = fixture();
         Long id = completed(fixture, Verdict.INCORRECT);
-        retry.execute(() -> service.applyInCurrentTransaction(id));
-        retry.execute(() -> service.applyInCurrentTransaction(id));
-        KnowledgeState state = states.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
+        retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(id));
+        retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(id));
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
                 .orElseThrow();
         assertThat(state.getAttemptCount()).isEqualTo(1);
         assertThat(state.getMasteryScore()).isZero();
-        assertThat(appliedConcepts.count()).isEqualTo(1);
+        assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(1);
     }
 
     @Test
@@ -265,31 +268,31 @@ class KnowledgeStateServiceTest {
         Fixture fixture = fixture();
         Long first = completed(fixture, Verdict.CORRECT);
         Long second = completed(fixture, Verdict.INCORRECT);
-        concurrently(() -> retry.execute(() -> service.applyInCurrentTransaction(first)),
-                () -> retry.execute(() -> service.applyInCurrentTransaction(second)));
-        KnowledgeState state = states.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
+        concurrently(() -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(first)),
+                () -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(second)));
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
                 .orElseThrow();
         assertThat(state.getAttemptCount()).isEqualTo(2);
         assertThat(state.getMasteryScore()).isCloseTo(100.0 / 3, within(0.0001));
-        assertThat(appliedConcepts.count()).isEqualTo(2);
+        assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(2);
     }
 
     @Test
     @DisplayName("기존 상태의 동시 갱신과 같은 평가의 재전달에도 관측을 잃거나 중복하지 않는다")
     void handlesConcurrentUpdatesAndDuplicateDelivery() throws Exception {
         Fixture fixture = fixture();
-        retry.execute(() -> service.applyInCurrentTransaction(completed(fixture, Verdict.CORRECT)));
+        retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(fixture, Verdict.CORRECT)));
         Long second = completed(fixture, Verdict.CORRECT);
         Long third = completed(fixture, Verdict.INCORRECT);
-        concurrently(() -> retry.execute(() -> service.applyInCurrentTransaction(second)),
-                () -> retry.execute(() -> service.applyInCurrentTransaction(third)));
-        concurrently(() -> retry.execute(() -> service.applyInCurrentTransaction(second)),
-                () -> retry.execute(() -> service.applyInCurrentTransaction(second)));
-        KnowledgeState state = states.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
+        concurrently(() -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(second)),
+                () -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(third)));
+        concurrently(() -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(second)),
+                () -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(second)));
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
                 .orElseThrow();
         assertThat(state.getAttemptCount()).isEqualTo(3);
         assertThat(state.getMasteryScore()).isEqualTo(50);
-        assertThat(appliedConcepts.count()).isEqualTo(3);
+        assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(3);
     }
 
     @Test
@@ -298,13 +301,13 @@ class KnowledgeStateServiceTest {
         Fixture fixture = fixture();
         Long pending = pending(fixture).getId();
         Long failed = pending(fixture).getId();
-        transactions.executeWithoutResult(status -> evaluations.findById(failed).orElseThrow().fail("TEST_FAILURE"));
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findById(failed).orElseThrow().fail("TEST_FAILURE"));
         Long review = completed(fixture, Verdict.NEEDS_REVIEW);
-        retry.execute(() -> service.applyInCurrentTransaction(pending));
-        retry.execute(() -> service.applyInCurrentTransaction(failed));
-        retry.execute(() -> service.applyInCurrentTransaction(review));
-        assertThat(states.count()).isZero();
-        assertThat(appliedConcepts.count()).isZero();
+        retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(pending));
+        retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(failed));
+        retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(review));
+        assertThat(knowledgeStateRepository.count()).isZero();
+        assertThat(appliedEvaluationConceptRepository.count()).isZero();
     }
 
     @Test
@@ -312,15 +315,15 @@ class KnowledgeStateServiceTest {
     void rollsBackCompletionAndStateTogether() {
         Fixture fixture = fixture();
         Long id = pending(fixture).getId();
-        assertThatThrownBy(() -> transactions.executeWithoutResult(status -> {
+        assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(status -> {
             complete(id, fixture, Verdict.CORRECT);
-            service.applyInCurrentTransaction(id);
-            assertThat(states.count()).isEqualTo(1);
+            knowledgeStateService.applyInCurrentTransaction(id);
+            assertThat(knowledgeStateRepository.count()).isEqualTo(1);
             throw new IllegalStateException("force rollback");
         })).isInstanceOf(IllegalStateException.class).hasMessage("force rollback");
-        assertThat(evaluations.findById(id).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATING);
-        assertThat(states.count()).isZero();
-        assertThat(appliedConcepts.count()).isZero();
+        assertThat(evaluationRepository.findById(id).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATING);
+        assertThat(knowledgeStateRepository.count()).isZero();
+        assertThat(appliedEvaluationConceptRepository.count()).isZero();
     }
 
     @Test
@@ -365,9 +368,9 @@ class KnowledgeStateServiceTest {
     }
 
     private Fixture fixture() {
-        Member member = members.save(Member.builder().nickname("학습자").build());
-        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topics.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
@@ -376,23 +379,25 @@ class KnowledgeStateServiceTest {
                 .content("스레드는 프로세스 자원을 공유하는 실행 단위다.").build();
         document.review(admin);
         document.publish();
-        document = documents.save(document);
-        KnowledgeChunk chunk = chunks.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
+        document = knowledgeDocumentRepository.save(document);
+        KnowledgeChunk chunk = knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
                 document.getContent(), "test-v1"));
         return new Fixture(member, admin, topic, concept, question, chunk);
     }
 
     private Concept concept(Topic topic, String name) {
-        return concepts.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
+        return conceptRepository.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
     }
 
     private Question question(Member admin, Topic topic, Concept concept, String content) {
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
                 .content(content).referenceAnswer("프로세스 자원을 공유하는 실행 단위").build();
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true)
+        ));
         question.review(admin);
         question.publish();
-        return questions.save(question);
+        return questionRepository.save(question);
     }
 
     private Evaluation pending(Fixture fixture) {
@@ -400,9 +405,9 @@ class KnowledgeStateServiceTest {
     }
 
     private Evaluation pending(Member member, Question question) {
-        Answer answer = answers.save(Answer.builder().member(member).question(question)
+        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
                 .requestId(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
-        return evaluations.save(Evaluation.builder().answer(answer).build());
+        return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
     private Long completed(Fixture fixture, Verdict verdict) {
@@ -412,10 +417,10 @@ class KnowledgeStateServiceTest {
     }
 
     private void complete(Long id, Fixture fixture, Verdict verdict) {
-        transactions.executeWithoutResult(status -> {
-            Evaluation evaluation = evaluations.findById(id).orElseThrow();
+        transactionTemplate.executeWithoutResult(status -> {
+            Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
             evaluation.completeWithEvidence(result(fixture, verdict),
-                    List.of(chunks.findById(fixture.chunk().getId()).orElseThrow()));
+                    List.of(knowledgeChunkRepository.findById(fixture.chunk().getId()).orElseThrow()));
         });
     }
 

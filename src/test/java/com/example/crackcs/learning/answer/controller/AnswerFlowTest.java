@@ -5,6 +5,7 @@ import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.content.concept.domain.Concept;
 import com.example.crackcs.content.concept.repository.ConceptRepository;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -25,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -42,45 +44,45 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 class AnswerFlowTest {
     @Autowired
-    private MockMvc mvc;
+    private MockMvc mockMvc;
 
     @Autowired
     private ObjectMapper mapper;
 
     @Autowired
-    private MemberRepository members;
+    private MemberRepository memberRepository;
 
     @Autowired
-    private TopicRepository topics;
+    private TopicRepository topicRepository;
 
     @Autowired
-    private ConceptRepository concepts;
+    private ConceptRepository conceptRepository;
 
     @Autowired
-    private QuestionRepository questions;
+    private QuestionRepository questionRepository;
 
     @Autowired
-    private EvaluationRepository evaluations;
+    private EvaluationRepository evaluationRepository;
 
     @Autowired
-    private AnswerRepository answers;
+    private AnswerRepository answerRepository;
 
     @AfterEach
     void tearDown() {
-        evaluations.deleteAll();
-        answers.deleteAllInBatch();
-        questions.deleteAll();
-        concepts.deleteAllInBatch();
-        topics.deleteAllInBatch();
-        members.deleteAllInBatch();
+        evaluationRepository.deleteAll();
+        answerRepository.deleteAllInBatch();
+        questionRepository.deleteAll();
+        conceptRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @Test
     @DisplayName("공개 문제에 답변을 제출하면 평가 진행 상태를 반환한다")
     void submitsAnswerForEvaluation() throws Exception {
-        Member member = members.save(Member.builder().nickname("학습자").build());
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        mvc.perform(post("/api/questions/{id}/answers", question.getId())
+        mockMvc.perform(post("/api/questions/{id}/answers", question.getId())
                         .with(user(principal(member))).with(csrf())
                         .contentType("application/json")
                         .header("Idempotency-Key", UUID.randomUUID().toString())
@@ -93,7 +95,7 @@ class AnswerFlowTest {
     @Test
     @DisplayName("같은 요청을 동시에 제출해도 답변과 평가가 한 개씩만 저장된다")
     void deduplicatesConcurrentRequests() throws Exception {
-        Member member = members.save(Member.builder().nickname("학습자").build());
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
         String key = UUID.randomUUID().toString();
         String body = mapper.writeValueAsString(Map.of("content", "같은 원문"));
@@ -101,7 +103,7 @@ class AnswerFlowTest {
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
             Callable<Long> submit = () -> {
                 barrier.await(5, TimeUnit.SECONDS);
-                String response = mvc.perform(post("/api/questions/{id}/answers", question.getId())
+                String response = mockMvc.perform(post("/api/questions/{id}/answers", question.getId())
                                 .with(user(principal(member))).with(csrf()).header("Idempotency-Key", key)
                                 .contentType("application/json").content(body))
                         .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
@@ -112,25 +114,25 @@ class AnswerFlowTest {
             assertThat(first.get(10, TimeUnit.SECONDS))
                     .isEqualTo(second.get(10, TimeUnit.SECONDS));
         }
-        assertThat(answers.count()).isEqualTo(1);
-        assertThat(evaluations.count()).isEqualTo(1);
+        assertThat(answerRepository.count()).isEqualTo(1);
+        assertThat(evaluationRepository.count()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("다른 회원에게는 답변과 평가의 존재를 숨긴다")
     void hidesAnotherMembersAnswer() throws Exception {
-        Member owner = members.save(Member.builder().nickname("소유자").build());
-        Member stranger = members.save(Member.builder().nickname("다른 회원").build());
+        Member owner = memberRepository.save(Member.builder().nickname("소유자").build());
+        Member stranger = memberRepository.save(Member.builder().nickname("다른 회원").build());
         Question question = publishedQuestion();
-        String response = mvc.perform(post("/api/questions/{id}/answers", question.getId())
+        String response = mockMvc.perform(post("/api/questions/{id}/answers", question.getId())
                         .with(user(principal(owner))).with(csrf()).contentType("application/json")
                         .header("Idempotency-Key", UUID.randomUUID().toString())
                         .content(mapper.writeValueAsString(Map.of("content", "개인 답변"))))
                 .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
         long id = mapper.readTree(response).get("answerId").asLong();
-        mvc.perform(get("/api/answers/{id}", id).with(user(principal(stranger))))
+        mockMvc.perform(get("/api/answers/{id}", id).with(user(principal(stranger))))
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("ANSWER_NOT_FOUND"));
-        mvc.perform(get("/api/answers/{id}/evaluation", id).with(user(principal(stranger))))
+        mockMvc.perform(get("/api/answers/{id}/evaluation", id).with(user(principal(stranger))))
                 .andExpect(status().isNotFound());
     }
 
@@ -140,14 +142,16 @@ class AnswerFlowTest {
     }
 
     private Question publishedQuestion() {
-        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topics.save(Topic.builder().code("OS").name("운영체제").build());
-        Concept concept = concepts.save(Concept.builder().topic(topic).code("THREAD").name("스레드").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code("OS").name("운영체제").build());
+        Concept concept = conceptRepository.save(Concept.builder().topic(topic).code("THREAD").name("스레드").build());
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
                 .content("스레드를 설명하세요").referenceAnswer("프로세스 자원을 공유하는 실행 단위").build();
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true)
+        ));
         question.review(admin);
         question.publish();
-        return questions.save(question);
+        return questionRepository.save(question);
     }
 }

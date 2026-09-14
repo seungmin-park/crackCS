@@ -23,14 +23,14 @@ import java.util.HashSet;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DefaultFollowUpQuestionService implements FollowUpQuestionService {
-    private final AnswerRepository answers;
-    private final EvaluationRepository evaluations;
-    private final FollowUpGenerationRepository generations;
+    private final AnswerRepository answerRepository;
+    private final EvaluationRepository evaluationRepository;
+    private final FollowUpGenerationRepository followUpGenerationRepository;
     private final FollowUpSourcePolicy policy;
 
     public FollowUpQuestionResult findByAnswerId(Long memberId, Long answerId) {
-        answers.findByIdAndMemberId(answerId, memberId).orElseThrow(() -> new AnswerNotFoundException(answerId));
-        return evaluations.findByAnswerId(answerId)
+        answerRepository.findByIdAndMemberId(answerId, memberId).orElseThrow(() -> new AnswerNotFoundException(answerId));
+        return evaluationRepository.findByAnswerId(answerId)
                 .map(evaluation -> findForEvaluation(answerId, evaluation))
                 .orElseGet(() -> FollowUpQuestionResult.unavailable(FollowUpReason.EVALUATION_NOT_ELIGIBLE));
     }
@@ -42,7 +42,7 @@ public class DefaultFollowUpQuestionService implements FollowUpQuestionService {
     }
 
     private FollowUpQuestionResult findGenerationResult(Long answerId, Evaluation evaluation) {
-        return generations.findByAnswerId(answerId)
+        return followUpGenerationRepository.findByAnswerId(answerId)
                 .map(job -> toGenerationResult(job, evaluation))
                 .orElseGet(FollowUpQuestionResult::pending);
     }

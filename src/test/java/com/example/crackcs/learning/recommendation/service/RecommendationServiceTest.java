@@ -8,6 +8,7 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 import com.example.crackcs.content.knowledge.repository.KnowledgeDocumentRepository;
 import com.example.crackcs.content.question.domain.Question;
+import com.example.crackcs.content.question.domain.QuestionConceptAssignment;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -48,62 +49,62 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class RecommendationServiceTest {
     @Autowired
-    private MemberRepository members;
+    private MemberRepository memberRepository;
 
     @Autowired
-    private TopicRepository topics;
+    private TopicRepository topicRepository;
 
     @Autowired
-    private ConceptRepository concepts;
+    private ConceptRepository conceptRepository;
 
     @Autowired
-    private QuestionRepository questions;
+    private QuestionRepository questionRepository;
 
     @Autowired
-    private AnswerRepository answers;
+    private AnswerRepository answerRepository;
 
     @Autowired
-    private EvaluationRepository evaluations;
+    private EvaluationRepository evaluationRepository;
 
     @Autowired
-    private KnowledgeDocumentRepository documents;
+    private KnowledgeDocumentRepository knowledgeDocumentRepository;
 
     @Autowired
-    private KnowledgeChunkRepository chunks;
+    private KnowledgeChunkRepository knowledgeChunkRepository;
 
     @Autowired
-    private KnowledgeStateRepository states;
+    private KnowledgeStateRepository knowledgeStateRepository;
 
     @Autowired
-    private AppliedEvaluationConceptRepository appliedConcepts;
+    private AppliedEvaluationConceptRepository appliedEvaluationConceptRepository;
 
     @Autowired
-    private TransactionTemplate transactions;
+    private TransactionTemplate transactionTemplate;
 
     @Autowired
-    private JdbcTemplate jdbc;
+    private JdbcTemplate jdbcTemplate;
 
     @Autowired
-    private KnowledgeStateService knowledge;
+    private KnowledgeStateService knowledgeStateService;
 
     @Autowired
     private EvaluationCompletionTransaction completionTransaction;
 
     @Autowired
-    private RecommendationService recommendations;
+    private RecommendationService recommendationService;
 
     @AfterEach
     void cleanUp() {
-        appliedConcepts.deleteAllInBatch();
-        states.deleteAllInBatch();
-        evaluations.deleteAll();
-        answers.deleteAllInBatch();
-        questions.deleteAll();
-        chunks.deleteAllInBatch();
-        documents.deleteAllInBatch();
-        concepts.deleteAllInBatch();
-        topics.deleteAllInBatch();
-        members.deleteAllInBatch();
+        appliedEvaluationConceptRepository.deleteAllInBatch();
+        knowledgeStateRepository.deleteAllInBatch();
+        evaluationRepository.deleteAll();
+        answerRepository.deleteAllInBatch();
+        questionRepository.deleteAll();
+        knowledgeChunkRepository.deleteAllInBatch();
+        knowledgeDocumentRepository.deleteAllInBatch();
+        conceptRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @Test
@@ -111,28 +112,30 @@ class RecommendationServiceTest {
     void excludesQuestionWithMixedActiveAndInactiveConcepts() {
         Fixture f = fixture();
         f.question().retire();
-        questions.save(f.question());
+        questionRepository.save(f.question());
         Concept disabled = concept(f.topic(), "비활성 개념");
         Question question = Question.builder().topic(f.topic()).createdByMember(f.admin())
                 .difficulty(QuestionDifficulty.BASIC).content("복합 문제").referenceAnswer("답").build();
-        question.addConcept(f.concept(), new BigDecimal("0.5"), true);
-        question.addConcept(disabled, new BigDecimal("0.5"), true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(f.concept(), new BigDecimal("0.5"), true),
+                new QuestionConceptAssignment(disabled, new BigDecimal("0.5"), true)
+        ));
         question.review(f.admin());
         question.publish();
-        questions.save(question);
+        questionRepository.save(question);
         disabled.deactivate();
-        concepts.save(disabled);
-        assertThat(recommendations.recommendation(f.member().getId()).reason()).isEqualTo(Reason.NO_AVAILABLE_QUESTION);
+        conceptRepository.save(disabled);
+        assertThat(recommendationService.recommendation(f.member().getId()).reason()).isEqualTo(Reason.NO_AVAILABLE_QUESTION);
     }
 
     @Test
     @DisplayName("추천 후보 안에서는 미평가 개념을 숙련도가 낮은 개념보다 먼저 선택한다")
     void recommendsUnassessedBeforeLowMastery() {
         Fixture f = fixture();
-        completionTransaction.execute(() -> knowledge.applyInCurrentTransaction(completed(f, Verdict.INCORRECT)));
+        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(f, Verdict.INCORRECT)));
         Concept unseen = concept(f.topic(), "프로세스");
         Question question = question(f.admin(), f.topic(), unseen, "프로세스 문제");
-        RecommendationResult result = recommendations.recommendation(f.member().getId());
+        RecommendationResult result = recommendationService.recommendation(f.member().getId());
         assertThat(result.questionId()).isEqualTo(question.getId());
         assertThat(result.conceptId()).isEqualTo(unseen.getId());
         assertThat(result.reason()).isEqualTo(Reason.UNASSESSED_CONCEPT);
@@ -143,8 +146,8 @@ class RecommendationServiceTest {
     void skipsUnassessedWithoutAvailableQuestion() {
         Fixture f = fixture();
         concept(f.topic(), "문제가 없는 개념");
-        completionTransaction.execute(() -> knowledge.applyInCurrentTransaction(completed(f, Verdict.INCORRECT)));
-        RecommendationResult result = recommendations.recommendation(f.member().getId());
+        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(f, Verdict.INCORRECT)));
+        RecommendationResult result = recommendationService.recommendation(f.member().getId());
         assertThat(result.questionId()).isEqualTo(f.question().getId());
         assertThat(result.reason()).isEqualTo(Reason.LOW_MASTERY);
     }
@@ -156,35 +159,37 @@ class RecommendationServiceTest {
         Question second = question(f.admin(), f.topic(), f.concept(), "두 번째 문제");
         Question third = question(f.admin(), f.topic(), f.concept(), "세 번째 문제");
         Evaluation firstAnswer = pending(f);
-        assertThat(recommendations.recommendation(f.member().getId()).questionId()).isEqualTo(second.getId());
+        assertThat(recommendationService.recommendation(f.member().getId()).questionId()).isEqualTo(second.getId());
         pending(f.member(), second);
         Evaluation thirdAnswer = pending(f.member(), third);
         // submittedAt은 생성 시 확정되는 불변 값이므로 과거 풀이 이력의 시간 경계만 SQL로 준비한다.
-        jdbc.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(2),
+        jdbcTemplate.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(2),
                 thirdAnswer.getAnswer().getId());
-        jdbc.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(1),
+        jdbcTemplate.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(1),
                 firstAnswer.getAnswer().getId());
-        assertThat(recommendations.recommendation(f.member().getId()).questionId()).isEqualTo(third.getId());
+        assertThat(recommendationService.recommendation(f.member().getId()).questionId()).isEqualTo(third.getId());
     }
 
     @Test
     @DisplayName("문제에 연결된 개념 중 미평가와 개념 식별자 순으로 추천 이유를 선택한다")
     void choosesBestConceptWithinQuestion() {
         Fixture f = fixture();
-        completionTransaction.execute(() -> knowledge.applyInCurrentTransaction(completed(f, Verdict.CORRECT)));
+        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(f, Verdict.CORRECT)));
         Concept second = concept(f.topic(), "두 번째 개념");
         Concept third = concept(f.topic(), "세 번째 개념");
         // Published questions are immutable, so a new reviewed question owns this concept set.
         Question question = Question.builder().topic(f.topic()).createdByMember(f.admin())
                 .difficulty(QuestionDifficulty.BASIC)
                 .content("여러 개념 문제").referenceAnswer("답").build();
-        question.addConcept(f.concept(), new BigDecimal("0.34"), true);
-        question.addConcept(third, new BigDecimal("0.33"), true);
-        question.addConcept(second, new BigDecimal("0.33"), true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(f.concept(), new BigDecimal("0.34"), true),
+                new QuestionConceptAssignment(third, new BigDecimal("0.33"), true),
+                new QuestionConceptAssignment(second, new BigDecimal("0.33"), true)
+        ));
         question.review(f.admin());
         question.publish();
-        questions.save(question);
-        RecommendationResult result = recommendations.recommendation(f.member().getId());
+        questionRepository.save(question);
+        RecommendationResult result = recommendationService.recommendation(f.member().getId());
         assertThat(result.questionId()).isEqualTo(question.getId());
         assertThat(result.conceptId()).isEqualTo(second.getId());
     }
@@ -194,16 +199,16 @@ class RecommendationServiceTest {
     void excludesUnavailableQuestions() {
         Fixture f = fixture();
         f.question().retire();
-        questions.save(f.question());
+        questionRepository.save(f.question());
         Concept inactiveConcept = concept(f.topic(), "비활성");
         question(f.admin(), f.topic(), inactiveConcept, "비활성 개념 문제");
         inactiveConcept.deactivate();
-        concepts.save(inactiveConcept);
-        Topic otherTopic = topics.save(Topic.builder().code("DISABLED").name("비활성").build());
+        conceptRepository.save(inactiveConcept);
+        Topic otherTopic = topicRepository.save(Topic.builder().code("DISABLED").name("비활성").build());
         question(f.admin(), otherTopic, concept(otherTopic, "개념"), "비활성 주제 문제");
         otherTopic.deactivate();
-        topics.save(otherTopic);
-        RecommendationResult result = recommendations.recommendation(f.member().getId());
+        topicRepository.save(otherTopic);
+        RecommendationResult result = recommendationService.recommendation(f.member().getId());
         assertThat(result.reason()).isEqualTo(Reason.NO_AVAILABLE_QUESTION);
         assertThat(result.questionId()).isNull();
         assertThat(result.title()).isNull();
@@ -213,9 +218,9 @@ class RecommendationServiceTest {
     }
 
     private Fixture fixture() {
-        Member member = members.save(Member.builder().nickname("학습자").build());
-        Member admin = members.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topics.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
@@ -224,23 +229,25 @@ class RecommendationServiceTest {
                 .content("스레드는 프로세스 자원을 공유하는 실행 단위다.").build();
         document.review(admin);
         document.publish();
-        document = documents.save(document);
-        KnowledgeChunk chunk = chunks.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
+        document = knowledgeDocumentRepository.save(document);
+        KnowledgeChunk chunk = knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
                 document.getContent(), "test-v1"));
         return new Fixture(member, admin, topic, concept, question, chunk);
     }
 
     private Concept concept(Topic topic, String name) {
-        return concepts.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
+        return conceptRepository.save(Concept.builder().topic(topic).code(UUID.randomUUID().toString()).name(name).build());
     }
 
     private Question question(Member admin, Topic topic, Concept concept, String content) {
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
                 .content(content).referenceAnswer("프로세스 자원을 공유하는 실행 단위").build();
-        question.addConcept(concept, BigDecimal.ONE, true);
+        question.replaceConcepts(List.of(
+                new QuestionConceptAssignment(concept, BigDecimal.ONE, true)
+        ));
         question.review(admin);
         question.publish();
-        return questions.save(question);
+        return questionRepository.save(question);
     }
 
     private Evaluation pending(Fixture fixture) {
@@ -248,9 +255,9 @@ class RecommendationServiceTest {
     }
 
     private Evaluation pending(Member member, Question question) {
-        Answer answer = answers.save(Answer.builder().member(member).question(question)
+        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
                 .requestId(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
-        return evaluations.save(Evaluation.builder().answer(answer).build());
+        return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
     private Long completed(Fixture fixture, Verdict verdict) {
@@ -260,10 +267,10 @@ class RecommendationServiceTest {
     }
 
     private void complete(Long id, Fixture fixture, Verdict verdict) {
-        transactions.executeWithoutResult(status -> {
-            Evaluation evaluation = evaluations.findById(id).orElseThrow();
+        transactionTemplate.executeWithoutResult(status -> {
+            Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
             evaluation.completeWithEvidence(result(fixture, verdict),
-                    List.of(chunks.findById(fixture.chunk().getId()).orElseThrow()));
+                    List.of(knowledgeChunkRepository.findById(fixture.chunk().getId()).orElseThrow()));
         });
     }
 

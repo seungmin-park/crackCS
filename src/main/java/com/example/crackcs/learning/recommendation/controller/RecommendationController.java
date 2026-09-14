@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class RecommendationController {
-    private final RecommendationService service;
+    private final RecommendationService recommendationService;
 
     @GetMapping("/api/recommendations/next-question")
     public RecommendationResponse recommendation(@AuthenticationPrincipal AuthenticatedMember member) {
-        return RecommendationResponse.from(service.recommendation(member.memberId()));
+        return RecommendationResponse.from(recommendationService.recommendation(member.memberId()));
     }
 }

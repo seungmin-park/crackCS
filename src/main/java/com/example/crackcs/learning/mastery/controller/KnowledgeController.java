@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class KnowledgeController {
-    private final KnowledgeQueryService service;
+    private final KnowledgeQueryService knowledgeQueryService;
 
     @GetMapping("/api/members/me/knowledge-states")
     public KnowledgeStatesResponse knowledgeStates(@AuthenticationPrincipal AuthenticatedMember member) {
-        return KnowledgeStatesResponse.from(service.knowledgeStates(member.memberId()));
+        return KnowledgeStatesResponse.from(knowledgeQueryService.knowledgeStates(member.memberId()));
     }
 }

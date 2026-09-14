@@ -8,10 +8,10 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class MasteryEvaluatedConceptAdapter implements EvaluatedConceptApplicationPort {
-    private final KnowledgeStateService knowledgeStates;
+    private final KnowledgeStateService knowledgeStateService;
 
     @Override
     public void applyInCurrentTransaction(Long evaluationId) {
-        knowledgeStates.applyInCurrentTransaction(evaluationId);
+        knowledgeStateService.applyInCurrentTransaction(evaluationId);
     }
 }

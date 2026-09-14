@@ -21,17 +21,17 @@ public class DefaultAdminEvaluationService implements AdminEvaluationService {
     private static final List<EvaluationStatus> REVIEW_STATUSES =
             List.of(EvaluationStatus.FAILED, EvaluationStatus.NEEDS_REVIEW);
 
-    private final EvaluationRepository evaluations;
+    private final EvaluationRepository evaluationRepository;
 
     @Override
     public Page<AdminEvaluationSummary> findFailures(EvaluationStatus status, Pageable pageable) {
         List<EvaluationStatus> statuses = status == null ? REVIEW_STATUSES : List.of(requireReviewStatus(status));
-        return evaluations.findByStatusIn(statuses, pageable).map(this::summary);
+        return evaluationRepository.findByStatusIn(statuses, pageable).map(this::summary);
     }
 
     @Override
     public AdminEvaluationDetail findFailureById(Long evaluationId) {
-        Evaluation evaluation = evaluations.findAdminDetailById(evaluationId)
+        Evaluation evaluation = evaluationRepository.findAdminDetailById(evaluationId)
                 .filter(candidate -> REVIEW_STATUSES.contains(candidate.getStatus()))
                 .orElseThrow(() -> new EvaluationNotFoundException(evaluationId));
         return new AdminEvaluationDetail(

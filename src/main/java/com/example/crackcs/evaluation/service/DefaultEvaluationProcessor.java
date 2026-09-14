@@ -32,11 +32,11 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 public class DefaultEvaluationProcessor implements EvaluationProcessor {
-    private final EvaluationRepository evaluations;
+    private final EvaluationRepository evaluationRepository;
     private final ObjectProvider<EvaluationPort> ports;
-    private final TransactionTemplate transactions;
-    private final KnowledgeRetrievalService retrievalService;
-    private final KnowledgeChunkRepository chunks;
+    private final TransactionTemplate transactionTemplate;
+    private final KnowledgeRetrievalService knowledgeRetrievalService;
+    private final KnowledgeChunkRepository knowledgeChunkRepository;
     private final EvaluationBudgetGuard budgetGuard;
     private final EvaluatedConceptApplicationPort evaluatedConcepts;
     private final EvaluationCompletionTransaction completionTransactions;
@@ -57,13 +57,13 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
 
     private void processSerially(Long evaluationId) {
         Optional<PendingEvaluation> claimed = Objects.requireNonNull(
-                transactions.execute(status -> claim(evaluationId)),
+                transactionTemplate.execute(status -> claim(evaluationId)),
                 "claim transaction must return an Optional");
         if (claimed.isEmpty()) {
             return;
         }
         PendingEvaluation pending = claimed.orElseThrow();
-        RetrievalResult retrieval = retrievalService.retrieve(pending.retrievalQuery(), 5);
+        RetrievalResult retrieval = knowledgeRetrievalService.retrieve(pending.retrievalQuery(), 5);
         if (retrieval.insufficientEvidence()) {
             requireReviewIfOwned(evaluationId, "EVIDENCE_NOT_FOUND");
             return;
@@ -116,7 +116,7 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
     }
 
     private Optional<PendingEvaluation> claim(Long evaluationId) {
-        Optional<Evaluation> found = evaluations.findLockedById(evaluationId);
+        Optional<Evaluation> found = evaluationRepository.findLockedById(evaluationId);
         if (found.isEmpty()) {
             return Optional.empty();
         }
@@ -146,8 +146,8 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
             EvaluationResult result,
             List<Long> providedChunkIds
     ) {
-        List<KnowledgeChunk> providedChunks = chunks.findAllById(providedChunkIds);
-        evaluations.findLockedById(evaluationId)
+        List<KnowledgeChunk> providedChunks = knowledgeChunkRepository.findAllById(providedChunkIds);
+        evaluationRepository.findLockedById(evaluationId)
                 .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
                 .ifPresent(evaluation -> {
                     evaluation.completeWithEvidence(result, providedChunks);
@@ -156,19 +156,19 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
     }
 
     private void requireReviewIfOwned(Long evaluationId, String safeReason) {
-        transactions.executeWithoutResult(status -> evaluations.findLockedById(evaluationId)
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findLockedById(evaluationId)
                 .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
                 .ifPresent(evaluation -> evaluation.requireReview(safeReason)));
     }
 
     private void failIfOwned(Long evaluationId, String safeReason) {
-        transactions.executeWithoutResult(status -> evaluations.findLockedById(evaluationId)
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findLockedById(evaluationId)
                 .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
                 .ifPresent(evaluation -> evaluation.fail(safeReason)));
     }
 
     private void retryOrFail(Long evaluationId, int attemptCount, String safeReason) {
-        transactions.executeWithoutResult(status -> evaluations.findLockedById(evaluationId)
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findLockedById(evaluationId)
                 .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
                 .ifPresent(evaluation -> {
                     if (evaluation.hasExhaustedAttempts()) {

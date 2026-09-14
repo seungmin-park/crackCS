@@ -21,19 +21,19 @@ public class DefaultKnowledgeChunkService implements KnowledgeChunkService {
 
     static final String POLICY_VERSION = "paragraph-1000-overlap-150-v1";
 
-    private final KnowledgeChunkRepository chunks;
-    private final KnowledgeDocumentRepository documents;
+    private final KnowledgeChunkRepository knowledgeChunkRepository;
+    private final KnowledgeDocumentRepository knowledgeDocumentRepository;
 
     @Override
     @Transactional
     public ChunkGenerationResult generateChunks(Long documentId) {
-        KnowledgeDocument document = documents.findById(documentId)
+        KnowledgeDocument document = knowledgeDocumentRepository.findById(documentId)
                 .orElseThrow(() -> new KnowledgeDocumentNotFoundException(documentId));
         if (document.getStatus() != KnowledgeDocumentStatus.PUBLISHED) {
             throw new InvalidContentStateException("PUBLISHED 문서만 Chunk를 생성할 수 있습니다.");
         }
         String generationKey = generationKey(document);
-        List<KnowledgeChunk> existing = chunks.findAllByDocument_IdOrderBySequenceNo(documentId);
+        List<KnowledgeChunk> existing = knowledgeChunkRepository.findAllByDocument_IdOrderBySequenceNo(documentId);
         if (!existing.isEmpty()) {
             return new ChunkGenerationResult(existing.getFirst().getGenerationKey(), true, existing);
         }
@@ -48,15 +48,15 @@ public class DefaultKnowledgeChunkService implements KnowledgeChunkService {
                         POLICY_VERSION
                 ))
                 .toList();
-        return new ChunkGenerationResult(generationKey, false, chunks.saveAll(created));
+        return new ChunkGenerationResult(generationKey, false, knowledgeChunkRepository.saveAll(created));
     }
 
     @Override
     public List<KnowledgeChunk> findByDocumentId(Long documentId) {
-        if (!documents.existsById(documentId)) {
+        if (!knowledgeDocumentRepository.existsById(documentId)) {
             throw new KnowledgeDocumentNotFoundException(documentId);
         }
-        return chunks.findAllByDocument_IdOrderBySequenceNo(documentId);
+        return knowledgeChunkRepository.findAllByDocument_IdOrderBySequenceNo(documentId);
     }
 
     private String generationKey(KnowledgeDocument document) {

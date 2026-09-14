@@ -24,13 +24,13 @@ class EvaluationCompletionTransactionTest {
     @Autowired
     EvaluationCompletionTransaction completionTransaction;
     @Autowired
-    TopicRepository topics;
+    TopicRepository topicRepository;
     @Autowired
-    JdbcTemplate jdbc;
+    JdbcTemplate jdbcTemplate;
 
     @AfterEach
     void cleanUp() {
-        topics.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
     }
 
     @ParameterizedTest
@@ -41,26 +41,26 @@ class EvaluationCompletionTransactionTest {
         AtomicInteger attempts = new AtomicInteger();
         assertThatThrownBy(() -> completionTransaction.execute(() -> {
             attempts.incrementAndGet();
-            Topic topic = topics.save(Topic.builder().code("ROLLBACK").name("롤백 확인").build());
-            jdbc.update(invalidUpdate, topic.getId());
+            Topic topic = topicRepository.save(Topic.builder().code("ROLLBACK").name("롤백 확인").build());
+            jdbcTemplate.update(invalidUpdate, topic.getId());
         })).isInstanceOf(DataIntegrityViolationException.class);
         assertThat(attempts.get()).isEqualTo(1);
-        assertThat(topics.count()).isZero();
+        assertThat(topicRepository.count()).isZero();
     }
 
     @Test
     @DisplayName("학습 상태와 무관한 유일키 오류는 재시도 없이 부분 저장을 롤백한다")
     void doesNotRetryUnrelatedUniqueConstraint() {
-        topics.save(Topic.builder().code("DUPLICATE").name("기존 주제").build());
+        topicRepository.save(Topic.builder().code("DUPLICATE").name("기존 주제").build());
         AtomicInteger attempts = new AtomicInteger();
 
         assertThatThrownBy(() -> completionTransaction.execute(() -> {
             attempts.incrementAndGet();
-            topics.save(Topic.builder().code("ROLLBACK").name("부분 저장").build());
-            topics.save(Topic.builder().code("DUPLICATE").name("중복 주제").build());
+            topicRepository.save(Topic.builder().code("ROLLBACK").name("부분 저장").build());
+            topicRepository.save(Topic.builder().code("DUPLICATE").name("중복 주제").build());
         })).isInstanceOf(DataIntegrityViolationException.class);
 
         assertThat(attempts.get()).isEqualTo(1);
-        assertThat(topics.findAll()).extracting(Topic::getCode).containsExactly("DUPLICATE");
+        assertThat(topicRepository.findAll()).extracting(Topic::getCode).containsExactly("DUPLICATE");
     }
 }

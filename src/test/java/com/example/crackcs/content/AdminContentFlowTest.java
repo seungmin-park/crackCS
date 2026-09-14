@@ -45,7 +45,7 @@ class AdminContentFlowTest {
     @Autowired
     AuthAccountRepository authAccountRepository;
     @Autowired
-    KnowledgeDocumentRepository documentRepository;
+    KnowledgeDocumentRepository knowledgeDocumentRepository;
     @Autowired
     QuestionRepository questionRepository;
 
@@ -136,9 +136,9 @@ class AdminContentFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PUBLISHED"));
 
-        assertThat(documentRepository.findById(firstId).orElseThrow().getContent()).isEqualTo("첫 버전");
-        assertThat(documentRepository.findById(firstId).orElseThrow().getStatus().name()).isEqualTo("RETIRED");
-        assertThat(documentRepository.findById(secondId).orElseThrow().getContent()).isEqualTo("둘째 버전");
+        assertThat(knowledgeDocumentRepository.findById(firstId).orElseThrow().getContent()).isEqualTo("첫 버전");
+        assertThat(knowledgeDocumentRepository.findById(firstId).orElseThrow().getStatus().name()).isEqualTo("RETIRED");
+        assertThat(knowledgeDocumentRepository.findById(secondId).orElseThrow().getContent()).isEqualTo("둘째 버전");
     }
 
     @Test

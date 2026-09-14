@@ -15,13 +15,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/admin/evaluations")
 public class AdminEvaluationController {
 
-    private final AdminEvaluationService service;
+    private final AdminEvaluationService adminEvaluationService;
 
     @GetMapping
     public PageResponse<AdminEvaluationSummaryResponse> findFailures(
             @Valid @ModelAttribute AdminEvaluationSearchRequest request
     ) {
-        return PageResponse.from(service.findFailures(request.statusValue(), request.pageable()),
+        return PageResponse.from(adminEvaluationService.findFailures(request.statusValue(), request.pageable()),
                 AdminEvaluationSummaryResponse::from);
     }
 
@@ -29,6 +29,6 @@ public class AdminEvaluationController {
     public AdminEvaluationDetailResponse findFailureById(
             @Positive(message = "evaluationId는 양수여야 합니다.") @PathVariable Long evaluationId
     ) {
-        return AdminEvaluationDetailResponse.from(service.findFailureById(evaluationId));
+        return AdminEvaluationDetailResponse.from(adminEvaluationService.findFailureById(evaluationId));
     }
 }

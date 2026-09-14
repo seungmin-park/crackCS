@@ -17,17 +17,17 @@ import java.util.List;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DefaultLearningProgressService implements LearningProgressService {
-    private final AnswerRepository answers;
-    private final KnowledgeQueryService knowledge;
-    private final RecommendationService recommendations;
+    private final AnswerRepository answerRepository;
+    private final KnowledgeQueryService knowledgeQueryService;
+    private final RecommendationService recommendationService;
 
     @Override
     public LearningProgressResult progress(Long memberId) {
-        List<RecentEvaluation> recent = answers.findRecentEvaluations(memberId, PageRequest.of(0, 5)).stream()
+        List<RecentEvaluation> recent = answerRepository.findRecentEvaluations(memberId, PageRequest.of(0, 5)).stream()
                 .map(row -> new RecentEvaluation(row.getAnswerId(), row.getQuestionTitle(), row.getStatus(),
                         row.getVerdict(), row.getScore(), row.getSubmittedAt())).toList();
-        return new LearningProgressResult(answers.countSubmittedSince(memberId, null),
-                answers.countSubmittedSince(memberId, LocalDateTime.now().minusDays(7)), recent,
-                knowledge.knowledgeStates(memberId).topics(), recommendations.recommendation(memberId));
+        return new LearningProgressResult(answerRepository.countSubmittedSince(memberId, null),
+                answerRepository.countSubmittedSince(memberId, LocalDateTime.now().minusDays(7)), recent,
+                knowledgeQueryService.knowledgeStates(memberId).topics(), recommendationService.recommendation(memberId));
     }
 }

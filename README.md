@@ -25,6 +25,14 @@ local seed: 화면 확인용 예시 문제·관리자 계정.
 
 계정 사용 범위: local H2 전용. 운영 사용 금지.
 
+후속 질문 Worker 설정:
+
+- 기본 활성. local은 stub 생성기 사용, 실제 OpenAI 품질 검증과 구분
+- 생성기 없이 Worker만 활성화하면 시작 단계에서 설정 오류로 차단
+- 후속 생성을 사용하지 않을 때: `--crackcs.followup.worker-enabled=false`
+- 실제 생성 사용 시: `--crackcs.followup.openai.enabled=true` 및 기존 evaluation OpenAI 키 설정 필요
+- 스케줄러 기본 2개 스레드: 평가와 후속 생성의 상호 대기 완화. 처리량 보장은 별도 측정 필요
+
 프런트: 다른 터미널에서 실행. `/api` 요청은 Vite proxy를 거쳐 `http://localhost:8080`으로 전달.
 
 ```bash

@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class KnowledgeDocumentRepositoryTest {
 
     @Autowired
-    KnowledgeDocumentRepository documentRepository;
+    KnowledgeDocumentRepository knowledgeDocumentRepository;
     @Autowired
     TopicRepository topicRepository;
     @Autowired
@@ -30,9 +30,9 @@ class KnowledgeDocumentRepositoryTest {
     void rejectsDuplicateChecksum() {
         Topic topic = saveTopic();
         Member admin = saveAdmin();
-        documentRepository.save(document(topic, admin, "같은 원문"));
+        knowledgeDocumentRepository.save(document(topic, admin, "같은 원문"));
 
-        assertThatThrownBy(() -> documentRepository.saveAndFlush(document(topic, admin, "같은 원문")))
+        assertThatThrownBy(() -> knowledgeDocumentRepository.saveAndFlush(document(topic, admin, "같은 원문")))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 

@@ -11,16 +11,16 @@ import java.time.LocalDateTime;
 
 @Service
 public class DefaultEvaluationBudgetGuard implements EvaluationBudgetGuard {
-    private final EvaluationRepository evaluations;
+    private final EvaluationRepository evaluationRepository;
     private final EvaluationCostPolicy policy;
 
     public DefaultEvaluationBudgetGuard(
-            EvaluationRepository evaluations,
+            EvaluationRepository evaluationRepository,
             @Value("${crackcs.evaluation.monthly-budget-usd:30}") BigDecimal monthlyCapUsd,
             @Value("${crackcs.evaluation.input-usd-per-million-tokens:2}") BigDecimal inputPrice,
             @Value("${crackcs.evaluation.output-usd-per-million-tokens:12}") BigDecimal outputPrice
     ) {
-        this.evaluations = evaluations;
+        this.evaluationRepository = evaluationRepository;
         this.policy = new EvaluationCostPolicy(monthlyCapUsd, inputPrice, outputPrice);
     }
 
@@ -31,8 +31,8 @@ public class DefaultEvaluationBudgetGuard implements EvaluationBudgetGuard {
         LocalDateTime from = firstDay.atStartOfDay();
         LocalDateTime until = firstDay.plusMonths(1).atStartOfDay();
         return policy.canEvaluate(
-                evaluations.sumInputTokensBetween(from, until),
-                evaluations.sumOutputTokensBetween(from, until)
+                evaluationRepository.sumInputTokensBetween(from, until),
+                evaluationRepository.sumOutputTokensBetween(from, until)
         );
     }
 }
