@@ -88,4 +88,45 @@ describe("관리자 근거 문서 화면", () => {
     await flushPromises();
     expect(wrapper.text()).toContain("복구 문단");
   });
+
+  it("문단 생성 성공 뒤 늦게 끝난 기존 조회 결과를 무시한다", async () => {
+    let resolveChunks!: (value: object[]) => void;
+    api.fetchKnowledgeChunks.mockReturnValue(new Promise(resolve => { resolveChunks = resolve; }));
+    api.generateKnowledgeChunks.mockResolvedValue({
+      reused: false,
+      chunks: [{ id: 11, sequenceNo: 0, searchStatus: "INDEXED", startOffset: 0, endOffset: 4, content: "새 문단" }],
+    });
+    const wrapper = mount(AdminKnowledgeDocumentView);
+    await flushPromises();
+    await wrapper.get("button[data-document-id='1']").trigger("click");
+    await wrapper.findAll("button").find(button => button.text() === "검색 문단 생성")!.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("새 문단");
+    resolveChunks([]);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("새 문단");
+    expect(wrapper.text()).not.toContain("아직 생성된 검색 문단이 없습니다.");
+  });
+
+  it("문단 생성 성공 뒤 늦게 실패한 기존 조회 오류를 무시한다", async () => {
+    let rejectChunks!: (reason: Error) => void;
+    api.fetchKnowledgeChunks.mockReturnValue(new Promise((_, reject) => { rejectChunks = reject; }));
+    api.generateKnowledgeChunks.mockResolvedValue({
+      reused: false,
+      chunks: [{ id: 12, sequenceNo: 0, searchStatus: "INDEXED", startOffset: 0, endOffset: 4, content: "생성 문단" }],
+    });
+    const wrapper = mount(AdminKnowledgeDocumentView);
+    await flushPromises();
+    await wrapper.get("button[data-document-id='1']").trigger("click");
+    await wrapper.findAll("button").find(button => button.text() === "검색 문단 생성")!.trigger("click");
+    await flushPromises();
+
+    rejectChunks(new Error("late failure"));
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("생성 문단");
+    expect(wrapper.text()).not.toContain("검색 문단을 불러오지 못했습니다.");
+  });
 });

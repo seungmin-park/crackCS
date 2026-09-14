@@ -33,6 +33,7 @@ const chunkError = ref(false);
 const chunksLoading = ref(false);
 let listGeneration = 0;
 let selectionGeneration = 0;
+let chunkRequestGeneration = 0;
 const form = reactive({ topicId: "", title: "", sourceType: "OFFICIAL_DOC" as KnowledgeSourceType, sourceUrl: "", technologyVersion: "", licenseNote: "", content: "" });
 
 function input(): KnowledgeDocumentInput {
@@ -67,6 +68,7 @@ function changeFilter() {
 
 function select(document?: KnowledgeDocument) {
   selectionGeneration++;
+  chunkRequestGeneration++;
   selected.value = document;
   Object.assign(form, document ? {
     topicId: String(document.topicId), title: document.title, sourceType: document.sourceType,
@@ -75,20 +77,22 @@ function select(document?: KnowledgeDocument) {
   } : { topicId: "", title: "", sourceType: "OFFICIAL_DOC", sourceUrl: "", technologyVersion: "", licenseNote: "", content: "" });
   chunks.value = [];
   chunkError.value = false;
+  chunksLoading.value = false;
   if (document) void loadChunks(document.id);
 }
 
 async function loadChunks(documentId: number) {
-  const generation = selectionGeneration;
+  const selection = selectionGeneration;
+  const request = ++chunkRequestGeneration;
   chunksLoading.value = true;
   chunkError.value = false;
   try {
     const result = await fetchKnowledgeChunks(documentId);
-    if (generation === selectionGeneration && selected.value?.id === documentId) chunks.value = result;
+    if (selection === selectionGeneration && request === chunkRequestGeneration && selected.value?.id === documentId) chunks.value = result;
   } catch {
-    if (generation === selectionGeneration && selected.value?.id === documentId) chunkError.value = true;
+    if (selection === selectionGeneration && request === chunkRequestGeneration && selected.value?.id === documentId) chunkError.value = true;
   } finally {
-    if (generation === selectionGeneration && selected.value?.id === documentId) chunksLoading.value = false;
+    if (selection === selectionGeneration && request === chunkRequestGeneration && selected.value?.id === documentId) chunksLoading.value = false;
   }
 }
 
@@ -96,11 +100,19 @@ async function chunkDocument() {
   if (!selected.value) return;
   const generation = selectionGeneration;
   const targetId = selected.value.id;
+  chunkRequestGeneration++;
+  chunksLoading.value = false;
+  chunkError.value = false;
   const result = await feedback.execute(
     () => generateKnowledgeChunks(targetId),
     "검색용 문단을 생성했습니다. 같은 문서와 정책이면 기존 결과를 재사용합니다.",
   );
-  if (result && generation === selectionGeneration) chunks.value = result.chunks;
+  if (result && generation === selectionGeneration && selected.value?.id === targetId) {
+    chunkRequestGeneration++;
+    chunks.value = result.chunks;
+    chunkError.value = false;
+    chunksLoading.value = false;
+  }
 }
 
 async function submit() {
@@ -137,7 +149,7 @@ async function transition(action: "review" | "publish" | "retire") {
 }
 
 onMounted(load);
-onBeforeUnmount(() => { listGeneration++; selectionGeneration++; });
+onBeforeUnmount(() => { listGeneration++; selectionGeneration++; chunkRequestGeneration++; });
 </script>
 
 <template>
