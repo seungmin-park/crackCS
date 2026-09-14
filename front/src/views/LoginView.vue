@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { onUnmounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { ApiClientError } from "@/api/client";
@@ -12,21 +12,30 @@ const form = reactive({ email: "", password: "" });
 const errorMessage = ref("");
 const submitting = ref(false);
 const registered = route.query.registered === "true";
+let active = true;
+onUnmounted(() => { active = false; });
 
 async function submit() {
+  if (submitting.value) return;
   errorMessage.value = "";
   submitting.value = true;
+  const credentials = { ...form };
 
   try {
-    const member = await login({ ...form });
-    const redirect = typeof route.query.redirect === "string" ? route.query.redirect : member.role === "ADMIN" ? "/admin" : "/";
+    const member = await login(credentials);
+    if (!active) return;
+    const requestedRedirect = typeof route.query.redirect === "string" ? route.query.redirect : undefined;
+    const redirect = requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
+      ? requestedRedirect
+      : member.role === "ADMIN" ? "/admin" : "/";
     await router.push(redirect);
   } catch (error) {
+    if (!active) return;
     errorMessage.value = error instanceof ApiClientError
       ? error.message
       : "로그인 요청을 처리하지 못했습니다.";
   } finally {
-    submitting.value = false;
+    if (active) submitting.value = false;
   }
 }
 </script>

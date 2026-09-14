@@ -19,17 +19,17 @@ export type LoginInput = {
 };
 
 export function signUp(input: SignUpInput): Promise<Member> {
-  return post<Member>("/api/auth/sign-up", input);
+  return post<Member>("/api/auth/sign-up", input, undefined, { authentication: "anonymous" });
 }
 
 export function login(input: LoginInput): Promise<Member> {
-  return post<Member>("/api/auth/login", input);
+  return post<Member>("/api/auth/login", input, undefined, { authentication: "credentials" });
 }
 
 export function logout(): Promise<void> {
-  return post<void>("/api/auth/logout");
+  return post<void>("/api/auth/logout", undefined, undefined, { authentication: "credentials" });
 }
 
 export function fetchCurrentMember(): Promise<Member> {
-  return get<Member>("/api/members/me");
+  return get<Member>("/api/members/me", { authentication: "anonymous" });
 }

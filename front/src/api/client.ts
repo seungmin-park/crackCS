@@ -19,12 +19,28 @@ type ApiErrorBody = {
   fieldErrors?: FieldError[];
 };
 
-export async function get<T>(path: string): Promise<T> {
-  return request<T>(path, { method: "GET" });
+export type RequestAuthentication = "required" | "credentials" | "anonymous";
+
+export type RequestPolicy = {
+  authentication?: RequestAuthentication;
+};
+
+type SessionExpiredGuard = () => void | Promise<void>;
+type SessionExpiredHandler = () => SessionExpiredGuard;
+
+let sessionExpiredHandler: SessionExpiredHandler | undefined;
+
+export function setSessionExpiredHandler(handler: SessionExpiredHandler | undefined): void {
+  sessionExpiredHandler = handler;
 }
 
-export async function post<T>(path: string, body?: unknown, headers?: Record<string, string>): Promise<T> {
-  return write<T>(path, "POST", body, headers);
+export async function get<T>(path: string, policy?: RequestPolicy): Promise<T> {
+  const expirationGuard = captureExpirationGuard(policy);
+  return request<T>(path, { method: "GET" }, policy, expirationGuard);
+}
+
+export async function post<T>(path: string, body?: unknown, headers?: Record<string, string>, policy?: RequestPolicy): Promise<T> {
+  return write<T>(path, "POST", body, headers, policy);
 }
 
 export async function patch<T>(path: string, body: unknown): Promise<T> {
@@ -35,13 +51,14 @@ export async function put<T>(path: string, body: unknown): Promise<T> {
   return write<T>(path, "PUT", body);
 }
 
-async function write<T>(path: string, method: "POST" | "PATCH" | "PUT", body?: unknown, headers?: Record<string, string>): Promise<T> {
+async function write<T>(path: string, method: "POST" | "PATCH" | "PUT", body?: unknown, headers?: Record<string, string>, policy?: RequestPolicy): Promise<T> {
+  const expirationGuard = captureExpirationGuard(policy);
   const csrf = await fetchCsrfToken();
   return request<T>(path, {
     method,
     headers: { ...headers, [csrf.headerName]: csrf.token },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
+  }, policy, expirationGuard);
 }
 
 export function clearCsrfToken(): void {
@@ -57,12 +74,16 @@ let cachedCsrfToken: CsrfToken | undefined;
 
 async function fetchCsrfToken(): Promise<CsrfToken> {
   if (!cachedCsrfToken) {
-    cachedCsrfToken = await request<CsrfToken>("/api/auth/csrf", { method: "GET" });
+    cachedCsrfToken = await request<CsrfToken>("/api/auth/csrf", { method: "GET" }, { authentication: "anonymous" });
   }
   return cachedCsrfToken;
 }
 
-async function request<T>(path: string, init: RequestInit): Promise<T> {
+function captureExpirationGuard(policy: RequestPolicy = {}): SessionExpiredGuard | undefined {
+  return (policy.authentication ?? "required") === "required" ? sessionExpiredHandler?.() : undefined;
+}
+
+async function request<T>(path: string, init: RequestInit, policy: RequestPolicy = {}, expirationGuard?: SessionExpiredGuard): Promise<T> {
   const response = await fetch(path, {
     ...init,
     credentials: "same-origin",
@@ -75,11 +96,15 @@ async function request<T>(path: string, init: RequestInit): Promise<T> {
 
   if (!response.ok) {
     const body = await parseError(response);
-    throw new ApiClientError(
+    const error = new ApiClientError(
       response.status,
       body.message ?? "요청을 처리하지 못했습니다.",
       body.fieldErrors ?? [],
     );
+    if (response.status === 401 && (policy.authentication ?? "required") === "required") {
+      await expirationGuard?.();
+    }
+    throw error;
   }
 
   if (response.status === 204) {

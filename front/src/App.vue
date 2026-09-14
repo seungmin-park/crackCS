@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from "vue";
+import { onMounted, ref } from "vue";
 import { RouterView, useRouter } from "vue-router";
 
 import { useAuth } from "@/composables/useAuth";
@@ -7,12 +7,18 @@ import ThemeSwitch from "@/components/ThemeSwitch.vue";
 
 const router = useRouter();
 const { currentMember, restoreAuthentication, logout } = useAuth();
+const logoutError = ref("");
 
 onMounted(() => restoreAuthentication());
 
 async function handleLogout() {
-  await logout();
-  await router.push("/login");
+  logoutError.value = "";
+  try {
+    await logout();
+    await router.push("/login");
+  } catch {
+    logoutError.value = "로그아웃 요청을 완료하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.";
+  }
 }
 </script>
 
@@ -42,6 +48,7 @@ async function handleLogout() {
         <RouterLink class="header-join" to="/sign-up">시작하기</RouterLink>
       </template>
     </nav>
+    <p v-if="logoutError" class="form-alert" role="alert">{{ logoutError }}</p>
     </div>
   </header>
   <div id="main-content" tabindex="-1"><RouterView /></div>

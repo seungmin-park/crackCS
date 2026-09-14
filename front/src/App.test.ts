@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const member = ref<{ nickname: string; role: "USER" | "ADMIN" } | null>(null);
 const restoreAuthentication = vi.fn();
 const logout = vi.fn();
+const routerPush = vi.fn();
 
 vi.mock("@/composables/useAuth", () => ({
   useAuth: () => ({
@@ -15,7 +16,7 @@ vi.mock("@/composables/useAuth", () => ({
 }));
 vi.mock("vue-router", async (importOriginal) => {
   const original = await importOriginal<typeof import("vue-router")>();
-  return { ...original, useRouter: () => ({ push: vi.fn() }) };
+  return { ...original, useRouter: () => ({ push: routerPush }) };
 });
 
 import App from "@/App.vue";
@@ -101,6 +102,8 @@ describe("애플리케이션 헤더", () => {
     member.value = null;
     restoreAuthentication.mockReset();
     restoreAuthentication.mockResolvedValue(undefined);
+    logout.mockReset();
+    routerPush.mockReset();
   });
 
   it("USER에게는 관리자 링크를 표시하지 않는다", () => {
@@ -136,5 +139,18 @@ describe("애플리케이션 헤더", () => {
       "관리",
       "로그아웃",
     ]);
+  });
+
+  it("로그아웃 네트워크 실패를 표시하고 로그인 화면으로 이동하지 않는다", async () => {
+    member.value = { nickname: "학습자", role: "USER" };
+    logout.mockRejectedValue(new Error("network down"));
+    const wrapper = mount(App, { global: { stubs: {
+      RouterLink: { template: "<a><slot /></a>" }, RouterView: true,
+    } } });
+
+    await wrapper.get("button").trigger("click");
+    await vi.waitFor(() => expect(wrapper.get("[role='alert']").text()).toContain("로그아웃"));
+
+    expect(routerPush).not.toHaveBeenCalled();
   });
 });
