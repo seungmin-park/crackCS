@@ -13,7 +13,7 @@ import { clearPendingAnswerSubmissions } from "@/composables/useAnswerSubmission
 const currentMember = ref<Member | null>(null);
 const authenticationResolved = ref(false);
 let restoring: Promise<void> | undefined;
-let loggingOut: Promise<void> | undefined;
+let loggingOut: { revision: number; id: symbol; promise: Promise<void> } | undefined;
 let authenticationRevision = 0;
 
 export function useAuth() {
@@ -57,9 +57,10 @@ export function useAuth() {
   }
 
   function logout(): Promise<void> {
-    if (loggingOut) return loggingOut;
+    if (loggingOut?.revision === authenticationRevision) return loggingOut.promise;
     const revision = ++authenticationRevision;
-    loggingOut = (async () => {
+    const id = Symbol("logout");
+    const promise = (async () => {
       try {
         try {
           await requestLogout();
@@ -68,10 +69,11 @@ export function useAuth() {
         }
         if (revision === authenticationRevision) clearAuthenticationStateWithoutInvalidation();
       } finally {
-        loggingOut = undefined;
+        if (loggingOut?.id === id) loggingOut = undefined;
       }
     })();
-    return loggingOut;
+    loggingOut = { revision, id, promise };
+    return promise;
   }
 
   function clearAuthenticationState(): void {

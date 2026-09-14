@@ -168,6 +168,33 @@ describe("인증 상태 composable", () => {
     expect(auth.currentMember.value?.nickname).toBe("회원");
   });
 
+  it("이전 세대 로그아웃 중 새 로그인 뒤 요청한 로그아웃은 별도 요청으로 새 세션을 정리한다", async () => {
+    requestLogin
+      .mockResolvedValueOnce({ id: 1, nickname: "기존", role: "USER", status: "ACTIVE" })
+      .mockResolvedValueOnce({ id: 2, nickname: "새 로그인", role: "USER", status: "ACTIVE" });
+    let resolveFirstLogout!: () => void;
+    let resolveSecondLogout!: () => void;
+    requestLogout
+      .mockReturnValueOnce(new Promise<void>((resolve) => { resolveFirstLogout = resolve; }))
+      .mockReturnValueOnce(new Promise<void>((resolve) => { resolveSecondLogout = resolve; }));
+    const { useAuth } = await import("@/composables/useAuth");
+    const auth = useAuth();
+    await auth.login({ email: "old@example.com", password: "old-password" });
+
+    const firstLogout = auth.logout();
+    await auth.login({ email: "new@example.com", password: "new-password" });
+    const secondLogout = auth.logout();
+    expect(requestLogout).toHaveBeenCalledTimes(2);
+    resolveFirstLogout();
+    await firstLogout;
+    const duplicateSecondLogout = auth.logout();
+    resolveSecondLogout();
+    await Promise.all([secondLogout, duplicateSecondLogout]);
+
+    expect(requestLogout).toHaveBeenCalledTimes(2);
+    expect(auth.currentMember.value).toBeNull();
+  });
+
   it("로그아웃의 확인된 401은 로컬 인증 상태를 정리한다", async () => {
     const { ApiClientError } = await import("@/api/client");
     requestLogin.mockResolvedValue({ id: 1, nickname: "회원", role: "USER", status: "ACTIVE" });
