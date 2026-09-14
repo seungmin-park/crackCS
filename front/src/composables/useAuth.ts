@@ -22,14 +22,15 @@ export function useAuth() {
     restoring = (async () => {
       try {
         currentMember.value = await fetchCurrentMember();
+        authenticationResolved.value = true;
       } catch (error) {
         if (error instanceof ApiClientError && error.status === 401) {
           currentMember.value = null;
+          authenticationResolved.value = true;
         } else {
           throw error;
         }
       } finally {
-        authenticationResolved.value = true;
         restoring = undefined;
       }
     })();
