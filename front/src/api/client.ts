@@ -102,7 +102,11 @@ async function request<T>(path: string, init: RequestInit, policy: RequestPolicy
       body.fieldErrors ?? [],
     );
     if (response.status === 401 && (policy.authentication ?? "required") === "required") {
-      await expirationGuard?.();
+      try {
+        await expirationGuard?.();
+      } catch {
+        // Session cleanup and navigation are best-effort side effects; the HTTP error is authoritative.
+      }
     }
     throw error;
   }

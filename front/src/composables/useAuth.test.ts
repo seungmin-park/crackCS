@@ -150,6 +150,24 @@ describe("인증 상태 composable", () => {
     expect(auth.currentMember.value?.nickname).toBe("회원");
   });
 
+  it("동시에 요청한 로그아웃은 하나의 서버 요청을 공유한다", async () => {
+    requestLogin.mockResolvedValue({ id: 1, nickname: "회원", role: "USER", status: "ACTIVE" });
+    let rejectLogout!: (error: Error) => void;
+    requestLogout.mockReturnValue(new Promise<void>((_resolve, reject) => { rejectLogout = reject; }));
+    const { useAuth } = await import("@/composables/useAuth");
+    const auth = useAuth();
+    await auth.login({ email: "user@example.com", password: "password" });
+
+    const first = auth.logout();
+    const second = auth.logout();
+    rejectLogout(new Error("network down"));
+
+    await expect(first).rejects.toThrow("network down");
+    await expect(second).rejects.toThrow("network down");
+    expect(requestLogout).toHaveBeenCalledOnce();
+    expect(auth.currentMember.value?.nickname).toBe("회원");
+  });
+
   it("로그아웃의 확인된 401은 로컬 인증 상태를 정리한다", async () => {
     const { ApiClientError } = await import("@/api/client");
     requestLogin.mockResolvedValue({ id: 1, nickname: "회원", role: "USER", status: "ACTIVE" });

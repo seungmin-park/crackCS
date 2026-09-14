@@ -13,6 +13,7 @@ import { clearPendingAnswerSubmissions } from "@/composables/useAnswerSubmission
 const currentMember = ref<Member | null>(null);
 const authenticationResolved = ref(false);
 let restoring: Promise<void> | undefined;
+let loggingOut: Promise<void> | undefined;
 let authenticationRevision = 0;
 
 export function useAuth() {
@@ -55,14 +56,22 @@ export function useAuth() {
     return member;
   }
 
-  async function logout(): Promise<void> {
+  function logout(): Promise<void> {
+    if (loggingOut) return loggingOut;
     const revision = ++authenticationRevision;
-    try {
-      await requestLogout();
-    } catch (error) {
-      if (!(error instanceof ApiClientError && error.status === 401)) throw error;
-    }
-    if (revision === authenticationRevision) clearAuthenticationStateWithoutInvalidation();
+    loggingOut = (async () => {
+      try {
+        try {
+          await requestLogout();
+        } catch (error) {
+          if (!(error instanceof ApiClientError && error.status === 401)) throw error;
+        }
+        if (revision === authenticationRevision) clearAuthenticationStateWithoutInvalidation();
+      } finally {
+        loggingOut = undefined;
+      }
+    })();
+    return loggingOut;
   }
 
   function clearAuthenticationState(): void {
@@ -77,15 +86,11 @@ export function useAuth() {
     clearCsrfToken();
   }
 
-  function expireSession(): void {
-    clearAuthenticationState();
-  }
-
   function captureSessionExpiration(): () => boolean {
     const revision = authenticationRevision;
     return () => {
       if (revision !== authenticationRevision) return false;
-      expireSession();
+      clearAuthenticationState();
       return true;
     };
   }
@@ -97,7 +102,6 @@ export function useAuth() {
     login,
     logout,
     clearAuthenticationState,
-    expireSession,
     captureSessionExpiration,
   };
 }

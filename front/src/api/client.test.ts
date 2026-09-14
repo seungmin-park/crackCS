@@ -47,4 +47,19 @@ describe("HTTP 인증 만료 경계", () => {
       .resolves.toEqual({ value: "ok" });
     expect(expired).not.toHaveBeenCalled();
   });
+
+  it("세션 만료 후속 처리 실패가 원래 401 오류를 덮지 않는다", async () => {
+    const navigationFailure = new Error("navigation failed");
+    setSessionExpiredHandler(() => async () => { throw navigationFailure; });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ message: "인증 필요" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    })));
+
+    await expect(get("/api/questions", { authentication: "required" })).rejects.toMatchObject({
+      name: "ApiClientError",
+      status: 401,
+      message: "인증 필요",
+    });
+  });
 });

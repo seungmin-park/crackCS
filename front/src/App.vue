@@ -8,16 +8,21 @@ import ThemeSwitch from "@/components/ThemeSwitch.vue";
 const router = useRouter();
 const { currentMember, restoreAuthentication, logout } = useAuth();
 const logoutError = ref("");
+const loggingOut = ref(false);
 
 onMounted(() => restoreAuthentication());
 
 async function handleLogout() {
+  if (loggingOut.value) return;
   logoutError.value = "";
+  loggingOut.value = true;
   try {
     await logout();
     await router.push("/login");
   } catch {
     logoutError.value = "로그아웃 요청을 완료하지 못했습니다. 연결을 확인하고 다시 시도해 주세요.";
+  } finally {
+    loggingOut.value = false;
   }
 }
 </script>
@@ -41,7 +46,9 @@ async function handleLogout() {
         </template>
         <RouterLink v-if="currentMember.role === 'USER'" to="/answers">답변 이력</RouterLink>
         <RouterLink v-if="currentMember.role === 'ADMIN'" to="/admin">관리</RouterLink>
-        <button class="header-text-button" type="button" @click="handleLogout">로그아웃</button>
+        <button class="header-text-button" type="button" :disabled="loggingOut" @click="handleLogout">
+          {{ loggingOut ? "로그아웃 중" : "로그아웃" }}
+        </button>
       </template>
       <template v-else>
         <RouterLink class="header-login" to="/login">로그인</RouterLink>

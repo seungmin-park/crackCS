@@ -153,4 +153,19 @@ describe("애플리케이션 헤더", () => {
 
     expect(routerPush).not.toHaveBeenCalled();
   });
+
+  it("로그아웃 처리 중 버튼을 비활성화한다", async () => {
+    member.value = { nickname: "학습자", role: "USER" };
+    let resolveLogout!: () => void;
+    logout.mockReturnValue(new Promise<void>((resolve) => { resolveLogout = resolve; }));
+    const wrapper = mount(App, { global: { stubs: {
+      RouterLink: { template: "<a><slot /></a>" }, RouterView: true,
+    } } });
+
+    await wrapper.get("button").trigger("click");
+
+    expect(wrapper.get("button").attributes("disabled")).toBeDefined();
+    resolveLogout();
+    await vi.waitFor(() => expect(routerPush).toHaveBeenCalledWith("/login"));
+  });
 });
