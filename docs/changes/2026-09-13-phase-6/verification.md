@@ -52,7 +52,7 @@ HTTP 계약:
 패키지 책임:
 
 - `content.knowledge`: 평가 근거 문서와 청크
-- `learning.knowledge`: 회원별 개념 상태와 조회
+- `learning.mastery`: 회원별 개념 상태와 조회
 - `learning.recommendation`: 추천 후보와 우선순위
 - `learning.progress`: 학습 현황 조합
 - `evaluation.service`: 평가 완료 트랜잭션과 재시도 조정

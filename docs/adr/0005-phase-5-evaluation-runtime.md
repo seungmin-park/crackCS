@@ -133,6 +133,6 @@ DB lease 선택 이유:
 
 - 현재 자동 검증: chunk 멱등성, 검색 필터·점수, strict schema, lease 재수령, retry, Evidence 연결, 비용 계산
 - 검색 실측: [개선 전](../evaluation/reference-v1/benchmarks/retrieval-baseline.json)과 [현재](../evaluation/reference-v1/benchmarks/retrieval-improved.json) 스냅샷. H2·PostgreSQL K=5 Recall 86.67% → 100%, 지정 정답 외 비율 57.19% → 0%. 근거와 기준답안 문구가 가까운 회귀 자료이며 독립 성능 인증 아님
-- 환경 의존 검증: `postgresTest`의 PostgreSQL 17 schema·query·답변 평가 저장/중복 처리·검색 측정 33개 통과. 초기 Docker 환경 실패는 과거 기준선에 보존, 운영 배포·migration·부하 검증은 별도
+- 환경 의존 검증: `postgresTest`의 PostgreSQL 17 schema·query·답변 평가 저장/중복 처리·검색 측정 37개 통과. 초기 Docker 환경 실패는 과거 기준선에 보존, 운영 배포·migration·부하 검증은 별도
 - 출시 전 필수: Terra와 Luna의 동일 60개 골든 세트 실측, 300회 schema·지연 측정
 - 가격 확인: [OpenAI 모델 문서](https://developers.openai.com/api/docs/models/gpt-5.6-terra)
