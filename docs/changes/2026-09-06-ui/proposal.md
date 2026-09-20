@@ -91,7 +91,6 @@ CrackCS의 제안 영역
 - [A 문제집 시안](assets/a-question-library.png)
 - [B 답변 작업실 시안](assets/b-answer-workspace.png)
 - [C 학습 기록장 시안](assets/c-learning-ledger.png)
-- [생성 및 수정 프롬프트](assets/prompts.md)
 
 이미지 검토에서 발견한 구현 시 보정 사항: A의 ‘학습 노트’ 안내는 별도 노트 기능을 추가하자는 결정이 아니므로 첫 구현에서는 제거한다. A 이미지의 ‘보통/어려움’은 현재 API 레이블인 ‘기본/중급/심화’로 통일한다. 로그인 상태와 메뉴도 실제 라우팅 정책에 맞춘다. 페이지 이동과 전체 건수는 이미지에 생략되었지만 구현 요구사항에 포함한다.
 
