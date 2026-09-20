@@ -1,1046 +1,226 @@
-# CrackCS 구현 작업 목록
+# CrackCS 구현 작업
 
-> 기준 문서: [개발 계획](plan.md)\
-> 제품 요구사항: [제품 기능 명세서](../product/spec.md)\
-> 데이터 설계: [도메인 모델 및 ERD](../architecture/domain-model-and-erd.md)
+## 현재 상태
 
-## 1. 사용 방법
+| Phase | 상태 | 남은 핵심 |
+|---|---|---|
+| 0 개발 기반 | 부분 완료 | 공통 오류 계약, 실행 환경 문서, CI, health |
+| 1 공개 문제 | 완료 | Phase 8 회귀만 남음 |
+| 2 인증·권한 | 완료 | 운영 보안 점검과 분산 rate limit |
+| 3 콘텐츠 운영 | 완료 | 동시 버전 생성·공개 경계 보강 |
+| 4 답변·평가 골격 | 완료 | 실제 provider 장애 E2E |
+| 5 Retrieval·평가 | 구현 기반 완료 | 실제 모델 비교와 출시 품질 실측 |
+| 6 개인화 | 완료 | 운영 PostgreSQL 동시성 검증 |
+| 7 후속 질문 | 완료 | 실제 provider·운영 흐름 검증 |
+| 8 운영 안정화 | 미착수 | E2E, 보안, 장애, 관측, 성능, 복구, 파일럿 |
 
-- `[ ]`는 미완료, `[x]`는 완료를 의미한다.
-- 각 작업 ID는 커밋, 이슈와 PR에서 그대로 사용한다. 예: `P2-T04 로그인 구현`.
-- 하위 항목과 검증 항목이 모두 끝난 뒤 상위 작업을 완료 처리한다.
-- `Phase Gate`를 모두 통과하기 전에는 다음 Phase의 기능 구현을 시작하지 않는다.
-- 요구사항이 바뀌면 `spec.md`를 먼저 수정하고 이 문서의 요구사항 매핑을 갱신한다.
-- 기술 선택이 바뀌어도 기능의 인수 조건은 임의로 변경하지 않는다.
+현재 우선순위:
 
 ```text
-작업 구현
-   ↓
-자동 테스트
-   ↓
-브라우저 또는 API 재현
-   ↓
-문서·schema 정책 갱신
-   ↓
-Phase Gate 체크
+Phase 5 실제 모델 품질 실측
+             ↓
+Phase 0 운영 기반 부채 정리
+             ↓
+Phase 8 운영 검증과 제한 파일럿
 ```
 
-## 2. 현재 기준선
+제품 요구의 단일 기준은 [제품 명세](../product/spec.md), 구현 순서와 의존성은 [개발 계획](plan.md), 평가 정답과 실행법은 [reference-v1](../evaluation/reference-v1/README.md) 참조.
 
-- [x] Java 21과 Spring Boot 4.1.1 프로젝트 골격이 존재한다.
-- [x] Spring MVC, Spring Data JPA와 H2 의존성이 존재한다.
-- [x] Vue 3.5, TypeScript 6과 Vite 8 프로젝트 골격이 존재한다.
-- [x] 백엔드 기본 context-load 테스트 파일이 존재한다.
-- [x] 현재 백엔드 테스트가 실제로 통과하는지 확인한다.
-- [x] 현재 프런트 type-check와 production build가 통과하는지 확인한다.
-- [x] 로컬 실행 절차와 필수 도구 버전을 README에 기록한다.
+## 완료 Phase 요약
 
-## 3. 전체 진행 현황
+| Phase | 결과 | 검증 근거 |
+|---|---|---|
+| 1 | 공개 문제 목록·상세, 공개 상태 필터, 내부 평가 필드 차단 | 제품 명세와 자동 테스트 |
+| 2 | 세션 인증, 회원가입·로그인·로그아웃, USER·ADMIN 경계 | [ADR-0001](../adr/0001-session-based-authentication.md), [ADR-0002](../adr/0002-password-policy.md), [ADR-0003](../adr/0003-authentication-security-baseline.md) |
+| 3 | Topic·Concept·문서·문제의 관리자 등록·검수·공개·폐기 | 제품 명세와 자동 테스트 |
+| 4 | 답변 저장, 평가 상태, 멱등 접수, 이력·상세 화면 | [Phase 4 검증](../changes/2026-09-07-phase-4/verification.md) |
+| 5 구현 기반 | Chunk, retrieval, 구조화 평가, worker, 근거 저장, 관리자 실패 조회 | [Phase 5 검증](../changes/2026-09-08-phase-5/verification.md), [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md) |
+| 6 | Knowledge State, 개인 추천, 학습 현황·지도, 동시 반영 방어 | [Phase 6 검증](../changes/2026-09-13-phase-6/verification.md) |
+| 7 | 후속 질문 생성·조회·답변·재평가, 다음 기본 문제 연결 | 제품 명세와 관련 자동 테스트 |
 
-- [ ] Phase 0 — 개발 기반과 결정 기록
-- [x] Phase 1 — 공개 문제 조회 최소 제품
-- [x] Phase 2 — 회원 인증과 관리자 경계
-- [x] Phase 3 — 관리자 콘텐츠 운영
-- [x] Phase 4 — 답변과 평가 상태 골격
-- [ ] Phase 5 — Knowledge Retrieval과 실제 AI 평가
-- [x] Phase 6 — Knowledge State와 개인 추천
-- [x] Phase 7 — 후속 질문 학습 루프
-- [ ] Phase 8 — 운영 안정화와 파일럿
+완료 Phase의 상세 체크리스트는 반복하지 않는다. 현재 계약은 코드·테스트·제품 명세, 당시 핵심 증거는 `docs/changes/`가 소유한다.
 
-## API URI 구현 체크리스트
+## 다음 작업
 
-전체 계약과 상태 코드는 [제품 기능 명세서의 API URI](../product/spec.md#12-api-uri)를 기준으로 한다.
+### Phase 5 실제 모델 품질 Gate
 
-### Phase 0 시스템
+검수 완료 원본과 자동 지표 계산은 준비됨. 실제 provider 호출이 필요한 항목만 미완료.
 
-- [ ] `GET /api/health` — PUBLIC, 애플리케이션 상태 확인
+- [ ] 평가 모델 후보를 같은 `reference-v1` 입력으로 비교
+- [ ] 모델·프롬프트·평가 규칙 버전 고정
+- [ ] 전체 판정 일치율과 false-correct 비율 측정
+- [ ] 근거 인용 유효성, schema 위반, timeout·429·5xx 기록
+- [ ] 비용과 처리 시간 측정
+- [ ] 출시 임계값과 실측 결과 기록
+- [ ] `AC-002`, `AC-003`, `AC-007`의 실제 provider 경로 확인
+- [ ] 골든 평가 세트 출시 품질 Gate 판정
 
-### Phase 1·2 학습자와 인증
+완료 조건:
 
-- [x] `POST /api/auth/sign-up` — PUBLIC, 회원가입
-- [x] `POST /api/auth/login` — PUBLIC, 로그인
-- [x] `POST /api/auth/logout` — USER, 로그아웃
-- [x] `GET /api/members/me` — USER, 현재 회원 조회
-- [x] `GET /api/questions` — USER, 공개 문제 목록
-- [x] `GET /api/questions/{questionId}` — USER, 공개 문제 상세
+- 정답 라벨과 provider 입력 분리
+- development로 조정한 뒤 evaluation-candidate로 최종 측정
+- 자동 지표를 사람 검수 기준과 대조
+- 실패 사례를 새 회귀 사례로 반영할 때 새 버전·재검수 적용
+- 결과가 기준 미달이면 Phase 8 파일럿 진행 중단
 
-Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 Gate 전에 USER 권한으로 전환한다.
+### Phase 0 운영 기반 부채
 
-### Phase 3 관리자 콘텐츠
+#### 실행 환경
 
-- [x] `GET /api/admin/members` — ADMIN, 회원 목록
-- [x] `PATCH /api/admin/members/{memberId}/status` — ADMIN, 회원 상태 변경
-- [x] `GET /api/admin/topics` — ADMIN, Topic 목록
-- [x] `POST /api/admin/topics` — ADMIN, Topic 등록
-- [x] `GET /api/admin/topics/{topicId}` — ADMIN, Topic 상세
-- [x] `PATCH /api/admin/topics/{topicId}` — ADMIN, Topic 수정
-- [x] `POST /api/admin/topics/{topicId}/deactivate` — ADMIN, Topic 비활성화
-- [x] `GET /api/admin/concepts` — ADMIN, Concept 목록
-- [x] `POST /api/admin/concepts` — ADMIN, Concept 등록
-- [x] `GET /api/admin/concepts/{conceptId}` — ADMIN, Concept 상세
-- [x] `PATCH /api/admin/concepts/{conceptId}` — ADMIN, Concept 수정
-- [x] `POST /api/admin/concepts/{conceptId}/deactivate` — ADMIN, Concept 비활성화
-- [x] `GET /api/admin/knowledge-documents` — ADMIN, 문서 목록
-- [x] `POST /api/admin/knowledge-documents` — ADMIN, 문서 등록
-- [x] `GET /api/admin/knowledge-documents/{documentId}` — ADMIN, 문서 상세
-- [x] `PATCH /api/admin/knowledge-documents/{documentId}` — ADMIN, DRAFT 수정
-- [x] `POST /api/admin/knowledge-documents/{documentId}/versions` — ADMIN, 새 버전
-- [x] `POST /api/admin/knowledge-documents/{documentId}/review` — ADMIN, 검수
-- [x] `POST /api/admin/knowledge-documents/{documentId}/publish` — ADMIN, 공개
-- [x] `POST /api/admin/knowledge-documents/{documentId}/retire` — ADMIN, 폐기
-- [x] `GET /api/admin/questions` — ADMIN, 문제 목록
-- [x] `POST /api/admin/questions` — ADMIN, 문제 등록
-- [x] `GET /api/admin/questions/{questionId}` — ADMIN, 문제 상세
-- [x] `PATCH /api/admin/questions/{questionId}` — ADMIN, DRAFT 수정
-- [x] `PUT /api/admin/questions/{questionId}/concepts` — ADMIN, 평가 Concept 교체
-- [x] `POST /api/admin/questions/{questionId}/review` — ADMIN, 검수
-- [x] `POST /api/admin/questions/{questionId}/publish` — ADMIN, 공개
-- [x] `POST /api/admin/questions/{questionId}/retire` — ADMIN, 폐기
-- [x] `POST /api/admin/questions/{questionId}/versions` — ADMIN, 새 문제 버전
+- [ ] `GET /api/health` 구현과 공개 범위 결정
+- [ ] Java·Node·npm 최소 버전과 로컬 실행 명령을 루트 README에 기록
+- [ ] 깨끗한 checkout에서 문서만으로 백엔드·프런트 실행 확인
+- [ ] 프런트에서 백엔드 연결 방식 확정
+- [ ] `local`, `test`, 운영 profile 책임 확인
+- [ ] H2 개발 DB와 테스트 DB 격리 확인
+- [ ] 운영 비밀정보 환경 변수 이름과 예시 제공
+- [ ] API key·비밀번호·사용자 답변의 기본 로그 제외 확인
+- [ ] 테스트가 개발 DB를 읽거나 변경하지 않는지 확인
 
-### Phase 4 답변과 평가
+#### 공통 HTTP 오류
 
-- [x] `POST /api/questions/{questionId}/answers` — USER, 답변 제출과 평가 접수
-- [x] `GET /api/members/me/answers` — USER, 내 답변 목록
-- [x] `GET /api/answers/{answerId}` — USER, 내 답변 상세
-- [x] `GET /api/answers/{answerId}/evaluation` — USER, 평가 상태·결과
+- [ ] `code`, `message`, `fieldErrors`, `requestId` 계약 확정
+- [ ] validation, not found, conflict, unexpected error 변환 통일
+- [ ] 내부 예외 정보 비노출
+- [ ] 대표 오류 응답 API 문서화
+- [ ] `400`, `404`, `409`, `500` 계약 테스트
 
-### Phase 5 근거와 운영
+#### 프런트 API 경계
 
-- [x] `POST /api/admin/knowledge-documents/{documentId}/chunks` — ADMIN, Chunk 동기 생성 또는 기존 결과 재사용
-- [x] `GET /api/admin/knowledge-documents/{documentId}/chunks` — ADMIN, Chunk·작업 상태
-- [x] `GET /api/admin/evaluations` — ADMIN, 실패·검토 평가 목록
-- [x] `GET /api/admin/evaluations/{evaluationId}` — ADMIN, 평가 상세
+- [ ] 공통 API client와 오류 타입 확정
+- [ ] loading, empty, validation, server error 처리 기준 통일
+- [ ] 화면별 HTTP 오류 변환 중복 제거
+- [ ] 인증·재시도 UI의 상태 전이와 실패 경계 테스트 보강
 
-### Phase 6 개인화
+#### 자동화
 
-- [x] `GET /api/recommendations/next-question` — USER, 다음 추천 문제
-- [x] `GET /api/members/me/knowledge-states` — USER, 지식 지도
-- [x] `GET /api/members/me/progress` — USER, 학습 홈 요약
+- [ ] 백엔드 테스트 CI
+- [ ] 프런트 type-check·production build CI
+- [ ] 실패 로그와 dependency cache 정책 확인
+- [ ] ADR 템플릿과 작성 기준 정리
 
-### Phase 7 후속 질문
+### 구현 품질 보강
 
-- [x] `GET /api/answers/{answerId}/follow-up-question` — USER, 후속 질문 조회
+- [ ] Question·KnowledgeDocument 버전 생성과 공개 전환의 동시 요청 원자성
+- [ ] 로그인 시도 제한의 다중 인스턴스 저장소와 시간 경계
+- [ ] 운영 PostgreSQL에서 Knowledge State UNIQUE·낙관적 잠금 경쟁 검증
 
----
+## Phase 8
 
-## Phase 0 — 개발 기반과 결정 기록
+### P8-T01 전체 E2E 회귀
 
-목표: 모든 개발자가 같은 명령, schema와 오류 계약으로 기능을 구현할 수 있게 한다.
-
-### P0-T01 빌드 기준선 확인
-
-- [ ] `./gradlew test`를 실행하고 실패가 있으면 원인을 해결한다.
-- [ ] `front`에서 `npm run type-check`를 실행하고 실패를 해결한다.
-- [ ] `front`에서 `npm run build-only`를 실행하고 실패를 해결한다.
-- [ ] Java, Node와 npm 최소 버전을 README에 기록한다.
-- [ ] 백엔드와 프런트 로컬 실행 명령을 README에 기록한다.
-- [ ] 프런트에서 백엔드 health endpoint까지 호출하는 방법을 기록한다.
-
-검증:
-
-- [ ] 깨끗한 checkout에서 문서의 명령만으로 두 애플리케이션을 실행할 수 있다.
-
-### P0-T02 실행 환경과 설정 분리
-
-- [ ] `local`, `test` profile의 책임을 정한다.
-- [ ] H2 개발 DB와 테스트 DB 설정을 분리한다.
-- [ ] 운영 비밀정보를 환경 변수로 주입하는 이름과 규칙을 정한다.
-- [ ] 실제 비밀값 없이 `.env` 또는 설정 예시를 제공한다.
-- [ ] JPA schema 자동 생성 정책을 profile별로 명시한다.
-- [ ] API key, 비밀번호와 사용자 답변이 기본 로그에 출력되지 않게 한다.
-
-검증:
-
-- [ ] `test` 실행이 개발 DB 내용을 읽거나 변경하지 않는다.
-- [ ] 저장소에 실제 비밀값이 없음을 확인한다.
-
-### P0-T03 DB schema 관리 기반 구축
-
-- [x] 운영 DB 확정 전에는 버전 기반 migration 도구를 보류한다.
-- [x] 선택 이유와 대안을 ADR로 기록한다.
-- [x] 기본, local과 test profile의 Hibernate schema 정책을 분리한다.
-- [x] local seed를 운영 schema 관리와 분리한다.
-- [x] 기본 profile이 외부 schema와 JPA mapping을 검증하도록 설정한다.
-- [x] 빈 DB와 기존 local DB에서 애플리케이션 기동을 확인한다.
-
-검증:
-
-- [x] 빈 local DB에 같은 엔티티 mapping을 반복 적용할 수 있다.
-- [x] 기본 profile에서 외부 schema와 엔티티가 다르면 기동이 실패한다.
-
-### P0-T04 공통 API 오류 계약
-
-- [ ] 오류 응답에 사용할 필드를 확정한다: `code`, `message`, `fieldErrors`, `requestId`.
-- [ ] 공통 오류 응답 DTO를 구현한다.
-- [ ] validation 오류를 공통 형식으로 변환한다.
-- [ ] 존재하지 않는 리소스와 비즈니스 규칙 위반을 구분한다.
-- [ ] 예상하지 못한 예외의 내부 정보가 클라이언트에 노출되지 않게 한다.
-- [ ] 대표 오류 응답을 API 문서에 기록한다.
-
-검증:
-
-- [ ] validation, 404, 409와 500 응답 계약 테스트가 통과한다.
-
-### P0-T05 프런트 API 기반
-
-- [ ] Vite proxy와 서버 CORS 중 로컬 연결 방식을 결정한다.
-- [ ] 공통 API client를 만든다.
-- [ ] 성공 응답과 공통 오류 응답의 TypeScript 타입을 정의한다.
-- [ ] loading, empty, validation error와 server error 처리 기준을 정한다.
-- [ ] 화면마다 HTTP 오류 변환을 반복하지 않게 한다.
-
-검증:
-
-- [ ] 샘플 API의 성공·실패 응답이 Vue 화면에서 구분되어 보인다.
-
-### P0-T06 미결정 사항과 ADR 준비
-
-- [ ] ADR 템플릿과 저장 위치를 정한다.
-- [ ] `OQ-001` 인증 상태 유지 방식의 결정 조건을 기록한다.
-- [ ] `OQ-002` 운영 DB와 벡터 저장 방식의 결정 시점을 기록한다.
-- [ ] `OQ-008` 비밀번호 정책을 Phase 2 전에 확정한다.
-- [ ] 결정되지 않은 항목과 확정된 항목을 구분해 추적한다.
-
-### P0-T07 CI 구성
-
-- [ ] 백엔드 테스트 작업을 CI에 추가한다.
-- [ ] 프런트 type-check 작업을 CI에 추가한다.
-- [ ] 프런트 production build 작업을 CI에 추가한다.
-- [ ] 실패한 작업의 로그를 확인할 수 있게 한다.
-- [ ] dependency cache가 결과 정확성을 해치지 않는지 확인한다.
-
-### Phase 0 Gate
-
-- [ ] 새 환경에서 백엔드와 프런트가 실행된다.
-- [x] 빈 local DB에 Hibernate schema와 local seed를 적용할 수 있다.
-- [ ] 백엔드 테스트, 프런트 type-check와 build가 통과한다.
-- [ ] 공통 오류 응답 예제가 문서화되어 있다.
-- [ ] 실제 비밀정보가 저장소와 로그에 없다.
-- [ ] Phase 0 작업을 독립 커밋 단위로 정리했다.
-
----
-
-## Phase 1 — 공개 문제 조회 최소 제품
-
-대상: `FR-QUESTION-002` 일부. Phase 2 전까지 외부 환경에 배포하지 않는다.
-
-### P1-T01 Topic 도메인과 schema
-
-- [x] Topic ID, parent, code와 name 규칙을 구현한다.
-- [x] 상위 Topic이 자기 자신을 가리키지 못하게 한다.
-- [x] Topic code의 유일성을 DB에서 보장한다.
-- [x] Topic의 DB constraint와 JPA mapping을 작성한다.
-- [x] 계층 조회에 필요한 repository query를 작성한다.
-- [x] Topic 도메인·repository 테스트를 작성한다.
-
-### P1-T02 Concept 도메인과 schema
-
-- [x] Concept ID, Topic, code, name과 description 규칙을 구현한다.
-- [x] Concept code의 유일성을 DB에서 보장한다.
-- [x] 존재하는 Topic에만 Concept를 연결할 수 있게 한다.
-- [x] Concept의 DB constraint와 JPA mapping을 작성한다.
-- [x] Topic별 Concept 조회 query와 테스트를 작성한다.
-
-### P1-T03 Question과 QuestionConcept 최소 모델
-
-- [x] Question의 Topic, origin, type, difficulty, content, reference answer와 status를 구현한다.
-- [x] QuestionConcept 식별자와 Question·Concept 조합의 유일성, weight, required를 구현한다.
-- [x] weight 범위와 필수 Concept 규칙을 정의한다.
-- [x] PUBLISHED 문제는 Concept를 하나 이상 가져야 한다는 규칙을 구현한다.
-- [x] 공개 조회에서 reference answer, Concept와 weight가 노출되지 않도록 DTO를 분리한다.
-- [x] JPA mapping, DB constraint와 도메인 테스트를 작성한다.
-
-### P1-T04 초기 문제 데이터
-
-- [x] 네트워크, 운영체제 또는 Java 중 하나의 작은 Topic 구조를 선택한다.
-- [x] DRAFT, PUBLISHED와 RETIRED 문제를 각각 준비한다.
-- [x] PUBLISHED 문제에 하나 이상의 필수 Concept를 연결한다.
-- [x] seed가 운영 데이터와 혼동되지 않도록 local profile로 구분한다.
-- [x] seed를 반복 적용해도 데이터가 중복되지 않는지 확인한다.
-
-### P1-T05 공개 문제 조회 API
-
-- [x] 문제 목록 요청·응답 계약을 정의한다.
-- [x] 문제 상세 요청·응답 계약을 정의한다.
-- [x] PUBLISHED만 조회하는 application service를 구현한다.
-- [x] 목록 pagination 또는 초기 조회 한도를 적용한다.
-- [x] 존재하지 않거나 비공개인 문제는 공개 API에서 구분 없이 노출하지 않는다.
-- [x] 엔티티를 직접 직렬화하지 않는다.
-
-검증:
-
-- [x] PUBLISHED 목록·상세 API 테스트가 통과한다.
-- [x] DRAFT와 RETIRED가 조회되지 않는 테스트가 통과한다.
-- [x] 응답에 reference answer와 평가 가중치가 없는지 테스트한다.
-
-### P1-T06 문제 목록·상세 화면
-
-- [x] 문제 목록 route와 화면을 만든다.
-- [x] 문제 상세 route와 화면을 만든다.
-- [x] Topic, 난이도와 문제 본문을 표시한다.
-- [x] loading, empty, not found와 server error 상태를 표시한다.
-- [x] 화면에서 모범 답안과 내부 평가 정보에 접근하지 않는다.
-- [x] 주요 화면 상태의 프런트 테스트를 작성한다.
-
-### Phase 1 Gate
-
-- [x] 브라우저에서 PUBLISHED 문제 목록과 상세를 조회할 수 있다.
-- [x] DRAFT·RETIRED 문제는 API와 화면에 노출되지 않는다.
-- [x] 평가용 비공개 필드가 응답에 포함되지 않는다.
-- [x] repository와 API 통합 테스트가 통과한다.
-- [x] 공통 Phase 완료 정의를 통과한다.
-
----
-
-## Phase 2 — 회원 인증과 관리자 경계
-
-대상: `FR-AUTH-001`, `FR-AUTH-002`, `FR-AUTH-003`, `AC-006`.
-
-### P2-T01 인증 방식과 비밀번호 정책 결정
-
-- [x] 동일 출처 웹 배포를 기준으로 세션과 토큰을 비교한다.
-- [x] `OQ-001`을 결정하고 ADR을 작성한다.
-- [x] 비밀번호 최소 길이와 허용 규칙을 결정한다.
-- [x] `OQ-008`을 결정하고 명세에 반영한다.
-- [x] 세션 cookie를 쓴다면 Secure, HttpOnly와 SameSite 정책을 정한다.
-- [x] CSRF 처리 방식을 정한다.
-
-### P2-T02 Member와 AuthAccount 모델
-
-- [x] Member의 nickname, role, status와 audit 필드를 구현한다.
-- [x] AuthAccount의 provider, loginId, passwordHash와 lastLoginAt을 구현한다.
-- [x] `(provider, login_id)` unique constraint를 JPA schema에 추가한다.
-- [x] Member와 LOCAL AuthAccount 생성을 한 트랜잭션으로 묶는다.
-- [x] BLOCKED와 WITHDRAWN 회원의 인증 규칙을 구현한다.
-- [x] repository와 트랜잭션 통합 테스트를 작성한다.
-
-### P2-T03 Spring Security 기반
-
-- [x] Spring Security 의존성을 추가한다.
-- [x] SecurityFilterChain을 구성한다.
-- [x] 공개, 로그인 필요와 ADMIN endpoint 규칙을 명시한다.
-- [x] PasswordEncoder를 구성한다.
-- [x] 인증 실패와 접근 거부 응답을 공통 오류 계약으로 변환한다.
-- [x] 테스트 profile에서도 실제 인가 규칙을 우회하지 않게 한다.
-
-### P2-T04 회원가입 API와 화면
-
-- [x] 이메일, 비밀번호와 닉네임 입력 DTO를 정의한다.
-- [x] 이메일 형식과 비밀번호 정책 validation을 구현한다.
-- [x] 중복 LOCAL 이메일을 409로 처리한다.
-- [x] 비밀번호를 해시한 뒤 저장하고 원문 참조를 남기지 않는다.
-- [x] 회원가입 Vue 화면과 필드 오류 표시를 구현한다.
-- [x] 정상, 중복, 잘못된 입력과 트랜잭션 rollback 테스트를 작성한다.
-
-### P2-T05 로그인·로그아웃·현재 회원
-
-- [x] 로그인 API 또는 Security 인증 endpoint를 구현한다.
-- [x] 로그인 성공 시 lastLoginAt을 갱신한다.
-- [x] 로그아웃 후 기존 인증 상태를 무효화한다.
-- [x] 현재 회원과 역할 조회 API를 구현한다.
-- [x] 로그인 화면과 인증 상태 composable을 구현한다.
-- [x] 새로고침 후 인증 상태 복구를 구현한다.
-- [x] 실패, 차단 회원과 로그아웃 테스트를 작성한다.
-
-### P2-T06 관리자 인가와 라우팅
-
-- [x] `/admin/**` API를 ADMIN으로 제한한다.
-- [x] 일반 회원 데이터 API는 본인 소유권을 기준으로 조회하도록 기반을 만든다.
-- [x] Vue 관리자 route guard를 구현한다.
-- [x] 비로그인 사용자는 로그인 화면으로 안내한다.
-- [x] USER에게 관리자 링크를 숨기되 서버 인가를 최종 기준으로 유지한다.
-- [x] `AC-006` 통합 테스트를 작성한다.
-
-### P2-T07 인증 보안 최소 기준
-
-- [x] 로그인 시도 제한 기준과 구현 방식을 정한다.
-- [x] 인증 관련 로그에서 이메일 마스킹 여부를 정한다.
-- [x] 비밀번호와 session/token 값이 로그에 남지 않는지 확인한다.
-- [x] session fixation, CSRF와 CORS 경계를 테스트한다.
-- [x] 인증 오류 메시지가 계정 존재 여부를 과도하게 노출하지 않게 한다.
-
-### Phase 2 Gate
-
-- [x] 브라우저에서 회원가입·로그인·로그아웃을 완료할 수 있다.
-- [x] BLOCKED·WITHDRAWN 회원은 로그인할 수 없다.
-- [x] USER의 관리자 API 요청이 서버에서 거부된다.
-- [x] DB와 로그에 비밀번호 원문이 없다.
-- [x] `AC-006`이 통과한다.
-- [x] Phase 1 무인증 문제 API에 최종 인증 정책을 적용했다.
-
----
-
-## Phase 3 — 관리자 콘텐츠 운영
-
-대상: `FR-ADMIN-001`, `FR-ADMIN-002`, `FR-ADMIN-004`.
-
-### P3-T01 관리자 레이아웃과 공통 목록
-
-- [x] 관리자 레이아웃, 메뉴와 route를 구성한다.
-- [x] 공통 pagination 요청·응답 규칙을 정한다.
-- [x] ADMIN 여부 확인 중 loading과 접근 거부 화면을 구현한다.
-- [x] 등록·수정 성공과 validation 실패 피드백 방식을 통일한다.
-
-### P3-T02 Topic·Concept 관리
-
-- [x] Topic 등록, 수정, 조회와 비활성화 API를 구현한다.
-- [x] Concept 등록, 수정, 조회와 비활성화 API를 구현한다.
-- [x] 참조 중인 Topic·Concept의 물리 삭제를 차단한다.
-- [x] 계층 순환과 중복 code를 차단한다.
-- [x] 관리자 Topic·Concept 목록과 편집 화면을 구현한다.
-- [x] ADMIN 인가와 상태 변경 통합 테스트를 작성한다.
-
-### P3-T03 KnowledgeDocument 모델과 버전
-
-- [x] KnowledgeDocument 전체 컬럼과 상태를 ERD에 맞게 구현한다.
-- [x] checksum 계산과 중복 원문 감지 규칙을 구현한다.
-- [x] 새 documentVersion 생성 규칙을 구현한다.
-- [x] PUBLISHED 문서를 덮어쓰지 못하게 한다.
-- [x] 검수자, reviewedAt과 출처 정보를 공개 조건으로 검증한다.
-- [x] RETIRED 전환이 과거 Evaluation 근거를 삭제하지 않게 한다.
-
-### P3-T04 KnowledgeDocument API와 화면
-
-- [x] 문서 등록, 상세, 목록과 수정 API를 구현한다.
-- [x] 새 버전 생성, 검수, 공개와 폐기 API를 구현한다.
-- [x] 출처 유형, URL, 기술 버전과 라이선스 메모 validation을 구현한다.
-- [x] 관리자 문서 목록·등록·검수 화면을 구현한다.
-- [x] DRAFT, PUBLISHED와 RETIRED 필터를 구현한다.
-- [x] 콘텐츠 버전 보존 통합 테스트를 작성한다.
-
-### P3-T05 Question 관리 도메인
-
-- [x] Question의 DRAFT → PUBLISHED → RETIRED 상태 전이를 구현한다.
-- [x] PUBLISHED 전 검수자와 reviewedAt을 요구한다.
-- [x] PUBLISHED 전 QuestionConcept가 하나 이상인지 검증한다.
-- [x] 필수 Concept 존재와 weight 합계 정책을 확정한다.
-- [x] Answer가 있는 문제를 덮어쓰지 않고 새 버전 또는 폐기로 처리한다.
-- [x] NORMAL 문제의 관리자 생성자 필수 규칙을 구현한다.
-
-### P3-T06 Question API와 화면
-
-- [x] 문제 등록, 상세, 목록과 수정 API를 구현한다.
-- [x] QuestionConcept 추가·수정·삭제 API를 구현한다.
-- [x] 문제 검수, 공개와 폐기 API를 구현한다.
-- [x] 관리자 문제 목록·등록·검수 화면을 구현한다.
-- [x] 모범 답안, 필수 Concept와 weight 입력 UI를 구현한다.
-- [x] 공개 조건과 버전 보존 API 테스트를 작성한다.
-
-### P3-T07 콘텐츠 공개 경계 검증
-
-- [x] 공개 문제 API에는 PUBLISHED Question만 포함되는지 확인한다.
-- [x] Retrieval 후보에는 PUBLISHED KnowledgeDocument만 포함되도록 query를 준비한다.
-- [x] ADMIN이 아닌 사용자가 DRAFT 상세를 조회하지 못하게 한다.
-- [x] 비활성 Topic·Concept의 신규 연결을 차단한다.
-- [x] `AC-007`의 문서 버전 시나리오 기반 테스트 골격을 작성한다.
-
-### Phase 3 Gate
-
-- [x] ADMIN이 Topic → Concept → 문서·문제를 등록하고 공개할 수 있다.
-- [x] 검수 조건을 충족하지 않은 콘텐츠는 공개할 수 없다.
-- [x] 일반 사용자는 PUBLISHED 콘텐츠만 볼 수 있다.
-- [x] 공개된 콘텐츠의 과거 버전이 보존된다.
-- [x] 관리자 핵심 흐름의 브라우저 E2E 테스트가 통과한다.
-
----
-
-## Phase 4 — 답변과 평가 상태 골격
-
-대상: `FR-ANSWER-001`, `FR-ANSWER-002`, `FR-ANSWER-003`, `FR-EVAL-001`, `FR-EVAL-004`, `FR-EVAL-005`.
-
-검증 근거: [Phase 4 결정·검증 기록](../changes/2026-09-07-phase-4/verification.md). 백엔드 202개·프런트 105개 성공, 타입 검사·빌드·실제 화면 흐름 통과.
-
-### P4-T01 Answer 모델과 제출 규칙
-
-- [x] Answer schema와 immutable 제출 모델을 구현한다.
-- [x] 공백 답변과 최대 길이 validation을 구현한다.
-- [x] 로그인 회원과 Answer 소유권을 연결한다.
-- [x] PUBLISHED Question에만 답변할 수 있게 한다.
-- [x] 재답변은 기존 row 수정이 아니라 새 Answer로 저장한다.
-- [x] Answer repository와 도메인 테스트를 작성한다.
-
-### P4-T02 멱등 제출
-
-- [x] 멱등 키의 전달 위치와 유효 범위를 정의한다.
-- [x] 회원·요청별 unique constraint 또는 동등한 저장 구조를 설계한다.
-- [x] 같은 멱등 키와 같은 payload는 기존 결과를 반환한다.
-- [x] 같은 멱등 키와 다른 payload는 충돌로 처리한다.
-- [x] 동시에 같은 요청이 들어오는 통합 테스트를 작성한다.
-
-### P4-T03 Evaluation 모델과 상태 전이
-
-- [x] Evaluation schema와 Answer 1:0..1 unique constraint를 구현한다.
-- [x] EVALUATING, EVALUATED와 FAILED 상태를 구현한다.
-- [x] NEEDS_REVIEW는 성공 status의 verdict인지 별도 status인지 최종 확정한다.
-- [x] CORRECT, PARTIALLY_CORRECT, INCORRECT와 NEEDS_REVIEW verdict를 구현한다.
-- [x] verdict → 100·50·0·NULL 변환을 서버 규칙으로 구현한다.
-- [x] 허용되지 않는 상태 전이와 필드 조합을 차단한다.
-- [x] 상태 전이 단위 테스트를 작성한다.
-
-### P4-T04 평가 Port와 Stub adapter
-
-- [x] AI 제공자와 무관한 Evaluation 요청 모델을 정의한다.
-- [x] 전체·Concept별 판정과 feedback을 담는 결과 모델을 정의한다.
-- [x] EvaluationPort 인터페이스를 정의한다.
-- [x] 성공, NEEDS_REVIEW, timeout과 실패를 재현하는 Stub adapter를 구현한다.
-- [x] Stub adapter를 local/test profile에서만 활성화한다.
-- [x] 운영 profile에 Stub이 활성화되면 기동 실패하도록 검토한다.
-
-### P4-T05 답변 제출 유스케이스와 트랜잭션
-
-- [x] Answer 저장과 Evaluation 생성의 트랜잭션 경계를 정의한다.
-- [x] Answer가 저장된 뒤 평가 실패해도 Answer를 보존한다.
-- [x] Evaluation 시작 작업이 유실되지 않는 방식을 정한다.
-- [x] 중복 worker 실행에도 Evaluation이 한 번만 확정되게 한다.
-- [x] 성공, 실패와 재시도 통합 테스트를 작성한다.
-
-### P4-T06 답변·평가 API
-
-- [x] Answer 제출 API 계약을 정의하고 구현한다.
-- [x] Evaluation 상태·결과 조회 API를 구현한다.
-- [x] 내 Answer 목록과 상세 조회 API를 구현한다.
-- [x] 다른 회원의 Answer·Evaluation 조회를 차단한다.
-- [x] 최신순 pagination을 구현한다.
-- [x] 소유권과 실패 상태 API 테스트를 작성한다.
-
-### P4-T07 문제 풀이·평가 화면
-
-- [x] 문제 상세에 답변 입력과 제출 UI를 구현한다.
-- [x] 중복 클릭과 네트워크 재시도에서 같은 멱등 키를 사용한다.
-- [x] EVALUATING polling 또는 상태 갱신 방식을 구현한다.
-- [x] EVALUATED, NEEDS_REVIEW와 FAILED 화면을 구분한다.
-- [x] 답변·평가 이력 목록과 상세 화면을 구현한다.
-- [x] 새로고침 후에도 평가 상태를 복구한다.
-
-### Phase 4 Gate
-
-- [x] 문제 조회 → 답변 제출 → 평가 결과 확인 흐름을 완주한다.
-- [x] 같은 멱등 요청으로 Answer와 Evaluation이 중복 생성되지 않는다.
-- [x] 평가 실패에도 Answer가 보존된다.
-- [x] 다른 회원의 답변과 평가를 조회할 수 없다.
-- [x] Stub adapter가 운영 환경에 노출되지 않는다.
-
-### Phase 4 코드 리뷰 개선
-
-- [x] P4-R01 모든 실행 profile에서 평가 Worker가 대기 작업을 종결한다.
-- [x] P4-R02 외부 평가 호출을 DB 트랜잭션과 비관적 잠금 밖에서 실행한다.
-- [x] P4-R03 답변 목록의 질문·평가·개념 조회를 페이지 단위로 일괄 처리한다.
-- [x] P4-R04 복구 불가능한 HTTP 오류와 반복된 일시 오류에서 polling을 중단한다.
-- [x] P4-R05 필수 Concept의 NEEDS_REVIEW와 전체 verdict 불변식을 일치시킨다.
-- [x] P4-R06 평가 실패 안내와 Concept 이름 표시를 실제 상태에 맞춘다.
-- [x] P4-R07 답변 이력과 평가 대기 조회 인덱스를 선언한다.
-- [x] P4-R08 관련 테스트·전체 테스트·프런트 빌드·문서 검증을 통과한다.
-
----
-
-## Phase 5 — Knowledge Retrieval과 실제 AI 평가
-
-대상: `FR-ADMIN-003`, `FR-ADMIN-005`, `FR-EVAL-002`, `FR-EVAL-003`, `FR-EVAL-004`, `FR-EVAL-005`, `AC-002`, `AC-003`, `AC-007`.
-
-### P5-T01 검색 기준선과 저장 기술 결정
-
-- [ ] 검색 품질을 평가할 질문·문서·정답 dataset을 준비한다.
-- [x] 관계형 필터와 전문/키워드 검색 기준선을 구현한다.
-- [ ] Recall@K와 관련 없는 Chunk 포함률을 측정한다.
-- [x] embedding 검색 실험이 필요한 기준을 정한다.
-- [x] H2, PostgreSQL과 pgvector 선택을 비교한다.
-- [x] `OQ-002`를 결정하고 ADR과 환경 구성을 갱신한다.
-- [ ] 최초 persistent staging 전 PostgreSQL Testcontainers 통합 테스트를 재도입한다.
-
-### P5-T02 KnowledgeChunk 생성
-
-- [x] Chunk 크기, overlap과 구분 기준을 문서화한다.
-- [x] KnowledgeChunk schema와 `(document_id, sequence_no)` unique constraint를 구현한다.
-- [x] PUBLISHED 대상 chunking 유스케이스를 구현한다.
-- [x] checksum 또는 작업 키로 중복 분할을 방지한다.
-- [x] embedding 생성 실패와 검색 가능 상태를 구분한다.
-- [x] 문서 순서와 원문 추적 테스트를 작성한다.
-
-### P5-T03 Retrieval pipeline
-
-- [x] Question의 Topic과 QuestionConcept로 후보 문서를 제한한다.
-- [x] 질문, 모범 답안과 Answer로 검색 query를 구성한다.
-- [x] 상위 K개 Chunk와 relevance score를 반환한다.
-- [x] RETIRED와 DRAFT 문서를 검색 대상에서 제외한다.
-- [x] 근거 없음과 상충 근거를 감지하는 규칙을 정의한다.
-- [x] 검색 결과 재현과 품질 측정 테스트를 작성한다.
-
-### P5-T04 구조화 AI 평가 계약
-
-- [x] 전체 verdict와 Concept별 verdict JSON schema를 정의한다.
-- [x] 강점, 누락, 오개념과 Evidence Chunk ID 필드를 정의한다.
-- [x] 필수 Concept 누락을 검증한다.
-- [x] 존재하지 않는 Chunk ID 인용을 거부한다.
-- [x] 최종 점수는 AI가 아니라 서버가 계산한다.
-- [x] 정상·누락·잘못된 타입·추가 필드 fixture로 계약 테스트를 작성한다.
-
-### P5-T05 외부 AI adapter
-
-- [ ] 평가 모델 후보를 골든 세트로 비교한다.
-- [x] 모델 선택과 fallback 기준을 ADR로 기록한다.
-- [x] 외부 AI client를 EvaluationPort adapter로 구현한다.
-- [x] timeout, 재시도 횟수와 backoff를 설정한다.
-- [x] provider 오류를 내부 실패 코드로 변환한다.
-- [x] prompt에서 지식 문서와 사용자 답변을 데이터 영역으로 격리한다.
-- [x] API key와 원문 답변을 일반 로그에 남기지 않는다.
-
-### P5-T06 비동기 평가 실행
-
-- [x] 동기·비동기 방식을 비교하고 `OQ-005`를 결정한다.
-- [x] Answer 저장 이후 평가 작업이 유실되지 않는 구조를 선택한다.
-- [x] worker 재시작과 중복 실행 시나리오를 처리한다.
-- [x] 최대 재시도 이후 FAILED와 실패 원인을 저장한다.
-- [x] 클라이언트가 진행 상태를 안정적으로 조회할 수 있게 한다.
-- [x] timeout, 중복 처리와 재시작 통합 테스트를 작성한다.
-
-### P5-T07 EvaluationEvidence와 결과 확정
-
-- [x] EvaluationConcept와 EvaluationEvidence schema를 구현한다.
-- [x] 평가에 실제 전달한 Chunk만 Evidence로 저장한다.
-- [x] 평가 모델명, evaluator version과 처리 시간을 저장한다.
-- [x] schema와 필수 Concept 검증 후에만 EVALUATED로 전환한다.
-- [x] 근거 부족·상충은 NEEDS_REVIEW로 처리한다.
-- [x] FAILED·NEEDS_REVIEW가 Knowledge State 후보가 되지 않게 한다.
-
-### P5-T08 평가 결과·관리자 실패 화면
-
-- [x] 학습자 결과에 전체·Concept별 판정과 근거를 표시한다.
-- [x] 근거 문서의 제목, 버전과 인용 범위를 표시한다.
-- [x] 관리자 FAILED·NEEDS_REVIEW 목록 API를 구현한다.
-- [x] 모델명, 규칙 버전, 실패 코드와 발생 시각을 제공한다.
-- [x] 관리자 실패 상세 화면과 필터를 구현한다.
-- [x] 답변 원문 접근에 ADMIN 인가를 적용한다.
-
-### P5-T09 골든 평가 세트 검증
-
-- [x] 초기 Topic별 정답·부분 정답·오답 fixture를 작성한다.
-- [x] 표현은 다르지만 의미가 같은 정답을 포함한다.
-- [x] 자연스럽지만 핵심이 틀린 오답을 포함한다.
-- [x] 근거 부족으로 NEEDS_REVIEW가 필요한 사례를 포함한다.
-- [x] 판정 일치율과 false-correct 비율을 자동 계산한다.
-- [ ] 확정된 출시 품질 기준과 측정 결과를 기록한다.
-
-### Phase 5 Gate
-
-- [x] EVALUATED 결과의 Evidence 연결률이 100%다.
-- [x] schema 위반과 근거 부족이 성공 평가로 저장되지 않는다.
-- [x] AI 장애에도 Answer가 보존된다.
-- [ ] `AC-002`, `AC-003`과 `AC-007`이 통과한다.
-- [ ] 골든 평가 세트의 확정 기준을 통과한다.
-- [x] 비밀정보와 답변 원문이 로그에 노출되지 않는다.
-
----
-
-## Phase 6 — Knowledge State와 개인 추천
-
-대상: `FR-KNOWLEDGE-001`, `FR-KNOWLEDGE-002`, `FR-KNOWLEDGE-003`, `FR-QUESTION-001`, `FR-PROGRESS-001`, `AC-001`, `AC-004`.
-
-- 구현·Gate 증거: [2026-09-13 검증 기록](../changes/2026-09-13-phase-6/verification.md). 백엔드274개·프런트123개 성공, 실제 API→DB 흐름 검증 및 독립 코드 검토 PASS
-- 완료 범위: Phase 6 기능 Gate. 운영 PostgreSQL·실모델·골든 셋 독립 검수는 별도 미완료
-
-### P6-T01 Knowledge State 공식 결정
-
-- [x] PARTIALLY_CORRECT의 Concept 충족 기준인 `OQ-003`을 확정한다.
-- [x] mastery, confidence와 STABLE 임계값인 `OQ-004`를 확정한다.
-- [x] 최신 평가와 반복 평가의 가중 방식을 정의한다.
-- [x] 알고리즘 버전과 변경 시 재계산 정책을 정의한다.
-- [x] 예시 평가 이력으로 예상 상태를 계산해 문서화한다.
-
-### P6-T02 KnowledgeState schema와 도메인
-
-- [x] 자동 생성 PK와 `(member_id, concept_id)` 복합 UNIQUE로 회원·개념별 상태 유일성 보장.
-- [x] masteryScore NULL과 UNKNOWN 의미를 보존한다.
-- [x] confidenceScore, attemptCount, status와 lastEvaluatedAt을 구현한다.
-- [x] 낙관적 잠금 version을 구현한다.
-- [x] 허용되는 상태 전이와 범위 검증을 구현한다.
-- [x] 상태 계산 단위 테스트를 작성한다.
-
-### P6-T03 정확히 한 번 반영
-
-- [x] 어떤 EvaluationConcept가 반영됐는지 추적하는 구조를 결정한다.
-- [x] 유일 제약으로 중복 반영을 차단한다.
-- [x] 평가 완료와 상태 반영의 트랜잭션 또는 이벤트 경계를 정의한다.
-- [x] 낙관적 잠금 충돌 재시도를 구현한다.
-- [x] 같은 평가 재처리와 동시 다른 평가 처리 테스트를 작성한다.
-- [x] lost update가 발생하지 않는지 최종 DB 값으로 확인한다.
-
-### P6-T04 Knowledge State 조회 API
-
-- [x] Topic별 집계 규칙을 정의한다.
-- [x] Concept별 상태·점수·신뢰도·횟수·최근 평가 조회를 구현한다.
-- [x] UNKNOWN과 낮은 mastery를 다른 응답 상태로 제공한다.
-- [x] 전체 Answer 이력을 매번 읽지 않는 query를 구현한다.
-- [x] 다른 회원의 상태 조회를 차단한다.
-- [x] 조회 query와 소유권 테스트를 작성한다.
-
-### P6-T05 추천 규칙
-
-- [x] 미평가 Concept 우선 규칙을 구현한다.
-- [x] 낮은 mastery Concept 차순위 규칙을 구현한다.
-- [x] 같은 우선순위에서 최근에 풀지 않은 Question을 선택한다.
-- [x] RETIRED와 이미 사용할 수 없는 문제를 제외한다.
-- [x] 후보 없음 상태와 이유를 정의한다.
-- [x] 결정적 fixture를 사용한 추천 단위·통합 테스트를 작성한다.
-
-### P6-T06 지식 지도와 학습 홈
-
-- [x] Topic별 상태 요약 UI를 구현한다.
-- [x] Concept별 UNKNOWN, LEARNING과 STABLE 표시를 구현한다.
-- [x] 숙련도와 신뢰도를 혼동하지 않게 설명한다.
-- [x] 최근 풀이 수와 평가 결과를 표시한다.
-- [x] 다음 추천 문제와 추천 이유를 표시한다.
-- [x] empty, 신규 회원과 일부 평가 상태 화면을 테스트한다.
-
-### Phase 6 Gate
-
-- [x] UNKNOWN이 0점 취약 상태와 구분된다.
-- [x] 같은 평가가 두 번 반영되지 않는다.
-- [x] 동시 완료된 평가가 유실되지 않는다.
-- [x] 추천 결과와 추천 이유가 함께 제공된다.
-- [x] `AC-001`과 `AC-004`가 통과한다.
-
----
-
-## Phase 7 — 후속 질문 학습 루프
-
-대상: `FR-FOLLOWUP-001`, `FR-FOLLOWUP-002`, `AC-005`.
-
-검증 기준: 2026-09-20 `main`의 `ecfbde5`에서 Java 21로 `./gradlew test --rerun-tasks --console=plain` 실행. 71개 테스트 클래스·385개 테스트 성공, 실패·오류·스킵 0. 기존 최종 cmux E2E와 함께 기능 Gate 확인. 이번 작업은 코드 변경 없이 구현·테스트와 체크리스트 대조.
-
-### P7-T01 후속 질문 도메인 불변식
-
-- [x] NORMAL과 FOLLOW_UP Question의 차이를 도메인 규칙으로 구현한다.
-- [x] FOLLOW_UP은 sourceAnswer가 필수임을 검증한다.
-- [x] NORMAL은 sourceAnswer를 가질 수 없게 한다.
-- [x] `source_answer_id` unique constraint로 답변당 최대 한 개를 보장한다.
-- [x] FOLLOW_UP에서 또 FOLLOW_UP을 만들지 못하게 한다.
-- [x] 도메인과 DB constraint 테스트를 작성한다.
-  - 근거: `Question`의 분리된 생성자·`uk_question_source_answer`, `FollowUpQuestionTest`, `FollowUpQuestionServiceTest.databaseRejectsDuplicateQuestion`·`databaseAllowsMultipleNormalQuestions`
-
-### P7-T02 후속 질문 생성 규칙
-
-- [x] INCORRECT는 가장 중요한 오개념을 묻도록 한다.
-- [x] PARTIALLY_CORRECT는 가장 중요한 누락을 묻도록 한다.
-- [x] CORRECT는 동일 Concept의 적용 질문을 만들도록 한다.
-- [x] FAILED와 NEEDS_REVIEW는 생성 대상에서 제외한다.
-- [x] 생성 결과에 평가 가능한 reference answer와 Concept를 포함한다.
-- [x] 질문 생성 규칙 버전을 기록한다.
-  - 근거: `FollowUpSourcePolicyTest.selectsConceptInPriorityOrder`의 판정별 선택 6개 사례. 판정 일치 → 필수 → 가중치 내림차순 → ID 순으로 Concept 선택, adapter에서 목적별 지시 전달
-  - 근거: `excludesIneligibleEvaluations`, `OpenAiFollowUpQuestionAdapterTest`의 응답 검증·`follow-up-v1` 확인, `FollowUpGeneration.complete`의 버전 저장
-  - 경계: stub은 적용 질문 고정 fixture. 실제 생성 문장의 오개념 교정·누락 보완·모범 답안 품질은 실모델 검수 대상
-
-### P7-T03 후속 질문 생성 adapter
-
-- [x] 외부 모델과 무관한 FollowUpQuestionGenerator 계약을 port 패키지에 정의한다.
-- [x] 개발·테스트용 Stub을 구현한다.
-- [x] 실제 AI adapter에 structured output 검증을 적용한다.
-- [x] 원본 질문, 평가 결과와 승인된 근거만 입력으로 사용한다.
-- [x] timeout과 생성 실패가 기존 평가를 변경하지 않게 한다.
-- [x] 같은 Answer 재처리 시 기존 후속 질문을 반환한다.
-  - 근거: `FollowUpQuestionGenerator`, 두 adapter·구성 테스트, `FollowUpSourcePolicy.request`, adapter schema/승인 Concept·Evidence 검증 테스트
-  - 근거: `FollowUpQuestionServiceTest.timeoutPreservesEvaluation`·`completesLearningLoopOnce`, 근거 폐기·저장 실패 롤백 테스트
-
-### P7-T04 기존 학습 파이프라인 재사용
-
-- [x] 후속 Question을 소유권이 확인된 전용 조회 DTO로 표시한다.
-  - 기존 계획의 DTO 재사용과 차이: 공개 문제 조회는 NORMAL 전용 유지. `FollowUpQuestionResponse`로 답변 소유자에게만 표시하고 정답은 응답에서 제외
-- [x] 후속 Answer가 기존 제출·멱등 처리 흐름을 사용하게 한다.
-- [x] 후속 Evaluation이 기존 Retrieval·평가 흐름을 사용하게 한다.
-- [x] 후속 평가도 Knowledge State에 반영할지 정책을 확정한다.
-  - 현재 정책: 후속 평가도 반영. `completesLearningLoopOnce`에서 적용 기록 2개·숙련도 시도 횟수 2 검증
-- [x] 후속 평가 후 다음 기본 Question을 추천한다.
-  - 근거: `DefaultAnswerService.submit`의 공통 멱등 처리, `DefaultEvaluationProcessor`의 Retrieval·평가·숙련도 반영, `completesLearningLoopOnce`의 기본 문제 추천 및 후속 재생성 차단. 기존 cmux E2E에서 다음 기본 문제 이동 확인
-
-### P7-T05 후속 질문 화면
-
-- [x] 일반 평가 결과 화면에서 후속 질문을 표시한다.
-  - 검증: 평가 종료 뒤 답변 ID로 후속 상태 조회·표시 컴포넌트 테스트 RED → GREEN (2026-09-20)
-- [x] 생성 중, 생성 실패와 질문 없음 상태를 처리한다.
-  - 검증: PENDING·PROCESSING·FAILED·UNAVAILABLE 표시와 terminal 403/404·bounded retry 테스트 RED → GREEN (2026-09-20)
-  - 보완: 첫 조회의 일시 오류 후 자동 재시도 중 로딩 안내 유지, 복구·3회 실패 종료 시 안내 전환을 실제 패널과 composable에서 RED → GREEN. 전체 프런트 283개·type-check·production build 성공 (2026-09-20)
-- [x] 후속 답변과 평가 결과 화면을 구현한다.
-  - 검증: READY 인라인 제출이 기존 멱등 제출 흐름을 사용하고 새 답변 상세로 이동하는 테스트 RED → GREEN (2026-09-20)
-- [x] 후속 평가 후 다음 기본 문제 이동을 제공한다.
-  - 검증: FOLLOW_UP_LIMIT에서 기본 문제 목록 경로 제공 테스트 RED → GREEN (2026-09-20)
-- [x] 새로고침해도 동일한 후속 질문을 조회한다.
-  - 검증: 화면 mount마다 원본 answerId로 서버 상태를 다시 조회하고 stale 응답을 폐기하는 테스트 RED → GREEN (2026-09-20)
-
-### Phase 7 Gate
-
-- [x] 일반 Answer 하나당 후속 Question이 최대 하나다.
-  - 근거: `concurrentProcessingClaimsOnce`의 단일 호출·생성, `databaseRejectsDuplicateQuestion`의 H2 유일 제약 검증
-- [x] FAILED·NEEDS_REVIEW 평가에서는 후속 질문이 없다.
-  - 근거: `excludesIneligibleEvaluations`의 두 상태별 생성 작업 0건 확인
-- [x] 후속 질문이 다시 후속 질문을 만들지 않는다.
-  - 근거: `FollowUpQuestionTest`의 후속 원본 거부와 `completesLearningLoopOnce`의 FOLLOW_UP_LIMIT·질문 수 유지
-- [x] 기본 문제 → 후속 질문 → 다음 기본 문제를 완주한다.
-  - 검증: 전체 Task·리뷰 수정 완료 후 cmux 브라우저에서 최종 통합 E2E 1회 수행. 기본 답변 평가 → READY 후속 질문 → 인라인 답변·평가 → 다음 기본 문제 이동 확인 (2026-09-20, 코드 `f31ed80`)
-  - 범위: 로컬 메모리 H2·평가/후속 생성 stub의 정상 흐름. 실모델·운영 DB·동시성 및 전체 실패 조합 검증과 구분
-- [x] `AC-005`가 통과한다.
-  - 근거: 위 도메인·DB·서비스 테스트와 기존 cmux 정상 흐름 E2E의 조합. H2·stub 기반 기능 인수 조건 완료이며 실모델 품질·운영 DB 다중 인스턴스 검증을 의미하지 않음
-
----
-
-## Phase 8 — 운영 안정화와 파일럿
-
-대상: 전체 P0, 비기능 요구사항, `AC-001`~`AC-007`.
-
-### P8-T01 전체 E2E 회귀 테스트
-
-- [ ] 관리자 Topic·Concept·문서·문제 공개 흐름을 자동화한다.
-- [ ] 회원가입·로그인·문제 풀이·평가 결과 흐름을 자동화한다.
-- [ ] Knowledge State·추천·후속 질문 흐름을 자동화한다.
-- [ ] 다른 회원 데이터와 관리자 기능 접근 차단을 자동화한다.
-- [ ] AI 실패와 재시도 후 화면 복구를 자동화한다.
-- [ ] `AC-001`~`AC-007`을 테스트와 1:1로 연결한다.
+- [ ] 관리자 Topic·Concept·문서·문제 공개 흐름
+- [ ] 회원가입·로그인·문제 풀이·평가 결과 흐름
+- [ ] Knowledge State·추천·후속 질문 흐름
+- [ ] 다른 회원 데이터와 관리자 기능 접근 차단
+- [ ] provider 실패·재시도 이후 화면 복구
+- [ ] `AC-001`~`AC-007`과 자동 테스트 1:1 연결
 
 ### P8-T02 보안 점검
 
-- [ ] 인증 우회와 수평 권한 상승을 점검한다.
-- [ ] 관리자 API 전체에 서버 인가가 있는지 점검한다.
-- [ ] 입력 길이, HTML 출력과 script injection을 점검한다.
-- [ ] prompt injection 답변이 시스템 지침으로 처리되지 않는지 점검한다.
-- [ ] session/token, AI key와 DB 비밀번호 노출을 점검한다.
-- [ ] rate limit 우회와 과도한 AI 호출을 점검한다.
-- [ ] 발견 사항과 조치 결과를 기록한다.
+- [ ] 인증 우회와 수평 권한 상승
+- [ ] 관리자 API 전체의 서버 인가
+- [ ] 입력 길이, HTML 출력, script injection
+- [ ] prompt injection 입력과 시스템 지침 경계
+- [ ] session, API key, DB 비밀번호 노출
+- [ ] rate limit 우회와 과도한 provider 호출
+- [ ] 발견 사항, 위험도, 수정·수용 결과 기록
 
-### P8-T03 장애와 데이터 정합성 점검
+### P8-T03 장애와 데이터 정합성
 
-- [ ] AI timeout, provider 429와 5xx를 재현한다.
-- [ ] worker가 평가 도중 종료되는 상황을 재현한다.
-- [ ] 중복 작업과 중복 HTTP 요청을 재현한다.
-- [ ] 동시 Knowledge State 갱신을 재현한다.
-- [ ] 실패 후 Answer, Evaluation과 Knowledge State 정합성을 확인한다.
-- [ ] 재시도 불가능한 실패의 운영 처리 절차를 문서화한다.
+- [ ] provider timeout, `429`, `5xx`
+- [ ] 평가 처리 중 worker 종료
+- [ ] 중복 작업과 중복 HTTP 요청
+- [ ] 동시 Knowledge State 갱신
+- [ ] 실패 후 Answer, Evaluation, Knowledge State 정합성
+- [ ] 재시도 불가능 실패의 운영 처리 절차
 
 ### P8-T04 관측 가능성
 
-- [ ] requestId를 모든 API 응답과 로그에 연결한다.
-- [ ] memberId, answerId와 evaluationId 상관관계를 기록한다.
-- [ ] Retrieval 시간, 후보 수와 Evidence ID를 기록한다.
-- [ ] AI 모델, evaluator version, latency와 실패 코드를 기록한다.
-- [ ] 원문 답변과 비밀번호를 일반 로그에서 제외한다.
-- [ ] 실패율과 latency를 확인할 운영 dashboard 또는 query를 준비한다.
+- [ ] 모든 API 응답과 로그의 `requestId` 연결
+- [ ] `memberId`, `answerId`, `evaluationId` 상관관계
+- [ ] retrieval 시간, 후보 수, Evidence ID
+- [ ] 모델·평가 규칙 버전, latency, 실패 코드
+- [ ] 원문 답변과 비밀번호의 일반 로그 제외
+- [ ] 실패율과 latency 확인용 dashboard 또는 query
 
-### P8-T05 성능 측정
+### P8-T05 성능
 
-- [ ] 일반 API p95 측정 시나리오와 데이터 크기를 정한다.
-- [ ] 평가 접수 응답 p95를 측정한다.
-- [ ] AI 평가 완료 p95를 측정한다.
-- [ ] 지식 지도와 추천 query 수·실행 시간을 측정한다.
-- [ ] N+1 query와 불필요한 전체 이력 조회를 점검한다.
-- [ ] 목표 미달 항목의 원인과 대응 계획을 기록한다.
+- [ ] 일반 API p95 시나리오와 데이터 크기
+- [ ] 평가 접수 응답 p95
+- [ ] 평가 완료 p95
+- [ ] 지식 지도·추천 query 수와 실행 시간
+- [ ] N+1과 전체 이력 조회 점검
+- [ ] 목표 미달 원인과 대응 계획
 
 ### P8-T06 백업·복구와 콘텐츠 rollback
 
-- [ ] 운영 DB backup 주기와 보존 기간을 정한다.
-- [ ] 빈 환경에 backup을 restore한다.
-- [ ] 복구 데이터로 회원, 문제, 답변과 Evaluation을 조회한다.
-- [ ] 잘못 공개한 문서를 RETIRED 처리하고 이전 버전으로 복구한다.
-- [ ] 과거 EvaluationEvidence가 계속 조회되는지 확인한다.
-- [ ] 복구 절차와 담당 책임을 문서화한다.
+- [ ] 운영 DB backup 주기와 보존 기간
+- [ ] 빈 환경 restore
+- [ ] 복구 데이터의 회원·문제·답변·평가 조회
+- [ ] 잘못 공개한 문서 폐기와 이전 버전 복구
+- [ ] 과거 EvaluationEvidence 조회 유지
+- [ ] 절차와 담당 책임 기록
 
-### P8-T07 초기 콘텐츠 준비
+### P8-T07 초기 콘텐츠
 
-- [ ] 초기 Topic과 Concept 체계를 확정한다.
-- [ ] Topic별 최소 문제·문서 수인 `OQ-006`을 확정한다.
-- [ ] CS 기본 지식 문서의 출처와 라이선스를 검수한다.
-- [ ] Java 21, Spring Boot 4.1.x, Spring Framework 7.0.x와 Jakarta Persistence 3.2 버전을 표시한다.
-- [ ] 문제별 필수 Concept와 reference answer를 검수한다.
-- [ ] 골든 평가 세트와 실제 공개 문제의 편향·중복을 점검한다.
+- [ ] 초기 Topic·Concept 체계 확정
+- [ ] Topic별 최소 문제·문서 수 `OQ-006` 확정
+- [ ] 출처와 라이선스 검수
+- [ ] Java 21, Spring Boot 4.1.x, Spring Framework 7.0.x, Jakarta Persistence 3.2 표시
+- [ ] 문제별 필수 Concept와 reference answer 검수
+- [ ] reference-v1과 실제 공개 문제의 편향·중복 점검
 
-### P8-T08 제한 사용자 파일럿
+### P8-T08 제한 파일럿
 
-- [ ] 파일럿 대상과 기간을 정한다.
-- [ ] 평가 오판정 신고와 관리자 검토 절차를 정한다.
-- [ ] AI 실패율, 평균 처리 시간과 콘텐츠 부족률을 수집한다.
-- [ ] 추천이 반복되거나 막히는 사례를 수집한다.
-- [ ] 사용자 피드백과 운영 병목을 우선순위화한다.
-- [ ] P0 출시 여부와 P1 착수 조건을 결정한다.
+- [ ] 대상과 기간
+- [ ] 오판정 신고와 관리자 검토 절차
+- [ ] 실패율, 처리 시간, 콘텐츠 부족률
+- [ ] 추천 반복·막힘 사례
+- [ ] 사용자 피드백과 운영 병목 우선순위
+- [ ] P0 출시 여부와 P1 착수 조건
 
-### Phase 8 Gate — P0 완료
+## 출시 전 공통 조건
 
-- [ ] `spec.md`의 기능 요구사항 24개를 모두 구현했다.
-- [ ] `AC-001`~`AC-007`이 모두 통과한다.
-- [ ] 치명적·높은 우선순위 보안 결함이 없다.
-- [ ] 데이터 정합성 결함이 없다.
-- [ ] AI 평가 품질 기준을 충족한다.
-- [ ] 실패를 관리자가 추적할 수 있다.
-- [ ] backup·restore를 실제로 검증했다.
-- [ ] 성능 측정 결과와 미달 대응 계획이 있다.
-- [ ] 코드 작성 문제, 사용자 문제 게시와 결제 기능이 P0에 포함되지 않았다.
+### 기능과 데이터
 
----
-
-## 요구사항 추적 체크리스트
-
-Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 표는 기능 누락을 찾기 위한 최종 인덱스다.
-
-### 인증과 관리자
-
-- [x] `FR-AUTH-001` 회원가입 — P2-T02, P2-T04
-- [x] `FR-AUTH-002` 로그인·로그아웃 — P2-T03, P2-T05
-- [x] `FR-AUTH-003` 관리자 인가 — P2-T06
-- [x] `FR-ADMIN-001` Topic·Concept 관리 — P3-T02
-- [x] `FR-ADMIN-002` KnowledgeDocument 관리 — P3-T03, P3-T04
-- [ ] `FR-ADMIN-003` KnowledgeChunk 생성 — P5-T02
-- [x] `FR-ADMIN-004` Question 관리 — P3-T05, P3-T06
-- [ ] `FR-ADMIN-005` 평가 실패 조회 — P5-T08
-
-### 문제, 답변과 평가
-
-- [x] `FR-QUESTION-001` 추천 문제 조회 — P6-T05
-- [x] `FR-QUESTION-002` 문제 표시 — P1-T05, P1-T06
-- [ ] `FR-ANSWER-001` Answer 제출 — P4-T01, P4-T05, P4-T06
-- [ ] `FR-ANSWER-002` 중복 제출 방지 — P4-T02
-- [ ] `FR-ANSWER-003` 답변 이력 — P4-T06, P4-T07
-- [ ] `FR-EVAL-001` 평가 시작 — P4-T03, P4-T05
-- [ ] `FR-EVAL-002` 평가 근거 검색 — P5-T03, P5-T07
-- [ ] `FR-EVAL-003` 구조화 평가 — P5-T04, P5-T05
-- [ ] `FR-EVAL-004` 정오 판정 — P4-T03, P5-T04
-- [ ] `FR-EVAL-005` 평가 완료와 실패 — P4-T05, P5-T06, P5-T07
-
-### 개인화와 후속 학습
-
-- [x] `FR-KNOWLEDGE-001` Concept별 상태 갱신 — P6-T02, P6-T03
-- [x] `FR-KNOWLEDGE-002` 상태 구분 — P6-T01, P6-T02
-- [x] `FR-KNOWLEDGE-003` 지식 지도 조회 — P6-T04, P6-T06
-- [x] `FR-FOLLOWUP-001` 후속 질문 생성 — P7-T01, P7-T02, P7-T03
-- [x] `FR-FOLLOWUP-002` 후속 답변 — P7-T04, P7-T05
-- [x] `FR-PROGRESS-001` 학습 홈 — P6-T04, P6-T06
-
-## 공통 검증 체크리스트
-
-모든 Phase 또는 기능 PR에서 필요한 항목만 복사해 사용한다.
-
-### 정확성
-
-- [ ] 정상 흐름이 요구사항대로 동작한다.
-- [ ] 빈 값, 경계값과 존재하지 않는 ID를 처리한다.
-- [ ] 허용되지 않는 상태 전이를 차단한다.
-- [ ] DB constraint와 애플리케이션 규칙이 일치한다.
+- [ ] 제품 명세의 P0 기능 요구사항 구현 확인
+- [ ] `AC-001`~`AC-007` 전체 통과
+- [ ] 정상·빈 값·경계값·없는 ID 처리
+- [ ] 상태 전이와 DB constraint 일치
+- [ ] rollback, 중복 요청, 동시 요청 검증
+- [ ] 과거 평가와 콘텐츠 버전 보존
 
 ### 보안과 소유권
 
-- [ ] 인증이 필요한 API는 비로그인 요청을 거부한다.
-- [ ] ADMIN API는 USER 요청을 거부한다.
-- [ ] 회원 데이터는 소유자만 조회할 수 있다.
-- [ ] 비밀정보와 개인정보가 응답·로그에 노출되지 않는다.
-
-### 데이터와 트랜잭션
-
-- [ ] 실패 시 어느 데이터가 저장되고 rollback되는지 테스트한다.
-- [ ] 중복 요청과 동시 요청 결과를 테스트한다.
-- [ ] 새 schema가 현재 profile별 schema 정책으로 재현된다.
-- [ ] 과거 평가와 콘텐츠 버전이 보존된다.
+- [ ] 비로그인 요청 차단
+- [ ] USER의 ADMIN API 차단
+- [ ] 회원 데이터 소유권 차단
+- [ ] 비밀정보와 개인정보의 응답·로그 비노출
+- [ ] 치명적·높은 우선순위 보안 결함 0건
 
 ### API와 화면
 
-- [ ] 요청·응답·오류 계약이 문서화되어 있다.
-- [ ] 화면에 loading, empty, success와 error 상태가 있다.
-- [ ] 새로고침과 네트워크 재시도 후 상태가 일관된다.
-- [ ] 접근할 수 없는 데이터가 프런트 응답에 포함되지 않는다.
+- [ ] 요청·응답·오류 계약 문서화
+- [ ] loading, empty, success, error 상태
+- [ ] 새로고침·네트워크 재시도 일관성
+- [ ] 접근 불가 데이터의 프런트 응답 비포함
 
-### 완료
+### 운영 Gate
 
-- [ ] 백엔드 자동 테스트가 통과한다.
-- [ ] 프런트 type-check가 통과한다.
-- [ ] 프런트 production build가 통과한다.
-- [ ] 필요한 브라우저 또는 API 재현 절차를 확인했다.
-- [ ] 관련 `spec.md`, `plan.md`, ERD와 ADR을 갱신했다.
+- [ ] 실제 모델 평가 품질 기준 충족
+- [ ] 관리자의 실패 추적 가능
+- [ ] backup·restore 실제 검증
+- [ ] 성능 결과와 미달 대응 계획
+- [ ] 백엔드 자동 테스트 성공
+- [ ] 프런트 테스트·type-check·production build 성공
+- [ ] 관련 제품 명세·ERD·ADR·문서 목록 최신 상태
+- [ ] 코드 작성 문제, 사용자 문제 게시, 결제 기능의 P0 제외 유지
 
-## 품질 개선 작업
+## 상태 갱신 규칙
 
-이 목록이 현재 품질 개선 상태의 기준이다. 완료 표시는 관련 코드와 테스트 근거가 확인된 항목만 사용한다.
-
-- [x] **Question이 Concept 불변식을 최종 방어하도록 개선**
-  - [x] 외부 변경은 `replaceConcepts`로 통일하고 비활성 Concept을 거부한다.
-  - [x] 외부 변경은 다른 Topic의 Concept을 거부한다.
-  - [x] `replaceConcepts`가 비활성 또는 다른 Topic의 Concept을 거부한다.
-  - [x] 교체 검증 실패 시 기존 Concept과 `updatedAt`을 유지한다.
-  - [x] 순수 도메인 테스트와 전체 테스트가 통과한다.
-- [x] **Phase 7 리뷰 합의사항 반영 — 2026-09-14**
-  - [x] `copyConcept`는 private 버전 복사 경로로 제한. 생성 시각·검수·실패 원자성 보존
-  - [x] 활성 후속 Worker에 생성기가 없으면 시작 실패. 비활성 설정은 생성기 없이 시작 가능
-  - [x] 스케줄러 2개 스레드 구성. 한 작업의 대기 중 다른 작업 실행 검증
-  - [x] 후속 Processor의 외부 transaction 진입을 `NEVER`로 차단
-  - [x] 일시적 완료 저장 충돌만 최대 3회 재시도. AI 결과 재사용·롤백·소진 검증
-  - [x] Adapter는 예상 파싱·검증 오류만 변환하고 cause 보존. 예상 밖 runtime 오류 전파
-  - [x] 전체 385개 테스트 통과, 실패·오류·스킵 0. bootJar 성공
-  - 미검증: 실제 DB 데드락·다중 인스턴스·느린 provider를 포함한 전체 Worker 흐름
-  - 보류: 문서 폐기와 commit 간 강한 일관성 잠금 확대, SQL 행 수 측정 전 fetch 변경
-- [ ] **Question과 KnowledgeDocument의 버전 생성·공개 전환을 동시 요청에도 원자적으로 보장**
-  - [ ] series/version 중복을 DB 제약으로 차단한다.
-  - [ ] 동시 버전 생성 충돌을 명시적인 애플리케이션 오류로 변환한다.
-  - [ ] series당 공개본 하나를 잠금 또는 DB 모델로 보장한다.
-  - [ ] 동시성 통합 테스트로 경쟁 조건을 검증한다.
-- [ ] **로그인 시도 제한 저장소의 메모리와 다중 인스턴스 경계를 개선**
-  - [ ] 만료와 최대 크기가 있는 저장소로 무제한 메모리 증가를 막는다.
-  - [ ] 4회/5회, 10분 window, 14분 59초/15분 경계를 검증한다.
-  - [ ] 성공 초기화, 계정/IP 격리와 로그인 ID 정규화를 검증한다.
-  - [ ] 다중 인스턴스 도입 전 공유 저장소 전환 조건을 문서화한다.
-- [x] **관리자 UI의 책임을 분리하고 비동기 실패에서도 상태를 복구**
-  - [x] 이전 문제 상세 응답이 새 문제 작성 모드·입력·저장 대상을 덮지 않도록 요청 무효화
-    - 검증: 신규 작성 중 지연 응답 회귀 테스트 RED → GREEN, 프런트 124개·type-check·build 성공 (2026-09-15)
-  - [x] 평가 목록·상세·필터 변경에서 오래된 성공·실패·완료 응답 무시
-    - 검증: 필터 변경 전 목록 완료와 이전 상세 실패 경쟁 테스트 RED → GREEN (2026-09-15)
-  - [x] 초기 로드가 실패해도 loading 상태가 종료된다.
-    - 검증: Question·KnowledgeDocument·Evaluation·Member 실패 후 재시도 복구 테스트 (2026-09-15)
-  - [x] Question 폼과 criteria 상태를 composable 또는 하위 컴포넌트로 분리한다.
-    - `useAdminQuestionEditor`·`useKnowledgeDocumentEditor`: 선택·폼·명령·요청 세대 소유, View는 목록·URL·관계 후보 조회 유지 (2026-09-20)
-  - [x] 관리자 API를 Topic, Concept, KnowledgeDocument, Question, Member, Evaluation 단위로 나눈다.
-    - 검증: 새 모듈 import 실패 RED → 6개 리소스·7개 query 사례 포함 관리자 테스트 29개 성공, 전체 프런트 테스트·type-check·production build 성공 (2026-09-15)
-    - 계약 정합성: OpenAPI에 맞춰 평가 `occurredAt`을 nullable wire type으로 표현
-  - [x] 생성·수정·검수·공개·폐기·새 버전의 실패 흐름을 테스트한다.
-    - 검증: 두 편집 화면의 명령 실패 입력·선택 보존 14건, 성공 후 목록 갱신의 선택 유지 12건, 기존 pagination·요청 경합 포함 48개 테스트 성공 (2026-09-20)
-  - [x] 관리자 쓰기 명령의 중복 실행을 막고 완료 응답이 새 선택을 덮지 않는다.
-    - 검증: 공통 명령 이중 실행과 Question 저장 중 새 작성 전환 테스트 RED → GREEN (2026-09-15)
-    - 보완: Question·KnowledgeDocument의 12개 명령, Member 상태 변경, Taxonomy 6개 명령의 unmount 후 목록·관계 후보 재조회 차단 RED → GREEN. 화면 유지 중 선택 변경 시 목록 갱신·새 입력 보존, 진행 중 목록 응답의 목적지 URL 보호 확인. 관련 105개·전체 283개 성공, type-check·production build 성공 (2026-09-20)
-  - [x] Question·KnowledgeDocument 목록 선택을 native button과 `aria-pressed`로 제공한다.
-    - 검증: 키보드 접근 가능한 선택 요소와 선택 상태 테스트 RED → GREEN (2026-09-15)
-  - [x] 관리자 Question·KnowledgeDocument·Evaluation·Member·Taxonomy 목록을 URL query와 서버 pagination 메타데이터로 이동한다.
-    - 검증: 새로고침·Back/Forward·필터 page reset·범위 밖 page 교정·Taxonomy query key 분리 테스트 RED → GREEN, 관리자 테스트 44개 성공 (2026-09-20)
-  - [x] 관계 Topic·Concept 후보를 현재 목록 page와 분리하고 전체 page를 bounded 순차 조회한다.
-    - 검증: 100개 이후 후보·오류 재시도·상한 초과·Topic mutation 후보 갱신 테스트 RED → GREEN (2026-09-20)
-- [ ] **인증과 재시도 UI의 상태 전이·실패·경계 테스트를 보강**
-  - [x] 인증 복구의 비401 실패는 완료로 캐시하지 않고 다음 조회에서 재시도
-    - 검증: 서버 오류 후 재조회 RED → GREEN, 401 익명 캐시 확인, 프런트 126개·type-check·build 성공 (2026-09-15)
-  - [x] `useAuth`의 401, 예상 밖 오류, 동시 restore, login/logout, CSRF 초기화를 검증한다.
-    - 검증: restore 중복 제거·로그인/로그아웃 세대 무효화·로그아웃 401/네트워크 실패 정책 테스트 RED → GREEN (2026-09-15)
-  - [x] 보호 요청의 세션 만료를 인증 상태 정리와 안전한 로그인 redirect로 연결한다.
-    - 검증: 자격 증명·초기 `/me` 401 제외, 오래된 보호 응답 무시, 내부 redirect 제한, 프런트 157개·type-check·build 성공 (2026-09-15)
-    - 보완: 중복 logout 요청 공유와 진행 UI, 만료 후속 처리 실패 시 원래 401 보존 테스트 RED → GREEN (2026-09-15)
-    - 보완: 이전 logout 중 새 login 이후 logout은 인증 세대별 별도 요청, 이전 완료가 최신 logout Promise를 지우지 않음 (2026-09-15)
-  - [x] 모듈 전역 인증 상태를 테스트마다 격리한다.
-  - [x] 문제 목록과 답변 이력의 범위 밖 page를 URL 의미에 맞는 마지막 page로 교정하고 최신 응답만 재조회한다.
-    - 검증: 1-based 문제 URL·0-based 답변 URL·빈 결과·query 보존·반복 방지·stale/unmount 응답 테스트 RED → GREEN (2026-09-20)
-  - [x] 답변 이력·상세 route를 USER 전용으로 제한하고 ADMIN은 API 화면 mount 전에 관리자 홈으로 이동한다.
-    - 검증: 실제 route metadata와 RouterView navigation에서 학습자 답변 API 미호출 테스트 RED → GREEN (2026-09-20)
-  - [x] 회원가입 진행 중 중복 요청을 막고 최초 양식 snapshot 및 unmount 이후 완료 무시를 보장한다.
-    - 검증: 이중 제출·입력 변경·늦은 성공·늦은 실패 테스트 RED → GREEN, 전체 프런트 228개·type-check·production build 성공 (2026-09-20)
-  - [ ] Question 목록·상세의 실패 → 재시도 → 복구 흐름을 검증한다.
-  - [ ] 운영 DB 동시성, 다중 인스턴스와 브라우저 E2E의 미검증 경계를 유지한다.
-- [x] **평가·화면 상태의 표시 의미를 한 곳에서 관리 — 2026-09-15**
-  - [x] `EVALUATING`과 `PROCESSING`을 모든 학습자 화면에서 평가 진행 중으로 표시
-  - [x] 평가 상태·판정의 사용자 라벨 결정을 공용 presentation 모델로 통합
-  - [x] `QuestionState`의 loading·error·empty 의미를 타입과 ARIA로 명시
-  - 검증: 상태 표시 회귀 테스트 RED 4개 → 관련 18개·전체 167개 성공, type-check·production build 성공
-  - 미검증: 실제 보조 기술을 사용한 브라우저 E2E
-
-### 프런트 개선 최종 검증 — 2026-09-20
-
-- [x] Task 4~7 구현·작업별 커밋 및 최종 리뷰 지적 수정 완료
-- [x] 코드 `f31ed80`에서 `cd front && npm test && npm run build` 검증
-  - 실행 기록: 30개 파일·283개 테스트 성공, 실패 0. vue-tsc·Vite production build 성공
-- [x] 모든 Task 완료 후 cmux pane에서 통합 E2E 1회 수행
-  - 관리자: 지식 문서 작성 → 검수 → 공개 → 검색 문단 생성, 기본 문제 작성 → 평가 기준 저장 → 검수 → 공개
-  - URL 경계: 관리자 문제 `page=99` → `0`, 학습자 문제 `page=999` → `1`, 답변 이력 `page=999` → `0`. 문제 필터 유지
-  - 권한: ADMIN의 `/answers` 접근 시 관리자 홈 이동
-  - 학습: 기본 문제 1 → 답변 2·100점 평가 → 후속 문제 3 → 답변 3·100점 평가 → 다음 기본 문제 2
-  - 새로고침: 원본 답변 재조회 후 동일한 후속 문제 3 유지
-  - 후속 종료: 추가 답변 폼 대신 학습 완료 안내·기본 문제 이동 제공. 홈의 다음 기본 문제 추천과 답변 이력 확인
-  - 브라우저 오류 조회: 오류 없음. 완료 화면 캡처 확인
-- 검증 환경: 메모리 H2 `create-drop`, 평가·후속 생성 stub, 유료 AI 호출 비활성. 기존 운영 데이터 변경 없음
-- 미검증: 실모델 품질·운영 PostgreSQL·다중 인스턴스·전체 실패 조합·교차 브라우저·보조 기술. 이후 백엔드 전체 테스트와 대조한 `AC-005` 기능 완료 근거는 위 Phase 7 Gate 참조
-- 환경 경계: 프로젝트 Node 요구 버전 24와 실행 버전 25.5.0 차이, 기존 `--localstorage-file` 경고 잔존
+- 구현 완료: 코드와 자동 테스트 근거 확인 후 표시
+- 계획: 아직 실행하지 않은 항목
+- 미확정: 확인할 질문과 다음 행동 함께 기록
+- Phase 완료: Gate 전체 충족 후 표시
+- 세부 과정: 이 파일에 누적하지 않고 최종 검증 문서 또는 Git 이력에 보존

@@ -277,8 +277,13 @@ flowchart TD
 
 #### FR-EVAL-002 평가 근거 검색
 
-- Question의 Topic과 QuestionConcept로 PUBLISHED KnowledgeDocument 후보를 제한한다.
-- 질문, 모범 답안과 사용자 Answer를 이용해 관련 KnowledgeChunk를 검색한다.
+- 후보 범위: Question의 Topic에 속한 PUBLISHED KnowledgeDocument. 검색 실패 상태의 Chunk 제외
+- 관련성: 질문·모범 답안의 키워드 일치와 QuestionConcept 이름 가산점. 개념명 본문 일치 필수 조건 없음
+- 최소 후보 조건: 개념명 토큰 일치 또는 질문·모범 답안의 서로 다른 토큰 2개 이상 일치
+- 사용자 Answer: AI 평가 입력으로 전달하되 검색 점수에서는 제외. 오답 내용에 의한 근거 선택 왜곡 방지
+- 선택: 최상위 근거와 개념별 지원 근거 우선 확보 후 최고 점수의 절반 이상인 후보로 채움. 개념별 보호는 개념명 전체 토큰과 추가 검색 토큰 2개 이상 일치 필요
+- 짧은 반대 근거 보호: 추가 검색 토큰 2개 이상 일치, 문단 토큰의 절반 이상이 질문·모범 답안과 일치, 기존 근거와 공통 단어·부정 표현 차이 충족 시 최고 후보 1개 우선 확보
+- 반환: 최대 K개, 점수·문서 ID·문단 순서 유지. 보호할 근거가 K개를 넘으면 점수 순 제한. 전체 개념·모든 충돌의 완전한 탐지 보장 아님
 - 평가에 실제 사용한 Chunk는 EvaluationEvidence로 저장한다.
 - 검색 근거가 없거나 서로 충돌하면 NEEDS_REVIEW로 처리한다.
 
@@ -540,9 +545,9 @@ KnowledgeState    = 여러 평가가 반영되며 변하는 현재 학습 상태
 - Backend: Java 21, Spring Boot 4.1.x, Spring MVC, Spring Data JPA
 - Frontend: Vue 3, TypeScript, Vite, Element Plus
 - Local database: H2
-- Production database target: PostgreSQL 17. Migration·실제 DB 검증은 최초 persistent staging 전 결정 ([ADR-0004](../adr/0004-defer-versioned-database-migrations.md), [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md))
+- Production database target: PostgreSQL 17. 격리 컨테이너 통합 검증과 운영 배포 검증 구분. Migration·배포 절차는 최초 persistent staging 전 결정 ([ADR-0004](../adr/0004-defer-versioned-database-migrations.md), [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md))
 - AI: OpenAI Responses API, 기본 GPT-5.6 Terra, 자동 fallback 없음
-- Retrieval: Topic·Concept 필터 + 키워드 기준선. 품질 미달 시 pgvector 비교
+- Retrieval: Topic·공개 상태 필터 + 질문·모범 답안 키워드 점수·Concept 가산점 + 약한 후보 제외. 품질 미달 시 pgvector 비교
 
 ### 의존 방향
 
@@ -606,6 +611,8 @@ Persistence / AI / Embedding adapter
 
 ### 출시 품질 목표
 
+현재 자료의 정답 기준: [출시 회귀 정답 기준 v1.0.0](../evaluation/reference-v1/manifest.json). 60문제·240사례의 출처 대조·판정 정책·원본 버전 고정과 프로젝트 소유자 독립 검수 완료. 대표 사용자 표본의 성능 인증과 구분하며, 아래 품질 목표의 달성 판정은 실측 필요.
+
 아래 수치는 초기 제안이며 대표 답안 세트가 준비되면 확정한다.
 
 - CORRECT / PARTIALLY_CORRECT / INCORRECT 판정 일치율 85% 이상
@@ -613,6 +620,15 @@ Persistence / AI / Embedding adapter
 - 명백한 오답을 CORRECT로 판정하는 비율 5% 이하
 - EVALUATED 결과의 EvaluationEvidence 연결률 100%
 - JSON 스키마 검증 성공률 99% 이상
+
+지표 집계 계약:
+
+- 삼종 판정 일치율: 기대값이 CORRECT / PARTIALLY_CORRECT / INCORRECT인 사례의 정확한 판정 일치 수 / 해당 사례 수
+- 이진 구분 정확도: 기대값이 CORRECT / INCORRECT인 사례의 정확한 판정 일치 수 / 해당 사례 수. 실제 PARTIALLY_CORRECT·NEEDS_REVIEW는 불일치
+- false-correct: 기대값 INCORRECT 중 실제 CORRECT인 수 / 기대값 INCORRECT 수. 부분 정답·검토 필요 사례로 분모를 늘리지 않음
+- 기대값 NEEDS_REVIEW: 위 세 지표와 분리해 검토 필요 탐지 결과 보고. 채점 가능한 사례에 대한 실제 NEEDS_REVIEW는 분모에 유지
+- 해당 분모가 0이면 지표는 null(계산 불가). 0% 오류 또는 100% 성공으로 해석하거나 출시 통과에 사용 금지
+- 평가 실패·응답 누락은 정상 판정 표본에서 조용히 삭제하지 않고 별도 실패 건수·전체 실행 건수로 보고. `GoldenSetMetrics`는 기대·실제 판정이 있는 관측만 계산하며 입력 누락은 거부
 
 모델 선택은 가격이나 일반 벤치마크가 아니라 이 평가 세트의 정확도, 지연과 비용을 함께 비교해 결정한다.
 
@@ -723,7 +739,7 @@ And 새로운 Evaluation만 새 문서 버전을 사용할 수 있다.
 | 위험 | 영향 | 대응 |
 |---|---|---|
 | AI가 자연스러운 오답을 정답으로 판정 | 잘못된 학습 상태 형성 | 골든 세트, 필수 Concept, NEEDS_REVIEW, 관리자 실패 조회 |
-| Retrieval이 관련 없는 문서를 제공 | 판정 근거 오염 | Topic·Concept 선필터, Evidence 저장, Recall@K 평가 |
+| Retrieval이 관련 없는 문서를 제공 | 판정 근거 오염 | Topic·공개 상태 필터, 답안의 검색 점수 배제, 약한 후보 제외, Evidence 저장, Recall@K 평가 |
 | 관리자 콘텐츠 병목 | 문제 수 부족 | 초기 품질 기준 확보 후 AI DRAFT 도입 검토 |
 | 프레임워크 버전 혼합 | 같은 질문에 상충하는 답 | technology_version 필수화, 문서 버전 보존 |
 | AI 비용 증가 | 운영 지속성 저하 | 모델 설정화, 입력 문서 제한, 검증 후 저비용 모델 전환 |

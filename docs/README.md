@@ -1,84 +1,97 @@
 # 문서 지도
 
-확인일: 2026-09-06. 존재 여부는 파일 기준. 문서 존재·계획 수립은 구현 완료의 근거가 아님.
+확인일: 2026-09-21
 
-## 찾는 질문
+이 파일은 문서 내용을 반복하지 않는다. 독자가 가진 질문과 그 답을 소유한 기준 문서를 연결한다.
 
-- 무엇을 만들었나? → 제품 명세
-- 어떤 순서로, 어디까지 진행했나? → 계획·작업 목록
-- 구조와 계약은? → 도메인 모델·OpenAPI
-- 왜 이 선택인가? → ADR·변경 기록·회고
+## 구조
 
+```text
+docs/
+├── product/       제품 요구와 콘텐츠 정책
+├── architecture/  현재 도메인·데이터 구조
+├── adr/           선택한 결정과 이유
+├── planning/      남은 작업과 구현 순서
+├── changes/       완료 작업의 최종 검증 증거
+├── evaluation/    버전화된 평가 정답·도구·결과
+├── superpowers/   승인된 구조 변경 설계·실행 계획
+└── retrospectives/ 로컬 회고, 커밋 제외
+```
 
-## 관리 기준
+```text
+현재 동작을 알고 싶음 → product / architecture / evaluation
+왜 이렇게 정했나      → adr
+다음에 무엇을 하나    → planning/tasks.md
+완료를 어떻게 검증했나 → changes
+```
 
-- 기준 정보: 한 문서가 소유. 다른 문서는 요약·링크
-- 유지 책임: 해당 요구·코드·결정을 변경한 작업자
-- 생성 기준: 독자·질문·갱신 계기가 명확하고 기존 문서로 충분하지 않을 때
-- 폴더 기준: 목적별 분류. 개별 변경의 계획·검증·시안은 함께 배치
-- 미작성 문서: 필요가 확정된 경우만 `작성 예정`과 예정 경로 기록. 빈 파일 생성 금지
-- 이동·통합·삭제: 같은 작업에서 목록·링크·도구 참조 점검
-- 기록 보존: 현재 기준과 분리. 과거 테스트 결과는 현재 통과의 증거가 아님
-- 점검: 파일 존재·목록 누락·상대 링크·이전 경로 잔존 확인
+## 현재 기준
 
-## 문서 목록
+| 답할 질문 | 상태 | 기준 문서 | 갱신 계기 |
+|---|---|---|---|
+| 프로젝트 실행·검증 방법 | 현재 안내 | [루트 README](../README.md) | 도구 버전·실행 명령·profile 변경 |
+| 협업·설계·테스트 규칙 | 현재 기준 | [AGENTS.md](../AGENTS.md) | 저장소 공통 규칙 변경 |
+| HTTP 요청·응답 계약 | 현재 계약 | [OpenAPI](../openapi.yml) | endpoint·상태 코드·schema 변경 |
+| 프런트 구조·실행 | 현재 안내 | [front README](../front/README.md) | 프런트 구조·설정 변경 |
+| 제품 범위·기능·인수 조건 | 현재 기준 | [제품 명세](product/spec.md) | 요구사항·출시 범위 변경 |
+| 콘텐츠 검수·평가 정책 | 현재 기준 | [콘텐츠 정책](product/content-and-ai-policy.md) | 검수·평가·공개 정책 변경 |
+| 도메인 관계·불변식·테이블 | 현재 기준 | [도메인·ERD](architecture/domain-model-and-erd.md) | 엔티티·관계·schema 변경 |
+| 평가 정답의 구성·실행법 | v1 확정 | [평가 정답 기준](evaluation/reference-v1/README.md) | 원본·manifest·도구 계약 변경 |
+| 평가 기준 버전·사람 검수·해시 | v1.0.0 확정 | [manifest](evaluation/reference-v1/manifest.json) | 원본 재검수 또는 새 버전 확정 |
+| retrieval 기준과 현재 결과 | 측정 완료, 출시 성능 인증 아님 | [개선 전](evaluation/reference-v1/benchmarks/retrieval-baseline.json), [현재](evaluation/reference-v1/benchmarks/retrieval-improved.json) | 검색 정책·자료·DB 환경 변경 |
+| 구현 순서와 의존성 | 계획 | [개발 계획](planning/plan.md) | 순서·의존성 변경 |
+| 현재 남은 작업 | 진행 기준 | [작업 목록](planning/tasks.md) | 작업 시작·완료·검증 결과 변경 |
+| 출시 이후 확장 후보 | 초안 | [확장 기능](planning/extension-features.md) | 후보 채택·보류·폐기 |
 
-| 문서의 책임 | 존재 여부 | 상태 | 위치 | 갱신 계기 |
-|---|---|---|---|---|
-| 프로젝트 실행·검증 입구 | 있음 | 현재 안내 | [README.md](../README.md) | 실행 환경·명령 변경 |
-| 협업·설계·테스트·문서 규칙 | 있음 | 현재 기준 | [AGENTS.md](../AGENTS.md) | 작업 규칙 변경 |
-| HTTP 요청·응답 계약 | 있음 | 현재 계약 | [openapi.yml](../openapi.yml) | API 계약 변경 |
-| 프런트 구조·설정 위치 | 있음 | 현재 안내 | [front/README.md](../front/README.md) | 프런트 구조·설정 변경 |
-| 문서 탐색·책임·위치 | 있음 | 현재 안내 | [docs/README.md](README.md) | 문서 생성·이동·통합·삭제 |
-| 제품 범위·요구사항·인수 조건 | 있음 | 목표 명세 | [docs/product/spec.md](product/spec.md) | 제품 요구 변경 |
-| 콘텐츠 검수·평가 정책 | 있음 | 정책·일부 도입 계획 | [docs/product/content-and-ai-policy.md](product/content-and-ai-policy.md) | 검수·평가 정책 변경 |
-| 문제·골든 셋 활용과 출처 | 있음 | AI 작성 초안·독립 검수 대기 | [활용 안내](content/2026-09-09-market-and-golden-set/report.md), [출처](content/2026-09-09-market-and-golden-set/sources.json) | 자료·출처·활용 조건 변경 |
-| 문제·판정 사례·근거 원본 | 있음 | 초안·운영 공개 전 검수 필요 | [문제](content/2026-09-09-market-and-golden-set/questions.jsonl), [골든 셋](content/2026-09-09-market-and-golden-set/golden-set.jsonl), [근거 문서](content/2026-09-09-market-and-golden-set/knowledge-documents.jsonl) | 문제·기대 판정·근거 변경 |
-| 자료 검수본·무결성 검사 | 있음 | 원본 기반 출력·초안 묶음 전용 검사 | [검수본](content/2026-09-09-market-and-golden-set/questions.md), [검사 도구](content/2026-09-09-market-and-golden-set/bundle.py) | 원본 수정 후 검사·검수본 재생성 |
-| 도메인 관계·불변식·테이블 | 있음 | 설계·구현 여부는 tasks 참조 | [docs/architecture/domain-model-and-erd.md](architecture/domain-model-and-erd.md) | 도메인·schema 변경 |
-| 개발 순서·의존성·실패 신호 | 있음 | 개발 계획 | [docs/planning/plan.md](planning/plan.md) | 순서·의존성 변경 |
-| 구현·검증·품질 개선 진행 | 있음 | 작업 현황 | [docs/planning/tasks.md](planning/tasks.md) | 작업 시작·완료·검증 결과 |
-| 출시 이후 확장 후보 | 있음 | 초안 | [docs/planning/extension-features.md](planning/extension-features.md) | 확장 채택·보류·폐기 |
-| Phase 4 결정·실행·검증 | 있음 | 구현·코드 리뷰 개선 완료·Gate 통과 | [docs/changes/2026-09-07-phase-4/verification.md](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 또는 검증 변경 |
-| Phase 5 구현·검증 | 있음 | 구현 기반 완료·출시 측정 대기 | [docs/changes/2026-09-08-phase-5/verification.md](changes/2026-09-08-phase-5/verification.md) | 검색·평가·검증 결과 변경 |
-| Phase 6 구현 범위·계약·검증 순서 | 있음 | 실행 완료 기록 | [구현 계획](changes/2026-09-13-phase-6/plan.md) | 상태·추천·화면 요구 변경 |
-| Phase 6 구현·Gate 증거 | 있음 | 구현 완료·기능 Gate 통과 | [검증 기록](changes/2026-09-13-phase-6/verification.md) | 구현·테스트·검토 결과 변경 |
-| Phase 6 구조·테스트 정리 | 있음 | answer/mastery 패키지·HTTP 결과 경계 정리 및 검증 완료 | [리팩터링 계획](changes/2026-09-13-phase-6/refactoring.md) | 이름·패키지·매핑·트랜잭션·테스트 책임 변경 |
-| UI 개편 선택지·제품 분석 | 있음 | 제안 당시 기록 | [docs/changes/2026-09-06-ui/proposal.md](changes/2026-09-06-ui/proposal.md) | 제안 정정·후속 결정 연결 |
-| UI·테마 구현 범위 | 있음 | 작업 계획 기록 | [docs/changes/2026-09-06-ui/plan.md](changes/2026-09-06-ui/plan.md) | 후속 검증 연결 |
-| UI 변경·검증 증거 | 있음 | 검증 당시 기록 | [docs/changes/2026-09-06-ui/verification.md](changes/2026-09-06-ui/verification.md) | 검증 정정·후속 검증 추가 |
-| 시안 재현 프롬프트 | 있음 | 시안 생성 기록 | [docs/changes/2026-09-06-ui/assets/prompts.md](changes/2026-09-06-ui/assets/prompts.md) | 시안 변경 |
-| 초기 제품 범위·학습 흐름 | 있음 | 대체됨: product/spec.md | [docs/archive/functional-specification.md](archive/functional-specification.md) | 현재 요구 수정 금지; 이력 오류만 정정 |
-| ADR-0001: 동일 출처 웹의 서버 세션 인증 | 있음 | 승인된 결정 이력 | [docs/adr/0001-session-based-authentication.md](adr/0001-session-based-authentication.md) | 결정 변경 시 후속 ADR·대체 관계 기록 |
-| ADR-0002: LOCAL 계정 비밀번호 정책 | 있음 | 승인된 결정 이력 | [docs/adr/0002-password-policy.md](adr/0002-password-policy.md) | 결정 변경 시 후속 ADR·대체 관계 기록 |
-| ADR-0003: Phase 2 인증 보안 최소 기준 | 있음 | 승인된 결정 이력 | [docs/adr/0003-authentication-security-baseline.md](adr/0003-authentication-security-baseline.md) | 결정 변경 시 후속 ADR·대체 관계 기록 |
-| ADR-0004: 버전 기반 DB migration 도구 도입 보류 | 있음 | 현재 결정 | [docs/adr/0004-defer-versioned-database-migrations.md](adr/0004-defer-versioned-database-migrations.md) | persistent DB 도입 또는 schema 배포 절차 결정 시 |
-| ADR-0005: Phase 5 평가 실행 기반 | 있음 | 현재 결정 | [docs/adr/0005-phase-5-evaluation-runtime.md](adr/0005-phase-5-evaluation-runtime.md) | DB·검색·AI·worker·비용 기준 변경 |
+## 결정 기록
 
-회고 경로: 로컬 파일 위치만 기록. 저장소 체크아웃에는 미포함.
+| 답할 질문 | 상태 | 기준 문서 | 갱신 계기 |
+|---|---|---|---|
+| 인증 상태 유지 방식 | 승인 | [ADR-0001](adr/0001-session-based-authentication.md) | 인증 방식 변경 |
+| LOCAL 비밀번호 정책 | 승인 | [ADR-0002](adr/0002-password-policy.md) | 비밀번호 정책 변경 |
+| 인증 보안 최소 기준 | 승인 | [ADR-0003](adr/0003-authentication-security-baseline.md) | 보안 기준 변경 |
+| DB migration 도구 도입 시점 | 현재 보류 | [ADR-0004](adr/0004-defer-versioned-database-migrations.md) | persistent DB·배포 절차 확정 |
+| 평가 실행·검색·worker 선택 | 현재 결정 | [ADR-0005](adr/0005-phase-5-evaluation-runtime.md) | DB·검색·provider·worker 기준 변경 |
 
-- Phase 6 질문·인사이트·트레이드오프: `docs/retrospectives/phase-6-decisions-and-insights.md` (로컬 작성 완료, 커밋 제외). Phase 6 설계 판단 변경 시 갱신
-- Phase 7 질문·인사이트·트레이드오프: `docs/retrospectives/phase-7-decisions-and-insights.md` (백엔드 구현·리뷰 당시 회고, 커밋 제외). 현재 화면·기능 Gate 완료 근거는 [작업 현황](planning/tasks.md#phase-7-gate) 참조. 후속 생성·null 계약·작업 인계 판단 변경 시 갱신
+결정이 바뀌면 기존 ADR을 조용히 덮어쓰지 않는다. 후속 ADR을 추가하고 대체 관계를 기록한다.
 
-## 이미지 자료
+## 완료 증거
 
-- [Phase 4 평가 화면](changes/2026-09-07-phase-4/assets/): 데스크톱·모바일 검증 증거
-- [ERD 이미지](architecture/images/crackcs-erd-illustrated.png): 2026-09-13 구현 기준 14개 엔티티·주요 관계선·숫자 다중성. 생성/검수 회원 FK와 컬렉션 테이블은 도메인 문서의 Mermaid 참조. 매핑 변경 시 함께 갱신
-- [UI 시안·검증 화면](changes/2026-09-06-ui/assets/): 해당 UI 변경 기록 부속 자료
+| 답할 질문 | 상태 | 기준 문서 | 갱신 계기 |
+|---|---|---|---|
+| UI 개편의 목표 | 당시 결정 | [UI 제안](changes/2026-09-06-ui/proposal.md) | 제안 해석 오류 정정 |
+| UI·테마 구현 결과 | 완료 증거 | [UI 검증](changes/2026-09-06-ui/verification.md) | 같은 변경 범위 재검증 |
+| Phase 4 답변·평가 골격 | 완료 증거 | [Phase 4 검증](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 변경 |
+| Phase 5 평가 실행 기반 | 구현 증거, 실제 모델 품질 미완료 | [Phase 5 검증](changes/2026-09-08-phase-5/verification.md) | 평가·검색·품질 결과 변경 |
+| Phase 6 개인화·구조 정리 | 완료 증거 | [Phase 6 검증](changes/2026-09-13-phase-6/verification.md) | 상태·추천·구조·검증 변경 |
+| 문서·평가 하네스 재구성 이유 | 승인된 설계 | [설계](superpowers/specs/2026-09-21-living-documentation-and-evaluation-harness-design.md) | 구조 결정 변경 |
+| 문서·평가 하네스 재구성 절차 | 실행 계획 | [계획](superpowers/plans/2026-09-21-living-documentation-and-evaluation-harness.md) | 계획 오류 정정 |
 
-## 통합·제거 이력
+`changes/`의 과거 테스트 수는 당시 증거다. 현재 통과 여부는 새 실행 결과로 판단한다.
 
-| 이전 문서 | 현재 처리 | 이유 |
-|---|---|---|
-| 루트 품질 개선 체크리스트 | 작업 목록의 ‘품질 개선 작업’에 통합 | 진행 상태의 소유 지점 통일. 체크 상태 보존 |
-| Spring 생성 도움말 | 제거 | 프로젝트 고유 정보 없이 외부 가이드 링크만 포함 |
-| 코드 품질 진단 보고서 | 제거 | 완료·미완료 상태는 tasks, 설계 기준은 AGENTS가 소유. 시점성 점수 중복 제거 |
-| AI 모델 선택 검토 | ADR-0005와 콘텐츠·AI 정책에 통합 | 현재 결정·가격·재검증 조건의 소유 지점 통일 |
-| 필수 기능 초안 | archive로 이동, 현재 제품 명세 연결 | 초기 맥락 보존; 중복 요구사항 갱신 중단 |
-| 프런트 생성 README | 프런트 고유 구조 안내로 교체 | 공통 실행 명령 중복 제거 |
+## 로컬 전용 자료
 
-## 기준 근거
+- `docs/retrospectives/`: 결정 당시 질문·트레이드오프
+- Git staging과 커밋에서 제외
+- 현재 계약의 근거로 사용하지 않음
+- 회고가 현재 기준과 충돌하면 현재 기준 문서 우선
 
-- [Google 문서 관리](https://google.github.io/styleguide/docguide/best_practices.html): 짧고 정확한 문서·코드와 함께 갱신·중복 제거
-- [Diátaxis](https://diataxis.fr/): 독자 목적에 따른 문서 책임 구분
-- [Google Cloud ADR](https://docs.cloud.google.com/architecture/architecture-decision-records): 선택지·결정 이유·이력 보존
+## 관리 규칙
+
+- 주제별 기준 문서 한 곳
+- 다른 문서는 짧은 요약과 링크만 유지
+- 코드·요구·결정 변경자가 관련 기준 문서도 같은 작업에서 갱신
+- 생성물은 원본과 생성 명령이 있으면 `build/reports/`에 출력
+- 완료 계획은 최종 검증에 고유 정보만 병합
+- 단순 작업 일지는 Git 이력 사용
+- 이동·삭제 시 이 목록, 상대 링크, Gradle·테스트 경로 함께 점검
+- 완료 표시는 코드와 새 테스트 결과 확인 후 적용
+- 미확정 항목은 질문과 다음 행동을 함께 기록
+
+## 관리 근거
+
+- [Codex AGENTS.md](https://developers.openai.com/codex/agent-configuration/agents-md): 계층별 지침과 제한된 프로젝트 컨텍스트
+- [Claude Code memory](https://code.claude.com/docs/en/memory): 간결한 프로젝트 지침과 범위별 규칙
+- [OpenAI Evaluation best practices](https://developers.openai.com/api/docs/guides/evaluation-best-practices): 사람 기준, 대표 데이터, 지속 평가
+- [Google README 지침](https://google.github.io/styleguide/docguide/READMEs.html): 디렉터리 탐색을 위한 짧은 README
+- [Diátaxis](https://diataxis.fr/): 독자 목적에 따른 문서 책임 분리

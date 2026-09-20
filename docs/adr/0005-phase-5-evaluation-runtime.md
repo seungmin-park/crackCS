@@ -14,8 +14,8 @@
 ## 결정
 
 ```text
-PostgreSQL 목표·현재 H2 검증
-       ↓ Topic·Concept 필터
+PostgreSQL 목표·H2 및 격리 PostgreSQL 검증
+       ↓ Topic·공개 상태 필터
 키워드 기준선 ── 품질 미달 시 ──▶ pgvector 비교
        ↓ 근거 Chunk
 DB lease worker → OpenAI Responses API / Terra
@@ -27,8 +27,12 @@ strict schema 검증 → Evidence 포함 결과 확정
 
 - 운영 DB 목표: PostgreSQL 17
 - 현재 schema 변경: local `update`, test `create-drop`, 기본 profile `validate`
-- version migration과 PostgreSQL 통합 테스트: 최초 persistent staging 전에 재도입 검토
+- version migration: 최초 persistent staging 전에 재도입 검토
+- PostgreSQL 통합 테스트: 2026-09-20 `postgresTest` 재도입 및 사용자 Docker Desktop 준비 후 실제 실행 통과. 운영 DB 배포·migration 검증과 구분
 - 초기 검색: 관계형 Topic 필터 + 애플리케이션 키워드 점수
+- 2026-09-20 후보·선택 개선: 개념명 본문 일치 필수 조건 제거, 질문·기준답안 중심 점수와 Concept 가산점. Answer는 검색 점수에서 제외하되 AI 평가 입력에 유지
+- 약한 후보 제외: 최고 점수의 절반 미만 제거. 단, 최상위·개념별 지원 근거·문맥 일치 조건을 충족한 반대 근거 먼저 확보 후 최대 K개 반환
+- 결정 이유: 개념명 표현 차이로 정답 근거가 점수 계산 전에 탈락하고, 긴 오답과 약한 후보가 근거 선택을 왜곡하는 문제. 세부 규칙·회귀 결과는 [현재 검색 스냅샷](../evaluation/reference-v1/benchmarks/retrieval-improved.json) 참조
 - embedding 실험 조건: Recall@K 85% 미만 또는 무관 Chunk 비율 20% 초과
 - pgvector: 조건 충족 전 미도입
 - 기존 문서의 Chunk: 분할 정책 변경 후에도 재생성하지 않음. 새 문서 버전에 새 정책 적용
@@ -36,7 +40,7 @@ strict schema 검증 → Evidence 포함 결과 확정
 PostgreSQL 선택 이유:
 
 - 향후 pgvector를 같은 transaction·백업·운영 경계에 배치 가능
-- 향후 Testcontainers로 실제 query와 schema 변경 절차 검증 가능
+- Testcontainers로 실제 query·schema 제약 검증 가능. 운영 schema 변경 절차 검증은 별도
 - 전문 검색과 JSON 기능을 별도 검색 서버 없이 확장 가능
 
 MySQL과의 트레이드오프:
@@ -48,7 +52,7 @@ MySQL과의 트레이드오프:
 | 운영 친숙도 | 팀 경험이 적으면 학습 비용 | 기존 MySQL 운영 경험이 있으면 초기 비용 절감 |
 | 이식성 | PostgreSQL 전용 migration·query 발생 | MySQL 전용 문법과 인덱스 선택 발생 |
 
-선택의 대가: 현재 H2 자동화 테스트는 PostgreSQL의 SQL, 잠금, 인덱스와 동시성을 보장하지 않음. 최초 persistent staging 전 PostgreSQL 통합 검증과 schema 배포 절차 결정 필요.
+선택의 대가: H2 테스트만으로 PostgreSQL 동작 보장 불가. 격리 PostgreSQL 검증 이후에도 운영 잠금·인덱스·다중 인스턴스 부하 검증과 최초 persistent staging의 schema 배포 절차 결정 필요.
 
 ### AI 모델과 fallback
 
@@ -128,6 +132,7 @@ DB lease 선택 이유:
 ## 검증과 다음 행동
 
 - 현재 자동 검증: chunk 멱등성, 검색 필터·점수, strict schema, lease 재수령, retry, Evidence 연결, 비용 계산
-- 환경 의존 검증: 현재 보류. 최초 persistent staging 전 PostgreSQL schema·잠금·query 검증 재도입
+- 검색 실측: [개선 전](../evaluation/reference-v1/benchmarks/retrieval-baseline.json)과 [현재](../evaluation/reference-v1/benchmarks/retrieval-improved.json) 스냅샷. H2·PostgreSQL K=5 Recall 86.67% → 100%, 지정 정답 외 비율 57.19% → 0%. 근거와 기준답안 문구가 가까운 회귀 자료이며 독립 성능 인증 아님
+- 환경 의존 검증: `postgresTest`의 PostgreSQL 17 schema·query·답변 평가 저장/중복 처리·검색 측정 33개 통과. 초기 Docker 환경 실패는 과거 기준선에 보존, 운영 배포·migration·부하 검증은 별도
 - 출시 전 필수: Terra와 Luna의 동일 60개 골든 세트 실측, 300회 schema·지연 측정
 - 가격 확인: [OpenAI 모델 문서](https://developers.openai.com/api/docs/models/gpt-5.6-terra)
