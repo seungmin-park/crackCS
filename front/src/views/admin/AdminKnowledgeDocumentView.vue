@@ -52,8 +52,10 @@ const relationLoading = ref(true);
 const relationError = ref(false);
 let listGeneration = 0;
 let relationGeneration = 0;
+let disposed = false;
 
 async function load() {
+  if (disposed) return;
   const generation = ++listGeneration;
   loading.value = true;
   loadError.value = false;
@@ -86,6 +88,7 @@ async function load() {
 }
 
 async function loadRelations() {
+  if (disposed) return;
   const generation = ++relationGeneration;
   relationLoading.value = true;
   relationError.value = false;
@@ -149,6 +152,7 @@ onMounted(() => {
   void loadRelations();
 });
 onBeforeUnmount(() => {
+  disposed = true;
   listGeneration++;
   relationGeneration++;
 });

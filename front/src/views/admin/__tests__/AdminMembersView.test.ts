@@ -18,6 +18,56 @@ describe("관리자 회원 화면", () => {
     api.fetchAdminMembers.mockResolvedValue({ content: [{ id: 1, nickname: "회원", role: "USER", status: "ACTIVE" }], page: 0, size: 100, totalElements: 1, totalPages: 1 });
   });
 
+  it("상태 변경 대기 중 화면을 떠나면 목록을 다시 조회하거나 목적지 URL을 바꾸지 않는다", async () => {
+    let resolveMutation!: (value: object) => void;
+    api.updateMemberStatus.mockReturnValue(new Promise(resolve => { resolveMutation = resolve; }));
+    route.query = { page: "1", status: "ACTIVE" };
+    api.fetchAdminMembers.mockResolvedValueOnce({
+      content: [{ id: 1, nickname: "회원", role: "USER", status: "ACTIVE" }],
+      page: 1, size: 20, totalElements: 21, totalPages: 2,
+    });
+    const wrapper = mount(AdminMembersView);
+    await flushPromises();
+    await wrapper.get(".admin-list select").setValue("BLOCKED");
+    expect(api.updateMemberStatus).toHaveBeenCalledOnce();
+    wrapper.unmount();
+    route.query = { page: "3", status: "DRAFT" };
+    api.fetchAdminMembers.mockClear();
+    resolveMutation({ id: 1, status: "BLOCKED" });
+    await flushPromises();
+    expect(api.fetchAdminMembers).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(route.query).toEqual({ page: "3", status: "DRAFT" });
+  });
+
+  it("화면이 유지되면 상태 변경 성공 뒤 회원 목록을 갱신한다", async () => {
+    api.updateMemberStatus.mockResolvedValue({ id: 1, status: "BLOCKED" });
+    const wrapper = mount(AdminMembersView);
+    await flushPromises();
+    api.fetchAdminMembers.mockResolvedValue({
+      content: [{ id: 1, nickname: "회원", role: "USER", status: "BLOCKED" }],
+      page: 0, size: 20, totalElements: 1, totalPages: 1,
+    });
+    await wrapper.get(".admin-list select").setValue("BLOCKED");
+    await flushPromises();
+    expect(api.fetchAdminMembers).toHaveBeenCalledTimes(2);
+    expect(wrapper.get(".admin-list small").text()).toContain("BLOCKED");
+  });
+
+  it("진행 중 회원 목록 응답은 화면 폐기 후 목적지 URL을 교정하지 않는다", async () => {
+    let resolveList!: (value: object) => void;
+    route.query = { page: "1", status: "ACTIVE" };
+    api.fetchAdminMembers.mockReturnValueOnce(new Promise(resolve => { resolveList = resolve; }));
+    const wrapper = mount(AdminMembersView);
+    await flushPromises();
+    wrapper.unmount();
+    route.query = { page: "3", status: "DRAFT" };
+    resolveList({ content: [], page: 1, size: 20, totalPages: 0, totalElements: 0 });
+    await flushPromises();
+    expect(replace).not.toHaveBeenCalled();
+    expect(route.query).toEqual({ page: "3", status: "DRAFT" });
+  });
+
   it("결과가 없는 범위 밖 회원 page를 0으로 replace한다", async () => {
     route.query = { page: "3", status: "BLOCKED" };
     api.fetchAdminMembers.mockResolvedValueOnce({ content: [], page: 3, size: 20, totalElements: 0, totalPages: 0 });

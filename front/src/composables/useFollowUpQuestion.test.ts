@@ -65,13 +65,29 @@ describe("후속 질문 조회", () => {
     expect(followUp.error.value).toBeUndefined();
   });
 
+  it("첫 일시 오류부터 복구 응답까지 로딩 상태를 유지한다", async () => {
+    const request = vi.fn().mockRejectedValueOnce(new TypeError("network")).mockResolvedValueOnce(ready);
+    const { followUp, wrapper } = mountHarness(request);
+    await flushPromises();
+    expect(followUp.loading.value).toBe(true);
+    expect(followUp.error.value).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(followUp.loading.value).toBe(true);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(followUp.loading.value).toBe(false);
+    expect(followUp.result.value).toEqual(ready);
+    wrapper.unmount();
+  });
+
   it("일시 오류는 세 번까지만 자동 재시도하고 수동 재시도로 복구한다", async () => {
     const request = vi.fn().mockRejectedValue(new TypeError("network"));
     const { followUp } = mountHarness(request);
     await flushPromises();
 
+    expect(followUp.loading.value).toBe(true);
     await vi.runAllTimersAsync();
     expect(request).toHaveBeenCalledTimes(3);
+    expect(followUp.loading.value).toBe(false);
     expect(followUp.error.value).toEqual({ kind: "temporary", retryable: true });
 
     request.mockResolvedValueOnce(ready);

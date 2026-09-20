@@ -59,6 +59,7 @@ export function useKnowledgeDocumentEditor(refreshList: () => Promise<void>) {
   const chunkError = ref(false);
   const chunksLoading = ref(false);
   let selectionGeneration = 0;
+  let disposed = false;
   let chunkRequestGeneration = 0;
   const form = reactive(documentForm());
 
@@ -126,7 +127,7 @@ export function useKnowledgeDocumentEditor(refreshList: () => Promise<void>) {
       target?.status === "DRAFT" ? "문서 초안을 수정했습니다. 수정 후에는 다시 검수해야 합니다." : "문서 초안을 등록했습니다.",
     );
     if (result && generation === selectionGeneration) select(result);
-    if (result) await refreshList();
+    if (result && !disposed) await refreshList();
   }
 
   async function createVersion() {
@@ -137,7 +138,7 @@ export function useKnowledgeDocumentEditor(refreshList: () => Promise<void>) {
     const result = await feedback.execute(() => createKnowledgeDocumentVersion(targetId, payload),
       "새 DRAFT 버전을 생성했습니다.");
     if (result && generation === selectionGeneration) select(result);
-    if (result) await refreshList();
+    if (result && !disposed) await refreshList();
   }
 
   async function transition(action: "review" | "publish" | "retire") {
@@ -156,10 +157,11 @@ export function useKnowledgeDocumentEditor(refreshList: () => Promise<void>) {
     };
     const result = await feedback.execute(() => calls[action](targetId), messages[action]);
     if (result && generation === selectionGeneration) select(result);
-    if (result) await refreshList();
+    if (result && !disposed) await refreshList();
   }
 
   onBeforeUnmount(() => {
+    disposed = true;
     selectionGeneration++;
     chunkRequestGeneration++;
   });

@@ -72,6 +72,21 @@ describe("후속 질문 패널", () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it.each(["recovery", "exhaustion"] as const)("첫 조회 실패 뒤 재시도 동안 안내가 끊기지 않는다: %s", async outcome => {
+    fetchFollowUpQuestion.mockRejectedValue(new TypeError("network"));
+    const wrapper = mountPanel();
+    await flushPromises();
+    expect(wrapper.get('[role="status"]').text()).toContain("후속 질문을 확인하고 있어요");
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(wrapper.get('[role="status"]').text()).toContain("후속 질문을 확인하고 있어요");
+    if (outcome === "recovery") fetchFollowUpQuestion.mockResolvedValueOnce(ready);
+    await vi.advanceTimersByTimeAsync(2_000);
+    if (outcome === "recovery") expect(wrapper.text()).toContain(ready.question.content);
+    else expect(wrapper.text()).toContain("후속 질문을 확인하지 못했어요");
+    expect(wrapper.text()).not.toContain("후속 질문을 확인하고 있어요");
+    wrapper.unmount();
+  });
+
   it.each([
     [{ status: "PENDING", reason: null, question: null }, "후속 질문을 준비하고 있어요"],
     [{ status: "PROCESSING", reason: null, question: null }, "후속 질문을 만들고 있어요"],

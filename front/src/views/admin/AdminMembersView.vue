@@ -19,8 +19,10 @@ const feedback = useAdminFeedback();
 const loading = ref(true);
 const loadError = ref(false);
 let loadGeneration = 0;
+let disposed = false;
 
 async function load() {
+  if (disposed) return;
   const generation = ++loadGeneration;
   loading.value = true;
   loadError.value = false;
@@ -56,10 +58,10 @@ async function change(member: AdminMember, status: MemberStatus) {
   const targetId = member.id;
   const targetStatus = status;
   const result = await feedback.execute(() => updateMemberStatus(targetId, targetStatus), "회원 상태를 변경했습니다.");
-  if (result) await load();
+  if (result && !disposed) await load();
 }
 onMounted(load);
-onBeforeUnmount(() => { loadGeneration++; });
+onBeforeUnmount(() => { disposed = true; loadGeneration++; });
 </script>
 
 <template>

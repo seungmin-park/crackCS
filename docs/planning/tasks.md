@@ -747,6 +747,7 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
   - 검증: 평가 종료 뒤 답변 ID로 후속 상태 조회·표시 컴포넌트 테스트 RED → GREEN (2026-09-20)
 - [x] 생성 중, 생성 실패와 질문 없음 상태를 처리한다.
   - 검증: PENDING·PROCESSING·FAILED·UNAVAILABLE 표시와 terminal 403/404·bounded retry 테스트 RED → GREEN (2026-09-20)
+  - 보완: 첫 조회의 일시 오류 후 자동 재시도 중 로딩 안내 유지, 복구·3회 실패 종료 시 안내 전환을 실제 패널과 composable에서 RED → GREEN. 전체 프런트 283개·type-check·production build 성공 (2026-09-20)
 - [x] 후속 답변과 평가 결과 화면을 구현한다.
   - 검증: READY 인라인 제출이 기존 멱등 제출 흐름을 사용하고 새 답변 상세로 이동하는 테스트 RED → GREEN (2026-09-20)
 - [x] 후속 평가 후 다음 기본 문제 이동을 제공한다.
@@ -978,6 +979,7 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
     - 검증: 두 편집 화면의 명령 실패 입력·선택 보존 14건, 성공 후 목록 갱신의 선택 유지 12건, 기존 pagination·요청 경합 포함 48개 테스트 성공 (2026-09-20)
   - [x] 관리자 쓰기 명령의 중복 실행을 막고 완료 응답이 새 선택을 덮지 않는다.
     - 검증: 공통 명령 이중 실행과 Question 저장 중 새 작성 전환 테스트 RED → GREEN (2026-09-15)
+    - 보완: Question·KnowledgeDocument의 12개 명령, Member 상태 변경, Taxonomy 6개 명령의 unmount 후 목록·관계 후보 재조회 차단 RED → GREEN. 화면 유지 중 선택 변경 시 목록 갱신·새 입력 보존, 진행 중 목록 응답의 목적지 URL 보호 확인. 관련 105개·전체 283개 성공, type-check·production build 성공 (2026-09-20)
   - [x] Question·KnowledgeDocument 목록 선택을 native button과 `aria-pressed`로 제공한다.
     - 검증: 키보드 접근 가능한 선택 요소와 선택 상태 테스트 RED → GREEN (2026-09-15)
   - [x] 관리자 Question·KnowledgeDocument·Evaluation·Member·Taxonomy 목록을 URL query와 서버 pagination 메타데이터로 이동한다.

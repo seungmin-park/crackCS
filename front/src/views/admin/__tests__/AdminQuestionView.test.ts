@@ -161,6 +161,79 @@ describe("관리자 Question 화면", () => {
     });
   });
 
+  it("선택이 바뀐 화면에서는 늦은 저장 완료가 목록만 갱신하고 새 입력을 보존한다", async () => {
+    let resolveMutation!: (value: typeof networkQuestion) => void;
+    api.publishQuestion.mockReturnValue(new Promise(resolve => { resolveMutation = resolve; }));
+    api.fetchAdminQuestions.mockResolvedValue({
+      content: [{ ...networkQuestion, status: "DRAFT" }], page: 0, size: 20, totalPages: 1, totalElements: 1,
+    });
+    api.fetchAdminQuestion.mockResolvedValue(networkQuestion);
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    await wrapper.get("button[data-question-id='10']").trigger("click");
+    await flushPromises();
+    await wrapper.findAll("button").find(button => button.text() === "공개")!.trigger("click");
+    expect(api.publishQuestion).toHaveBeenCalledOnce();
+    route.query = { status: "PUBLISHED", page: "0" };
+    await flushPromises();
+    await wrapper.findAll("textarea")[0]!.setValue("새로 작성 중");
+    api.fetchAdminQuestions.mockClear();
+    resolveMutation(networkQuestion);
+    await flushPromises();
+    expect(api.fetchAdminQuestions).toHaveBeenCalledOnce();
+    expect(api.fetchAdminQuestions).toHaveBeenCalledWith(expect.objectContaining({ status: "PUBLISHED" }));
+    expect(wrapper.findAll("textarea")[0]!.element.value).toBe("새로 작성 중");
+    expect(wrapper.get("h2").text()).toContain("새 문제");
+  });
+
+  it("진행 중 목록 응답은 화면 폐기 후 목적지 URL을 교정하지 않는다", async () => {
+    let resolveList!: (value: object) => void;
+    route.query = { page: "1", status: "DRAFT" };
+    api.fetchAdminQuestions.mockReturnValueOnce(new Promise(resolve => { resolveList = resolve; }));
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    wrapper.unmount();
+    route.query = { page: "3", status: "ACTIVE" };
+    resolveList({ content: [], page: 1, size: 20, totalPages: 0, totalElements: 0 });
+    await flushPromises();
+    expect(replace).not.toHaveBeenCalled();
+    expect(route.query).toEqual({ page: "3", status: "ACTIVE" });
+  });
+
+  it.each([
+    ["createAdminQuestion", undefined, undefined],
+    ["updateAdminQuestion", "DRAFT", undefined],
+    ["reviewQuestion", "DRAFT", "검수"],
+    ["publishQuestion", "DRAFT", "공개"],
+    ["retireQuestion", "PUBLISHED", "폐기"],
+    ["createQuestionVersion", "PUBLISHED", "현재 입력으로 새 버전"],
+  ] as const)("%s 대기 중 화면을 떠나면 이전 목록과 목적지 URL을 변경하지 않는다", async (method, status, buttonText) => {
+    let resolveMutation!: (value: typeof networkQuestion) => void;
+    api[method].mockReturnValue(new Promise(resolve => { resolveMutation = resolve; }));
+    route.query = { page: "1", status: "DRAFT" };
+    api.fetchAdminQuestions.mockResolvedValueOnce({
+      content: [{ ...networkQuestion, status }], page: 1, size: 20, totalPages: 2, totalElements: 21,
+    });
+    api.fetchAdminQuestion.mockResolvedValue({ ...networkQuestion, status });
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    if (status) {
+      await wrapper.get("button[data-question-id='10']").trigger("click");
+      await flushPromises();
+    }
+    if (buttonText) await wrapper.findAll("button").find(button => button.text() === buttonText)!.trigger("click");
+    else await wrapper.get("form").trigger("submit");
+    expect(api[method]).toHaveBeenCalledOnce();
+    wrapper.unmount();
+    route.query = { page: "3", status: "ACTIVE" };
+    api.fetchAdminQuestions.mockClear();
+    resolveMutation(networkQuestion);
+    await flushPromises();
+    expect(api.fetchAdminQuestions).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(route.query).toEqual({ page: "3", status: "ACTIVE" });
+  });
+
   it.each([
     ["등록", "createAdminQuestion", undefined, undefined],
     ["수정", "updateAdminQuestion", "DRAFT", undefined],

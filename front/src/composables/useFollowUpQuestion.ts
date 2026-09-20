@@ -55,9 +55,9 @@ export function useFollowUpQuestion(
     } catch (caught) {
       if (disposed || activeGeneration !== generation) return;
 
-      loading.value = false;
       const terminal = terminalError(caught);
       if (terminal) {
+        loading.value = false;
         error.value = terminal;
         return;
       }
@@ -66,6 +66,7 @@ export function useFollowUpQuestion(
       if (requestCount >= MAX_POLL_REQUESTS) error.value = { kind: "timeout", retryable: true };
       else if (consecutiveFailures < MAX_CONSECUTIVE_FAILURES) schedulePoll(activeAnswerId, activeGeneration);
       else error.value = { kind: "temporary", retryable: true };
+      loading.value = !result.value && !error.value;
     }
   }
 

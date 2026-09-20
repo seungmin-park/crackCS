@@ -43,8 +43,10 @@ const feedback = useAdminFeedback();
 const loadError = ref(false);
 let loadGeneration = 0;
 let relationGeneration = 0;
+let disposed = false;
 
 async function load() {
+  if (disposed) return;
   const generation = ++loadGeneration;
   loading.value = true;
   loadError.value = false;
@@ -72,6 +74,7 @@ async function load() {
 }
 
 async function loadRelations() {
+  if (disposed) return;
   const generation = ++relationGeneration;
   relationLoading.value = true; relationError.value = false;
   try {
@@ -113,7 +116,7 @@ async function submitTopic() {
     () => topicEditingId.value ? updateTopic(topicEditingId.value, input) : createTopic(input),
     topicEditingId.value ? "Topic을 수정했습니다." : "Topic을 등록했습니다.",
   );
-  if (result) {
+  if (result && !disposed) {
     topicEditingId.value = undefined;
     Object.assign(topicForm, { parentId: "", code: "", name: "" });
     await Promise.all([load(), loadRelations()]);
@@ -126,7 +129,7 @@ async function submitConcept() {
     () => conceptEditingId.value ? updateConcept(conceptEditingId.value, input) : createConcept(input),
     conceptEditingId.value ? "Concept을 수정했습니다." : "Concept을 등록했습니다.",
   );
-  if (result) { conceptEditingId.value = undefined; Object.assign(conceptForm, { topicId: "", code: "", name: "", description: "" }); await load(); }
+  if (result && !disposed) { conceptEditingId.value = undefined; Object.assign(conceptForm, { topicId: "", code: "", name: "", description: "" }); await load(); }
 }
 
 async function deactivate(kind: "topic" | "concept", id: number) {
@@ -134,13 +137,13 @@ async function deactivate(kind: "topic" | "concept", id: number) {
     () => kind === "topic" ? deactivateTopic(id) : deactivateConcept(id),
     `${kind === "topic" ? "Topic" : "Concept"}을 비활성화했습니다.`,
   );
-  if (result === undefined && feedback.formError.value) return;
+  if (disposed || (result === undefined && feedback.formError.value)) return;
   if (kind === "topic") await Promise.all([load(), loadRelations()]);
   else await load();
 }
 
 onMounted(() => { void load(); void loadRelations(); });
-onBeforeUnmount(() => { loadGeneration++; relationGeneration++; });
+onBeforeUnmount(() => { disposed = true; loadGeneration++; relationGeneration++; });
 </script>
 
 <template>

@@ -37,6 +37,52 @@ describe("관리자 Topic과 Concept 화면", () => {
     api.fetchConcepts.mockResolvedValue({ content: [{ id: 2, topicId: 1, code: "THREAD", name: "스레드", description: null, active: true }], page: 0, size: 100, totalElements: 1, totalPages: 1 });
   });
 
+  it.each([
+    ["createTopic", 0, "submit"],
+    ["updateTopic", 0, "edit"],
+    ["deactivateTopic", 0, "deactivate"],
+    ["createConcept", 1, "submit"],
+    ["updateConcept", 1, "edit"],
+    ["deactivateConcept", 1, "deactivate"],
+  ] as const)("%s 대기 중 화면을 떠나면 목록과 관계 후보를 다시 조회하지 않는다", async (method, panelIndex, action) => {
+    let resolveMutation!: (value?: object) => void;
+    api[method].mockReturnValue(new Promise(resolve => { resolveMutation = resolve; }));
+    const wrapper = mount(AdminTaxonomyView);
+    await flushPromises();
+    const panel = wrapper.findAll(".admin-panel")[panelIndex]!;
+    if (action === "deactivate") {
+      await panel.findAll("button").find(button => button.text() === "비활성화")!.trigger("click");
+    } else {
+      if (action === "edit") await panel.findAll("button").find(button => button.text() === "편집")!.trigger("click");
+      await panel.get("form").trigger("submit");
+    }
+    expect(api[method]).toHaveBeenCalledOnce();
+    wrapper.unmount();
+    route.query = { page: "3", status: "ACTIVE" };
+    api.fetchTopics.mockClear();
+    api.fetchConcepts.mockClear();
+    resolveMutation(action === "deactivate" ? undefined : { id: 3 });
+    await flushPromises();
+    expect(api.fetchTopics).not.toHaveBeenCalled();
+    expect(api.fetchConcepts).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(route.query).toEqual({ page: "3", status: "ACTIVE" });
+  });
+
+  it("진행 중 분류 목록 응답은 화면 폐기 후 목적지 URL을 교정하지 않는다", async () => {
+    let resolveList!: (value: object) => void;
+    route.query = { topicPage: "1", conceptPage: "1" };
+    api.fetchTopics.mockReturnValueOnce(new Promise(resolve => { resolveList = resolve; }));
+    const wrapper = mount(AdminTaxonomyView);
+    await flushPromises();
+    wrapper.unmount();
+    route.query = { page: "3", status: "ACTIVE" };
+    resolveList({ content: [], page: 1, size: 20, totalPages: 0, totalElements: 0 });
+    await flushPromises();
+    expect(replace).not.toHaveBeenCalled();
+    expect(route.query).toEqual({ page: "3", status: "ACTIVE" });
+  });
+
   it("Topic과 Concept의 범위 밖 page를 한 번에 서로 다른 query key로 replace한다", async () => {
     route.query = { topicPage: "4", conceptPage: "3" };
     api.fetchTopics.mockResolvedValueOnce({ content: [], page: 4, size: 20, totalElements: 30, totalPages: 2 });

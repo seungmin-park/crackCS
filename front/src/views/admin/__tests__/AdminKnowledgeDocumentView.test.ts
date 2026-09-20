@@ -108,6 +108,79 @@ describe("관리자 근거 문서 화면", () => {
     api.fetchKnowledgeChunks.mockResolvedValue([]);
   });
 
+  it("선택이 바뀐 화면에서는 늦은 저장 완료가 목록만 갱신하고 새 입력을 보존한다", async () => {
+    let resolveMutation!: (value: typeof document) => void;
+    api.publishKnowledgeDocument.mockReturnValue(new Promise(resolve => { resolveMutation = resolve; }));
+    api.fetchKnowledgeDocuments.mockResolvedValue({
+      content: [{ ...document, status: "DRAFT" }], page: 0, size: 20, totalPages: 1, totalElements: 1,
+    });
+
+    const wrapper = mount(AdminKnowledgeDocumentView);
+    await flushPromises();
+    await wrapper.get("button[data-document-id='1']").trigger("click");
+    await flushPromises();
+    await wrapper.findAll("button").find(button => button.text() === "공개")!.trigger("click");
+    expect(api.publishKnowledgeDocument).toHaveBeenCalledOnce();
+    route.query = { status: "PUBLISHED", page: "0" };
+    await flushPromises();
+    await wrapper.get(".admin-form input").setValue("새로 작성 중");
+    api.fetchKnowledgeDocuments.mockClear();
+    resolveMutation(document);
+    await flushPromises();
+    expect(api.fetchKnowledgeDocuments).toHaveBeenCalledOnce();
+    expect(api.fetchKnowledgeDocuments).toHaveBeenCalledWith(expect.objectContaining({ status: "PUBLISHED" }));
+    expect(wrapper.get(".admin-form input").element.value).toBe("새로 작성 중");
+    expect(wrapper.get("h2").text()).toContain("새 문서");
+  });
+
+  it("진행 중 목록 응답은 화면 폐기 후 목적지 URL을 교정하지 않는다", async () => {
+    let resolveList!: (value: object) => void;
+    route.query = { page: "1", status: "DRAFT" };
+    api.fetchKnowledgeDocuments.mockReturnValueOnce(new Promise(resolve => { resolveList = resolve; }));
+    const wrapper = mount(AdminKnowledgeDocumentView);
+    await flushPromises();
+    wrapper.unmount();
+    route.query = { page: "3", status: "ACTIVE" };
+    resolveList({ content: [], page: 1, size: 20, totalPages: 0, totalElements: 0 });
+    await flushPromises();
+    expect(replace).not.toHaveBeenCalled();
+    expect(route.query).toEqual({ page: "3", status: "ACTIVE" });
+  });
+
+  it.each([
+    ["createKnowledgeDocument", undefined, undefined],
+    ["updateKnowledgeDocument", "DRAFT", undefined],
+    ["reviewKnowledgeDocument", "DRAFT", "검수"],
+    ["publishKnowledgeDocument", "DRAFT", "공개"],
+    ["retireKnowledgeDocument", "PUBLISHED", "폐기"],
+    ["createKnowledgeDocumentVersion", "PUBLISHED", "현재 입력으로 새 버전"],
+  ] as const)("%s 대기 중 화면을 떠나면 이전 목록과 목적지 URL을 변경하지 않는다", async (method, status, buttonText) => {
+    let resolveMutation!: (value: typeof document) => void;
+    api[method].mockReturnValue(new Promise(resolve => { resolveMutation = resolve; }));
+    route.query = { page: "1", status: "DRAFT" };
+    api.fetchKnowledgeDocuments.mockResolvedValueOnce({
+      content: [{ ...document, status }], page: 1, size: 20, totalPages: 2, totalElements: 21,
+    });
+
+    const wrapper = mount(AdminKnowledgeDocumentView);
+    await flushPromises();
+    if (status) {
+      await wrapper.get("button[data-document-id='1']").trigger("click");
+      await flushPromises();
+    }
+    if (buttonText) await wrapper.findAll("button").find(button => button.text() === buttonText)!.trigger("click");
+    else await wrapper.get("form").trigger("submit");
+    expect(api[method]).toHaveBeenCalledOnce();
+    wrapper.unmount();
+    route.query = { page: "3", status: "ACTIVE" };
+    api.fetchKnowledgeDocuments.mockClear();
+    resolveMutation(document);
+    await flushPromises();
+    expect(api.fetchKnowledgeDocuments).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+    expect(route.query).toEqual({ page: "3", status: "ACTIVE" });
+  });
+
   it.each([
     ["등록", "createKnowledgeDocument", undefined, undefined],
     ["수정", "updateKnowledgeDocument", "DRAFT", undefined],

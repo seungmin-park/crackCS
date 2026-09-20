@@ -81,6 +81,7 @@ export function useAdminQuestionEditor(
 ) {
   const selected = ref<AdminQuestion>();
   let selectionGeneration = 0;
+  let disposed = false;
   const detailError = ref(false);
   const feedback = useAdminFeedback();
   const form = reactive(questionForm());
@@ -128,7 +129,7 @@ export function useAdminQuestionEditor(
       target?.status === "DRAFT" ? "문제 초안을 수정했습니다." : "문제 초안을 등록했습니다.",
     );
     if (result && activeGeneration === selectionGeneration) selected.value = result;
-    if (result) await refreshList();
+    if (result && !disposed) await refreshList();
   }
 
   function addCriterion() {
@@ -171,7 +172,7 @@ export function useAdminQuestionEditor(
     };
     const result = await feedback.execute(() => calls[action](targetId), messages[action]);
     if (result && activeGeneration === selectionGeneration) selected.value = result;
-    if (result) await refreshList();
+    if (result && !disposed) await refreshList();
   }
 
   async function newVersion() {
@@ -191,10 +192,11 @@ export function useAdminQuestionEditor(
       selected.value = result;
       criteria.value = questionCriteria(result);
     }
-    if (result) await refreshList();
+    if (result && !disposed) await refreshList();
   }
 
   onBeforeUnmount(() => {
+    disposed = true;
     selectionGeneration++;
   });
   return {
