@@ -1,5 +1,12 @@
-import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { reactive } from "vue";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+enableAutoUnmount(afterEach);
+
+const route = reactive({ query: {} as Record<string, string> });
+const push = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
+vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push }) }));
 
 const api = vi.hoisted(() => ({
   fetchTopics: vi.fn(),
@@ -42,6 +49,8 @@ const networkQuestion = {
 describe("관리자 Question 화면", () => {
   beforeEach(() => {
     Object.values(api).forEach(mock => mock.mockReset());
+    route.query = {};
+    push.mockClear();
     api.fetchTopics.mockResolvedValue({
       content: [
         { id: 1, parentId: null, code: "OS", name: "운영체제", active: true },
@@ -64,6 +73,62 @@ describe("관리자 Question 화면", () => {
       ...networkQuestion,
       concepts: [{ conceptId: 12, code: "TCP", name: "TCP 신뢰성", weight: 1, required: true }],
     });
+  });
+
+  it("새로고침된 URL의 page와 상태로 목록을 조회하고 다음 페이지를 URL에 기록한다", async () => {
+    route.query = { page: "2", status: "PUBLISHED" };
+    api.fetchAdminQuestions.mockResolvedValueOnce({
+      content: [networkQuestion], page: 2, size: 20, totalElements: 70, totalPages: 4,
+    });
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+
+    expect(api.fetchAdminQuestions).toHaveBeenCalledWith({ status: "PUBLISHED", page: 2, size: 20, sort: "id,desc" });
+    await wrapper.get("button[data-page='next']").trigger("click");
+    expect(push).toHaveBeenCalledWith({ query: { page: "3", status: "PUBLISHED" } });
+  });
+
+  it("브라우저 이동으로 URL query가 바뀌면 해당 page와 상태를 다시 조회한다", async () => {
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    api.fetchAdminQuestions.mockClear();
+
+    route.query = { page: "3", status: "RETIRED" };
+    await flushPromises();
+
+    expect(api.fetchAdminQuestions).toHaveBeenCalledWith({ status: "RETIRED", page: 3, size: 20, sort: "id,desc" });
+    wrapper.unmount();
+  });
+
+  it("상태 필터를 바꾸면 선택을 지우고 page를 0으로 되돌린 URL을 기록한다", async () => {
+    route.query = { page: "2" };
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    await wrapper.get("button[data-question-id='10']").trigger("click");
+    await flushPromises();
+
+    await wrapper.get(".admin-toolbar select").setValue("PUBLISHED");
+    await flushPromises();
+    expect(push).toHaveBeenCalledWith({ query: { page: "0", status: "PUBLISHED" } });
+    expect(wrapper.find("h2").text()).toBe("새 문제");
+  });
+
+  it("Concept 후보를 마지막 페이지까지 순차 조회하고 실패한 후보 조회를 재시도한다", async () => {
+    api.fetchConcepts
+      .mockResolvedValueOnce({ content: [], page: 0, size: 100, totalElements: 101, totalPages: 2 })
+      .mockRejectedValueOnce(new Error("temporary"))
+      .mockResolvedValueOnce({ content: [], page: 0, size: 100, totalElements: 101, totalPages: 2 })
+      .mockResolvedValueOnce({ content: [{ id: 112, topicId: 2, code: "LATE", name: "후반 후보", active: true }], page: 1, size: 100, totalElements: 101, totalPages: 2 });
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    expect(wrapper.text()).toContain("관계 후보를 불러오지 못했습니다.");
+
+    await wrapper.get("button[data-retry='relations']").trigger("click");
+    await flushPromises();
+    expect(api.fetchConcepts).toHaveBeenLastCalledWith({ active: true, page: 1, size: 100 });
+    await wrapper.get("button[data-question-id='10']").trigger("click");
+    await flushPromises();
+    expect(wrapper.find('select[aria-label="추가할 Concept"]').text()).toContain("후반 후보");
   });
 
   it("늦은 상세 응답이 새 문제 입력과 생성 대상을 바꾸지 않는다", async () => {

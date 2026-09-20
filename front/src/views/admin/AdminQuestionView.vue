@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import {
   createAdminQuestion,
@@ -20,22 +21,34 @@ import { fetchConcepts, type Concept } from "@/api/admin/concepts";
 import { fetchTopics, type Topic } from "@/api/admin/topics";
 import type { ContentStatus } from "@/api/admin/types";
 import AdminFeedback from "@/components/AdminFeedback.vue";
+import AdminPagination from "@/components/AdminPagination.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
+import { ADMIN_PAGE_SIZE, fetchAllPages, queryPage, queryStringValue, updateAdminQuery } from "./adminPagination";
+
+const route = useRoute();
+const router = useRouter();
 
 const topics = ref<Topic[]>([]);
 const concepts = ref<Concept[]>([]);
 const questions = ref<AdminQuestionSummary[]>([]);
 const selected = ref<AdminQuestion>();
 let selectionGeneration = 0;
-const statusFilter = ref<ContentStatus | "">("");
+const statusFilter = ref<ContentStatus | "">(queryStringValue(route.query, "status") as ContentStatus | "");
+let routeStatus = statusFilter.value;
+const page = ref(queryPage(route.query));
+const totalPages = ref(0);
+const totalElements = ref(0);
 const loading = ref(true);
 const loadError = ref(false);
 const detailError = ref(false);
+const relationLoading = ref(true);
+const relationError = ref(false);
 const feedback = useAdminFeedback();
 const form = reactive({ topicId: "", difficulty: "BASIC" as QuestionDifficulty, content: "", referenceAnswer: "" });
 const criteria = ref<Array<{ conceptId: number; weight: number; required: boolean }>>([]);
 const newCriterionConceptId = ref<number>();
 let loadGeneration = 0;
+let relationGeneration = 0;
 const topicConcepts = computed(() => concepts.value.filter(
   item => item.topicId === Number(form.topicId),
 ));
@@ -52,16 +65,16 @@ async function load() {
   loading.value = true;
   loadError.value = false;
   try {
-    const [topicPage, conceptPage, questionPage] = await Promise.all([
-      fetchTopics({ active: true, size: 100 }), fetchConcepts({ active: true, size: 100 }),
-      fetchAdminQuestions({
+    const questionPage = await fetchAdminQuestions({
         ...(statusFilter.value ? { status: statusFilter.value } : {}),
-        size: 100,
+        page: page.value, size: ADMIN_PAGE_SIZE,
         sort: "id,desc",
-      }),
-    ]);
+      });
     if (generation !== loadGeneration) return;
-    topics.value = topicPage.content; concepts.value = conceptPage.content; questions.value = questionPage.content;
+    questions.value = questionPage.content;
+    page.value = questionPage.page;
+    totalPages.value = questionPage.totalPages;
+    totalElements.value = questionPage.totalElements;
   } catch {
     if (generation === loadGeneration) loadError.value = true;
   } finally {
@@ -69,10 +82,42 @@ async function load() {
   }
 }
 
-function changeFilter() {
-  clearSelection();
-  void load();
+async function loadRelations() {
+  const generation = ++relationGeneration;
+  relationLoading.value = true;
+  relationError.value = false;
+  try {
+    const [allTopics, allConcepts] = await Promise.all([
+      fetchAllPages((candidatePage, size) => fetchTopics({ active: true, page: candidatePage, size })),
+      fetchAllPages((candidatePage, size) => fetchConcepts({ active: true, page: candidatePage, size })),
+    ]);
+    if (generation !== relationGeneration) return;
+    topics.value = allTopics;
+    concepts.value = allConcepts;
+  } catch {
+    if (generation === relationGeneration) relationError.value = true;
+  } finally {
+    if (generation === relationGeneration) relationLoading.value = false;
+  }
 }
+
+async function changeFilter() {
+  clearSelection();
+  await updateAdminQuery(router, route.query, { page: 0, status: statusFilter.value || undefined });
+}
+
+async function changePage(nextPage: number) {
+  await updateAdminQuery(router, route.query, { page: nextPage, status: statusFilter.value || undefined });
+}
+
+watch(() => route.query, () => {
+  const nextStatus = queryStringValue(route.query, "status") as ContentStatus | "";
+  if (nextStatus !== routeStatus) clearSelection();
+  routeStatus = nextStatus;
+  statusFilter.value = nextStatus;
+  page.value = queryPage(route.query);
+  void load();
+}, { deep: true });
 
 function clearSelection() {
   selectionGeneration++;
@@ -152,8 +197,8 @@ async function newVersion() {
   if (result) await load();
 }
 
-onMounted(load);
-onBeforeUnmount(() => { selectionGeneration++; loadGeneration++; });
+onMounted(() => { void load(); void loadRelations(); });
+onBeforeUnmount(() => { selectionGeneration++; loadGeneration++; relationGeneration++; });
 </script>
 
 <template>
@@ -162,6 +207,8 @@ onBeforeUnmount(() => { selectionGeneration++; loadGeneration++; });
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
     <p v-if="loadError" class="admin-error">문제 목록을 불러오지 못했습니다. <button type="button" data-retry="list" @click="load">다시 시도</button></p>
     <p v-if="detailError" class="admin-error">문제 상세를 불러오지 못했습니다.</p>
+    <p v-if="relationError" class="admin-error">관계 후보를 불러오지 못했습니다. <button type="button" data-retry="relations" @click="loadRelations">다시 시도</button></p>
+    <p v-else-if="relationLoading" class="admin-loading">관계 후보를 불러오는 중…</p>
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter"><option value="">전체</option><option>DRAFT</option><option>PUBLISHED</option><option>RETIRED</option></select></label><button @click="clearSelection">새 문제</button></div>
     <p v-if="loading" class="admin-loading">문제를 불러오는 중…</p>
     <div v-else class="admin-editor-layout">
@@ -190,5 +237,6 @@ onBeforeUnmount(() => { selectionGeneration++; loadGeneration++; });
         </section>
       </section>
     </div>
+    <AdminPagination :page="page" :total-pages="totalPages" :total-elements="totalElements" @change="changePage" />
   </section>
 </template>

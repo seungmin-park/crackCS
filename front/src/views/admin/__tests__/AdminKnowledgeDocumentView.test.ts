@@ -1,5 +1,12 @@
-import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { reactive } from "vue";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+enableAutoUnmount(afterEach);
+
+const route = reactive({ query: {} as Record<string, string> });
+const push = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
+vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push }) }));
 
 const api = vi.hoisted(() => ({
   fetchTopics: vi.fn(), fetchKnowledgeDocuments: vi.fn(), fetchKnowledgeChunks: vi.fn(),
@@ -18,9 +25,29 @@ const document = { id: 1, topicId: 2, title: "기존 문서", sourceType: "OFFIC
 describe("관리자 근거 문서 화면", () => {
   beforeEach(() => {
     Object.values(api).forEach(mock => mock.mockReset());
+    route.query = {}; push.mockClear();
     api.fetchTopics.mockResolvedValue({ content: [{ id: 2, name: "네트워크", active: true }], page: 0, size: 100, totalElements: 1, totalPages: 1 });
     api.fetchKnowledgeDocuments.mockResolvedValue({ content: [document], page: 0, size: 100, totalElements: 1, totalPages: 1 });
     api.fetchKnowledgeChunks.mockResolvedValue([]);
+  });
+
+  it("URL의 문서 page와 상태를 복원하고 필터 변경 시 첫 페이지 URL로 돌아간다", async () => {
+    route.query = { page: "1", status: "RETIRED" };
+    api.fetchKnowledgeDocuments.mockResolvedValueOnce({ content: [document], page: 1, size: 20, totalElements: 41, totalPages: 3 });
+    const wrapper = mount(AdminKnowledgeDocumentView);
+    await flushPromises();
+    expect(api.fetchKnowledgeDocuments).toHaveBeenCalledWith({ status: "RETIRED", page: 1, size: 20, sort: "id,desc" });
+    await wrapper.get(".admin-toolbar select").setValue("DRAFT");
+    expect(push).toHaveBeenCalledWith({ query: { page: "0", status: "DRAFT" } });
+  });
+
+  it("브라우저 이동으로 문서 query가 바뀌면 새 조건을 조회한다", async () => {
+    const wrapper = mount(AdminKnowledgeDocumentView);
+    await flushPromises(); api.fetchKnowledgeDocuments.mockClear();
+    route.query = { page: "2", status: "PUBLISHED" };
+    await flushPromises();
+    expect(api.fetchKnowledgeDocuments).toHaveBeenCalledWith({ status: "PUBLISHED", page: 2, size: 20, sort: "id,desc" });
+    wrapper.unmount();
   });
 
   it("초기 목록 실패 뒤 재시도하면 로딩을 끝내고 목록을 표시한다", async () => {

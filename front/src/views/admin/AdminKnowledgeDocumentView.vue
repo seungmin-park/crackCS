@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, reactive, ref } from "vue";
+import { onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import {
   createKnowledgeDocument,
@@ -19,13 +20,23 @@ import {
 import { fetchTopics, type Topic } from "@/api/admin/topics";
 import type { ContentStatus } from "@/api/admin/types";
 import AdminFeedback from "@/components/AdminFeedback.vue";
+import AdminPagination from "@/components/AdminPagination.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
+import { ADMIN_PAGE_SIZE, fetchAllPages, queryPage, queryStringValue, updateAdminQuery } from "./adminPagination";
 
+const route = useRoute();
+const router = useRouter();
 const topics = ref<Topic[]>([]);
 const documents = ref<KnowledgeDocument[]>([]);
 const loading = ref(true);
 const loadError = ref(false);
-const statusFilter = ref<ContentStatus | "">("");
+const statusFilter = ref<ContentStatus | "">(queryStringValue(route.query, "status") as ContentStatus | "");
+let routeStatus = statusFilter.value;
+const page = ref(queryPage(route.query));
+const totalPages = ref(0);
+const totalElements = ref(0);
+const relationLoading = ref(true);
+const relationError = ref(false);
 const selected = ref<KnowledgeDocument>();
 const feedback = useAdminFeedback();
 const chunks = ref<KnowledgeChunk[]>([]);
@@ -34,6 +45,7 @@ const chunksLoading = ref(false);
 let listGeneration = 0;
 let selectionGeneration = 0;
 let chunkRequestGeneration = 0;
+let relationGeneration = 0;
 const form = reactive({ topicId: "", title: "", sourceType: "OFFICIAL_DOC" as KnowledgeSourceType, sourceUrl: "", technologyVersion: "", licenseNote: "", content: "" });
 
 function input(): KnowledgeDocumentInput {
@@ -45,15 +57,13 @@ async function load() {
   loading.value = true;
   loadError.value = false;
   try {
-    const [topicPage, documentPage] = await Promise.all([
-      fetchTopics({ active: true, size: 100 }),
-      fetchKnowledgeDocuments({
-        ...(statusFilter.value ? { status: statusFilter.value } : {}), size: 100, sort: "id,desc",
-      }),
-    ]);
+    const documentPage = await fetchKnowledgeDocuments({
+        ...(statusFilter.value ? { status: statusFilter.value } : {}),
+        page: page.value, size: ADMIN_PAGE_SIZE, sort: "id,desc",
+      });
     if (generation !== listGeneration) return;
-    topics.value = topicPage.content;
     documents.value = documentPage.content;
+    page.value = documentPage.page; totalPages.value = documentPage.totalPages; totalElements.value = documentPage.totalElements;
   } catch {
     if (generation === listGeneration) loadError.value = true;
   } finally {
@@ -61,10 +71,33 @@ async function load() {
   }
 }
 
-function changeFilter() {
-  select();
-  void load();
+async function loadRelations() {
+  const generation = ++relationGeneration;
+  relationLoading.value = true; relationError.value = false;
+  try {
+    const result = await fetchAllPages((candidatePage, size) => fetchTopics({ active: true, page: candidatePage, size }));
+    if (generation === relationGeneration) topics.value = result;
+  } catch { if (generation === relationGeneration) relationError.value = true; }
+  finally { if (generation === relationGeneration) relationLoading.value = false; }
 }
+
+async function changeFilter() {
+  select();
+  await updateAdminQuery(router, route.query, { page: 0, status: statusFilter.value || undefined });
+}
+
+async function changePage(nextPage: number) {
+  await updateAdminQuery(router, route.query, { page: nextPage, status: statusFilter.value || undefined });
+}
+
+watch(() => route.query, () => {
+  const nextStatus = queryStringValue(route.query, "status") as ContentStatus | "";
+  if (nextStatus !== routeStatus) select();
+  routeStatus = nextStatus;
+  statusFilter.value = nextStatus;
+  page.value = queryPage(route.query);
+  void load();
+}, { deep: true });
 
 function select(document?: KnowledgeDocument) {
   selectionGeneration++;
@@ -148,14 +181,16 @@ async function transition(action: "review" | "publish" | "retire") {
   if (result) await load();
 }
 
-onMounted(load);
-onBeforeUnmount(() => { listGeneration++; selectionGeneration++; chunkRequestGeneration++; });
+onMounted(() => { void load(); void loadRelations(); });
+onBeforeUnmount(() => { listGeneration++; selectionGeneration++; chunkRequestGeneration++; relationGeneration++; });
 </script>
 
 <template>
   <section>
     <header class="admin-page-heading"><div><p class="eyebrow">KNOWLEDGE</p><h1>근거 문서</h1></div><p>공개본은 수정하지 않고 같은 계열의 새 버전을 만듭니다.</p></header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
+    <p v-if="relationError" class="admin-error">관계 후보를 불러오지 못했습니다. <button type="button" data-retry="relations" @click="loadRelations">다시 시도</button></p>
+    <p v-else-if="relationLoading" class="admin-loading">관계 후보를 불러오는 중…</p>
     <p v-if="loadError" class="admin-error">문서 목록을 불러오지 못했습니다. <button type="button" data-retry="list" @click="load">다시 시도</button></p>
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter"><option value="">전체</option><option>DRAFT</option><option>PUBLISHED</option><option>RETIRED</option></select></label><button @click="select()">새 문서</button></div>
     <p v-if="loading" class="admin-loading">문서를 불러오는 중…</p>
@@ -193,5 +228,6 @@ onBeforeUnmount(() => { listGeneration++; selectionGeneration++; chunkRequestGen
         </section>
       </section>
     </div>
+    <AdminPagination :page="page" :total-pages="totalPages" :total-elements="totalElements" @change="changePage" />
   </section>
 </template>

@@ -1,5 +1,10 @@
-import { flushPromises, mount } from "@vue/test-utils";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
+import { reactive } from "vue";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+enableAutoUnmount(afterEach);
+const route = reactive({ query: {} as Record<string, string> });
+const push = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
+vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push }) }));
 
 const { fetchAdminEvaluations, fetchAdminEvaluation } = vi.hoisted(() => ({
   fetchAdminEvaluations: vi.fn(), fetchAdminEvaluation: vi.fn(),
@@ -12,6 +17,7 @@ describe("관리자 평가 검토 화면", () => {
   beforeEach(() => {
     fetchAdminEvaluations.mockReset();
     fetchAdminEvaluation.mockReset();
+    route.query = {}; push.mockClear();
     fetchAdminEvaluations.mockResolvedValue({ content: [{ evaluationId: 9, answerId: 8, questionId: 7,
       status: "FAILED", failureCode: "PROVIDER_TIMEOUT", modelName: "gpt-5.6-terra",
       evaluatorVersion: "os-evaluator-v1", occurredAt: "2026-09-08T00:00:00" }],
@@ -20,6 +26,25 @@ describe("관리자 평가 검토 화면", () => {
       questionContent: "프로세스란?", answerContent: "프로그램 실행 인스턴스",
       status: "FAILED", failureCode: "PROVIDER_TIMEOUT", modelName: "gpt-5.6-terra",
       evaluatorVersion: "os-evaluator-v1", occurredAt: "2026-09-08T00:00:00", evidence: [] });
+  });
+
+  it("URL의 평가 page와 상태를 복원하고 필터 변경 시 page를 0으로 기록한다", async () => {
+    route.query = { page: "2", status: "FAILED" };
+    fetchAdminEvaluations.mockResolvedValueOnce({ content: [], page: 2, size: 20, totalElements: 70, totalPages: 4 });
+    const wrapper = mount(AdminEvaluationView);
+    await flushPromises();
+    expect(fetchAdminEvaluations).toHaveBeenCalledWith({ status: "FAILED", page: 2, size: 20 });
+    await wrapper.get("select").setValue("NEEDS_REVIEW");
+    expect(push).toHaveBeenCalledWith({ query: { page: "0", status: "NEEDS_REVIEW" } });
+  });
+
+  it("브라우저 이동으로 평가 query가 바뀌면 새 조건을 조회한다", async () => {
+    const wrapper = mount(AdminEvaluationView);
+    await flushPromises(); fetchAdminEvaluations.mockClear();
+    route.query = { page: "1", status: "NEEDS_REVIEW" };
+    await flushPromises();
+    expect(fetchAdminEvaluations).toHaveBeenCalledWith({ status: "NEEDS_REVIEW", page: 1, size: 20 });
+    wrapper.unmount();
   });
 
   it("실패 목록에서 항목을 선택하면 답변 원문과 안전한 실패 코드를 표시한다", async () => {
