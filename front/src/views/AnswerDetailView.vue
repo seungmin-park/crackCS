@@ -1,14 +1,17 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { fetchAnswer, fetchAnswerEvaluation, type AnswerResponse } from "@/api/answers";
 import { ApiClientError } from "@/api/client";
 import EvaluationPanel from "@/components/EvaluationPanel.vue";
+import FollowUpQuestionPanel from "@/components/FollowUpQuestionPanel.vue";
 import QuestionState from "@/components/QuestionState.vue";
 
 const route = useRoute();
 const answer = ref<AnswerResponse>();
 const error = ref(false);
+const evaluationComplete = computed(() => answer.value !== undefined
+  && ["EVALUATED", "NEEDS_REVIEW", "FAILED"].includes(answer.value.evaluation.status));
 let timer: ReturnType<typeof setTimeout> | undefined;
 let generation = 0;
 let disposed = false;
@@ -67,9 +70,12 @@ onBeforeUnmount(() => { disposed = true; generation++; cancelTimer(); });
   <main class="page-shell answer-detail-shell">
     <RouterLink class="back-link" to="/answers">← 답변 이력</RouterLink>
     <QuestionState v-if="error" kind="error" title="답변을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswer" />
-    <article v-else-if="answer" class="answer-detail-grid">
-      <section class="answer-copy"><p class="eyebrow">질문</p><h1>{{ answer.questionContent }}</h1><p class="submitted-at">{{ new Date(answer.submittedAt).toLocaleString('ko-KR') }}</p><h2>내 답변</h2><p class="answer-content">{{ answer.content }}</p></section>
-      <EvaluationPanel :evaluation="answer.evaluation" />
-    </article>
+    <template v-else-if="answer">
+      <article class="answer-detail-grid">
+        <section class="answer-copy"><p class="eyebrow">질문</p><h1>{{ answer.questionContent }}</h1><p class="submitted-at">{{ new Date(answer.submittedAt).toLocaleString('ko-KR') }}</p><h2>내 답변</h2><p class="answer-content">{{ answer.content }}</p></section>
+        <EvaluationPanel :evaluation="answer.evaluation" />
+      </article>
+      <FollowUpQuestionPanel v-if="evaluationComplete" :answer-id="answer.answerId" />
+    </template>
   </main>
 </template>

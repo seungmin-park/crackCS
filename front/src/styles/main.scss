@@ -294,6 +294,17 @@ button.admin-primary { padding: 11px 16px; color: var(--on-primary); background:
 .evaluation-panel h2 { margin: 8px 0 18px; font-size: 23px; }
 .evaluation-panel p { line-height: 1.7; }
 .evaluation-panel[data-status="FAILED"] { border-top: 3px solid var(--danger); }
+.follow-up-panel { margin-top: 24px; border: 1px solid var(--line); background: var(--surface); }
+.follow-up-panel > .eyebrow { margin: 0; padding: 30px 30px 0; }
+.follow-up-panel > h2 { margin: 6px 0 0; padding: 0 30px 26px; font-size: 23px; }
+.follow-up-panel > .state-panel { min-height: 230px; border: 0; border-top: 1px solid var(--line); }
+.follow-up-status { padding: 30px; border-top: 1px solid var(--line); }
+.follow-up-status strong { font-size: 18px; }
+.follow-up-status p { margin: 10px 0 18px; color: var(--muted); line-height: 1.7; }
+.follow-up-status a { color: var(--accent); font-size: 14px; font-weight: 650; }
+.follow-up-question { padding: 30px; border-top: 1px solid var(--line); }
+.follow-up-question .detail-meta { margin-bottom: 18px; }
+.follow-up-question > p { margin: 0; font-size: 20px; font-weight: 550; line-height: 1.7; white-space: pre-wrap; }
 .simulation-note { padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
 .concept-results { display: grid; gap: 10px; padding: 14px 0 0; list-style: none; }
 .concept-results li { display: grid; gap: 5px; padding: 12px; background: var(--subtle); font-size: 13px; }
@@ -337,7 +348,9 @@ button.admin-primary { padding: 11px 16px; color: var(--on-primary); background:
   .answer-detail-grid { grid-template-columns: 1fr; }
   .evaluation-panel { position: static; }
   .answer-history-list a, .pending-submission { align-items: flex-start; flex-direction: column; }
-  .answer-form, .answer-copy, .evaluation-panel { padding: 20px; }
+  .answer-form, .answer-copy, .evaluation-panel, .follow-up-status, .follow-up-question { padding: 20px; }
+  .follow-up-panel > .eyebrow { padding: 20px 20px 0; }
+  .follow-up-panel > h2 { padding: 0 20px 20px; }
   .question-row { grid-template-columns: 28px minmax(0, 1fr) auto 20px; gap: 8px 12px; padding: 22px 4px; }
   .question-row h3 { grid-column: 2 / 4; grid-row: 1; font-size: 16px; }
   .question-number { align-self: start; padding-top: 3px; }

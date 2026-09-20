@@ -4,18 +4,30 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AnswerDetailView from "@/views/AnswerDetailView.vue";
 import { ApiClientError } from "@/api/client";
 
-const { fetchAnswer, fetchAnswerEvaluation, routeState } = vi.hoisted(() => ({ fetchAnswer: vi.fn(), fetchAnswerEvaluation: vi.fn(), routeState: { route: null as any } }));
-vi.mock("@/api/answers", () => ({ fetchAnswer, fetchAnswerEvaluation }));
+const { fetchAnswer, fetchAnswerEvaluation, fetchFollowUpQuestion, routeState } = vi.hoisted(() => ({
+  fetchAnswer: vi.fn(),
+  fetchAnswerEvaluation: vi.fn(),
+  fetchFollowUpQuestion: vi.fn(),
+  routeState: { route: null as any },
+}));
+vi.mock("@/api/answers", () => ({ fetchAnswer, fetchAnswerEvaluation, fetchFollowUpQuestion, submitAnswer: vi.fn() }));
 vi.mock("vue-router", async () => {
   const { reactive } = await import("vue");
   routeState.route = reactive({ params: { answerId: "31" } });
-  return { useRoute: () => routeState.route };
+  return { useRoute: () => routeState.route, useRouter: () => ({ push: vi.fn() }) };
 });
 
 const evaluating = { status: "EVALUATING", verdict: null, score: null, feedback: null, failureReason: null, concepts: [] };
 
 describe("답변 상세 화면", () => {
-  beforeEach(() => { vi.useFakeTimers(); fetchAnswer.mockReset(); fetchAnswerEvaluation.mockReset(); routeState.route.params.answerId = "31"; });
+  beforeEach(() => {
+    vi.useFakeTimers();
+    fetchAnswer.mockReset();
+    fetchAnswerEvaluation.mockReset();
+    fetchFollowUpQuestion.mockReset();
+    fetchFollowUpQuestion.mockResolvedValue({ status: "UNAVAILABLE", reason: "EVALUATION_NOT_ELIGIBLE", question: null });
+    routeState.route.params.answerId = "31";
+  });
   afterEach(() => vi.useRealTimers());
 
   it("평가 중이면 다시 조회하고 완료되면 polling을 멈춘다", async () => {
@@ -111,5 +123,19 @@ describe("답변 상세 화면", () => {
 
     expect(wrapper.text()).toContain("스레드 · 정답");
     expect(wrapper.text()).not.toContain("개념 11");
+  });
+
+  it("평가가 끝난 뒤 같은 답변의 후속 질문 상태를 표시한다", async () => {
+    fetchAnswer.mockResolvedValue({ answerId: 31, questionId: 7, questionContent: "질문", content: "내 답변", submittedAt: "2026-09-07T10:00:00Z", evaluation: evaluating });
+    fetchAnswerEvaluation.mockResolvedValue({ ...evaluating, status: "NEEDS_REVIEW", verdict: "NEEDS_REVIEW" });
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });
+    await flushPromises();
+
+    expect(fetchFollowUpQuestion).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(2000);
+    await flushPromises();
+
+    expect(fetchFollowUpQuestion).toHaveBeenCalledWith(31);
+    expect(wrapper.text()).toContain("이번 답변에는 후속 질문이 없어요");
   });
 });

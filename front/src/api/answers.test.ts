@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fetchAnswer, fetchAnswerEvaluation, fetchMyAnswers, submitAnswer } from "./answers";
+import * as answerApi from "./answers";
 
 const { get, post } = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 vi.mock("./client", () => ({ get, post }));
@@ -29,5 +30,16 @@ describe("답변 API", () => {
     await fetchAnswerEvaluation(12);
     expect(get).toHaveBeenNthCalledWith(1, "/api/answers/12");
     expect(get).toHaveBeenNthCalledWith(2, "/api/answers/12/evaluation");
+  });
+
+  it("원본 답변에서 생성된 후속 질문 상태를 조회한다", async () => {
+    const fetchFollowUpQuestion = (answerApi as Record<string, unknown>).fetchFollowUpQuestion as
+      | ((answerId: number | string) => Promise<unknown>)
+      | undefined;
+
+    await fetchFollowUpQuestion?.("12/unsafe");
+
+    expect(fetchFollowUpQuestion).toBeTypeOf("function");
+    expect(get).toHaveBeenCalledWith("/api/answers/12%2Funsafe/follow-up-question");
   });
 });
