@@ -962,18 +962,20 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
   - [ ] 4회/5회, 10분 window, 14분 59초/15분 경계를 검증한다.
   - [ ] 성공 초기화, 계정/IP 격리와 로그인 ID 정규화를 검증한다.
   - [ ] 다중 인스턴스 도입 전 공유 저장소 전환 조건을 문서화한다.
-- [ ] **관리자 UI의 책임을 분리하고 비동기 실패에서도 상태를 복구**
+- [x] **관리자 UI의 책임을 분리하고 비동기 실패에서도 상태를 복구**
   - [x] 이전 문제 상세 응답이 새 문제 작성 모드·입력·저장 대상을 덮지 않도록 요청 무효화
     - 검증: 신규 작성 중 지연 응답 회귀 테스트 RED → GREEN, 프런트 124개·type-check·build 성공 (2026-09-15)
   - [x] 평가 목록·상세·필터 변경에서 오래된 성공·실패·완료 응답 무시
     - 검증: 필터 변경 전 목록 완료와 이전 상세 실패 경쟁 테스트 RED → GREEN (2026-09-15)
   - [x] 초기 로드가 실패해도 loading 상태가 종료된다.
     - 검증: Question·KnowledgeDocument·Evaluation·Member 실패 후 재시도 복구 테스트 (2026-09-15)
-  - [ ] Question 폼과 criteria 상태를 composable 또는 하위 컴포넌트로 분리한다.
+  - [x] Question 폼과 criteria 상태를 composable 또는 하위 컴포넌트로 분리한다.
+    - `useAdminQuestionEditor`·`useKnowledgeDocumentEditor`: 선택·폼·명령·요청 세대 소유, View는 목록·URL·관계 후보 조회 유지 (2026-09-20)
   - [x] 관리자 API를 Topic, Concept, KnowledgeDocument, Question, Member, Evaluation 단위로 나눈다.
     - 검증: 새 모듈 import 실패 RED → 6개 리소스·7개 query 사례 포함 관리자 테스트 29개 성공, 전체 프런트 테스트·type-check·production build 성공 (2026-09-15)
     - 계약 정합성: OpenAPI에 맞춰 평가 `occurredAt`을 nullable wire type으로 표현
-  - [ ] 생성·수정·검수·공개·폐기·새 버전의 실패 흐름을 테스트한다.
+  - [x] 생성·수정·검수·공개·폐기·새 버전의 실패 흐름을 테스트한다.
+    - 검증: 두 편집 화면의 명령 실패 입력·선택 보존 14건, 성공 후 목록 갱신의 선택 유지 12건, 기존 pagination·요청 경합 포함 48개 테스트 성공 (2026-09-20)
   - [x] 관리자 쓰기 명령의 중복 실행을 막고 완료 응답이 새 선택을 덮지 않는다.
     - 검증: 공통 명령 이중 실행과 Question 저장 중 새 작성 전환 테스트 RED → GREEN (2026-09-15)
   - [x] Question·KnowledgeDocument 목록 선택을 native button과 `aria-pressed`로 제공한다.
