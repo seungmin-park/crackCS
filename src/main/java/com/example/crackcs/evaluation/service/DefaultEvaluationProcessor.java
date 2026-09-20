@@ -32,6 +32,8 @@ import java.util.stream.IntStream;
 @Service
 @RequiredArgsConstructor
 public class DefaultEvaluationProcessor implements EvaluationProcessor {
+
+    private static final int EVALUATION_EVIDENCE_LIMIT = 5;
     private final EvaluationRepository evaluationRepository;
     private final ObjectProvider<EvaluationPort> ports;
     private final TransactionTemplate transactionTemplate;
@@ -63,7 +65,8 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
             return;
         }
         PendingEvaluation pending = claimed.orElseThrow();
-        RetrievalResult retrieval = knowledgeRetrievalService.retrieve(pending.retrievalQuery(), 5);
+        RetrievalResult retrieval = knowledgeRetrievalService.retrieve(
+                pending.retrievalQuery(), EVALUATION_EVIDENCE_LIMIT);
         if (retrieval.insufficientEvidence()) {
             requireReviewIfOwned(evaluationId, "EVIDENCE_NOT_FOUND");
             return;

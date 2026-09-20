@@ -41,8 +41,69 @@ dependencies {
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	// Version managed by the Spring Boot BOM (currently Testcontainers 2.0.5).
+	testRuntimeOnly 'org.testcontainers:testcontainers-postgresql'
 }
 
 tasks.named('test') {
+	useJUnitPlatform {
+		excludeTags 'retrieval-benchmark', 'postgres'
+	}
+}
+
+def referenceDirectory = layout.projectDirectory.dir('docs/evaluation/reference-v1')
+
+tasks.register('verifyReferenceStandard', Exec) {
+	group = 'verification'
+	description = 'Verify the frozen answer reference before measuring retrieval.'
+	commandLine 'python3', referenceDirectory.file('tools/bundle.py').asFile.absolutePath
+}
+
+tasks.register('retrievalBenchmark', Test) {
+	group = 'verification'
+	description = 'Measure current retrieval against the frozen corpus on isolated H2.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	dependsOn 'verifyReferenceStandard'
+	useJUnitPlatform { includeTags 'retrieval-benchmark' }
+	systemProperty 'spring.profiles.active', 'retrieval-benchmark'
+	systemProperty 'spring.datasource.url', 'jdbc:h2:mem:retrieval_benchmark;DB_CLOSE_DELAY=-1'
+	systemProperty 'spring.datasource.driver-class-name', 'org.h2.Driver'
+	systemProperty 'spring.datasource.username', 'sa'
+	systemProperty 'spring.datasource.password', ''
+	systemProperty 'spring.jpa.hibernate.ddl-auto', 'create-drop'
+	systemProperty 'spring.sql.init.mode', 'never'
+	systemProperty 'crackcs.evaluation.openai.enabled', 'false'
+	systemProperty 'reference.directory', referenceDirectory.asFile.absolutePath
+	systemProperty 'benchmark.output', layout.buildDirectory.dir('reports/retrieval/h2').get().asFile.absolutePath
+	outputs.upToDateWhen { false }
+}
+
+tasks.register('postgresTest', Test) {
+	group = 'verification'
+	description = 'Run PostgreSQL 17 integration checks and retrieval measurement; Docker is required.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	dependsOn 'verifyReferenceStandard'
 	useJUnitPlatform()
+	filter {
+		includeTestsMatching '*PostgresPersistenceTest'
+		includeTestsMatching '*KnowledgeChunkServiceTest'
+		includeTestsMatching '*KnowledgeRetrievalServiceTest'
+		includeTestsMatching '*RetrievalBenchmarkTest'
+		includeTestsMatching '*AnswerServiceTest'
+	}
+	systemProperty 'spring.datasource.url', 'jdbc:tc:postgresql:17-alpine:///crackcs_test'
+	systemProperty 'spring.profiles.active', 'postgres-test'
+	systemProperty 'spring.datasource.driver-class-name', 'org.testcontainers.jdbc.ContainerDatabaseDriver'
+	systemProperty 'spring.datasource.username', 'test'
+	systemProperty 'spring.datasource.password', 'test'
+	systemProperty 'spring.jpa.hibernate.ddl-auto', 'create-drop'
+	systemProperty 'spring.sql.init.mode', 'never'
+	systemProperty 'crackcs.evaluation.openai.enabled', 'false'
+	systemProperty 'benchmark.database', 'PostgreSQL'
+	systemProperty 'reference.directory', referenceDirectory.asFile.absolutePath
+	systemProperty 'benchmark.output', layout.buildDirectory.dir('reports/retrieval/postgres').get().asFile.absolutePath
+	maxParallelForks = 1
+	outputs.upToDateWhen { false }
 }

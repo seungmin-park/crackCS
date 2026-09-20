@@ -12,28 +12,34 @@ public final class GoldenSetMetrics {
         if (hasInsufficientDataForMetrics(observations)) {
             throw new IllegalArgumentException("observations must contain expected and actual verdicts");
         }
-        long detailedMatches = observations.stream()
+        List<Observation> classified = observations.stream()
+                .filter(value -> value.expected != Verdict.NEEDS_REVIEW).toList();
+        List<Observation> binary = classified.stream()
+                .filter(value -> value.expected != Verdict.PARTIALLY_CORRECT).toList();
+        List<Observation> incorrect = classified.stream()
+                .filter(value -> value.expected == Verdict.INCORRECT).toList();
+        long detailedMatches = classified.stream()
                 .filter(value -> value.expected == value.actual)
                 .count();
-        long binaryMatches = observations.stream()
-                .filter(value -> correct(value.expected) == correct(value.actual))
+        long binaryMatches = binary.stream()
+                .filter(value -> value.expected == value.actual)
                 .count();
-        long falseCorrect = observations.stream()
-                .filter(value -> !correct(value.expected) && correct(value.actual))
+        long falseCorrect = incorrect.stream()
+                .filter(value -> value.actual == Verdict.CORRECT)
                 .count();
 
-        double size = observations.size();
-        return new Result(detailedMatches / size, binaryMatches / size, falseCorrect / size);
+        return new Result(ratio(detailedMatches, classified.size()),
+                ratio(binaryMatches, binary.size()), ratio(falseCorrect, incorrect.size()));
     }
 
     private static boolean hasInsufficientDataForMetrics(List<Observation> observations) {
         return observations == null
                 || observations.isEmpty()
-                || observations.stream().anyMatch(Observation::isIncomplete);
+                || observations.stream().anyMatch(value -> value == null || value.isIncomplete());
     }
 
-    private static boolean correct(Verdict verdict) {
-        return verdict == Verdict.CORRECT;
+    private static Double ratio(long matches, long total) {
+        return total == 0 ? null : (double) matches / total;
     }
 
     public record Observation(Verdict expected, Verdict actual) {
@@ -42,6 +48,6 @@ public final class GoldenSetMetrics {
         }
     }
 
-    public record Result(double detailedAgreement, double binaryAgreement, double falseCorrectRate) {
+    public record Result(Double detailedAgreement, Double binaryAgreement, Double falseCorrectRate) {
     }
 }

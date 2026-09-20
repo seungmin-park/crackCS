@@ -21,6 +21,7 @@ public record RetrievalQuery(
     }
 
     public String searchText() {
-        return String.join(" ", safe(question), safe(referenceAnswer), safe(answer));
+        // The submitted answer is untrusted: a fluent wrong answer must not choose its own evidence.
+        return String.join(" ", safe(question), safe(referenceAnswer));
     }
 }
