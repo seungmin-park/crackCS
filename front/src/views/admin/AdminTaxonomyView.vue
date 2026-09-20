@@ -19,7 +19,7 @@ import {
 import AdminFeedback from "@/components/AdminFeedback.vue";
 import AdminPagination from "@/components/AdminPagination.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
-import { ADMIN_PAGE_SIZE, fetchAllPages, queryPage, updateAdminQuery } from "./adminPagination";
+import { ADMIN_PAGE_SIZE, fetchAllPages, normalizedPage, queryPage, replaceAdminQuery, updateAdminQuery } from "./adminPagination";
 
 const route = useRoute();
 const router = useRouter();
@@ -54,6 +54,12 @@ async function load() {
       fetchConcepts({ page: conceptPage.value, size: ADMIN_PAGE_SIZE }),
     ]);
     if (generation !== loadGeneration) return;
+    const validTopicPage = normalizedPage(topicPage.value, topicResult.totalPages);
+    const validConceptPage = normalizedPage(conceptPage.value, conceptResult.totalPages);
+    if (validTopicPage !== topicPage.value || validConceptPage !== conceptPage.value) {
+      await replaceAdminQuery(router, route.query, { topicPage: validTopicPage, conceptPage: validConceptPage });
+      return;
+    }
     topics.value = topicResult.content;
     concepts.value = conceptResult.content;
     topicPage.value = topicResult.page; topicTotalPages.value = topicResult.totalPages; topicTotalElements.value = topicResult.totalElements;
@@ -107,7 +113,11 @@ async function submitTopic() {
     () => topicEditingId.value ? updateTopic(topicEditingId.value, input) : createTopic(input),
     topicEditingId.value ? "Topic을 수정했습니다." : "Topic을 등록했습니다.",
   );
-  if (result) { topicEditingId.value = undefined; Object.assign(topicForm, { parentId: "", code: "", name: "" }); await load(); }
+  if (result) {
+    topicEditingId.value = undefined;
+    Object.assign(topicForm, { parentId: "", code: "", name: "" });
+    await Promise.all([load(), loadRelations()]);
+  }
 }
 
 async function submitConcept() {
@@ -125,7 +135,8 @@ async function deactivate(kind: "topic" | "concept", id: number) {
     `${kind === "topic" ? "Topic" : "Concept"}을 비활성화했습니다.`,
   );
   if (result === undefined && feedback.formError.value) return;
-  await load();
+  if (kind === "topic") await Promise.all([load(), loadRelations()]);
+  else await load();
 }
 
 onMounted(() => { void load(); void loadRelations(); });

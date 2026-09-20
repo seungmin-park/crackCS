@@ -6,7 +6,7 @@ import { fetchAdminMembers, updateMemberStatus, type AdminMember, type MemberSta
 import AdminFeedback from "@/components/AdminFeedback.vue";
 import AdminPagination from "@/components/AdminPagination.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
-import { ADMIN_PAGE_SIZE, queryPage, queryStringValue, updateAdminQuery } from "./adminPagination";
+import { ADMIN_PAGE_SIZE, normalizedPage, queryPage, queryStringValue, replaceAdminQuery, updateAdminQuery } from "./adminPagination";
 
 const route = useRoute();
 const router = useRouter();
@@ -27,6 +27,11 @@ async function load() {
   try {
     const result = await fetchAdminMembers({ ...(statusFilter.value ? { status: statusFilter.value } : {}), page: page.value, size: ADMIN_PAGE_SIZE });
     if (generation === loadGeneration) {
+      const validPage = normalizedPage(page.value, result.totalPages);
+      if (validPage !== page.value) {
+        await replaceAdminQuery(router, route.query, { page: validPage });
+        return;
+      }
       members.value = result.content; page.value = result.page;
       totalPages.value = result.totalPages; totalElements.value = result.totalElements;
     }

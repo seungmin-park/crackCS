@@ -29,6 +29,23 @@ export async function updateAdminQuery(
   await router.push({ query: next });
 }
 
+export function normalizedPage(requestedPage: number, totalPages: number): number {
+  return Math.min(requestedPage, Math.max(totalPages - 1, 0));
+}
+
+export async function replaceAdminQuery(
+  router: Router,
+  query: LocationQuery,
+  values: Record<string, string | number | undefined>,
+): Promise<void> {
+  const next: LocationQueryRaw = { ...query };
+  Object.entries(values).forEach(([key, value]) => {
+    if (value === undefined || value === "") delete next[key];
+    else next[key] = String(value);
+  });
+  await router.replace({ query: next });
+}
+
 export async function fetchAllPages<T>(
   fetchPage: (page: number, size: number) => Promise<PageResponse<T>>,
 ): Promise<T[]> {

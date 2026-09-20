@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 enableAutoUnmount(afterEach);
 const route = reactive({ query: {} as Record<string, string> });
 const push = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
-vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push }) }));
+const replace = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
+vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push, replace }) }));
 
 const api = vi.hoisted(() => ({
   fetchTopics: vi.fn(), fetchConcepts: vi.fn(), createTopic: vi.fn(), updateTopic: vi.fn(),
@@ -31,9 +32,18 @@ import AdminTaxonomyView from "@/views/admin/AdminTaxonomyView.vue";
 describe("관리자 Topic과 Concept 화면", () => {
   beforeEach(() => {
     Object.values(api).forEach(mock => mock.mockReset());
-    route.query = {}; push.mockClear();
+    route.query = {}; push.mockClear(); replace.mockClear();
     api.fetchTopics.mockResolvedValue({ content: [{ id: 1, parentId: null, code: "OS", name: "운영체제", active: true }], page: 0, size: 100, totalElements: 1, totalPages: 1 });
     api.fetchConcepts.mockResolvedValue({ content: [{ id: 2, topicId: 1, code: "THREAD", name: "스레드", description: null, active: true }], page: 0, size: 100, totalElements: 1, totalPages: 1 });
+  });
+
+  it("Topic과 Concept의 범위 밖 page를 한 번에 서로 다른 query key로 replace한다", async () => {
+    route.query = { topicPage: "4", conceptPage: "3" };
+    api.fetchTopics.mockResolvedValueOnce({ content: [], page: 4, size: 20, totalElements: 30, totalPages: 2 });
+    api.fetchConcepts.mockResolvedValueOnce({ content: [], page: 3, size: 20, totalElements: 0, totalPages: 0 });
+    mount(AdminTaxonomyView);
+    await flushPromises();
+    expect(replace).toHaveBeenCalledWith({ query: { topicPage: "1", conceptPage: "0" } });
   });
 
   it("Topic과 Concept의 서로 다른 URL page를 각각 조회한다", async () => {
@@ -77,5 +87,44 @@ describe("관리자 Topic과 Concept 화면", () => {
     expect(api.createTopic).toHaveBeenCalledWith({ code: "NETWORK", name: "네트워크" });
     expect(wrapper.text()).toContain("Topic을 등록했습니다.");
     expect(api.fetchTopics.mock.calls.filter(([request]) => request.size === 20)).toHaveLength(2);
+  });
+
+  it("Topic 등록 성공 후 관계 후보를 갱신해 새 Topic을 선택할 수 있다", async () => {
+    let relationTopics = [{ id: 1, parentId: null, code: "OS", name: "운영체제", active: true }];
+    api.fetchTopics.mockImplementation(async request => ({
+      content: request.active ? relationTopics : relationTopics,
+      page: request.page ?? 0, size: request.size ?? 20, totalElements: relationTopics.length, totalPages: 1,
+    }));
+    api.createTopic.mockImplementation(async () => {
+      const created = { id: 3, parentId: null, code: "NETWORK", name: "네트워크", active: true };
+      relationTopics = [...relationTopics, created];
+      return created;
+    });
+    const wrapper = mount(AdminTaxonomyView);
+    await flushPromises();
+    const form = wrapper.findAll("form")[0]!;
+    await form.findAll("input")[0]!.setValue("NETWORK");
+    await form.findAll("input")[1]!.setValue("네트워크");
+    await form.trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.findAll("form")[0]!.find("select").text()).toContain("네트워크");
+  });
+
+  it("Topic 비활성화 성공 후 관계 후보에서 제거한다", async () => {
+    let relationTopics = [{ id: 1, parentId: null, code: "OS", name: "운영체제", active: true }];
+    api.fetchTopics.mockImplementation(async request => ({
+      content: relationTopics,
+      page: request.page ?? 0, size: request.size ?? 20, totalElements: relationTopics.length, totalPages: 1,
+    }));
+    api.deactivateTopic.mockImplementation(async () => { relationTopics = [{ ...relationTopics[0]!, active: false }]; });
+    const wrapper = mount(AdminTaxonomyView);
+    await flushPromises();
+    expect(wrapper.findAll("form")[1]!.find("select").text()).toContain("운영체제");
+
+    await wrapper.findAll("button").find(button => button.text() === "비활성화")!.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.findAll("form")[1]!.find("select").text()).not.toContain("운영체제");
   });
 });

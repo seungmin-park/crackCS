@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { fetchAdminEvaluation, fetchAdminEvaluations, type AdminEvaluationDetail,
   type AdminEvaluationStatus, type AdminEvaluationSummary } from "@/api/admin/evaluations";
 import AdminPagination from "@/components/AdminPagination.vue";
-import { ADMIN_PAGE_SIZE, queryPage, queryStringValue, updateAdminQuery } from "./adminPagination";
+import { ADMIN_PAGE_SIZE, normalizedPage, queryPage, queryStringValue, replaceAdminQuery, updateAdminQuery } from "./adminPagination";
 
 const route = useRoute();
 const router = useRouter();
@@ -27,6 +27,11 @@ async function load() {
   try {
     const result = await fetchAdminEvaluations({ status: status.value, page: page.value, size: ADMIN_PAGE_SIZE });
     if (generation === listGeneration) {
+      const validPage = normalizedPage(page.value, result.totalPages);
+      if (validPage !== page.value) {
+        await replaceAdminQuery(router, route.query, { page: validPage });
+        return;
+      }
       evaluations.value = result.content; page.value = result.page;
       totalPages.value = result.totalPages; totalElements.value = result.totalElements;
     }

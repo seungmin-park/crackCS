@@ -6,7 +6,8 @@ enableAutoUnmount(afterEach);
 
 const route = reactive({ query: {} as Record<string, string> });
 const push = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
-vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push }) }));
+const replace = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
+vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push, replace }) }));
 
 const api = vi.hoisted(() => ({
   fetchTopics: vi.fn(),
@@ -50,7 +51,7 @@ describe("관리자 Question 화면", () => {
   beforeEach(() => {
     Object.values(api).forEach(mock => mock.mockReset());
     route.query = {};
-    push.mockClear();
+    push.mockClear(); replace.mockClear();
     api.fetchTopics.mockResolvedValue({
       content: [
         { id: 1, parentId: null, code: "OS", name: "운영체제", active: true },
@@ -73,6 +74,14 @@ describe("관리자 Question 화면", () => {
       ...networkQuestion,
       concepts: [{ conceptId: 12, code: "TCP", name: "TCP 신뢰성", weight: 1, required: true }],
     });
+  });
+
+  it("범위를 벗어난 문제 page를 마지막 유효 page로 replace한다", async () => {
+    route.query = { page: "3", status: "PUBLISHED" };
+    api.fetchAdminQuestions.mockResolvedValueOnce({ content: [], page: 3, size: 20, totalElements: 1, totalPages: 1 });
+    mount(AdminQuestionView);
+    await flushPromises();
+    expect(replace).toHaveBeenCalledWith({ query: { page: "0", status: "PUBLISHED" } });
   });
 
   it("새로고침된 URL의 page와 상태로 목록을 조회하고 다음 페이지를 URL에 기록한다", async () => {

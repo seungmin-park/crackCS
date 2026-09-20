@@ -4,7 +4,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 enableAutoUnmount(afterEach);
 const route = reactive({ query: {} as Record<string, string> });
 const push = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
-vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push }) }));
+const replace = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
+vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push, replace }) }));
 
 const { fetchAdminEvaluations, fetchAdminEvaluation } = vi.hoisted(() => ({
   fetchAdminEvaluations: vi.fn(), fetchAdminEvaluation: vi.fn(),
@@ -17,7 +18,7 @@ describe("관리자 평가 검토 화면", () => {
   beforeEach(() => {
     fetchAdminEvaluations.mockReset();
     fetchAdminEvaluation.mockReset();
-    route.query = {}; push.mockClear();
+    route.query = {}; push.mockClear(); replace.mockClear();
     fetchAdminEvaluations.mockResolvedValue({ content: [{ evaluationId: 9, answerId: 8, questionId: 7,
       status: "FAILED", failureCode: "PROVIDER_TIMEOUT", modelName: "gpt-5.6-terra",
       evaluatorVersion: "os-evaluator-v1", occurredAt: "2026-09-08T00:00:00" }],
@@ -26,6 +27,14 @@ describe("관리자 평가 검토 화면", () => {
       questionContent: "프로세스란?", answerContent: "프로그램 실행 인스턴스",
       status: "FAILED", failureCode: "PROVIDER_TIMEOUT", modelName: "gpt-5.6-terra",
       evaluatorVersion: "os-evaluator-v1", occurredAt: "2026-09-08T00:00:00", evidence: [] });
+  });
+
+  it("범위를 벗어난 평가 page를 마지막 유효 page로 replace한다", async () => {
+    route.query = { page: "4", status: "FAILED" };
+    fetchAdminEvaluations.mockResolvedValueOnce({ content: [], page: 4, size: 20, totalElements: 35, totalPages: 2 });
+    mount(AdminEvaluationView);
+    await flushPromises();
+    expect(replace).toHaveBeenCalledWith({ query: { page: "1", status: "FAILED" } });
   });
 
   it("URL의 평가 page와 상태를 복원하고 필터 변경 시 page를 0으로 기록한다", async () => {

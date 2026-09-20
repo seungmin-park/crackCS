@@ -973,6 +973,10 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
     - 검증: 공통 명령 이중 실행과 Question 저장 중 새 작성 전환 테스트 RED → GREEN (2026-09-15)
   - [x] Question·KnowledgeDocument 목록 선택을 native button과 `aria-pressed`로 제공한다.
     - 검증: 키보드 접근 가능한 선택 요소와 선택 상태 테스트 RED → GREEN (2026-09-15)
+  - [x] 관리자 Question·KnowledgeDocument·Evaluation·Member·Taxonomy 목록을 URL query와 서버 pagination 메타데이터로 이동한다.
+    - 검증: 새로고침·Back/Forward·필터 page reset·범위 밖 page 교정·Taxonomy query key 분리 테스트 RED → GREEN, 관리자 테스트 44개 성공 (2026-09-20)
+  - [x] 관계 Topic·Concept 후보를 현재 목록 page와 분리하고 전체 page를 bounded 순차 조회한다.
+    - 검증: 100개 이후 후보·오류 재시도·상한 초과·Topic mutation 후보 갱신 테스트 RED → GREEN (2026-09-20)
 - [ ] **인증과 재시도 UI의 상태 전이·실패·경계 테스트를 보강**
   - [x] 인증 복구의 비401 실패는 완료로 캐시하지 않고 다음 조회에서 재시도
     - 검증: 서버 오류 후 재조회 RED → GREEN, 401 익명 캐시 확인, 프런트 126개·type-check·build 성공 (2026-09-15)

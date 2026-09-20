@@ -6,7 +6,8 @@ enableAutoUnmount(afterEach);
 
 const route = reactive({ query: {} as Record<string, string> });
 const push = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
-vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push }) }));
+const replace = vi.fn(async ({ query }: { query: Record<string, string> }) => { route.query = query; });
+vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push, replace }) }));
 
 const api = vi.hoisted(() => ({
   fetchTopics: vi.fn(), fetchKnowledgeDocuments: vi.fn(), fetchKnowledgeChunks: vi.fn(),
@@ -25,10 +26,18 @@ const document = { id: 1, topicId: 2, title: "기존 문서", sourceType: "OFFIC
 describe("관리자 근거 문서 화면", () => {
   beforeEach(() => {
     Object.values(api).forEach(mock => mock.mockReset());
-    route.query = {}; push.mockClear();
+    route.query = {}; push.mockClear(); replace.mockClear();
     api.fetchTopics.mockResolvedValue({ content: [{ id: 2, name: "네트워크", active: true }], page: 0, size: 100, totalElements: 1, totalPages: 1 });
     api.fetchKnowledgeDocuments.mockResolvedValue({ content: [document], page: 0, size: 100, totalElements: 1, totalPages: 1 });
     api.fetchKnowledgeChunks.mockResolvedValue([]);
+  });
+
+  it("삭제로 비어진 마지막 문서 page를 유효 page로 replace한다", async () => {
+    route.query = { page: "2", status: "DRAFT" };
+    api.fetchKnowledgeDocuments.mockResolvedValueOnce({ content: [], page: 2, size: 20, totalElements: 20, totalPages: 1 });
+    mount(AdminKnowledgeDocumentView);
+    await flushPromises();
+    expect(replace).toHaveBeenCalledWith({ query: { page: "0", status: "DRAFT" } });
   });
 
   it("URL의 문서 page와 상태를 복원하고 필터 변경 시 첫 페이지 URL로 돌아간다", async () => {

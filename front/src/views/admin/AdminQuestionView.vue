@@ -23,7 +23,7 @@ import type { ContentStatus } from "@/api/admin/types";
 import AdminFeedback from "@/components/AdminFeedback.vue";
 import AdminPagination from "@/components/AdminPagination.vue";
 import { useAdminFeedback } from "@/composables/useAdminFeedback";
-import { ADMIN_PAGE_SIZE, fetchAllPages, queryPage, queryStringValue, updateAdminQuery } from "./adminPagination";
+import { ADMIN_PAGE_SIZE, fetchAllPages, normalizedPage, queryPage, queryStringValue, replaceAdminQuery, updateAdminQuery } from "./adminPagination";
 
 const route = useRoute();
 const router = useRouter();
@@ -71,6 +71,11 @@ async function load() {
         sort: "id,desc",
       });
     if (generation !== loadGeneration) return;
+    const validPage = normalizedPage(page.value, questionPage.totalPages);
+    if (validPage !== page.value) {
+      await replaceAdminQuery(router, route.query, { page: validPage });
+      return;
+    }
     questions.value = questionPage.content;
     page.value = questionPage.page;
     totalPages.value = questionPage.totalPages;
