@@ -44,7 +44,7 @@ Phase Gate 체크
 - [x] Phase 4 — 답변과 평가 상태 골격
 - [ ] Phase 5 — Knowledge Retrieval과 실제 AI 평가
 - [x] Phase 6 — Knowledge State와 개인 추천
-- [ ] Phase 7 — 후속 질문 학습 루프
+- [x] Phase 7 — 후속 질문 학습 루프
 - [ ] Phase 8 — 운영 안정화와 파일럿
 
 ## API URI 구현 체크리스트
@@ -120,7 +120,7 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ### Phase 7 후속 질문
 
-- [ ] `GET /api/answers/{answerId}/follow-up-question` — USER, 후속 질문 조회
+- [x] `GET /api/answers/{answerId}/follow-up-question` — USER, 후속 질문 조회
 
 ---
 
@@ -706,40 +706,51 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 대상: `FR-FOLLOWUP-001`, `FR-FOLLOWUP-002`, `AC-005`.
 
+검증 기준: 2026-09-20 `main`의 `ecfbde5`에서 Java 21로 `./gradlew test --rerun-tasks --console=plain` 실행. 71개 테스트 클래스·385개 테스트 성공, 실패·오류·스킵 0. 기존 최종 cmux E2E와 함께 기능 Gate 확인. 이번 작업은 코드 변경 없이 구현·테스트와 체크리스트 대조.
+
 ### P7-T01 후속 질문 도메인 불변식
 
-- [ ] NORMAL과 FOLLOW_UP Question의 차이를 도메인 규칙으로 구현한다.
-- [ ] FOLLOW_UP은 sourceAnswer가 필수임을 검증한다.
-- [ ] NORMAL은 sourceAnswer를 가질 수 없게 한다.
-- [ ] `source_answer_id` unique constraint로 답변당 최대 한 개를 보장한다.
-- [ ] FOLLOW_UP에서 또 FOLLOW_UP을 만들지 못하게 한다.
-- [ ] 도메인과 DB constraint 테스트를 작성한다.
+- [x] NORMAL과 FOLLOW_UP Question의 차이를 도메인 규칙으로 구현한다.
+- [x] FOLLOW_UP은 sourceAnswer가 필수임을 검증한다.
+- [x] NORMAL은 sourceAnswer를 가질 수 없게 한다.
+- [x] `source_answer_id` unique constraint로 답변당 최대 한 개를 보장한다.
+- [x] FOLLOW_UP에서 또 FOLLOW_UP을 만들지 못하게 한다.
+- [x] 도메인과 DB constraint 테스트를 작성한다.
+  - 근거: `Question`의 분리된 생성자·`uk_question_source_answer`, `FollowUpQuestionTest`, `FollowUpQuestionServiceTest.databaseRejectsDuplicateQuestion`·`databaseAllowsMultipleNormalQuestions`
 
 ### P7-T02 후속 질문 생성 규칙
 
-- [ ] INCORRECT는 가장 중요한 오개념을 묻도록 한다.
-- [ ] PARTIALLY_CORRECT는 가장 중요한 누락을 묻도록 한다.
-- [ ] CORRECT는 동일 Concept의 적용 질문을 만들도록 한다.
-- [ ] FAILED와 NEEDS_REVIEW는 생성 대상에서 제외한다.
-- [ ] 생성 결과에 평가 가능한 reference answer와 Concept를 포함한다.
-- [ ] 질문 생성 규칙 버전을 기록한다.
+- [x] INCORRECT는 가장 중요한 오개념을 묻도록 한다.
+- [x] PARTIALLY_CORRECT는 가장 중요한 누락을 묻도록 한다.
+- [x] CORRECT는 동일 Concept의 적용 질문을 만들도록 한다.
+- [x] FAILED와 NEEDS_REVIEW는 생성 대상에서 제외한다.
+- [x] 생성 결과에 평가 가능한 reference answer와 Concept를 포함한다.
+- [x] 질문 생성 규칙 버전을 기록한다.
+  - 근거: `FollowUpSourcePolicyTest.selectsConceptInPriorityOrder`의 판정별 선택 6개 사례. 판정 일치 → 필수 → 가중치 내림차순 → ID 순으로 Concept 선택, adapter에서 목적별 지시 전달
+  - 근거: `excludesIneligibleEvaluations`, `OpenAiFollowUpQuestionAdapterTest`의 응답 검증·`follow-up-v1` 확인, `FollowUpGeneration.complete`의 버전 저장
+  - 경계: stub은 적용 질문 고정 fixture. 실제 생성 문장의 오개념 교정·누락 보완·모범 답안 품질은 실모델 검수 대상
 
 ### P7-T03 후속 질문 생성 adapter
 
-- [ ] 외부 모델과 무관한 FollowUpQuestionGenerator 계약을 port 패키지에 정의한다.
-- [ ] 개발·테스트용 Stub을 구현한다.
-- [ ] 실제 AI adapter에 structured output 검증을 적용한다.
-- [ ] 원본 질문, 평가 결과와 승인된 근거만 입력으로 사용한다.
-- [ ] timeout과 생성 실패가 기존 평가를 변경하지 않게 한다.
-- [ ] 같은 Answer 재처리 시 기존 후속 질문을 반환한다.
+- [x] 외부 모델과 무관한 FollowUpQuestionGenerator 계약을 port 패키지에 정의한다.
+- [x] 개발·테스트용 Stub을 구현한다.
+- [x] 실제 AI adapter에 structured output 검증을 적용한다.
+- [x] 원본 질문, 평가 결과와 승인된 근거만 입력으로 사용한다.
+- [x] timeout과 생성 실패가 기존 평가를 변경하지 않게 한다.
+- [x] 같은 Answer 재처리 시 기존 후속 질문을 반환한다.
+  - 근거: `FollowUpQuestionGenerator`, 두 adapter·구성 테스트, `FollowUpSourcePolicy.request`, adapter schema/승인 Concept·Evidence 검증 테스트
+  - 근거: `FollowUpQuestionServiceTest.timeoutPreservesEvaluation`·`completesLearningLoopOnce`, 근거 폐기·저장 실패 롤백 테스트
 
 ### P7-T04 기존 학습 파이프라인 재사용
 
-- [ ] 후속 Question도 기존 조회 DTO로 표시할 수 있게 한다.
-- [ ] 후속 Answer가 기존 제출·멱등 처리 흐름을 사용하게 한다.
-- [ ] 후속 Evaluation이 기존 Retrieval·평가 흐름을 사용하게 한다.
-- [ ] 후속 평가도 Knowledge State에 반영할지 정책을 확정한다.
-- [ ] 후속 평가 후 다음 기본 Question을 추천한다.
+- [x] 후속 Question을 소유권이 확인된 전용 조회 DTO로 표시한다.
+  - 기존 계획의 DTO 재사용과 차이: 공개 문제 조회는 NORMAL 전용 유지. `FollowUpQuestionResponse`로 답변 소유자에게만 표시하고 정답은 응답에서 제외
+- [x] 후속 Answer가 기존 제출·멱등 처리 흐름을 사용하게 한다.
+- [x] 후속 Evaluation이 기존 Retrieval·평가 흐름을 사용하게 한다.
+- [x] 후속 평가도 Knowledge State에 반영할지 정책을 확정한다.
+  - 현재 정책: 후속 평가도 반영. `completesLearningLoopOnce`에서 적용 기록 2개·숙련도 시도 횟수 2 검증
+- [x] 후속 평가 후 다음 기본 Question을 추천한다.
+  - 근거: `DefaultAnswerService.submit`의 공통 멱등 처리, `DefaultEvaluationProcessor`의 Retrieval·평가·숙련도 반영, `completesLearningLoopOnce`의 기본 문제 추천 및 후속 재생성 차단. 기존 cmux E2E에서 다음 기본 문제 이동 확인
 
 ### P7-T05 후속 질문 화면
 
@@ -757,13 +768,17 @@ Phase 1에서는 문제 조회 URI만 임시 PUBLIC으로 구현하고 Phase 2 G
 
 ### Phase 7 Gate
 
-- [ ] 일반 Answer 하나당 후속 Question이 최대 하나다.
-- [ ] FAILED·NEEDS_REVIEW 평가에서는 후속 질문이 없다.
-- [ ] 후속 질문이 다시 후속 질문을 만들지 않는다.
+- [x] 일반 Answer 하나당 후속 Question이 최대 하나다.
+  - 근거: `concurrentProcessingClaimsOnce`의 단일 호출·생성, `databaseRejectsDuplicateQuestion`의 H2 유일 제약 검증
+- [x] FAILED·NEEDS_REVIEW 평가에서는 후속 질문이 없다.
+  - 근거: `excludesIneligibleEvaluations`의 두 상태별 생성 작업 0건 확인
+- [x] 후속 질문이 다시 후속 질문을 만들지 않는다.
+  - 근거: `FollowUpQuestionTest`의 후속 원본 거부와 `completesLearningLoopOnce`의 FOLLOW_UP_LIMIT·질문 수 유지
 - [x] 기본 문제 → 후속 질문 → 다음 기본 문제를 완주한다.
   - 검증: 전체 Task·리뷰 수정 완료 후 cmux 브라우저에서 최종 통합 E2E 1회 수행. 기본 답변 평가 → READY 후속 질문 → 인라인 답변·평가 → 다음 기본 문제 이동 확인 (2026-09-20, 코드 `f31ed80`)
   - 범위: 로컬 메모리 H2·평가/후속 생성 stub의 정상 흐름. 실모델·운영 DB·동시성 및 전체 실패 조합 검증과 구분
-- [ ] `AC-005`가 통과한다.
+- [x] `AC-005`가 통과한다.
+  - 근거: 위 도메인·DB·서비스 테스트와 기존 cmux 정상 흐름 E2E의 조합. H2·stub 기반 기능 인수 조건 완료이며 실모델 품질·운영 DB 다중 인스턴스 검증을 의미하지 않음
 
 ---
 
@@ -891,8 +906,8 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
 - [x] `FR-KNOWLEDGE-001` Concept별 상태 갱신 — P6-T02, P6-T03
 - [x] `FR-KNOWLEDGE-002` 상태 구분 — P6-T01, P6-T02
 - [x] `FR-KNOWLEDGE-003` 지식 지도 조회 — P6-T04, P6-T06
-- [ ] `FR-FOLLOWUP-001` 후속 질문 생성 — P7-T01, P7-T02, P7-T03
-- [ ] `FR-FOLLOWUP-002` 후속 답변 — P7-T04, P7-T05
+- [x] `FR-FOLLOWUP-001` 후속 질문 생성 — P7-T01, P7-T02, P7-T03
+- [x] `FR-FOLLOWUP-002` 후속 답변 — P7-T04, P7-T05
 - [x] `FR-PROGRESS-001` 학습 홈 — P6-T04, P6-T06
 
 ## 공통 검증 체크리스트
@@ -1027,5 +1042,5 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
   - 후속 종료: 추가 답변 폼 대신 학습 완료 안내·기본 문제 이동 제공. 홈의 다음 기본 문제 추천과 답변 이력 확인
   - 브라우저 오류 조회: 오류 없음. 완료 화면 캡처 확인
 - 검증 환경: 메모리 H2 `create-drop`, 평가·후속 생성 stub, 유료 AI 호출 비활성. 기존 운영 데이터 변경 없음
-- 미검증: 실모델 품질·운영 PostgreSQL·다중 인스턴스·전체 실패 조합·교차 브라우저·보조 기술. `AC-005` 전체 완료 표시는 보류
+- 미검증: 실모델 품질·운영 PostgreSQL·다중 인스턴스·전체 실패 조합·교차 브라우저·보조 기술. 이후 백엔드 전체 테스트와 대조한 `AC-005` 기능 완료 근거는 위 Phase 7 Gate 참조
 - 환경 경계: 프로젝트 Node 요구 버전 24와 실행 버전 25.5.0 차이, 기존 `--localstorage-file` 경고 잔존
