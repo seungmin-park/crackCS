@@ -1,0 +1,169 @@
+{
+  "version": "exploratory-2026-09-20",
+  "status": "CANDIDATE_NOT_INDEPENDENT_HOLDOUT",
+  "note": "문제·변형 답변을 같은 그룹으로 유지하는 실험용 분리. 프로젝트 소유자 검수 완료 자료이나 비공개 holdout·출시 품질 인증을 대신하지 않음.",
+  "groups": [
+    {
+      "family": "runtime",
+      "split": "development",
+      "questionIds": [
+        "CS-01",
+        "CS-03",
+        "JAVA-06",
+        "JAVA-07"
+      ]
+    },
+    {
+      "family": "concurrency-transactions",
+      "split": "development",
+      "questionIds": [
+        "CS-02",
+        "CS-06",
+        "JAVA-04",
+        "JAVA-05",
+        "JAVA-13",
+        "SPRING-03",
+        "SPRING-04",
+        "SPRING-05",
+        "SPRING-06",
+        "JPA-09"
+      ]
+    },
+    {
+      "family": "references-collections",
+      "split": "development",
+      "questionIds": [
+        "CS-08",
+        "CS-10",
+        "JAVA-01",
+        "JAVA-02",
+        "JAVA-03",
+        "JAVA-10",
+        "JPA-11"
+      ]
+    },
+    {
+      "family": "generics",
+      "split": "evaluation-candidate",
+      "questionIds": [
+        "JAVA-11",
+        "JAVA-12"
+      ]
+    },
+    {
+      "family": "streams",
+      "split": "evaluation-candidate",
+      "questionIds": [
+        "JAVA-09"
+      ]
+    },
+    {
+      "family": "exceptions",
+      "split": "development",
+      "questionIds": [
+        "JAVA-08",
+        "JAVA-14",
+        "SPRING-08"
+      ]
+    },
+    {
+      "family": "network-http",
+      "split": "development",
+      "questionIds": [
+        "CS-04",
+        "CS-05",
+        "SPRING-09"
+      ]
+    },
+    {
+      "family": "database-querying",
+      "split": "evaluation-candidate",
+      "questionIds": [
+        "CS-07",
+        "CS-11",
+        "JPA-06",
+        "JPA-07",
+        "JPA-08"
+      ]
+    },
+    {
+      "family": "identity-associations",
+      "split": "development",
+      "questionIds": [
+        "CS-12",
+        "JPA-04",
+        "JPA-05"
+      ]
+    },
+    {
+      "family": "persistence-state",
+      "split": "development",
+      "questionIds": [
+        "JPA-01",
+        "JPA-02",
+        "JPA-03",
+        "JPA-10"
+      ]
+    },
+    {
+      "family": "validation",
+      "split": "evaluation-candidate",
+      "questionIds": [
+        "SPRING-07",
+        "SPRING-11"
+      ]
+    },
+    {
+      "family": "composition-test-state",
+      "split": "development",
+      "questionIds": [
+        "SPRING-01",
+        "SPRING-02",
+        "SPRING-12",
+        "SPRING-13"
+      ]
+    },
+    {
+      "family": "event-delivery",
+      "split": "development",
+      "questionIds": [
+        "SPRING-10",
+        "AX-08"
+      ]
+    },
+    {
+      "family": "graph-search",
+      "split": "development",
+      "questionIds": [
+        "CS-09"
+      ]
+    },
+    {
+      "family": "rag-evaluation",
+      "split": "evaluation-candidate",
+      "questionIds": [
+        "AX-03",
+        "AX-04",
+        "AX-05",
+        "AX-06"
+      ]
+    },
+    {
+      "family": "ai-workflow",
+      "split": "development",
+      "questionIds": [
+        "AX-01",
+        "AX-02",
+        "AX-10"
+      ]
+    },
+    {
+      "family": "ai-security",
+      "split": "development",
+      "questionIds": [
+        "AX-07",
+        "AX-09"
+      ]
+    }
+  ]
+}

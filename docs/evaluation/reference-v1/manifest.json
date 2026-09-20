@@ -1,0 +1,866 @@
+{
+  "schemaVersion": "1.0",
+  "version": "1.0.0",
+  "status": "FINALIZED",
+  "scope": "RELEASE_REGRESSION_REFERENCE",
+  "finalizedAt": "2026-09-21",
+  "reviewer": {
+    "kind": "HUMAN",
+    "name": "PROJECT_OWNER"
+  },
+  "independentHumanReview": true,
+  "modelQualityCertified": false,
+  "publicationAuthorized": false,
+  "reviewMethod": "프로젝트 소유자가 문항 60개·필수 개념 120개·사례 240개를 출처 및 질문 조건과 대조. 기술 사실과 프로젝트 설계 판단을 구분. 실모델 성능 평가는 포함하지 않음.",
+  "gradingPolicy": {
+    "authority": "questions.jsonl의 적용 버전·질문·concepts.acceptance가 문항 기준. golden-set.jsonl은 고정 사례의 기대 판정. questions.md는 파생 출력.",
+    "meaning": "문구 일치가 아닌 필수 개념 의미 충족 여부. 동의어·문장 순서·의미를 바꾸지 않는 오탈자·간결함 허용. 예시 대안 나열을 모두 요구하지 않음.",
+    "precedence": [
+      "제공 근거만으로 필수 개념을 판단할 수 없으면 NEEDS_REVIEW, score=null",
+      "충분한 근거 아래 핵심 모순은 INCORRECT, score=0; 다른 맞는 설명으로 상쇄하지 않음",
+      "핵심 모순 없이 두 필수 개념 충족은 CORRECT, score=100",
+      "핵심 모순 없이 필수 개념 일부만 충족은 PARTIALLY_CORRECT, score=50"
+    ],
+    "coverage": "본 버전은 각 문항의 G01~G04 고정 사례 기준. 무관 답변·무응답·복합 모순·상충 출처 등 추가 입력은 검토 후 별도 사례와 버전으로 확장; 미검증 사례의 판정 정확도를 주장하지 않음.",
+    "evidence": "G04는 G01 답변 그대로 K2만 제거. 모델 사전 지식이나 referenceAnswer로 빠진 제공 근거를 대체하지 않음.",
+    "independence": "프로젝트 소유자의 독립 사람 검수 완료. 비공개 holdout은 미완료이므로 benchmarkEligible=false 유지. 이 기준을 개발 회귀 비교에 사용 가능하나 일반화 성능 인증으로 사용 금지."
+  },
+  "changePolicy": "정답·라벨·근거·출처·실험 분리 수정 시 관련 문항 재검토, 버전 증가, 검토 메모와 해시 갱신. 해시만 재계산해 검토를 대체하지 않음.",
+  "artifacts": {
+    "questions.jsonl": "b8d559a635f8fb25e3c1024150605734e90b71c1f2886e8926df011bd783beb9",
+    "golden-set.jsonl": "e3a508a061756f30606686854e0db64af102a1474b70cf9f974977d41f2b1af2",
+    "knowledge-documents.jsonl": "a8a286301f0cf86503dd88bf4f7fbd7b7130a93390276c62aa3c9eeee83f4f3b",
+    "sources.json": "9aa935a6e40b29b3fc12f3721ac0713bda1753baf5755bc5ea767dff9b9e5f86",
+    "experiment-splits.json": "6fc02a99de739af6ba391b6bf82cb2f79694b023159540d3ae0f698eb8fd707c"
+  },
+  "sourceSnapshots": [
+    {
+      "sourceId": "A01",
+      "url": "https://www.anthropic.com/engineering/building-effective-agents",
+      "bodySha256": "6e137644bfee05b4fcfecc1db9843114db36e4821a110c9633880da2dc61a915",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "A02",
+      "url": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+      "bodySha256": "6c8ae33f9b93e5a78ce2b0ff26ea7f197164df43f1913d12d3e2a17855965592",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "A03",
+      "url": "https://learn.microsoft.com/en-us/azure/foundry/concepts/retrieval-augmented-generation",
+      "bodySha256": "6da1c0028caa53fb1475eefb7b0d55bf51415b98380b11e6e5849b544ce6b242",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "A04",
+      "url": "https://genai.owasp.org/llmrisk/llm01-prompt-injection/",
+      "bodySha256": "eea0c68d03342198c04047c29886f68662482f2d8c25697346ab26d40eb396bf",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "A05",
+      "url": "https://genai.owasp.org/llmrisk/llm062025-excessive-agency/",
+      "bodySha256": "247255e25e8be72e7ec5178c2a9f91def75f347241f9a5b61ef52be6da6a8c2a",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "A06",
+      "url": "https://developers.google.com/machine-learning/guides/rules-of-ml",
+      "bodySha256": "7151e0edead605545215b304b96ed403975e1595274777382fce2510bc9f7488",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "A07",
+      "url": "https://learn.microsoft.com/en-us/azure/ai-foundry/concepts/evaluation-approach-gen-ai",
+      "bodySha256": "97aa712aa42126728aed75fdf02d531078abd217a92fa8415ba576bee6a5cc30",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "A08",
+      "url": "https://genai.owasp.org/llmrisk/llm022025-sensitive-information-disclosure/",
+      "bodySha256": "9552c847c6e5a66cf992666844f7ba0de64cbebb2e6ffd6c0800c375b97545b2",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "A09",
+      "url": "https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-design-patterns/transactional-outbox.html",
+      "bodySha256": "d3f4413c8128aead7546a9d3e324493b699904aef0db19b1b0add9ed60b16135",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "A11",
+      "url": "https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/rag-evaluators",
+      "bodySha256": "c97bc1439d94dd23e647dcc195baf922bb413f87a0fa3c118a18a7f2d77d61bd",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C02",
+      "url": "https://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf",
+      "bodySha256": "d40aa442a75553f7b5366cb4c6ebd98bd54bd25ed1a50605955d4cef31c7e344",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C03",
+      "url": "https://pages.cs.wisc.edu/~remzi/OSTEP/threads-bugs.pdf",
+      "bodySha256": "89093f8e4978fb8b7663244a2cf57df12b6fbeef07a2394bd80855858da9f358",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C04",
+      "url": "https://pdos.csail.mit.edu/6.1810/2025/xv6/book-riscv-rev5.pdf",
+      "bodySha256": "814d782432def5ccd360530e78a762835700b253f17f4ece7ec018f4e4954bb7",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C05",
+      "url": "https://www.rfc-editor.org/rfc/rfc9293.html",
+      "bodySha256": "d867bfdf9197282b2dfc3068999cf2ddc01e709c450e66d485fc3f23213f7e38",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C06",
+      "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+      "bodySha256": "532bd83583aed2685306f35d9a78bfc3e2f7fd0f0c8e18f64ff98ac7b3f520dc",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C07",
+      "url": "https://www.postgresql.org/docs/17/transaction-iso.html",
+      "bodySha256": "0e2bfc97068b2c6625368c53f309a9526c9388daa229f109f0d4b8ca0e920895",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C08",
+      "url": "https://www.postgresql.org/docs/17/indexes-multicolumn.html",
+      "bodySha256": "53ece5f16fda8791e8e54377aa8c7812ca3fdc9b4ff558fc20921a4fce27e548",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C10",
+      "url": "https://algs4.cs.princeton.edu/34hash/",
+      "bodySha256": "df4f5918039444bb23455ae6868cb3b65d73e6e4f962a7051e584251bc660d13",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C11",
+      "url": "https://algs4.cs.princeton.edu/41graph/",
+      "bodySha256": "f08464231ecacf39934d68aa55ec9b8c3cfabd2189e49ed5385d389d83296096",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "C12",
+      "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/ArrayList.html",
+      "bodySha256": "ae8d8bee2b555d2629be03a17c510f12ff75ca89ba63c3a5cb151ec380041589",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "J01",
+      "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html",
+      "bodySha256": "85f5e0b30f886517a3fa1289d7da0798ac441c5fb1170dd9b0c76d6c58beb5fd",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "J02",
+      "url": "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html",
+      "bodySha256": "533d4d28b2a6d57a5a2ecb019f286b0c6f6b2a879a873eb9250f0946c4723912",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "J03",
+      "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/Collections.html",
+      "bodySha256": "5d277d465ef49a3b058daded0df8f25e528ecaf0f537ab8a7109d06045203c9e",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "J04",
+      "url": "https://docs.oracle.com/javase/specs/jls/se21/html/jls-17.html",
+      "bodySha256": "1e14810db65aa22242714f5a464d70ac559ec74e7d5df6b715db8c667ef60252",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "J05",
+      "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ConcurrentHashMap.html",
+      "bodySha256": "22671de73ea142f4dbf78829fb5a2987b0c965734d8e353309d6907fa3f46233",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "J06",
+      "url": "https://openjdk.org/jeps/444",
+      "bodySha256": "f2c580dfda6138c0b106848be35b5d25873a965e1bfa517d4716acd2bd6275f4",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "J07",
+      "url": "https://docs.oracle.com/javase/specs/jls/se21/html/jls-14.html",
+      "bodySha256": "c06d8bec315f229d0bb8064b46b85037e7030077147f9a8bfbd020062f516c41",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "J08",
+      "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/stream/Stream.html",
+      "bodySha256": "739c7c32a03e3b9914395a7a3fce74cccc4bba19e1b248e92caccede081ac6a0",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "J09",
+      "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/ref/package-summary.html",
+      "bodySha256": "3a9de3622078961c191181b9e6a05853c2b8d5777087ef9fa67e61b90029068e",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "P04",
+      "url": "https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html",
+      "bodySha256": "8c8282f55afe53ad0b39780725b83cad8d55dff991eaf2e4a608ad73ec60e7be",
+      "bodyOrigin": "EXISTING_LOCAL_CAPTURE",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "P07",
+      "url": "https://docs.hibernate.org/orm/7.0/introduction/html_single/",
+      "bodySha256": "1417c91d59e079eae49793386b63dcfebd09a9ca1e6284be4852efd161794c95",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "S01",
+      "url": "https://docs.spring.io/spring-framework/reference/core/beans/dependencies/factory-collaborators.html",
+      "bodySha256": "a0e54ba446bebc9c88486d5f8a49a7e074b0e3fc889091b7fbee431b4a4eb34c",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "S02",
+      "url": "https://docs.spring.io/spring-framework/reference/core/beans/factory-scopes.html",
+      "bodySha256": "6f4208ab9c206c3b82d3716c05e69aaa215835e87a1f105ec337868098bdb07d",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "S03",
+      "url": "https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html",
+      "bodySha256": "a1c2017bf6f18901aacc68c84b1832b06fc71cb41e87fdfe0c65406f071ebee6",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "S04",
+      "url": "https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html",
+      "bodySha256": "8b6342239c605164348d56e52135430cb37e82ebbccb0930c252f19ce937c4bc",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "S05",
+      "url": "https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-methods/requestbody.html",
+      "bodySha256": "f97cd68be278bacb14418a08fe8b00c19572d8ece9107202bdf9439fb97760dc",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "S06",
+      "url": "https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller/ann-exceptionhandler.html",
+      "bodySha256": "098d62760f827e1981f8f911c67360c84e4932d5503cec8c29ecf790a2d97033",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "S07",
+      "url": "https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html",
+      "bodySha256": "cb3600cb6a2b1b058b2eb32f7341a7a5ac43b7bde66330c67e598519b88f3b05",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "S08",
+      "url": "https://docs.spring.io/spring-framework/reference/data-access/transaction/event.html",
+      "bodySha256": "a1d636cd4fa74c83a09a77b981b2a142940d6bd6b03f906c7510ab71dd48d958",
+      "bodyOrigin": "RETRIEVED_DURING_REVIEW",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "X01",
+      "url": "https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html",
+      "bodySha256": "6675567b23076baf6c583cc76a2c72d1bd207f30aafae2d09925dc519b575b20",
+      "bodyOrigin": "EXISTING_LOCAL_CAPTURE",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "X02",
+      "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/Future.html",
+      "bodySha256": "4fa5e5f12f9da2c449ca130ca3cf9696394a1d73c6f56163610979eb7e8eacad",
+      "bodyOrigin": "EXISTING_LOCAL_CAPTURE",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "X03",
+      "url": "https://docs.oracle.com/javase/specs/jls/se21/html/jls-11.html",
+      "bodySha256": "c17c01c7cf9e2e356784bf54e68f0e39e4cf00d9292befdcfb4813f53c32ac5c",
+      "bodyOrigin": "EXISTING_LOCAL_CAPTURE",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "X04",
+      "url": "https://www.postgresql.org/docs/17/queries-table-expressions.html",
+      "bodySha256": "2669dcfb76b0aa5411917da83bfe8f8efe0ceebacb31611d09975a2e85677390",
+      "bodyOrigin": "EXISTING_LOCAL_CAPTURE",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "X05",
+      "url": "https://www.postgresql.org/docs/17/ddl-constraints.html",
+      "bodySha256": "ff1a9a34a0617246cc1ae34ed080265b0e43064d53f331be9145a7dc4a33c6e0",
+      "bodyOrigin": "EXISTING_LOCAL_CAPTURE",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "X06",
+      "url": "https://docs.spring.io/spring-boot/4.1/reference/features/external-config.html",
+      "bodySha256": "f755a75537c50d3a64fd262f9b7bba3760b03a8422b6749f9dfe25a94393476b",
+      "bodyOrigin": "EXISTING_LOCAL_CAPTURE",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "X07",
+      "url": "https://docs.junit.org/5.12.2/user-guide/",
+      "bodySha256": "88d35cbee1578c7cd87ef0975cb8901c507faf1015a2a76e5dd25e75e8d144b7",
+      "bodyOrigin": "EXISTING_LOCAL_CAPTURE",
+      "reviewedAt": "2026-09-20"
+    },
+    {
+      "sourceId": "X08",
+      "url": "https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/ctx-management/caching.html",
+      "bodySha256": "4d5e807e39f3f6618cac8e9e47600ce8b475febf2558da330ff28959f454d932",
+      "bodyOrigin": "EXISTING_LOCAL_CAPTURE",
+      "reviewedAt": "2026-09-20"
+    }
+  ],
+  "questionReviews": [
+    {
+      "questionId": "CS-01",
+      "sourceIds": [
+        "C02"
+      ],
+      "decision": "ACCEPT",
+      "note": "공유 주소 공간과 스레드별 PC·레지스터·스택 확인. 개별 스택과 접근 격리 구분."
+    },
+    {
+      "questionId": "CS-02",
+      "sourceIds": [
+        "C03"
+      ],
+      "decision": "ACCEPT",
+      "note": "교착 원인은 순환 대기. 일부 경로가 아닌 전역 획득 순서가 예방 조건."
+    },
+    {
+      "questionId": "CS-03",
+      "sourceIds": [
+        "C04"
+      ],
+      "decision": "ACCEPT",
+      "note": "주소 변환·권한과 지연 할당·COW 폴트 구분. 디스크 읽기 필수라는 오개념 배제."
+    },
+    {
+      "questionId": "CS-04",
+      "sourceIds": [
+        "C05"
+      ],
+      "decision": "ACCEPT",
+      "note": "RFC 9293 §3.7의 바이트 스트림·write 경계 비보존 확인. framing은 애플리케이션 책임."
+    },
+    {
+      "questionId": "CS-05",
+      "sourceIds": [
+        "C06"
+      ],
+      "decision": "ACCEPT",
+      "note": "RFC 9110 §9.2.2의 의도된 효과와 응답·로그 구분. POST 일반 멱등 보장 없음."
+    },
+    {
+      "questionId": "CS-06",
+      "sourceIds": [
+        "C07"
+      ],
+      "decision": "ACCEPT",
+      "note": "PostgreSQL 17 §13.2.1~2 확인. RR 첫 비제어문 스냅샷과 자기 변경·재시도 조건을 정답 예시에 명시."
+    },
+    {
+      "questionId": "CS-07",
+      "sourceIds": [
+        "C08"
+      ],
+      "decision": "ACCEPT",
+      "note": "PostgreSQL 17 선두 열 동등·후속 범위 조건 확인. 선두 조건 부재를 사용 불가능으로 단정하지 않음."
+    },
+    {
+      "questionId": "CS-08",
+      "sourceIds": [
+        "C10"
+      ],
+      "decision": "ACCEPT",
+      "note": "균등 분포·부하율 전제와 체이닝 순차 탐색 확인. 최악 선형 비용은 한 버킷 집중에서 도출."
+    },
+    {
+      "questionId": "CS-09",
+      "sourceIds": [
+        "C11"
+      ],
+      "decision": "ACCEPT",
+      "note": "FIFO 층별 탐색의 최소 간선 수 확인. 서로 다른 가중치의 비용 최소와 구분."
+    },
+    {
+      "questionId": "CS-10",
+      "sourceIds": [
+        "C12",
+        "C10"
+      ],
+      "decision": "ACCEPT",
+      "note": "ArrayList 인덱스 조회 상수 시간과 링크 순차 탐색 확인. 삽입 위치 탐색 비용을 분리해 정답 예시 보강."
+    },
+    {
+      "questionId": "CS-11",
+      "sourceIds": [
+        "X04"
+      ],
+      "decision": "ACCEPT",
+      "note": "외부 조인의 ON은 매칭 전, WHERE는 조인 후 필터. 비활성 회원만 있는 팀도 고려."
+    },
+    {
+      "questionId": "CS-12",
+      "sourceIds": [
+        "X05"
+      ],
+      "decision": "ACCEPT",
+      "note": "기본키 범위와 login_name의 NOT NULL·UNIQUE 분리. 사전 조회 경쟁은 동시 실행에서 도출."
+    },
+    {
+      "questionId": "JAVA-01",
+      "sourceIds": [
+        "J01",
+        "C10"
+      ],
+      "decision": "ACCEPT",
+      "note": "equals이면 동일 hashCode, 역은 불성립. 저장 중 비교 상태 변경 위험 확인."
+    },
+    {
+      "questionId": "JAVA-02",
+      "sourceIds": [
+        "J02"
+      ],
+      "decision": "ACCEPT",
+      "note": "JLS §15.12.4.5의 인수값을 새 매개변수에 대입하는 계약 확인. 객체 변경과 참조 재대입 구분."
+    },
+    {
+      "questionId": "JAVA-03",
+      "sourceIds": [
+        "J03"
+      ],
+      "decision": "ACCEPT",
+      "note": "unmodifiableList의 read-through view 확인. 구조 수정 제한에서 깊은 불변성을 추론하지 않음."
+    },
+    {
+      "questionId": "JAVA-04",
+      "sourceIds": [
+        "J04",
+        "J02"
+      ],
+      "decision": "ACCEPT",
+      "note": "volatile happens-before와 증가식의 읽기·계산·쓰기 구분. 가시성만으로 복합 원자성 보장 불가."
+    },
+    {
+      "questionId": "JAVA-05",
+      "sourceIds": [
+        "J05"
+      ],
+      "decision": "ACCEPT",
+      "note": "computeIfAbsent의 원자성·짧은 계산·계산 중 같은 맵 수정 금지 확인. 재귀 갱신만 금지한 설명 보정."
+    },
+    {
+      "questionId": "JAVA-06",
+      "sourceIds": [
+        "J06"
+      ],
+      "decision": "ACCEPT",
+      "note": "JEP 444의 대기 중심 처리량과 CPU 속도 구분. 유한 자원에는 semaphore 등 별도 제한."
+    },
+    {
+      "questionId": "JAVA-07",
+      "sourceIds": [
+        "J06"
+      ],
+      "decision": "ACCEPT",
+      "note": "JEP 444 pinning 조건을 Java 21 synchronized 내부 blocking I/O로 한정. 일반적인 대기라는 모호한 표현 보정."
+    },
+    {
+      "questionId": "JAVA-08",
+      "sourceIds": [
+        "J07"
+      ],
+      "decision": "ACCEPT",
+      "note": "JLS §14.20.3의 초기화 역순 close·주 예외·suppressed·초기화 실패 정리 확인."
+    },
+    {
+      "questionId": "JAVA-09",
+      "sourceIds": [
+        "J08"
+      ],
+      "decision": "ACCEPT",
+      "note": "중간 연산 지연·최적화 생략·일회 소비 계약 확인. terminal 호출이 모든 부수 효과 실행을 보장하지 않음."
+    },
+    {
+      "questionId": "JAVA-10",
+      "sourceIds": [
+        "J09"
+      ],
+      "decision": "ACCEPT",
+      "note": "도달 가능성과 업무상 사용 종료 구분. 참조 제거·유한 캐시는 수명 관리 설계 대안."
+    },
+    {
+      "questionId": "JAVA-11",
+      "sourceIds": [
+        "X01"
+      ],
+      "decision": "ACCEPT",
+      "note": "JLS §4.5.1 wildcard 상·하한 확인. non-null Integer 추가와 정적 읽기 타입 구분."
+    },
+    {
+      "questionId": "JAVA-12",
+      "sourceIds": [
+        "X01"
+      ],
+      "decision": "ACCEPT",
+      "note": "JLS §4.6·§4.12.6의 왼쪽 상한 소거와 런타임 표현 공유 확인."
+    },
+    {
+      "questionId": "JAVA-13",
+      "sourceIds": [
+        "X02"
+      ],
+      "decision": "ACCEPT",
+      "note": "Future.cancel은 인터럽트 시도. 취소 상태와 실제 작업 종료 구분, get의 CancellationException 확인."
+    },
+    {
+      "questionId": "JAVA-14",
+      "sourceIds": [
+        "X03"
+      ],
+      "decision": "ACCEPT",
+      "note": "JLS §11.2의 컴파일 시 예외 처리 검사 확인. 예외 발생 시점과 catch/throws 의무 구분."
+    },
+    {
+      "questionId": "SPRING-01",
+      "sourceIds": [
+        "S01"
+      ],
+      "decision": "ACCEPT",
+      "note": "생성자 주입의 필수 의존성·초기화 상태 확인. 구현체 선택은 구성 책임."
+    },
+    {
+      "questionId": "SPRING-02",
+      "sourceIds": [
+        "S02",
+        "J04"
+      ],
+      "decision": "ACCEPT",
+      "note": "컨테이너·빈 정의당 공유 인스턴스 확인. 요청별 상태 격리와 자동 직렬화 부재 구분."
+    },
+    {
+      "questionId": "SPRING-03",
+      "sourceIds": [
+        "S03"
+      ],
+      "decision": "ACCEPT",
+      "note": "기본 proxy 모드의 self-invocation 우회 확인. 외부 진입 경계 또는 별도 빈은 적용 가능한 대안."
+    },
+    {
+      "questionId": "SPRING-04",
+      "sourceIds": [
+        "S03"
+      ],
+      "decision": "ACCEPT",
+      "note": "기본 RuntimeException·Error 롤백과 checked 기본 비대상 확인. ALL_EXCEPTIONS는 지원 버전·설정 조건부."
+    },
+    {
+      "questionId": "SPRING-05",
+      "sourceIds": [
+        "S04"
+      ],
+      "decision": "ACCEPT",
+      "note": "REQUIRED 물리 트랜잭션 공유와 rollback-only 확인. catch만으로 커밋 가능 상태로 복원되지 않음."
+    },
+    {
+      "questionId": "SPRING-06",
+      "sourceIds": [
+        "S04"
+      ],
+      "decision": "ACCEPT",
+      "note": "REQUIRES_NEW 독립 물리 트랜잭션·외부 자원 유지·추가 연결 및 풀 고갈 확인."
+    },
+    {
+      "questionId": "SPRING-07",
+      "sourceIds": [
+        "S05",
+        "S06"
+      ],
+      "decision": "ACCEPT",
+      "note": "MVC @Valid 검증 실패·오류 변환 확인. 도메인 자체 불변식은 HTTP 밖 호출을 위한 프로젝트 설계 기준."
+    },
+    {
+      "questionId": "SPRING-08",
+      "sourceIds": [
+        "S06"
+      ],
+      "decision": "ACCEPT",
+      "note": "ControllerAdvice 예외 응답 변환 확인. 도메인/HTTP 책임 분리·내부 정보 차단은 프로젝트 설계 기준. 문제 없음의 모호성 제거."
+    },
+    {
+      "questionId": "SPRING-09",
+      "sourceIds": [
+        "S07"
+      ],
+      "decision": "ACCEPT",
+      "note": "HttpOnly 읽기 제한과 CSRF 토큰 전달 구분. 정답에 JS 읽기 제한 명시. JSON 명칭만으로 안전 판정 금지."
+    },
+    {
+      "questionId": "SPRING-10",
+      "sourceIds": [
+        "S08",
+        "A09"
+      ],
+      "decision": "ACCEPT",
+      "note": "AFTER_COMMIT·트랜잭션 부재 기본 미실행 확인. DB/외부 전송 이중 쓰기와 중복 허용 outbox 구분."
+    },
+    {
+      "questionId": "SPRING-11",
+      "sourceIds": [
+        "X06"
+      ],
+      "decision": "ACCEPT",
+      "note": "ConfigurationProperties + Validated + 제약 + 구현체 조건 확인. int 바인딩과 양수 검증 분리."
+    },
+    {
+      "questionId": "SPRING-12",
+      "sourceIds": [
+        "X07",
+        "X08"
+      ],
+      "decision": "ACCEPT",
+      "note": "JUnit PER_METHOD와 Spring static context cache 수명 차이 확인. 공유 상태 복원·조건부 DirtiesContext."
+    },
+    {
+      "questionId": "SPRING-13",
+      "sourceIds": [
+        "X07"
+      ],
+      "decision": "ACCEPT",
+      "note": "BeforeEach 실행 의미 확인. 최소 공통 준비·본문 시나리오 노출은 프로젝트 테스트 설계 기준이지 JUnit 강제 규칙이 아님."
+    },
+    {
+      "questionId": "JPA-01",
+      "sourceIds": [
+        "P04"
+      ],
+      "decision": "ACCEPT",
+      "note": "§3.3.4 관리 상태 동기화와 활성·참여 트랜잭션 조건 확인. JVM 모든 객체의 자동 저장과 구분."
+    },
+    {
+      "questionId": "JPA-02",
+      "sourceIds": [
+        "P04"
+      ],
+      "decision": "ACCEPT",
+      "note": "§3.3.4 동기화와 트랜잭션 종료 구분. 일반 트랜잭션 DB 롤백 전제 유지."
+    },
+    {
+      "questionId": "JPA-03",
+      "sourceIds": [
+        "P04"
+      ],
+      "decision": "ACCEPT",
+      "note": "§3.3.7.1 detached 상태의 managed 복사 확인. 입력 자체가 managed로 전환된다는 오개념 배제."
+    },
+    {
+      "questionId": "JPA-04",
+      "sourceIds": [
+        "P04"
+      ],
+      "decision": "ACCEPT",
+      "note": "§2.11·§3.3.4 owning side 저장과 양방향 메모리 일관성의 개발자 책임 확인."
+    },
+    {
+      "questionId": "JPA-05",
+      "sourceIds": [
+        "P04"
+      ],
+      "decision": "ACCEPT",
+      "note": "§2.11 orphanRemoval flush 계기와 부모 remove 전파 구분. new/detached 예외 혼동을 막도록 관리 상태 기존 자식으로 질문 한정."
+    },
+    {
+      "questionId": "JPA-06",
+      "sourceIds": [
+        "P04",
+        "P07"
+      ],
+      "decision": "ACCEPT",
+      "note": "FetchType LAZY hint·EAGER requirement 확인. SQL join 방식/횟수 보장과 구분."
+    },
+    {
+      "questionId": "JPA-07",
+      "sourceIds": [
+        "P07"
+      ],
+      "decision": "ACCEPT",
+      "note": "association fetching의 N+1 및 fetch join 대안 확인. 실제 SQL 관찰과 목적별 조회 설계 기준."
+    },
+    {
+      "questionId": "JPA-08",
+      "sourceIds": [
+        "P04",
+        "P07"
+      ],
+      "decision": "ACCEPT",
+      "note": "§3.11.1 collection fetch join 페이지 효과 undefined 확인. ID 선조회는 순서·동시 변경을 고려할 설계 대안."
+    },
+    {
+      "questionId": "JPA-09",
+      "sourceIds": [
+        "P04"
+      ],
+      "decision": "ACCEPT",
+      "note": "§3.5.2 버전 비교와 실패 시 rollback 확인. 새 트랜잭션 재조회·업무 재검사는 재시도 안전성 기준."
+    },
+    {
+      "questionId": "JPA-10",
+      "sourceIds": [
+        "P04"
+      ],
+      "decision": "ACCEPT",
+      "note": "§4.11 bulk update의 optimistic 검사 우회·컨텍스트 비동기화 확인. pending 변경 처리 후 stale state 차단."
+    },
+    {
+      "questionId": "JPA-11",
+      "sourceIds": [
+        "P04"
+      ],
+      "decision": "ACCEPT",
+      "note": "§2.7 embedded 객체의 엔티티 간 공유 의미 undefined 확인. 소유자별 값 교체는 부작용 방지 설계."
+    },
+    {
+      "questionId": "AX-01",
+      "sourceIds": [
+        "A06",
+        "A01"
+      ],
+      "decision": "ACCEPT",
+      "note": "단순 기준선·지표 우선 접근 확인. 업무 시간·오류·비용과 파일럿은 프로젝트 적용 기준."
+    },
+    {
+      "questionId": "AX-02",
+      "sourceIds": [
+        "A01"
+      ],
+      "decision": "ACCEPT",
+      "note": "고정 코드 경로 workflow와 모델 주도 agent 구분. 복잡성·비용·지연 조건부 선택."
+    },
+    {
+      "questionId": "AX-03",
+      "sourceIds": [
+        "A03"
+      ],
+      "decision": "ACCEPT",
+      "note": "검색 문맥 주입과 행동/형식 fine-tuning 구분. 최신 지식 보장 및 RAG 무오류 주장은 배제."
+    },
+    {
+      "questionId": "AX-04",
+      "sourceIds": [
+        "A11"
+      ],
+      "decision": "ACCEPT",
+      "note": "검색 process 평가와 생성 groundedness/정확성 분리 확인. recall@k는 본 데이터의 지정 근거 포함률로 정의."
+    },
+    {
+      "questionId": "AX-05",
+      "sourceIds": [
+        "A02",
+        "A06"
+      ],
+      "decision": "ACCEPT",
+      "note": "생성 라벨 자체를 독립 정답으로 취급하지 않음. 사람 교정·주제별 holdout 분리는 최종 성능 인증 조건."
+    },
+    {
+      "questionId": "AX-06",
+      "sourceIds": [
+        "A02"
+      ],
+      "decision": "ACCEPT",
+      "note": "rubric·사람 교정과 반복 trial 필요 확인. 길이·표현별 회귀 비교는 판정기 편향 진단 설계."
+    },
+    {
+      "questionId": "AX-07",
+      "sourceIds": [
+        "A04",
+        "A05"
+      ],
+      "decision": "ACCEPT",
+      "note": "외부 문서 간접 injection·최소 권한·출력 검증·고위험 승인 확인. prompt 한 줄 완전 방어 배제."
+    },
+    {
+      "questionId": "AX-08",
+      "sourceIds": [
+        "A05",
+        "C06",
+        "A09"
+      ],
+      "decision": "ACCEPT",
+      "note": "실행 결과 불명과 멱등 재시도 구분. 모델 요청과 서버 권한 승인 분리, 고영향 행동 통제."
+    },
+    {
+      "questionId": "AX-09",
+      "sourceIds": [
+        "A08",
+        "A05"
+      ],
+      "decision": "ACCEPT",
+      "note": "prompt 제한 우회 가능성과 사용자 범위 최소 권한 확인. 검색·출력·로그 경계의 데이터 최소화."
+    },
+    {
+      "questionId": "AX-10",
+      "sourceIds": [
+        "A06",
+        "A07",
+        "A01"
+      ],
+      "decision": "ACCEPT",
+      "note": "업무 성과 지표와 모델 지표 구분. 성공 건당 총비용은 호출·도구·재시도·사람 검토를 포함하는 프로젝트 기준."
+    }
+  ]
+}

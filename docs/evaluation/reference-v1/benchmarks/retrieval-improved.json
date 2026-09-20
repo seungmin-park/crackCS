@@ -1,0 +1,455 @@
+{
+  "schemaVersion": "1.0",
+  "status": "MEASURED_NOT_RELEASE_APPROVED",
+  "baselineSnapshot": "retrieval-baseline.json",
+  "referenceVersion": "1.0.0",
+  "referenceArtifacts": {
+    "questions.jsonl": "b8d559a635f8fb25e3c1024150605734e90b71c1f2886e8926df011bd783beb9",
+    "golden-set.jsonl": "e3a508a061756f30606686854e0db64af102a1474b70cf9f974977d41f2b1af2",
+    "knowledge-documents.jsonl": "a8a286301f0cf86503dd88bf4f7fbd7b7130a93390276c62aa3c9eeee83f4f3b",
+    "sources.json": "9aa935a6e40b29b3fc12f3721ac0713bda1753baf5755bc5ea767dff9b9e5f86",
+    "experiment-splits.json": "6fc02a99de739af6ba391b6bf82cb2f79694b023159540d3ae0f698eb8fd707c"
+  },
+  "policy": {
+    "name": "trusted-query-supported-evidence-v1",
+    "candidateScope": "same Topic, PUBLISHED documents, not EMBEDDING_FAILED",
+    "trustedQuery": "question + referenceAnswer; submitted answer excluded from retrieval scoring",
+    "eligibility": "concept token match OR at least 2 distinct trusted query token matches",
+    "score": "3 * concept token matches + trusted query token matches; case-insensitive substring match",
+    "relativeCutoff": 0.5,
+    "conceptReservation": "highest-ranked chunk per nonempty full concept-name token set with at least 2 additional query token matches",
+    "conflictReservation": "if initial selection has no conflict, reserve strongest candidate with 2 additional query token matches, >=0.5 exact candidate token query coverage, and existing shared-token/negation conflict relation to initial selection",
+    "selection": "reserve global top and protected IDs in rank order up to K, fill from >=0.5*top, return score/documentId/sequenceNo order",
+    "capacityBoundary": "protected candidates exceeding K still limited by rank; complete concept/conflict coverage not guaranteed"
+  },
+  "documents": 60,
+  "referenceEvidenceSpans": 120,
+  "persistedChunks": 60,
+  "chunkPolicies": [
+    "paragraph-1000-overlap-150-v1"
+  ],
+  "conceptInput": "questions.jsonl concepts.name (same field as production)",
+  "aiCalls": 0,
+  "independentBenchmark": false,
+  "irrelevancePolicy": "not in mapped reference IDs; cross-question relevance not independently annotated",
+  "limitations": [
+    "60 reference documents become 60 chunks; each question has one distinct relevant DB chunk after mapping.",
+    "180 answer cases are 60 distinct question/reference retrieval inputs because submitted answers no longer affect retrieval.",
+    "Reference answers closely overlap the evidence summaries; the high score is not independent generalization evidence.",
+    "Development 138 and public evaluation-candidate 42 queries were measured repeatedly; not an untouched holdout. Additional fixes used separate synthetic regression fixtures.",
+    "Keyword substring matching and negation heuristics can still miss synonyms or mistake short unrelated negative statements for conflicts.",
+    "No external evaluation model, API-to-worker quality experiment, operational migration, or production load validation."
+  ],
+  "implementationSha256": {
+    "build.gradle": "3d2199fede9ccd4a207c6210abdcf5dcc6f41d1bf9f81d6883bc4a77812087e2",
+    "src/main/java/com/example/crackcs/evaluation/retrieval/DefaultKnowledgeRetrievalService.java": "909da81b643c9e74bde18950351ae7597c60c1886feb48523bfc256fc910b350",
+    "src/main/java/com/example/crackcs/evaluation/retrieval/RetrievalQualityMetrics.java": "a32261dde7de46d029604b0203b6b6a1aaecb0eecb9fd1bb361288bb61fb67de",
+    "src/main/java/com/example/crackcs/content/knowledge/chunk/service/DefaultKnowledgeChunkService.java": "93fb0b3a130f0c730429bef20b9db96e49a80eb8d7592ec6970f99cd14432cde",
+    "src/main/java/com/example/crackcs/content/knowledge/chunk/service/KnowledgeChunker.java": "b9be6adac082a5a1a2cd9170d1dd72d62602a6fef31bd715c1c31454e7cddc1a",
+    "src/main/java/com/example/crackcs/content/knowledge/chunk/repository/KnowledgeChunkRepository.java": "d9ce72851bd72ba125825586e31fc4bb84d587e6784ee19176934a88eca9bceb",
+    "src/test/java/com/example/crackcs/evaluation/retrieval/benchmark/ReferenceChunkMapping.java": "fb11adc536d34b774e4a9ccf54e279e41076da3b72a98e7d1bbdb1ae06ecf346",
+    "src/test/java/com/example/crackcs/evaluation/retrieval/benchmark/RetrievalBenchmarkStatistics.java": "9ce13df7eb180b649e828f6c19371477f46de0e46585693d1feb3ed8fb2638ee",
+    "src/test/java/com/example/crackcs/evaluation/retrieval/benchmark/RetrievalBenchmarkTest.java": "a468b8df4170c47b60e987448fd9c3d8a5c4016e72228f447abd3fa4af53aa7e",
+    "src/main/java/com/example/crackcs/evaluation/retrieval/RetrievalQuery.java": "5d564bf9e038728140de284f1d58b8dde7afa5f3c7cfc06f408cb5472ff7b8f3",
+    "src/test/java/com/example/crackcs/evaluation/retrieval/KnowledgeRetrievalServiceTest.java": "5bc7320bdd6f993d8eb6c54b8a4bcf2225569b7b4a67459571cb4d3b5cbbb731",
+    "src/main/java/com/example/crackcs/evaluation/service/DefaultEvaluationProcessor.java": "3eac174b6ffa2ebfe12aa1c1f7f7446a051d1512c0d227592037f3183032d1de",
+    "src/test/java/com/example/crackcs/integration/postgres/PostgresPersistenceTest.java": "0fa60cac1678cf6f24eb3e2d88a34c074eecfe0f63020016e6f18d116370b39c"
+  },
+  "runs": [
+    {
+      "database": "H2",
+      "measuredAt": "2026-09-20T17:19:41.957482Z",
+      "fullReportPath": "build/reports/retrieval/h2/baseline.json",
+      "fullReportSha256": "edca3bb04ce51ead1f2b49dfdbb3e71398047ed7df380653ae9ee07a49965980",
+      "tests": {
+        "classes": 1,
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    {
+      "database": "PostgreSQL",
+      "measuredAt": "2026-09-20T17:20:16.924482Z",
+      "fullReportPath": "build/reports/retrieval/postgres/baseline.json",
+      "fullReportSha256": "4dfa8433e10b8237762aabfc36359d08aaba868fc0988c9fc784e611f1b3fe98",
+      "tests": {
+        "classes": 5,
+        "tests": 37,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  ],
+  "databaseSummariesIdentical": true,
+  "summaries": [
+    {
+      "statistics": {
+        "queries": 180,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 1,
+      "scope": "all"
+    },
+    {
+      "statistics": {
+        "queries": 138,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 1,
+      "scope": "development"
+    },
+    {
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 1,
+      "scope": "evaluation-candidate"
+    },
+    {
+      "statistics": {
+        "queries": 36,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 1,
+      "scope": "CS"
+    },
+    {
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 1,
+      "scope": "JAVA"
+    },
+    {
+      "statistics": {
+        "queries": 39,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 1,
+      "scope": "SPRING"
+    },
+    {
+      "statistics": {
+        "queries": 33,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 1,
+      "scope": "JPA"
+    },
+    {
+      "statistics": {
+        "queries": 30,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 1,
+      "scope": "AX"
+    },
+    {
+      "statistics": {
+        "queries": 180,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 3,
+      "scope": "all"
+    },
+    {
+      "statistics": {
+        "queries": 138,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 3,
+      "scope": "development"
+    },
+    {
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 3,
+      "scope": "evaluation-candidate"
+    },
+    {
+      "statistics": {
+        "queries": 36,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 3,
+      "scope": "CS"
+    },
+    {
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 3,
+      "scope": "JAVA"
+    },
+    {
+      "statistics": {
+        "queries": 39,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 3,
+      "scope": "SPRING"
+    },
+    {
+      "statistics": {
+        "queries": 33,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 3,
+      "scope": "JPA"
+    },
+    {
+      "statistics": {
+        "queries": 30,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 3,
+      "scope": "AX"
+    },
+    {
+      "statistics": {
+        "queries": 180,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 5,
+      "scope": "all"
+    },
+    {
+      "statistics": {
+        "queries": 138,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 5,
+      "scope": "development"
+    },
+    {
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 5,
+      "scope": "evaluation-candidate"
+    },
+    {
+      "statistics": {
+        "queries": 36,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 5,
+      "scope": "CS"
+    },
+    {
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 5,
+      "scope": "JAVA"
+    },
+    {
+      "statistics": {
+        "queries": 39,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 5,
+      "scope": "SPRING"
+    },
+    {
+      "statistics": {
+        "queries": 33,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 5,
+      "scope": "JPA"
+    },
+    {
+      "statistics": {
+        "queries": 30,
+        "macroRecallAtK": 1,
+        "macroIrrelevantChunkRate": 0,
+        "microIrrelevantChunkRate": 0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "conflictingEvidenceQueries": 0,
+      "k": 5,
+      "scope": "AX"
+    }
+  ],
+  "productionK": 5,
+  "beforeAtProductionK": [
+    {
+      "statistics": {
+        "queries": 180,
+        "macroRecallAtK": 0.8666666666666667,
+        "macroIrrelevantChunkRate": 0.5719444444444445,
+        "microIrrelevantChunkRate": 0.7011494252873564,
+        "emptyResults": 3,
+        "requiresEmbeddingExperiment": true
+      },
+      "scope": "all",
+      "k": 5,
+      "conflictingEvidenceQueries": 60
+    },
+    {
+      "statistics": {
+        "queries": 138,
+        "macroRecallAtK": 0.8913043478260869,
+        "macroIrrelevantChunkRate": 0.5253623188405797,
+        "microIrrelevantChunkRate": 0.672,
+        "emptyResults": 3,
+        "requiresEmbeddingExperiment": true
+      },
+      "scope": "development",
+      "k": 5,
+      "conflictingEvidenceQueries": 42
+    },
+    {
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 0.7857142857142857,
+        "macroIrrelevantChunkRate": 0.725,
+        "microIrrelevantChunkRate": 0.7755102040816326,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": true
+      },
+      "scope": "evaluation-candidate",
+      "k": 5,
+      "conflictingEvidenceQueries": 18
+    }
+  ],
+  "missedQuestionIdsAtProductionK": [],
+  "regressionTests": {
+    "classes": 73,
+    "tests": 417,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "retrievalServiceTests": 18,
+  "tddEvidence": "Initial defects: 3 assertion REDs; review boundaries: 2 + 3 + 1 assertion REDs; limit error contract: 2 RED invocations; all GREEN. One duplicate-checksum fixture setup failure was corrected and excluded from RED evidence.",
+  "pythonTests": 18,
+  "referenceCheckGroups": 14
+}

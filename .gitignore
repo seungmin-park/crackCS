@@ -3,7 +3,7 @@ HELP.md
 build/
 front/node_modules/
 front/dist/
-data/
+/data/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
@@ -38,3 +38,4 @@ out/
 
 ### VS Code ###
 .vscode/
+.firecrawl/

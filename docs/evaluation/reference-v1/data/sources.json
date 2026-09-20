@@ -614,5 +614,93 @@
     "licenseNote": "원문 재배포 없음. 출처 링크와 독자 작성 요약만 제공. 승인 전 원문 이용 조건 재확인.",
     "retrievedBodySha256": "0e3cdf1cc816b17ea2902ea0cb374dd87d97b9c8e306473c12dad0c5d242e4d8",
     "locatorNote": "문항별 sourceRefs.locator에서 해당 절 확인. 이동 가능한 문서는 접근일과 기술 버전을 함께 사용."
+  },
+  {
+    "id": "X01",
+    "title": "Java Language Specification 21: Types",
+    "url": "https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html",
+    "checkedAt": "2026-09-20",
+    "role": "REFERENCE",
+    "verification": "BODY_RETRIEVED",
+    "licenseNote": "원문 재배포 없음. 공식 문서로 기술 의미 대조, 독자 작성 사례. 운영 공개 전 이용 조건 확인 필요.",
+    "retrievedBodySha256": "6675567b23076baf6c583cc76a2c72d1bd207f30aafae2d09925dc519b575b20",
+    "locatorNote": "기술 버전과 문항의 locator 참조. 테스트 설계 권고는 언어·프레임워크의 강제 규칙이 아닌 사례별 판단."
+  },
+  {
+    "id": "X02",
+    "title": "Java 21 Future API",
+    "url": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/Future.html",
+    "checkedAt": "2026-09-20",
+    "role": "REFERENCE",
+    "verification": "BODY_RETRIEVED",
+    "licenseNote": "원문 재배포 없음. 공식 문서로 기술 의미 대조, 독자 작성 사례. 운영 공개 전 이용 조건 확인 필요.",
+    "retrievedBodySha256": "4fa5e5f12f9da2c449ca130ca3cf9696394a1d73c6f56163610979eb7e8eacad",
+    "locatorNote": "기술 버전과 문항의 locator 참조. 테스트 설계 권고는 언어·프레임워크의 강제 규칙이 아닌 사례별 판단."
+  },
+  {
+    "id": "X03",
+    "title": "Java Language Specification 21: Exceptions",
+    "url": "https://docs.oracle.com/javase/specs/jls/se21/html/jls-11.html",
+    "checkedAt": "2026-09-20",
+    "role": "REFERENCE",
+    "verification": "BODY_RETRIEVED",
+    "licenseNote": "원문 재배포 없음. 공식 문서로 기술 의미 대조, 독자 작성 사례. 운영 공개 전 이용 조건 확인 필요.",
+    "retrievedBodySha256": "c17c01c7cf9e2e356784bf54e68f0e39e4cf00d9292befdcfb4813f53c32ac5c",
+    "locatorNote": "기술 버전과 문항의 locator 참조. 테스트 설계 권고는 언어·프레임워크의 강제 규칙이 아닌 사례별 판단."
+  },
+  {
+    "id": "X04",
+    "title": "PostgreSQL 17: Table Expressions",
+    "url": "https://www.postgresql.org/docs/17/queries-table-expressions.html",
+    "checkedAt": "2026-09-20",
+    "role": "REFERENCE",
+    "verification": "BODY_RETRIEVED",
+    "licenseNote": "원문 재배포 없음. 공식 문서로 기술 의미 대조, 독자 작성 사례. 운영 공개 전 이용 조건 확인 필요.",
+    "retrievedBodySha256": "2669dcfb76b0aa5411917da83bfe8f8efe0ceebacb31611d09975a2e85677390",
+    "locatorNote": "기술 버전과 문항의 locator 참조. 테스트 설계 권고는 언어·프레임워크의 강제 규칙이 아닌 사례별 판단."
+  },
+  {
+    "id": "X05",
+    "title": "PostgreSQL 17: Constraints",
+    "url": "https://www.postgresql.org/docs/17/ddl-constraints.html",
+    "checkedAt": "2026-09-20",
+    "role": "REFERENCE",
+    "verification": "BODY_RETRIEVED",
+    "licenseNote": "원문 재배포 없음. 공식 문서로 기술 의미 대조, 독자 작성 사례. 운영 공개 전 이용 조건 확인 필요.",
+    "retrievedBodySha256": "ff1a9a34a0617246cc1ae34ed080265b0e43064d53f331be9145a7dc4a33c6e0",
+    "locatorNote": "기술 버전과 문항의 locator 참조. 테스트 설계 권고는 언어·프레임워크의 강제 규칙이 아닌 사례별 판단."
+  },
+  {
+    "id": "X06",
+    "title": "Spring Boot 4.1: Externalized Configuration",
+    "url": "https://docs.spring.io/spring-boot/4.1/reference/features/external-config.html",
+    "checkedAt": "2026-09-20",
+    "role": "REFERENCE",
+    "verification": "BODY_RETRIEVED",
+    "licenseNote": "원문 재배포 없음. 공식 문서로 기술 의미 대조, 독자 작성 사례. 운영 공개 전 이용 조건 확인 필요.",
+    "retrievedBodySha256": "f755a75537c50d3a64fd262f9b7bba3760b03a8422b6749f9dfe25a94393476b",
+    "locatorNote": "기술 버전과 문항의 locator 참조. 테스트 설계 권고는 언어·프레임워크의 강제 규칙이 아닌 사례별 판단."
+  },
+  {
+    "id": "X07",
+    "title": "JUnit 5.12.2 User Guide",
+    "url": "https://docs.junit.org/5.12.2/user-guide/",
+    "checkedAt": "2026-09-20",
+    "role": "REFERENCE",
+    "verification": "BODY_RETRIEVED",
+    "licenseNote": "원문 재배포 없음. 공식 문서로 기술 의미 대조, 독자 작성 사례. 운영 공개 전 이용 조건 확인 필요.",
+    "retrievedBodySha256": "88d35cbee1578c7cd87ef0975cb8901c507faf1015a2a76e5dd25e75e8d144b7",
+    "locatorNote": "기술 버전과 문항의 locator 참조. 테스트 설계 권고는 언어·프레임워크의 강제 규칙이 아닌 사례별 판단."
+  },
+  {
+    "id": "X08",
+    "title": "Spring TestContext: Context Caching",
+    "url": "https://docs.spring.io/spring-framework/reference/testing/testcontext-framework/ctx-management/caching.html",
+    "checkedAt": "2026-09-20",
+    "role": "REFERENCE",
+    "verification": "BODY_RETRIEVED",
+    "licenseNote": "원문 재배포 없음. 공식 문서로 기술 의미 대조, 독자 작성 사례. 운영 공개 전 이용 조건 확인 필요.",
+    "retrievedBodySha256": "4d5e807e39f3f6618cac8e9e47600ce8b475febf2558da330ff28959f454d932",
+    "locatorNote": "기술 버전과 문항의 locator 참조. 테스트 설계 권고는 언어·프레임워크의 강제 규칙이 아닌 사례별 판단."
   }
 ]
