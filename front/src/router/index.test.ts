@@ -1,11 +1,22 @@
-import { ref } from "vue";
+import { flushPromises, mount } from "@vue/test-utils";
+import { defineComponent, ref } from "vue";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const currentMember = ref<{ role: "USER" | "ADMIN" } | null>(null);
+const authenticationResolved = ref(true);
 const restoreAuthentication = vi.fn();
+const { fetchMyAnswers, fetchAnswer } = vi.hoisted(() => ({
+  fetchMyAnswers: vi.fn(),
+  fetchAnswer: vi.fn(),
+}));
 
 vi.mock("@/composables/useAuth", () => ({
-  useAuth: () => ({ currentMember, restoreAuthentication }),
+  useAuth: () => ({ currentMember, authenticationResolved, restoreAuthentication }),
+}));
+vi.mock("@/api/answers", async (importOriginal) => ({
+  ...await importOriginal<typeof import("@/api/answers")>(),
+  fetchMyAnswers,
+  fetchAnswer,
 }));
 
 import router, { authorizationGuard } from "@/router";
@@ -17,6 +28,26 @@ describe("인증 라우트 가드", () => {
     expect(router.resolve("/knowledge-map").meta).toMatchObject({ requiresAuth: true, requiresUser: true });
   });
 
+  it("답변 이력과 상세 route는 실제 metadata로 USER 전용 경계를 선언한다", () => {
+    expect(router.resolve("/answers").meta).toMatchObject({ requiresAuth: true, requiresUser: true });
+    expect(router.resolve("/answers/31").meta).toMatchObject({ requiresAuth: true, requiresUser: true });
+  });
+
+  it.each(["/answers", "/answers/31"])("ADMIN이 %s API 화면을 mount하기 전에 관리자 홈으로 이동한다", async (path) => {
+    currentMember.value = { role: "ADMIN" };
+    const wrapper = mount(defineComponent({ template: "<RouterView />" }), {
+      global: { plugins: [router] },
+    });
+
+    await router.push(path);
+    await flushPromises();
+
+    expect(router.currentRoute.value.name).toBe("admin");
+    expect(fetchMyAnswers).not.toHaveBeenCalled();
+    expect(fetchAnswer).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
   it("ADMIN이 학습자 전용 화면에 접근하면 관리자 홈으로 이동한다", async () => {
     currentMember.value = { role: "ADMIN" };
     expect(await authorizationGuard({ meta: { requiresAuth: true, requiresUser: true }, fullPath: "/" } as never))
@@ -26,6 +57,8 @@ describe("인증 라우트 가드", () => {
     currentMember.value = null;
     restoreAuthentication.mockReset();
     restoreAuthentication.mockResolvedValue(undefined);
+    fetchMyAnswers.mockReset();
+    fetchAnswer.mockReset();
   });
 
   it("비로그인 사용자가 보호 화면에 접근하면 로그인 화면으로 안내한다", async () => {

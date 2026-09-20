@@ -66,4 +66,55 @@ describe("회원가입 화면", () => {
 
     expect(wrapper.get("[role='alert']").text()).toBe("이미 가입된 이메일입니다.");
   });
+
+  it("가입 처리 중 중복 제출을 무시하고 최초 입력 스냅샷을 보낸다", async () => {
+    let resolveSignUp!: (member: { id: number; nickname: string; role: "USER"; status: "ACTIVE" }) => void;
+    signUp.mockReturnValue(new Promise((resolve) => { resolveSignUp = resolve; }));
+    const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
+    await wrapper.get("input[name='email']").setValue("first@example.com");
+    await wrapper.get("input[name='password']").setValue("first-password-value");
+    await wrapper.get("input[name='nickname']").setValue("처음닉네임");
+
+    await wrapper.get("form").trigger("submit");
+    await wrapper.get("input[name='email']").setValue("changed@example.com");
+    await wrapper.get("input[name='nickname']").setValue("바뀐닉네임");
+    await wrapper.get("form").trigger("submit");
+
+    expect(signUp).toHaveBeenCalledOnce();
+    expect(signUp).toHaveBeenCalledWith({
+      email: "first@example.com",
+      password: "first-password-value",
+      nickname: "처음닉네임",
+    });
+    resolveSignUp({ id: 1, nickname: "처음닉네임", role: "USER", status: "ACTIVE" });
+    await flushPromises();
+  });
+
+  it("화면을 떠난 뒤 끝난 가입은 로그인 화면으로 이동하지 않는다", async () => {
+    let resolveSignUp!: (member: { id: number; nickname: string; role: "USER"; status: "ACTIVE" }) => void;
+    signUp.mockReturnValue(new Promise((resolve) => { resolveSignUp = resolve; }));
+    const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
+
+    await wrapper.get("form").trigger("submit");
+    wrapper.unmount();
+    resolveSignUp({ id: 1, nickname: "학습자", role: "USER", status: "ACTIVE" });
+    await flushPromises();
+
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("화면을 떠난 뒤 실패한 가입은 이전 화면의 오류 상태를 바꾸지 않는다", async () => {
+    let rejectSignUp!: (error: Error) => void;
+    signUp.mockReturnValue(new Promise((_resolve, reject) => { rejectSignUp = reject; }));
+    const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
+    const setupState = wrapper.vm.$.setupState as { generalError: string };
+
+    await wrapper.get("form").trigger("submit");
+    wrapper.unmount();
+    rejectSignUp(new Error("late failure"));
+    await flushPromises();
+
+    expect(setupState.generalError).toBe("");
+    expect(push).not.toHaveBeenCalled();
+  });
 });

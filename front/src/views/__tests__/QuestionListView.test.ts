@@ -8,10 +8,11 @@ const { fetchQuestions } = vi.hoisted(() => ({ fetchQuestions: vi.fn() }));
 enableAutoUnmount(afterEach);
 const route = reactive<{ query: Record<string, string | undefined> }>({ query: {} });
 const push = vi.fn();
+const replace = vi.fn();
 vi.mock("vue-router", async (importOriginal) => ({
   ...await importOriginal<typeof import("vue-router")>(),
   useRoute: () => route,
-  useRouter: () => ({ push }),
+  useRouter: () => ({ push, replace }),
 }));
 
 vi.mock("@/api/questions", async (importOriginal) => {
@@ -35,6 +36,8 @@ describe("문제 목록 화면", () => {
     route.query = {};
     push.mockReset();
     push.mockImplementation(({ query }) => { route.query = query; return Promise.resolve(); });
+    replace.mockReset();
+    replace.mockImplementation(({ query }) => { route.query = query; return Promise.resolve(); });
   });
 
   it("주소에 저장된 난이도와 페이지를 복원한다", async () => {
@@ -139,5 +142,64 @@ describe("문제 목록 화면", () => {
     resolveOld({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
     await flushPromises();
     expect(wrapper.text()).toContain("새 필터 문제");
+  });
+
+  it("범위 밖 페이지는 다른 query를 보존한 마지막 1-based 페이지로 교정하고 한 번 다시 조회한다", async () => {
+    route.query = { page: "9", difficulty: "ADVANCED", layout: "compact" };
+    fetchQuestions
+      .mockResolvedValueOnce({ content: [], page: 8, size: 20, totalElements: 41, totalPages: 3 })
+      .mockResolvedValueOnce({ content: [], page: 2, size: 20, totalElements: 41, totalPages: 3 });
+
+    mountView();
+    await flushPromises();
+
+    expect(replace).toHaveBeenCalledOnce();
+    expect(replace).toHaveBeenCalledWith({
+      query: { page: "3", difficulty: "ADVANCED", layout: "compact" },
+    });
+    expect(fetchQuestions).toHaveBeenNthCalledWith(1, { page: 8, difficulty: "ADVANCED" });
+    expect(fetchQuestions).toHaveBeenNthCalledWith(2, { page: 2, difficulty: "ADVANCED" });
+    expect(fetchQuestions).toHaveBeenCalledTimes(2);
+  });
+
+  it("빈 결과의 범위 밖 페이지는 첫 1-based 페이지로 교정하고 반복 보정하지 않는다", async () => {
+    route.query = { page: "5", source: "bookmark" };
+    fetchQuestions.mockResolvedValue({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+
+    mountView();
+    await flushPromises();
+
+    expect(replace).toHaveBeenCalledOnce();
+    expect(replace).toHaveBeenCalledWith({ query: { page: "1", source: "bookmark" } });
+    expect(fetchQuestions).toHaveBeenCalledTimes(2);
+  });
+
+  it("이전 페이지 응답은 더 최신 URL을 교정하지 않는다", async () => {
+    let resolveOld!: (value: unknown) => void;
+    route.query = { page: "9", difficulty: "BASIC" };
+    fetchQuestions.mockReturnValueOnce(new Promise((resolve) => { resolveOld = resolve; }));
+    mountView();
+
+    fetchQuestions.mockResolvedValueOnce({ content: [], page: 1, size: 20, totalElements: 21, totalPages: 2 });
+    route.query = { page: "2", difficulty: "BASIC", source: "newer" };
+    await flushPromises();
+    resolveOld({ content: [], page: 8, size: 20, totalElements: 1, totalPages: 1 });
+    await flushPromises();
+
+    expect(replace).not.toHaveBeenCalled();
+    expect(route.query).toEqual({ page: "2", difficulty: "BASIC", source: "newer" });
+  });
+
+  it("화면을 떠난 뒤 도착한 범위 밖 응답은 URL을 교정하지 않는다", async () => {
+    let resolveRequest!: (value: unknown) => void;
+    route.query = { page: "9" };
+    fetchQuestions.mockReturnValueOnce(new Promise((resolve) => { resolveRequest = resolve; }));
+    const wrapper = mountView();
+
+    wrapper.unmount();
+    resolveRequest({ content: [], page: 8, size: 20, totalElements: 1, totalPages: 1 });
+    await flushPromises();
+
+    expect(replace).not.toHaveBeenCalled();
   });
 });

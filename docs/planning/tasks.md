@@ -992,6 +992,12 @@ Phase 작업을 완료해도 아래 항목을 다시 확인해야 한다. 이 �
     - 보완: 중복 logout 요청 공유와 진행 UI, 만료 후속 처리 실패 시 원래 401 보존 테스트 RED → GREEN (2026-09-15)
     - 보완: 이전 logout 중 새 login 이후 logout은 인증 세대별 별도 요청, 이전 완료가 최신 logout Promise를 지우지 않음 (2026-09-15)
   - [x] 모듈 전역 인증 상태를 테스트마다 격리한다.
+  - [x] 문제 목록과 답변 이력의 범위 밖 page를 URL 의미에 맞는 마지막 page로 교정하고 최신 응답만 재조회한다.
+    - 검증: 1-based 문제 URL·0-based 답변 URL·빈 결과·query 보존·반복 방지·stale/unmount 응답 테스트 RED → GREEN (2026-09-20)
+  - [x] 답변 이력·상세 route를 USER 전용으로 제한하고 ADMIN은 API 화면 mount 전에 관리자 홈으로 이동한다.
+    - 검증: 실제 route metadata와 RouterView navigation에서 학습자 답변 API 미호출 테스트 RED → GREEN (2026-09-20)
+  - [x] 회원가입 진행 중 중복 요청을 막고 최초 양식 snapshot 및 unmount 이후 완료 무시를 보장한다.
+    - 검증: 이중 제출·입력 변경·늦은 성공·늦은 실패 테스트 RED → GREEN, 전체 프런트 228개·type-check·production build 성공 (2026-09-20)
   - [ ] Question 목록·상세의 실패 → 재시도 → 복구 흐름을 검증한다.
   - [ ] 운영 DB 동시성, 다중 인스턴스와 브라우저 E2E의 미검증 경계를 유지한다.
 - [x] **평가·화면 상태의 표시 의미를 한 곳에서 관리 — 2026-09-15**

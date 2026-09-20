@@ -22,11 +22,17 @@ function evaluationLabel(answer: AnswerResponse) {
 }
 async function loadAnswers() {
   const activeGeneration = ++generation;
+  const requestedPage = page.value;
   loading.value = true;
   error.value = false;
   try {
-    const result = await fetchMyAnswers({ page: page.value, size: 20 });
+    const result = await fetchMyAnswers({ page: requestedPage, size: 20 });
     if (disposed || activeGeneration !== generation) return;
+    const lastPage = Math.max(result.totalPages - 1, 0);
+    if (requestedPage > lastPage) {
+      void router.replace({ query: { ...route.query, page: String(lastPage) } });
+      return;
+    }
     answers.value = result.content;
     totalPages.value = result.totalPages;
   } catch {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { difficultyLabel, fetchQuestions, type PublicQuestionPage, type QuestionDifficulty } from "@/api/questions";
 import QuestionState from "@/components/QuestionState.vue";
@@ -18,6 +18,7 @@ const difficulty = computed<QuestionDifficulty | undefined>(() => {
 const loading = ref(true);
 const failed = ref(false);
 let requestId = 0;
+let disposed = false;
 const filters: { value: QuestionDifficulty | undefined; title: string; description: string }[] = [
   { value: undefined, title: "전체 문제", description: "모든 난이도 둘러보기" },
   { value: "BASIC", title: "기본", description: "개념부터 차근차근" },
@@ -27,15 +28,23 @@ const filters: { value: QuestionDifficulty | undefined; title: string; descripti
 
 async function loadQuestions() {
   const currentRequest = ++requestId;
+  const requestedPage = page.value;
+  const requestedDifficulty = difficulty.value;
   loading.value = true;
   failed.value = false;
   try {
-    const response = await fetchQuestions({ page: page.value, difficulty: difficulty.value });
-    if (currentRequest === requestId) result.value = response;
+    const response = await fetchQuestions({ page: requestedPage, difficulty: requestedDifficulty });
+    if (disposed || currentRequest !== requestId) return;
+    const lastPage = Math.max(response.totalPages - 1, 0);
+    if (requestedPage > lastPage) {
+      void router.replace({ query: { ...route.query, page: String(lastPage + 1) } });
+      return;
+    }
+    result.value = response;
   } catch {
-    if (currentRequest === requestId) failed.value = true;
+    if (!disposed && currentRequest === requestId) failed.value = true;
   } finally {
-    if (currentRequest === requestId) loading.value = false;
+    if (!disposed && currentRequest === requestId) loading.value = false;
   }
 }
 function filterBy(value: QuestionDifficulty | undefined) {
@@ -45,6 +54,10 @@ function goToPage(value: number) {
   void router.push({ query: { ...route.query, page: String(value + 1) } });
 }
 watch([page, difficulty], loadQuestions, { immediate: true });
+onBeforeUnmount(() => {
+  disposed = true;
+  requestId++;
+});
 </script>
 
 <template>

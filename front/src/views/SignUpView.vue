@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { onUnmounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { signUp } from "@/api/auth";
@@ -10,16 +10,22 @@ const form = reactive({ email: "", password: "", nickname: "" });
 const fieldErrors = reactive<Record<string, string>>({});
 const generalError = ref("");
 const submitting = ref(false);
+let active = true;
+onUnmounted(() => { active = false; });
 
 async function submit() {
+  if (submitting.value) return;
   Object.keys(fieldErrors).forEach((field) => delete fieldErrors[field]);
   generalError.value = "";
   submitting.value = true;
+  const request = { ...form };
 
   try {
-    await signUp({ ...form });
+    await signUp(request);
+    if (!active) return;
     await router.push({ name: "login", query: { registered: "true" } });
   } catch (error) {
+    if (!active) return;
     if (error instanceof ApiClientError) {
       error.fieldErrors.forEach(({ field, reason }) => {
         fieldErrors[field] = reason;
@@ -31,7 +37,7 @@ async function submit() {
       generalError.value = "회원가입 요청을 처리하지 못했습니다.";
     }
   } finally {
-    submitting.value = false;
+    if (active) submitting.value = false;
   }
 }
 </script>
