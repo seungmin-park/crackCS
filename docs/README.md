@@ -14,7 +14,6 @@ docs/
 ├── planning/      남은 작업과 구현 순서
 ├── changes/       완료 작업의 최종 검증 증거
 ├── evaluation/    버전화된 평가 정답·도구·결과
-├── superpowers/   승인된 구조 변경 설계·실행 계획
 └── retrospectives/ 로컬 회고, 커밋 제외
 ```
 
@@ -64,9 +63,6 @@ docs/
 | Phase 4 답변·평가 골격 | 완료 증거 | [Phase 4 검증](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 변경 |
 | Phase 5 평가 실행 기반 | 구현 증거, 실제 모델 품질 미완료 | [Phase 5 검증](changes/2026-09-08-phase-5/verification.md) | 평가·검색·품질 결과 변경 |
 | Phase 6 개인화·구조 정리 | 완료 증거 | [Phase 6 검증](changes/2026-09-13-phase-6/verification.md) | 상태·추천·구조·검증 변경 |
-| 문서·평가 하네스 재구성 이유 | 승인된 설계 | [설계](superpowers/specs/2026-09-21-living-documentation-and-evaluation-harness-design.md) | 구조 결정 변경 |
-| 문서·평가 하네스 재구성 절차 | 실행 계획 | [계획](superpowers/plans/2026-09-21-living-documentation-and-evaluation-harness.md) | 계획 오류 정정 |
-
 `changes/`의 과거 테스트 수는 당시 증거다. 현재 통과 여부는 새 실행 결과로 판단한다.
 
 ## 로컬 전용 자료
