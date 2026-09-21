@@ -20,6 +20,7 @@ public class ApiAuthenticationEntryPoint implements AuthenticationEntryPoint {
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException authenticationException) throws IOException, ServletException {
-        errorResponseWriter.write(response, HttpStatus.UNAUTHORIZED, "AUTHENTICATION_REQUIRED", "로그인이 필요합니다.");
+        errorResponseWriter.write(request, response, HttpStatus.UNAUTHORIZED,
+                "AUTHENTICATION_REQUIRED", "로그인이 필요합니다.");
     }
 }

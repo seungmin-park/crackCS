@@ -37,13 +37,13 @@ public class DefaultAnswerService implements AnswerService {
 
     @Override
     @Transactional
-    public AnswerResult submit(Long memberId, Long questionId, String requestId, String content) {
+    public AnswerResult submit(Long memberId, Long questionId, String idempotencyKey, String content) {
         Member member = memberRepository.findLockedById(memberId)
                 .orElseThrow(() -> new MemberNotFoundException(memberId));
         if (!member.isAuthenticatable()) {
             throw new InvalidContentStateException("활성 회원만 답변할 수 있습니다.");
         }
-        Optional<Answer> existing = answerRepository.findByMemberIdAndRequestId(memberId, requestId);
+        Optional<Answer> existing = answerRepository.findByMemberIdAndIdempotencyKey(memberId, idempotencyKey);
         if (existing.isPresent()) {
             Answer answer = existing.get();
             if (!answer.getQuestion().getId().equals(questionId) || !answer.getContent().equals(content)) {
@@ -58,7 +58,7 @@ public class DefaultAnswerService implements AnswerService {
         Answer answer = answerRepository.save(Answer.builder()
                 .member(member)
                 .question(question)
-                .requestId(requestId)
+                .idempotencyKey(idempotencyKey)
                 .content(content)
                 .build());
         Evaluation evaluation = evaluationRepository.save(Evaluation.builder().answer(answer).build());

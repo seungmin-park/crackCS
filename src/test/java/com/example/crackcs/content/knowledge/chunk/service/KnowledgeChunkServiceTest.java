@@ -45,7 +45,16 @@ class KnowledgeChunkServiceTest {
     @Test
     @DisplayName("공개 문서를 원문 순서가 보존된 검색 가능 Chunk로 생성한다")
     void chunksPublishedDocumentInSourceOrder() {
-        KnowledgeDocument document = saveDocument("프로세스 설명.\n\n스레드 설명.", true);
+        Topic topic = topicRepository.save(Topic.builder().code("OS" + System.nanoTime()).name("운영체제").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        KnowledgeDocument document = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
+                .topic(topic).createdByMember(admin).title("운영체제")
+                .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
+                .technologyVersion("general").licenseNote("독립 작성")
+                .content("프로세스 설명.\n\n스레드 설명.").build());
+        document.review(admin);
+        document.publish();
+        document = knowledgeDocumentRepository.save(document);
 
         ChunkGenerationResult result = knowledgeChunkService.generateChunks(document.getId());
 
@@ -58,7 +67,15 @@ class KnowledgeChunkServiceTest {
     @Test
     @DisplayName("같은 공개 문서의 Chunk 생성 요청은 기존 근거 보존을 위해 결과를 재사용한다")
     void reusesSameChunkingJob() {
-        KnowledgeDocument document = saveDocument("프로세스 설명.", true);
+        Topic topic = topicRepository.save(Topic.builder().code("OS" + System.nanoTime()).name("운영체제").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        KnowledgeDocument document = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
+                .topic(topic).createdByMember(admin).title("운영체제")
+                .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
+                .technologyVersion("general").licenseNote("독립 작성").content("프로세스 설명.").build());
+        document.review(admin);
+        document.publish();
+        document = knowledgeDocumentRepository.save(document);
         knowledgeChunkService.generateChunks(document.getId());
 
         ChunkGenerationResult second = knowledgeChunkService.generateChunks(document.getId());
@@ -70,24 +87,14 @@ class KnowledgeChunkServiceTest {
     @Test
     @DisplayName("공개되지 않은 문서는 Chunk 생성 요청을 거부한다")
     void rejectsDraftDocument() {
-        KnowledgeDocument document = saveDocument("초안", false);
-
-        assertThatThrownBy(() -> knowledgeChunkService.generateChunks(document.getId()))
-                .isInstanceOf(InvalidContentStateException.class);
-    }
-
-    private KnowledgeDocument saveDocument(String content, boolean publish) {
         Topic topic = topicRepository.save(Topic.builder().code("OS" + System.nanoTime()).name("운영체제").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         KnowledgeDocument document = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
                 .topic(topic).createdByMember(admin).title("운영체제")
                 .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
-                .technologyVersion("general").licenseNote("독립 작성").content(content).build());
-        if (publish) {
-            document.review(admin);
-            document.publish();
-            knowledgeDocumentRepository.save(document);
-        }
-        return document;
+                .technologyVersion("general").licenseNote("독립 작성").content("초안").build());
+
+        assertThatThrownBy(() -> knowledgeChunkService.generateChunks(document.getId()))
+                .isInstanceOf(InvalidContentStateException.class);
     }
 }

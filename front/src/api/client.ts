@@ -3,6 +3,8 @@ export class ApiClientError extends Error {
     public readonly status: number,
     message: string,
     public readonly fieldErrors: FieldError[] = [],
+    public readonly code?: string,
+    public readonly requestId?: string,
   ) {
     super(message);
     this.name = "ApiClientError";
@@ -15,8 +17,10 @@ export type FieldError = {
 };
 
 type ApiErrorBody = {
+  code?: string;
   message?: string;
   fieldErrors?: FieldError[];
+  requestId?: string;
 };
 
 export type RequestAuthentication = "required" | "credentials" | "anonymous";
@@ -100,6 +104,8 @@ async function request<T>(path: string, init: RequestInit, policy: RequestPolicy
       response.status,
       body.message ?? "요청을 처리하지 못했습니다.",
       body.fieldErrors ?? [],
+      body.code,
+      body.requestId,
     );
     if (response.status === 401 && (policy.authentication ?? "required") === "required") {
       try {

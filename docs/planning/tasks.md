@@ -12,7 +12,7 @@
 | 5 Retrieval·평가 | 구현 기반 완료 | 실제 모델 비교와 출시 품질 실측 |
 | 6 개인화 | 완료 | 운영 PostgreSQL 동시성 검증 |
 | 7 후속 질문 | 완료 | 실제 provider·운영 흐름 검증 |
-| 8 운영 안정화 | 미착수 | E2E, 보안, 장애, 관측, 성능, 복구, 파일럿 |
+| 8 운영 안정화 | 부분 완료 | 실제 OpenAI Gate, production backup·restore/p95, 실제 파일럿 |
 
 현재 우선순위:
 
@@ -67,36 +67,36 @@ Phase 8 운영 검증과 제한 파일럿
 
 #### 실행 환경
 
-- [ ] `GET /api/health` 구현과 공개 범위 결정
-- [ ] Java·Node·npm 최소 버전과 로컬 실행 명령을 루트 README에 기록
+- [x] Actuator health·Prometheus 관리 포트와 공개 범위 결정
+- [x] Java·Node·npm 최소 버전과 로컬 실행 명령을 루트 README에 기록
 - [ ] 깨끗한 checkout에서 문서만으로 백엔드·프런트 실행 확인
 - [ ] 프런트에서 백엔드 연결 방식 확정
-- [ ] `local`, `test`, 운영 profile 책임 확인
-- [ ] H2 개발 DB와 테스트 DB 격리 확인
-- [ ] 운영 비밀정보 환경 변수 이름과 예시 제공
-- [ ] API key·비밀번호·사용자 답변의 기본 로그 제외 확인
-- [ ] 테스트가 개발 DB를 읽거나 변경하지 않는지 확인
+- [x] `local`, `test`, 운영 profile 책임 확인
+- [x] H2 개발 DB와 테스트 DB 격리 확인
+- [x] 운영 비밀정보 환경 변수 이름과 예시 제공
+- [x] API key·비밀번호·사용자 답변의 기본 로그 제외 확인
+- [x] 테스트가 개발 DB를 읽거나 변경하지 않는지 확인
 
 #### 공통 HTTP 오류
 
-- [ ] `code`, `message`, `fieldErrors`, `requestId` 계약 확정
-- [ ] validation, not found, conflict, unexpected error 변환 통일
-- [ ] 내부 예외 정보 비노출
-- [ ] 대표 오류 응답 API 문서화
-- [ ] `400`, `404`, `409`, `500` 계약 테스트
+- [x] `code`, `message`, `fieldErrors`, `requestId` 계약 확정
+- [x] validation, not found, conflict, unexpected error 변환 통일
+- [x] 내부 예외 정보 비노출
+- [x] 대표 오류 응답 API 문서화
+- [x] `400`, `404`, `409`, `500` 계약 테스트
 
 #### 프런트 API 경계
 
-- [ ] 공통 API client와 오류 타입 확정
+- [x] 공통 API client와 오류 타입 확정
 - [ ] loading, empty, validation, server error 처리 기준 통일
 - [ ] 화면별 HTTP 오류 변환 중복 제거
 - [ ] 인증·재시도 UI의 상태 전이와 실패 경계 테스트 보강
 
 #### 자동화
 
-- [ ] 백엔드 테스트 CI
-- [ ] 프런트 type-check·production build CI
-- [ ] 실패 로그와 dependency cache 정책 확인
+- [x] 백엔드 테스트 CI
+- [x] 프런트 type-check·production build CI
+- [x] 실패 로그와 dependency cache 정책 확인
 - [ ] ADR 템플릿과 작성 기준 정리
 
 ### 구현 품질 보강
@@ -118,54 +118,54 @@ Phase 8 운영 검증과 제한 파일럿
 
 ### P8-T02 보안 점검
 
-- [ ] 인증 우회와 수평 권한 상승
-- [ ] 관리자 API 전체의 서버 인가
-- [ ] 입력 길이, HTML 출력, script injection
-- [ ] prompt injection 입력과 시스템 지침 경계
-- [ ] session, API key, DB 비밀번호 노출
+- [x] 인증 우회와 수평 권한 상승
+- [x] 관리자 API 전체의 서버 인가
+- [x] 입력 길이, HTML 출력, script injection
+- [x] prompt injection 입력과 시스템 지침 경계
+- [x] session, API key, DB 비밀번호 노출
 - [ ] rate limit 우회와 과도한 provider 호출
 - [ ] 발견 사항, 위험도, 수정·수용 결과 기록
 
 ### P8-T03 장애와 데이터 정합성
 
-- [ ] provider timeout, `429`, `5xx`
-- [ ] 평가 처리 중 worker 종료
-- [ ] 중복 작업과 중복 HTTP 요청
-- [ ] 동시 Knowledge State 갱신
-- [ ] 실패 후 Answer, Evaluation, Knowledge State 정합성
-- [ ] 재시도 불가능 실패의 운영 처리 절차
+- [x] provider timeout, `429`, `5xx`
+- [x] 평가 처리 중 worker 종료
+- [x] 중복 작업과 중복 HTTP 요청
+- [x] 동시 Knowledge State 갱신
+- [x] 실패 후 Answer, Evaluation, Knowledge State 정합성
+- [x] 재시도 불가능 실패의 운영 처리 절차
 
 ### P8-T04 관측 가능성
 
-- [ ] 모든 API 응답과 로그의 `requestId` 연결
-- [ ] `memberId`, `answerId`, `evaluationId` 상관관계
-- [ ] retrieval 시간, 후보 수, Evidence ID
-- [ ] 모델·평가 규칙 버전, latency, 실패 코드
-- [ ] 원문 답변과 비밀번호의 일반 로그 제외
-- [ ] 실패율과 latency 확인용 dashboard 또는 query
+- [x] 모든 API 응답과 로그의 `requestId` 연결
+- [x] `memberId`, `answerId`, `evaluationId` 상관관계
+- [x] retrieval 시간, 후보 수, Evidence ID
+- [x] 모델·평가 규칙 버전, latency, 실패 코드
+- [x] 원문 답변과 비밀번호의 일반 로그 제외
+- [x] 실패율과 latency 확인용 dashboard 또는 query
 
 ### P8-T05 성능
 
 - [ ] 일반 API p95 시나리오와 데이터 크기
 - [ ] 평가 접수 응답 p95
-- [ ] 평가 완료 p95
-- [ ] 지식 지도·추천 query 수와 실행 시간
-- [ ] N+1과 전체 이력 조회 점검
+- [x] 평가 완료 p95
+- [x] 지식 지도·추천 query 수와 실행 시간
+- [x] N+1과 전체 이력 조회 점검
 - [ ] 목표 미달 원인과 대응 계획
 
 ### P8-T06 백업·복구와 콘텐츠 rollback
 
-- [ ] 운영 DB backup 주기와 보존 기간
+- [x] 운영 DB backup 주기와 보존 기간
 - [ ] 빈 환경 restore
 - [ ] 복구 데이터의 회원·문제·답변·평가 조회
-- [ ] 잘못 공개한 문서 폐기와 이전 버전 복구
-- [ ] 과거 EvaluationEvidence 조회 유지
-- [ ] 절차와 담당 책임 기록
+- [x] 잘못 공개한 문서 폐기와 이전 버전 복구
+- [x] 과거 EvaluationEvidence 조회 유지
+- [x] 절차와 담당 책임 기록
 
 ### P8-T07 초기 콘텐츠
 
 - [ ] 초기 Topic·Concept 체계 확정
-- [ ] Topic별 최소 문제·문서 수 `OQ-006` 확정
+- [x] Topic별 최소 문제·문서 수 `OQ-006` 확정
 - [ ] 출처와 라이선스 검수
 - [ ] Java 21, Spring Boot 4.1.x, Spring Framework 7.0.x, Jakarta Persistence 3.2 표시
 - [ ] 문제별 필수 Concept와 reference answer 검수

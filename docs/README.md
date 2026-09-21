@@ -1,6 +1,6 @@
 # 문서 지도
 
-확인일: 2026-09-21
+확인일: 2026-09-22
 
 이 파일은 문서 내용을 반복하지 않는다. 독자가 가진 질문과 그 답을 소유한 기준 문서를 연결한다.
 
@@ -40,6 +40,8 @@ docs/
 | retrieval 기준과 현재 결과 | 측정 완료, 출시 성능 인증 아님 | [개선 전](evaluation/reference-v1/benchmarks/retrieval-baseline.json), [현재](evaluation/reference-v1/benchmarks/retrieval-improved.json) | 검색 정책·자료·DB 환경 변경 |
 | 구현 순서와 의존성 | 계획 | [개발 계획](planning/plan.md) | 순서·의존성 변경 |
 | 현재 남은 작업 | 진행 기준 | [작업 목록](planning/tasks.md) | 작업 시작·완료·검증 결과 변경 |
+| Phase 8 운영 안정화 범위·실행 순서 | 부분 완료 | [설계](changes/2026-09-21-phase-8/design.md), [구현 계획](changes/2026-09-21-phase-8/implementation-plan.md), [검증](changes/2026-09-21-phase-8/verification.md) | Phase 8 범위·Gate·책임·순서·증거 변경 |
+| 운영 경계·평가 처리 책임 개선 | 구현 완료 | [설계](changes/2026-09-22-operability/design.md), [구현 계획](changes/2026-09-22-operability/implementation-plan.md), [검증](changes/2026-09-22-operability/verification.md) | Actuator·상관 ID·평가 관측·처리 책임 변경 |
 | 출시 이후 확장 후보 | 초안 | [확장 기능](planning/extension-features.md) | 후보 채택·보류·폐기 |
 
 ## 결정 기록

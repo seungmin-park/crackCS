@@ -88,18 +88,25 @@ class LearningProgressServiceTest {
     @Test
     @DisplayName("진도는 회원의 전체 풀이 수와 최근 7일 수 및 최신 다섯 답변의 현재 평가 상태를 반환한다")
     void returnsRecentProgressWithCurrentEvaluationStatus() {
-        Fixture f = fixture();
-        Long old = completed(f, Verdict.INCORRECT);
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Concept concept = concept(topic, "스레드");
+        Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+        KnowledgeChunk chunk = knowledgeChunk(topic, admin);
+        Long old = completed(member, question, concept, chunk, Verdict.INCORRECT);
         // submittedAt은 생성 시 확정되는 불변 값이므로 과거 풀이 이력의 시간 경계만 SQL로 준비한다.
         jdbcTemplate.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(8),
                 evaluationRepository.findById(old).orElseThrow().getAnswer().getId());
-        for (int i = 0; i < 4; i++) {
-            pending(f);
+        for (int index = 0; index < 4; index++) {
+            pending(member, question);
         }
-        Long latest = completed(f, Verdict.CORRECT);
+        Long latest = completed(member, question, concept, chunk, Verdict.CORRECT);
         Member other = memberRepository.save(Member.builder().nickname("다른 학습자").build());
-        pending(other, f.question());
-        LearningProgressResult progress = learningProgressService.progress(f.member().getId());
+        pending(other, question);
+
+        LearningProgressResult progress = learningProgressService.progress(member.getId());
+
         assertThat(progress.totalAnswers()).isEqualTo(6);
         assertThat(progress.recentAnswerCount()).isEqualTo(5);
         assertThat(progress.recentEvaluations()).hasSize(5);
@@ -109,15 +116,10 @@ class LearningProgressServiceTest {
         assertThat(progress.recentEvaluations().getFirst().score()).isEqualTo(100);
         assertThat(progress.recentEvaluations().getLast().status()).isEqualTo(EvaluationStatus.EVALUATING);
         assertThat(progress.topics()).hasSize(1);
-        assertThat(progress.recommendation().questionId()).isEqualTo(f.question().getId());
+        assertThat(progress.recommendation().questionId()).isEqualTo(question.getId());
     }
 
-    private Fixture fixture() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
-        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
-        Concept concept = concept(topic, "스레드");
-        Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+    private KnowledgeChunk knowledgeChunk(Topic topic, Member admin) {
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
                 .title("스레드 근거").sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
                 .technologyVersion("general").licenseNote("독립 작성")
@@ -125,9 +127,8 @@ class LearningProgressServiceTest {
         document.review(admin);
         document.publish();
         document = knowledgeDocumentRepository.save(document);
-        KnowledgeChunk chunk = knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
+        return knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
                 document.getContent(), "test-v1"));
-        return new Fixture(member, admin, topic, concept, question, chunk);
     }
 
     private Concept concept(Topic topic, String name) {
@@ -145,37 +146,29 @@ class LearningProgressServiceTest {
         return questionRepository.save(question);
     }
 
-    private Evaluation pending(Fixture fixture) {
-        return pending(fixture.member(), fixture.question());
-    }
-
     private Evaluation pending(Member member, Question question) {
         Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
-                .requestId(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
+                .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
-    private Long completed(Fixture fixture, Verdict verdict) {
-        Long id = pending(fixture).getId();
-        complete(id, fixture, verdict);
+    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = pending(member, question).getId();
+        complete(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Fixture fixture, Verdict verdict) {
+    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(fixture, verdict),
-                    List.of(knowledgeChunkRepository.findById(fixture.chunk().getId()).orElseThrow()));
+            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+                    List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Fixture fixture, Verdict verdict) {
+    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
-                List.of(new ConceptResult(fixture.concept().getId(), verdict, "개념 평가")),
-                List.of(), List.of(), List.of(), List.of(fixture.chunk().getId()), "test", "v1", 1, 1, 1);
-    }
-
-    private record Fixture(Member member, Member admin, Topic topic, Concept concept, Question question,
-                           KnowledgeChunk chunk) {
+                List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
+                List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);
     }
 }

@@ -91,20 +91,22 @@ class KnowledgeAnswerSerializationTest {
     @Test
     @DisplayName("평가 조회 응답은 Service 트랜잭션 종료 후에도 근거와 피드백 목록을 직렬화한다")
     void serializesFeedbackOutsideTransaction() {
-        Fixture f = fixture();
-        Long id = completed(f, Verdict.CORRECT);
-        Long answerId = evaluationRepository.findById(id).orElseThrow().getAnswer().getId();
-        AnswerEvaluationResult result = answerService.findEvaluation(f.member().getId(), answerId);
-        String json = mapper.writeValueAsString(EvaluationResponse.from(result));
-        assertThat(json).contains("\"strengths\":[]", "\"omissions\":[]", "\"misconceptions\":[]", "\"evidence\":[{");
-    }
-
-    private Fixture fixture() {
         Member member = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+        KnowledgeChunk chunk = knowledgeChunk(topic, admin);
+        Long id = completed(member, question, concept, chunk, Verdict.CORRECT);
+        Long answerId = evaluationRepository.findById(id).orElseThrow().getAnswer().getId();
+
+        AnswerEvaluationResult result = answerService.findEvaluation(member.getId(), answerId);
+        String json = mapper.writeValueAsString(EvaluationResponse.from(result));
+
+        assertThat(json).contains("\"strengths\":[]", "\"omissions\":[]", "\"misconceptions\":[]", "\"evidence\":[{");
+    }
+
+    private KnowledgeChunk knowledgeChunk(Topic topic, Member admin) {
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
                 .title("스레드 근거").sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
                 .technologyVersion("general").licenseNote("독립 작성")
@@ -112,9 +114,8 @@ class KnowledgeAnswerSerializationTest {
         document.review(admin);
         document.publish();
         document = knowledgeDocumentRepository.save(document);
-        KnowledgeChunk chunk = knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
+        return knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
                 document.getContent(), "test-v1"));
-        return new Fixture(member, admin, topic, concept, question, chunk);
     }
 
     private Concept concept(Topic topic, String name) {
@@ -132,38 +133,30 @@ class KnowledgeAnswerSerializationTest {
         return questionRepository.save(question);
     }
 
-    private Long completed(Fixture fixture, Verdict verdict) {
-        Long id = pending(fixture).getId();
-        complete(id, fixture, verdict);
+    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = pending(member, question).getId();
+        complete(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Fixture fixture, Verdict verdict) {
+    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(fixture, verdict),
-                    List.of(knowledgeChunkRepository.findById(fixture.chunk().getId()).orElseThrow()));
+            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+                    List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Fixture fixture, Verdict verdict) {
+    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
-                List.of(new ConceptResult(fixture.concept().getId(), verdict, "개념 평가")),
-                List.of(), List.of(), List.of(), List.of(fixture.chunk().getId()), "test", "v1", 1, 1, 1);
-    }
-
-    private Evaluation pending(Fixture fixture) {
-        return pending(fixture.member(), fixture.question());
+                List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
+                List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);
     }
 
     private Evaluation pending(Member member, Question question) {
         Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
-                .requestId(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
+                .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
-    }
-
-    private record Fixture(Member member, Member admin, Topic topic, Concept concept, Question question,
-                           KnowledgeChunk chunk) {
     }
 
 }

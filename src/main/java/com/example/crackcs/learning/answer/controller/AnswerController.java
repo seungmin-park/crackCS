@@ -27,7 +27,7 @@ public class AnswerController {
                                  @Valid @RequestBody AnswerSubmitRequest request,
                                  @RequestHeader("Idempotency-Key") String idempotencyKey) {
         return AnswerResponse.from(
-                answerService.submit(member.memberId(), path.questionId(), request.validatedRequestId(idempotencyKey),
+                answerService.submit(member.memberId(), path.questionId(), request.validatedIdempotencyKey(idempotencyKey),
                         request.content()));
     }
 

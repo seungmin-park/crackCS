@@ -13,6 +13,8 @@ import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
@@ -70,22 +72,21 @@ class EvaluationTest {
         assertThat(evaluation.getVerdict()).isNull();
     }
 
-    @Test
+    @ParameterizedTest
+    @EnumSource(value = Verdict.class, names = {"PARTIALLY_CORRECT", "INCORRECT"})
     @DisplayName("전체 정답 판정은 모든 필수 Concept이 정답일 때만 허용한다")
-    void correctOverallVerdictRequiresEveryRequiredConceptToBeCorrect() {
-        for (Verdict contradictoryVerdict : List.of(Verdict.PARTIALLY_CORRECT, Verdict.INCORRECT)) {
-            Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
-            EvaluationResult contradictory = new EvaluationResult(Verdict.CORRECT, "전체 정답", List.of(
-                    new ConceptResult(11L, contradictoryVerdict, "필수 Concept 모순"),
-                    new ConceptResult(12L, Verdict.CORRECT, "정확함")
-            ));
+    void correctOverallVerdictRequiresEveryRequiredConceptToBeCorrect(Verdict contradictoryVerdict) {
+        Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
+        EvaluationResult contradictory = new EvaluationResult(Verdict.CORRECT, "전체 정답", List.of(
+                new ConceptResult(11L, contradictoryVerdict, "필수 Concept 모순"),
+                new ConceptResult(12L, Verdict.CORRECT, "정확함")
+        ));
 
-            assertThatThrownBy(() -> evaluation.complete(contradictory))
-                    .isInstanceOf(IllegalArgumentException.class)
-                    .hasMessageContaining("CORRECT");
-            assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.EVALUATING);
-            assertThat(evaluation.getConcepts()).isEmpty();
-        }
+        assertThatThrownBy(() -> evaluation.complete(contradictory))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("CORRECT");
+        assertThat(evaluation.getStatus()).isEqualTo(EvaluationStatus.EVALUATING);
+        assertThat(evaluation.getConcepts()).isEmpty();
     }
 
     @Test
@@ -323,6 +324,6 @@ class EvaluationTest {
         question.review(admin);
         question.publish();
         return Answer.builder().member(Member.builder().nickname("학습자").build()).question(question)
-                .requestId(UUID.randomUUID().toString()).content("답변").build();
+                .idempotencyKey(UUID.randomUUID().toString()).content("답변").build();
     }
 }

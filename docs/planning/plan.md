@@ -321,6 +321,8 @@ com.example.crackcs
 
 ### Phase 8 — 운영 안정화와 파일럿
 
+상태: 부분 완료. 로컬 자동 검증·관측·성능 기준선·운영 절차는 준비됐고, 실제 OpenAI Gate, production-equivalent backup·restore와 성능, 실제 참가자 파일럿은 남아 있다.
+
 대상 요구사항: 전체 P0, 비기능 요구사항과 P0 완료 정의.
 
 목표: 기능이 동작하는 수준을 넘어 제한된 실제 사용자가 안전하게 사용할 수 있게 한다.

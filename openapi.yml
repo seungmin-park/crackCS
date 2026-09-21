@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: CrackCS API
   version: 6.0.0
-  description: 세션 인증, 콘텐츠 운영, 근거 평가와 개인 학습 상태·추천 API
+  description: 세션 인증, 콘텐츠 운영, 근거 평가와 개인 학습 상태·추천 API. 모든 응답의 X-Request-Id는 같은 요청의 오류 본문 requestId 및 서버 로그와 연결된다.
 servers:
   - url: /
 tags:
@@ -906,6 +906,14 @@ components:
       in: cookie
       name: CRACKCS_SESSION
   parameters:
+    RequestIdHeader:
+      name: X-Request-Id
+      in: header
+      required: false
+      description: 요청 추적용 canonical UUID. 형식이 잘못되었거나 없으면 서버가 새 UUID를 발급한다.
+      schema:
+        type: string
+        format: uuid
     AnswerIdPath:
       name: answerId
       in: path
@@ -1057,15 +1065,27 @@ components:
           - id,asc
       style: form
       explode: true
+  headers:
+    RequestId:
+      description: 요청·응답·서버 로그를 연결하는 canonical UUID
+      schema:
+        type: string
+        format: uuid
   responses:
     BadRequest:
       description: 요청 형식 또는 검증 실패
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
     QuestionNotFound:
       description: 해당 ID의 문제가 없음
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/json:
           schema:
@@ -1077,30 +1097,45 @@ components:
             requestId: 1e85b909-2114-47be-a1c3-1fa47a4a7235
     Unauthorized:
       description: 인증이 필요함
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
     Forbidden:
       description: 인증됐지만 역할 또는 소유권이 없음
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
     InvalidCredentials:
       description: 이메일 또는 비밀번호가 올바르지 않거나 회원이 비활성 상태임
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
     DuplicateAuthAccount:
       description: 같은 LOCAL 이메일 계정이 이미 존재함
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
     ContentConflict:
       description: 중복 코드·원문 또는 현재 상태에서 허용되지 않는 전이
+      headers:
+        X-Request-Id:
+          $ref: '#/components/headers/RequestId'
       content:
         application/json:
           schema:

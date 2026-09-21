@@ -69,6 +69,11 @@ class AuthenticationFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nickname").value("크랙러"))
                 .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.password").doesNotExist())
+                .andExpect(jsonPath("$.passwordHash").doesNotExist())
+                .andExpect(jsonPath("$.sessionId").doesNotExist())
+                .andExpect(jsonPath("$.csrfToken").doesNotExist())
+                .andExpect(jsonPath("$.apiKey").doesNotExist())
                 .andReturn();
         MockHttpSession authenticatedSession = sessionOf(loginResult);
 

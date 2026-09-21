@@ -31,8 +31,6 @@ import com.example.crackcs.member.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -184,22 +182,49 @@ class KnowledgeCompletionTest {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(booleans = {false, true})
-    @DisplayName("동시에 완료하는 두 평가는 AI 재호출 없이 신규 또는 기존 학습 상태에 모두 반영된다")
-    void completesConcurrentEvaluationsAtomically(boolean existingState) throws Exception {
-        Fixture fixture = fixture();
-        if (existingState) {
-            completionTransaction.execute(
-                    () -> knowledgeStateService.applyInCurrentTransaction(completed(fixture, Verdict.CORRECT)));
-        }
-        Long first = pending(fixture).getId();
-        Long second = pending(fixture).getId();
+    @Test
+    @DisplayName("학습 상태가 없을 때 동시에 완료하는 두 평가를 모두 반영한다")
+    void completesConcurrentEvaluationsIntoNewState() throws Exception {
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Concept concept = concept(topic, "스레드");
+        Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+        KnowledgeChunk chunk = knowledgeChunk(topic, admin);
+        Long first = pending(member, question).getId();
+        Long second = pending(member, question).getId();
+
         concurrently(() -> evaluationProcessor.process(first), () -> evaluationProcessor.process(second));
-        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(fixture.member().getId(), fixture.concept().getId())
+
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
                 .orElseThrow();
-        assertThat(state.getAttemptCount()).isEqualTo(existingState ? 3 : 2);
-        assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(existingState ? 3 : 2);
+        assertThat(state.getAttemptCount()).isEqualTo(2);
+        assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(2);
+        assertThat(evaluationRepository.findById(first).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
+        assertThat(evaluationRepository.findById(second).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
+        assertThat(port.calls.get()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("기존 학습 상태가 있을 때 동시에 완료하는 두 평가를 모두 추가 반영한다")
+    void completesConcurrentEvaluationsIntoExistingState() throws Exception {
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Concept concept = concept(topic, "스레드");
+        Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+        KnowledgeChunk chunk = knowledgeChunk(topic, admin);
+        Long initial = completed(member, question, concept, chunk, Verdict.CORRECT);
+        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(initial));
+        Long first = pending(member, question).getId();
+        Long second = pending(member, question).getId();
+
+        concurrently(() -> evaluationProcessor.process(first), () -> evaluationProcessor.process(second));
+
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
+                .orElseThrow();
+        assertThat(state.getAttemptCount()).isEqualTo(3);
+        assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(3);
         assertThat(evaluationRepository.findById(first).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(evaluationRepository.findById(second).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(port.calls.get()).isEqualTo(2);
@@ -246,12 +271,7 @@ class KnowledgeCompletionTest {
         assertThat(interrupted).isTrue();
     }
 
-    private Fixture fixture() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
-        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
-        Concept concept = concept(topic, "스레드");
-        Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+    private KnowledgeChunk knowledgeChunk(Topic topic, Member admin) {
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
                 .title("스레드 근거").sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
                 .technologyVersion("general").licenseNote("독립 작성")
@@ -259,9 +279,8 @@ class KnowledgeCompletionTest {
         document.review(admin);
         document.publish();
         document = knowledgeDocumentRepository.save(document);
-        KnowledgeChunk chunk = knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
+        return knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
                 document.getContent(), "test-v1"));
-        return new Fixture(member, admin, topic, concept, question, chunk);
     }
 
     private Concept concept(Topic topic, String name) {
@@ -279,34 +298,30 @@ class KnowledgeCompletionTest {
         return questionRepository.save(question);
     }
 
-    private Evaluation pending(Fixture fixture) {
-        return pending(fixture.member(), fixture.question());
-    }
-
     private Evaluation pending(Member member, Question question) {
         Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
-                .requestId(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
+                .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
-    private Long completed(Fixture fixture, Verdict verdict) {
-        Long id = pending(fixture).getId();
-        complete(id, fixture, verdict);
+    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = pending(member, question).getId();
+        complete(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Fixture fixture, Verdict verdict) {
+    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(fixture, verdict),
-                    List.of(knowledgeChunkRepository.findById(fixture.chunk().getId()).orElseThrow()));
+            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+                    List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Fixture fixture, Verdict verdict) {
+    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
-                List.of(new ConceptResult(fixture.concept().getId(), verdict, "개념 평가")),
-                List.of(), List.of(), List.of(), List.of(fixture.chunk().getId()), "test", "v1", 1, 1, 1);
+                List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
+                List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);
     }
 
     @TestConfiguration
@@ -342,7 +357,4 @@ class KnowledgeCompletionTest {
         }
     }
 
-    private record Fixture(Member member, Member admin, Topic topic, Concept concept, Question question,
-                           KnowledgeChunk chunk) {
-    }
 }

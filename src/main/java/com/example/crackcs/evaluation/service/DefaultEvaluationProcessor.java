@@ -2,19 +2,15 @@ package com.example.crackcs.evaluation.service;
 
 import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
-import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.evaluation.domain.Evaluation;
 import com.example.crackcs.evaluation.domain.EvaluationResult;
-import com.example.crackcs.evaluation.port.*;
+import com.example.crackcs.evaluation.port.EvaluatedConceptApplicationPort;
+import com.example.crackcs.evaluation.port.EvaluationConceptInput;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
-import com.example.crackcs.evaluation.retrieval.KnowledgeRetrievalService;
-import com.example.crackcs.evaluation.retrieval.RetrievalQuery;
-import com.example.crackcs.evaluation.retrieval.RetrievalResult;
-import com.example.crackcs.exception.EvaluationTimeoutException;
 import com.example.crackcs.learning.answer.domain.Answer;
+import io.micrometer.core.annotation.Timed;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -27,21 +23,21 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
 public class DefaultEvaluationProcessor implements EvaluationProcessor {
 
-    private static final int EVALUATION_EVIDENCE_LIMIT = 5;
     private final EvaluationRepository evaluationRepository;
-    private final ObjectProvider<EvaluationPort> ports;
     private final TransactionTemplate transactionTemplate;
-    private final KnowledgeRetrievalService knowledgeRetrievalService;
     private final KnowledgeChunkRepository knowledgeChunkRepository;
-    private final EvaluationBudgetGuard budgetGuard;
-    private final EvaluatedConceptApplicationPort evaluatedConcepts;
-    private final EvaluationCompletionTransaction completionTransactions;
+    private final EvaluationAttemptExecutor evaluationAttemptExecutor;
+    private final EvaluatedConceptApplicationPort evaluatedConceptApplicationPort;
+    private final EvaluationCompletionTransaction evaluationCompletionTransaction;
+    private final EvaluationOperationLogger evaluationOperationLogger;
     private final String workerId = UUID.randomUUID().toString();
     private final Object[] localLocks = IntStream.range(0, 64).mapToObj(ignored -> new Object()).toArray();
     @Value("${crackcs.evaluation.lease-duration:1m}")
@@ -50,75 +46,85 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
     private Duration retryBaseDelay;
 
     @Override
+    @Timed(value = "crackcs.evaluation.process", description = "Evaluation processing time")
     public void process(Long evaluationId) {
         Object localLock = localLocks[Math.floorMod(evaluationId.hashCode(), localLocks.length)];
         synchronized (localLock) {
-            processSerially(evaluationId);
+            processWithLocalLock(evaluationId);
         }
     }
 
-    private void processSerially(Long evaluationId) {
-        Optional<PendingEvaluation> claimed = Objects.requireNonNull(
+    private void processWithLocalLock(Long evaluationId) {
+        Optional<ClaimedEvaluationWork> claimed = Objects.requireNonNull(
                 transactionTemplate.execute(status -> claim(evaluationId)),
                 "claim transaction must return an Optional");
         if (claimed.isEmpty()) {
             return;
         }
-        PendingEvaluation pending = claimed.orElseThrow();
-        RetrievalResult retrieval = knowledgeRetrievalService.retrieve(
-                pending.retrievalQuery(), EVALUATION_EVIDENCE_LIMIT);
-        if (retrieval.insufficientEvidence()) {
-            requireReviewIfOwned(evaluationId, "EVIDENCE_NOT_FOUND");
-            return;
-        }
-        if (retrieval.conflictingEvidence()) {
-            requireReviewIfOwned(evaluationId, "EVIDENCE_CONFLICT");
-            return;
-        }
-        EvaluationRequest request = pending.request(retrieval);
-        if (!budgetGuard.canEvaluate()) {
-            requireReviewIfOwned(evaluationId, "MONTHLY_BUDGET_EXCEEDED");
-            return;
-        }
-        EvaluationPort port;
-        try {
-            port = ports.getIfAvailable();
-        } catch (RuntimeException unavailable) {
-            retryOrFail(evaluationId, pending.attemptCount(), "PROVIDER_UNAVAILABLE");
-            return;
-        }
-        if (port == null) {
-            retryOrFail(evaluationId, pending.attemptCount(), "PROVIDER_UNAVAILABLE");
-            return;
-        }
-        EvaluationResult result;
-        try {
-            result = port.evaluate(request);
-        } catch (EvaluationTimeoutException timeout) {
-            retryOrFail(evaluationId, pending.attemptCount(), "PROVIDER_TIMEOUT");
-            return;
-        } catch (IllegalArgumentException invalidResult) {
-            retryOrFail(evaluationId, pending.attemptCount(), "INVALID_RESULT");
-            return;
-        } catch (RuntimeException providerFailure) {
-            retryOrFail(evaluationId, pending.attemptCount(), "PROVIDER_ERROR");
-            return;
-        }
-        List<Long> providedChunkIds = retrieval.chunks().stream()
-                .map(retrieved -> retrieved.chunk().getId()).toList();
-        try {
-            // A storage conflict retries completion using this same provider result in a fresh transaction.
-            completionTransactions.execute(() -> completeIfOwned(evaluationId, result, providedChunkIds));
-        } catch (DataIntegrityViolationException permanentStorageFailure) {
-            failIfOwned(evaluationId, "PERSISTENCE_ERROR");
-        } catch (ConcurrencyFailureException exhaustedConflict) {
-            retryOrFail(evaluationId, pending.attemptCount(), "PERSISTENCE_CONFLICT");
-        } catch (IllegalArgumentException invalidResult) {
-            retryOrFail(evaluationId, pending.attemptCount(), "INVALID_RESULT");
+        ClaimedEvaluationWork work = claimed.orElseThrow();
+        applyAttempt(work, evaluationAttemptExecutor.execute(work));
+    }
+
+    private void applyAttempt(ClaimedEvaluationWork work, EvaluationAttempt attempt) {
+        switch (attempt) {
+            case EvaluationAttempt.Completed completed -> complete(work, completed);
+            case EvaluationAttempt.ReviewRequired review -> applyReview(work, review.reason());
+            case EvaluationAttempt.RetryRequired retry -> applyRetry(work, retry.reason());
         }
     }
 
-    private Optional<PendingEvaluation> claim(Long evaluationId) {
+    private void applyReview(ClaimedEvaluationWork work, String reason) {
+        if (requireReviewIfOwned(work.evaluationId(), reason)) {
+            logFailure(work, reason);
+        }
+    }
+
+    private void applyRetry(ClaimedEvaluationWork work, String reason) {
+        if (retryOrFail(work.evaluationId(), work.attemptCount(), reason)) {
+            logFailure(work, reason);
+        }
+    }
+
+    private void complete(ClaimedEvaluationWork work, EvaluationAttempt.Completed completed) {
+        try {
+            // A storage conflict retries completion using this same provider result in a fresh transaction.
+            AtomicBoolean completionApplied = new AtomicBoolean();
+            evaluationCompletionTransaction.execute(() -> completionApplied.set(
+                    completeIfOwned(work.evaluationId(), completed.result(), completed.evidenceChunkIds())));
+            if (completionApplied.get()) {
+                evaluationOperationLogger.evaluationCompleted(
+                        work.evaluationId(),
+                        work.answerId(),
+                        work.memberId(),
+                        completed.result().modelName(),
+                        completed.result().evaluatorVersion()
+                );
+            }
+        } catch (DataIntegrityViolationException permanentStorageFailure) {
+            if (failIfOwned(work.evaluationId(), "PERSISTENCE_ERROR")) {
+                logFailure(work, "PERSISTENCE_ERROR");
+            }
+        } catch (ConcurrencyFailureException exhaustedConflict) {
+            if (retryOrFail(work.evaluationId(), work.attemptCount(), "PERSISTENCE_CONFLICT")) {
+                logFailure(work, "PERSISTENCE_CONFLICT");
+            }
+        } catch (IllegalArgumentException invalidResult) {
+            if (retryOrFail(work.evaluationId(), work.attemptCount(), "INVALID_RESULT")) {
+                logFailure(work, "INVALID_RESULT");
+            }
+        }
+    }
+
+    private void logFailure(ClaimedEvaluationWork work, String failureCode) {
+        evaluationOperationLogger.evaluationFailed(
+                work.evaluationId(),
+                work.answerId(),
+                work.memberId(),
+                failureCode
+        );
+    }
+
+    private Optional<ClaimedEvaluationWork> claim(Long evaluationId) {
         Optional<Evaluation> found = evaluationRepository.findLockedById(evaluationId);
         if (found.isEmpty()) {
             return Optional.empty();
@@ -128,100 +134,71 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
         if (!evaluation.claim(workerId, now, leaseDuration)) {
             return Optional.empty();
         }
-        return Optional.of(toPendingEvaluation(evaluation));
+        return Optional.of(toClaimedWork(evaluation));
     }
 
-    private PendingEvaluation toPendingEvaluation(Evaluation evaluation) {
+    private ClaimedEvaluationWork toClaimedWork(Evaluation evaluation) {
         Answer answer = evaluation.getAnswer();
         Question question = answer.getQuestion();
         List<EvaluationConceptInput> concepts = question.getQuestionConcepts().stream()
                 .map(qc -> new EvaluationConceptInput(qc.getConcept().getId(), qc.getConcept().getName(),
                         qc.isRequired()))
                 .toList();
-        return new PendingEvaluation(
+        return new ClaimedEvaluationWork(
+                evaluation.getId(),
+                answer.getId(), answer.getMember().getId(),
                 question.getTopic().getId(), question.getContent(), question.getReferenceAnswer(),
                 answer.getContent(), concepts, evaluation.getAttemptCount()
         );
     }
 
-    private void completeIfOwned(
+    private boolean completeIfOwned(
             Long evaluationId,
             EvaluationResult result,
             List<Long> providedChunkIds
     ) {
         List<KnowledgeChunk> providedChunks = knowledgeChunkRepository.findAllById(providedChunkIds);
-        evaluationRepository.findLockedById(evaluationId)
+        return evaluationRepository.findLockedById(evaluationId)
                 .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
-                .ifPresent(evaluation -> {
+                .map(evaluation -> {
                     evaluation.completeWithEvidence(result, providedChunks);
-                    evaluatedConcepts.applyInCurrentTransaction(evaluationId);
-                });
+                    evaluatedConceptApplicationPort.applyInCurrentTransaction(evaluationId);
+                    return true;
+                })
+                .orElse(false);
     }
 
-    private void requireReviewIfOwned(Long evaluationId, String safeReason) {
-        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findLockedById(evaluationId)
-                .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
-                .ifPresent(evaluation -> evaluation.requireReview(safeReason)));
+    private boolean requireReviewIfOwned(Long evaluationId, String safeReason) {
+        return updateIfOwned(evaluationId, evaluation -> evaluation.requireReview(safeReason));
     }
 
-    private void failIfOwned(Long evaluationId, String safeReason) {
-        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findLockedById(evaluationId)
-                .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
-                .ifPresent(evaluation -> evaluation.fail(safeReason)));
+    private boolean failIfOwned(Long evaluationId, String safeReason) {
+        return updateIfOwned(evaluationId, evaluation -> evaluation.fail(safeReason));
     }
 
-    private void retryOrFail(Long evaluationId, int attemptCount, String safeReason) {
-        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findLockedById(evaluationId)
+    private boolean retryOrFail(Long evaluationId, int attemptCount, String safeReason) {
+        return updateIfOwned(evaluationId, evaluation -> {
+            if (evaluation.hasExhaustedAttempts()) {
+                evaluation.fail(safeReason);
+            } else {
+                evaluation.scheduleRetry(safeReason, LocalDateTime.now(), retryDelay(attemptCount));
+            }
+        });
+    }
+
+    private boolean updateIfOwned(Long evaluationId, Consumer<Evaluation> update) {
+        Boolean applied = transactionTemplate.execute(status -> evaluationRepository.findLockedById(evaluationId)
                 .filter(evaluation -> evaluation.hasActiveLease(workerId, LocalDateTime.now()))
-                .ifPresent(evaluation -> {
-                    if (evaluation.hasExhaustedAttempts()) {
-                        evaluation.fail(safeReason);
-                    } else {
-                        evaluation.scheduleRetry(safeReason, LocalDateTime.now(), retryDelay(attemptCount));
-                    }
-                }));
+                .map(evaluation -> {
+                    update.accept(evaluation);
+                    return true;
+                })
+                .orElse(false));
+        return Boolean.TRUE.equals(applied);
     }
 
     private Duration retryDelay(int attemptCount) {
         return retryBaseDelay.multipliedBy(1L << Math.max(0, attemptCount - 1));
     }
 
-    private record PendingEvaluation(
-            Long topicId,
-            String question,
-            String referenceAnswer,
-            String answer,
-            List<EvaluationConceptInput> concepts,
-            int attemptCount
-    ) {
-        RetrievalQuery retrievalQuery() {
-            return new RetrievalQuery(
-                    topicId,
-                    concepts.stream().map(EvaluationConceptInput::name).toList(),
-                    question,
-                    referenceAnswer,
-                    answer
-            );
-        }
-
-        EvaluationRequest request(RetrievalResult retrieval) {
-            List<EvaluationEvidenceInput> evidence = retrieval.chunks().stream()
-                    .map(retrieved -> {
-                        KnowledgeChunk chunk = retrieved.chunk();
-                        KnowledgeDocument document = chunk.getDocument();
-                        return new EvaluationEvidenceInput(
-                                chunk.getId(),
-                                document.getId(),
-                                document.getTitle(),
-                                document.getDocumentVersion(),
-                                chunk.getStartOffset(),
-                                chunk.getEndOffset(),
-                                chunk.getContent(),
-                                retrieved.relevanceScore()
-                        );
-                    })
-                    .toList();
-            return new EvaluationRequest(topicId, question, referenceAnswer, answer, concepts, evidence);
-        }
-    }
 }

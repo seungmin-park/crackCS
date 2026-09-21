@@ -39,7 +39,7 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
             """)
     List<RecentAnswerEvaluation> findRecentEvaluations(@Param("memberId") Long memberId, Pageable pageable);
 
-    Optional<Answer> findByMemberIdAndRequestId(Long memberId, String requestId);
+    Optional<Answer> findByMemberIdAndIdempotencyKey(Long memberId, String idempotencyKey);
 
     Optional<Answer> findByIdAndMemberId(Long id, Long memberId);
 

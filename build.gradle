@@ -23,6 +23,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-aspectj'
+	runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
 
 	// Persistence
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
@@ -47,7 +50,7 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform {
-		excludeTags 'retrieval-benchmark', 'postgres'
+		excludeTags 'retrieval-benchmark', 'postgres', 'local-service-latency-benchmark'
 	}
 }
 
@@ -76,6 +79,28 @@ tasks.register('retrievalBenchmark', Test) {
 	systemProperty 'crackcs.evaluation.openai.enabled', 'false'
 	systemProperty 'reference.directory', referenceDirectory.asFile.absolutePath
 	systemProperty 'benchmark.output', layout.buildDirectory.dir('reports/retrieval/h2').get().asFile.absolutePath
+	outputs.upToDateWhen { false }
+}
+
+tasks.register('localServiceLatencyBenchmark', Test) {
+	group = 'verification'
+	description = 'Measure local service and evaluation latency on isolated H2.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform { includeTags 'local-service-latency-benchmark' }
+	systemProperty 'spring.profiles.active', 'test'
+	systemProperty 'spring.datasource.url', 'jdbc:h2:mem:local_service_latency;DB_CLOSE_DELAY=-1'
+	systemProperty 'spring.datasource.driver-class-name', 'org.h2.Driver'
+	systemProperty 'spring.datasource.username', 'sa'
+	systemProperty 'spring.datasource.password', ''
+	systemProperty 'spring.jpa.hibernate.ddl-auto', 'create-drop'
+	systemProperty 'spring.sql.init.mode', 'never'
+	systemProperty 'crackcs.evaluation.openai.enabled', 'false'
+	systemProperty 'crackcs.followup.openai.enabled', 'false'
+	systemProperty 'crackcs.evaluation.worker-enabled', 'false'
+	systemProperty 'crackcs.followup.worker-enabled', 'false'
+	systemProperty 'benchmark.output', layout.buildDirectory.dir('reports/local-service-latency').get().asFile.absolutePath
+	maxParallelForks = 1
 	outputs.upToDateWhen { false }
 }
 

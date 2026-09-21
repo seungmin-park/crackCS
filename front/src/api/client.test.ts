@@ -62,4 +62,22 @@ describe("HTTP 인증 만료 경계", () => {
       message: "인증 필요",
     });
   });
+
+  it("서버 오류의 코드와 requestId를 진단 정보로 보존한다", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      code: "INTERNAL_SERVER_ERROR",
+      message: "서버 오류",
+      fieldErrors: [],
+      requestId: "1e85b909-2114-47be-a1c3-1fa47a4a7235",
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    })));
+
+    await expect(get("/api/questions")).rejects.toMatchObject({
+      status: 500,
+      code: "INTERNAL_SERVER_ERROR",
+      requestId: "1e85b909-2114-47be-a1c3-1fa47a4a7235",
+    });
+  });
 });

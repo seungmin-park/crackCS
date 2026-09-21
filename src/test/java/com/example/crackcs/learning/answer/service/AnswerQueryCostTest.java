@@ -27,7 +27,8 @@ import org.hibernate.SessionFactory;
 import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
@@ -102,33 +103,29 @@ class AnswerQueryCostTest {
         memberRepository.deleteAllInBatch();
     }
 
-    @Test
-    @DisplayName("답변 목록은 질문과 평가 및 Concept을 페이지 단위로 일괄 조회한다")
-    void loadsAnswerPageWithoutPerAnswerQueries() {
+    @ParameterizedTest
+    @ValueSource(ints = {1, 25})
+    @DisplayName("답변 목록 query 수는 페이지의 답변 수에 비례해 증가하지 않는다")
+    void loadsAnswerPageWithoutPerAnswerQueries(int answerCount) {
         Member member = memberRepository.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
-        AnswerResult first = answerService.submit(
-                member.getId(),
-                question.getId(),
-                UUID.randomUUID().toString(),
-                "첫 답변"
-        );
-        AnswerResult second = answerService.submit(
-                member.getId(),
-                question.getId(),
-                UUID.randomUUID().toString(),
-                "둘째 답변"
-        );
-        evaluationProcessor.process(first.evaluationId());
-        evaluationProcessor.process(second.evaluationId());
-        Statistics statistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
-        statistics.clear();
+        for (int index = 0; index < answerCount; index++) {
+            AnswerResult answer = answerService.submit(
+                    member.getId(),
+                    question.getId(),
+                    UUID.randomUUID().toString(),
+                    "답변 " + index
+            );
+            evaluationProcessor.process(answer.evaluationId());
+        }
+        Statistics hibernateStatistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
+        hibernateStatistics.clear();
 
-        Page<AnswerResult> page = answerService.findAll(member.getId(), PageRequest.of(0, 2));
+        Page<AnswerResult> page = answerService.findAll(member.getId(), PageRequest.of(0, answerCount));
 
-        assertThat(page.getContent()).hasSize(2);
+        assertThat(page.getContent()).hasSize(answerCount);
         assertThat(page.getContent().getFirst().evaluation().concepts()).hasSize(1);
-        assertThat(statistics.getPrepareStatementCount()).isLessThanOrEqualTo(7);
+        assertThat(hibernateStatistics.getPrepareStatementCount()).isLessThanOrEqualTo(7);
     }
 
     private Question publishedQuestion() {

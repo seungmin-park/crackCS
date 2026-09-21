@@ -34,8 +34,8 @@ public class Answer {
     @JoinColumn(name = "question_id", nullable = false)
     private Question question;
 
-    @Column(name = "request_id", nullable = false, length = 36)
-    private String requestId;
+    @Column(name = "request_id", nullable = false, updatable = false, length = 36)
+    private String idempotencyKey;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
@@ -44,7 +44,7 @@ public class Answer {
     private LocalDateTime submittedAt;
 
     @Builder
-    private Answer(Member member, Question question, String requestId, String content) {
+    private Answer(Member member, Question question, String idempotencyKey, String content) {
         this.member = requireNonNull(member, "member");
         if (!member.isAuthenticatable() || member.getRole() != MemberRole.USER) {
             throw new IllegalArgumentException("active USER member is required");
@@ -53,7 +53,7 @@ public class Answer {
         if (!question.isUnrestrictedOrOwnedBy(member)) {
             throw new IllegalArgumentException("follow-up question belongs to another member");
         }
-        this.requestId = requireCanonicalUuid(requestId);
+        this.idempotencyKey = requireCanonicalUuid(idempotencyKey);
         this.content = requireContent(content);
         this.submittedAt = LocalDateTime.now();
     }
@@ -66,18 +66,18 @@ public class Answer {
         return question;
     }
 
-    private static String requireCanonicalUuid(String requestId) {
-        if (requestId == null) {
-            throw new IllegalArgumentException("requestId must not be null");
+    private static String requireCanonicalUuid(String idempotencyKey) {
+        if (idempotencyKey == null) {
+            throw new IllegalArgumentException("idempotencyKey must not be null");
         }
         try {
-            String canonical = UUID.fromString(requestId).toString();
-            if (!canonical.equals(requestId)) {
-                throw new IllegalArgumentException("requestId must be a canonical UUID");
+            String canonical = UUID.fromString(idempotencyKey).toString();
+            if (!canonical.equals(idempotencyKey)) {
+                throw new IllegalArgumentException("idempotencyKey must be a canonical UUID");
             }
             return canonical;
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("requestId must be a canonical UUID", exception);
+            throw new IllegalArgumentException("idempotencyKey must be a canonical UUID", exception);
         }
     }
 

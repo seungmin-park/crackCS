@@ -55,4 +55,18 @@ describe("평가 결과 패널", () => {
     expect(wrapper.text()).toContain("사람의 검토가 필요합니다");
     expect(wrapper.text()).toContain("학습 상태에는 반영되지 않습니다");
   });
+
+  it("평가와 근거의 HTML 문자열을 실행하지 않고 텍스트로 표시한다", () => {
+    const injection = '<script>window.compromised = true</script>';
+    const wrapper = mount(EvaluationPanel, { props: { evaluation: {
+      status: "EVALUATED", verdict: "CORRECT", score: 100, feedback: injection,
+      failureReason: null, concepts: [], strengths: [], omissions: [], misconceptions: [],
+      evidence: [{ chunkId: 21, documentTitle: injection, documentVersion: 1,
+        startOffset: 0, endOffset: 8, content: injection }],
+    } } });
+
+    expect(wrapper.text()).toContain(injection);
+    expect(wrapper.find("script").exists()).toBe(false);
+    expect(wrapper.html()).toContain("&lt;script&gt;");
+  });
 });

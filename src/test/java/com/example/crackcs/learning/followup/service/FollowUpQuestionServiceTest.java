@@ -41,8 +41,6 @@ import com.example.crackcs.member.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -203,20 +201,31 @@ class FollowUpQuestionServiceTest {
         assertThat(followUpGenerationRepository.count()).isZero();
     }
 
-    @ParameterizedTest
-    @EnumSource(value = EvaluationStatus.class, names = {"FAILED", "NEEDS_REVIEW"})
-    @DisplayName("실패하거나 검토가 필요한 평가는 후속 생성 대상에서 제외한다")
-    void excludesIneligibleEvaluations(EvaluationStatus evaluationStatus) {
+    @Test
+    @DisplayName("실패한 평가는 후속 생성 대상에서 제외한다")
+    void excludesFailedEvaluation() {
         AnswerResult source = source();
-        transactionTemplate.executeWithoutResult(status -> {
-            if (evaluationStatus == EvaluationStatus.FAILED) {
-                evaluationRepository.findByAnswerId(source.answerId()).orElseThrow().fail("PROVIDER_ERROR");
-            } else {
-                evaluationRepository.findByAnswerId(source.answerId()).orElseThrow().requireReview("EVIDENCE_NOT_FOUND");
-            }
-        });
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findByAnswerId(source.answerId())
+                .orElseThrow().fail("PROVIDER_ERROR"));
+
         followUpQuestionProcessor.process(source.answerId());
-        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).reason()).isEqualTo(FollowUpReason.EVALUATION_NOT_ELIGIBLE);
+
+        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).reason())
+                .isEqualTo(FollowUpReason.EVALUATION_NOT_ELIGIBLE);
+        assertThat(followUpGenerationRepository.count()).isZero();
+    }
+
+    @Test
+    @DisplayName("검토가 필요한 평가는 후속 생성 대상에서 제외한다")
+    void excludesEvaluationNeedingReview() {
+        AnswerResult source = source();
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findByAnswerId(source.answerId())
+                .orElseThrow().requireReview("EVIDENCE_NOT_FOUND"));
+
+        followUpQuestionProcessor.process(source.answerId());
+
+        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).reason())
+                .isEqualTo(FollowUpReason.EVALUATION_NOT_ELIGIBLE);
         assertThat(followUpGenerationRepository.count()).isZero();
     }
 

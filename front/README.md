@@ -22,6 +22,16 @@ Vue 기반 학습자·관리자 화면.
 
 개발 요청 흐름: 브라우저 → Vite `/api` proxy → 백엔드 `localhost:8080`.
 
+API 오류 흐름:
+
+```text
+ApiErrorResponse(code, message, fieldErrors, requestId)
+                       ↓
+ApiClientError(status, code, fieldErrors, requestId)
+```
+
+`requestId`는 사용자에게 오류를 설명하는 문구가 아니라 서버 로그와 같은 요청을 찾기 위한 진단 값이다. 화면은 `message`를 기본 안내로 사용하고, 운영 문의가 필요한 경우에만 `requestId`를 표시한다.
+
 관리자 편집 책임:
 
 ```text

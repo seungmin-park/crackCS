@@ -104,61 +104,82 @@ class KnowledgeQueryServiceTest {
     @Test
     @DisplayName("미평가 개념과 0점 개념을 구분하고 주제 신뢰도에 미평가를 포함한다")
     void aggregatesUnknownAndZero() {
-        Fixture f = fixture();
-        concept(f.topic(), "프로세스");
-        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(f, Verdict.INCORRECT)));
-        TopicState topic = knowledgeQueryService.knowledgeStates(f.member().getId()).topics().getFirst();
-        assertThat(topic.status()).isEqualTo(KnowledgeStatus.LEARNING);
-        assertThat(topic.masteryScore()).isZero();
-        assertThat(topic.confidenceScore()).isEqualTo(12.5);
-        assertThat(topic.unknownCount()).isEqualTo(1);
-        assertThat(topic.learningCount()).isEqualTo(1);
-        assertThat(topic.concepts().getFirst().masteryScore()).isZero();
-        assertThat(topic.concepts().getLast().masteryScore()).isNull();
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Concept concept = concept(topic, "스레드");
+        Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+        KnowledgeChunk chunk = knowledgeChunk(topic, admin);
+        concept(topic, "프로세스");
+        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(
+                completed(member, question, concept, chunk, Verdict.INCORRECT)));
+
+        TopicState topicState = knowledgeQueryService.knowledgeStates(member.getId()).topics().getFirst();
+
+        assertThat(topicState.status()).isEqualTo(KnowledgeStatus.LEARNING);
+        assertThat(topicState.masteryScore()).isZero();
+        assertThat(topicState.confidenceScore()).isEqualTo(12.5);
+        assertThat(topicState.unknownCount()).isEqualTo(1);
+        assertThat(topicState.learningCount()).isEqualTo(1);
+        assertThat(topicState.concepts().getFirst().masteryScore()).isZero();
+        assertThat(topicState.concepts().getLast().masteryScore()).isNull();
     }
 
     @Test
     @DisplayName("학습 상태는 회원별로 격리하고 빈 주제와 신규 회원은 미평가로 조회한다")
     void isolatesMembersAndIncludesEmptyTopics() {
-        Fixture f = fixture();
-        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(f, Verdict.CORRECT)));
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Concept concept = concept(topic, "스레드");
+        Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+        KnowledgeChunk chunk = knowledgeChunk(topic, admin);
+        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(
+                completed(member, question, concept, chunk, Verdict.CORRECT)));
         Member other = memberRepository.save(Member.builder().nickname("다른 학습자").build());
         topicRepository.save(Topic.builder().code("EMPTY").name("빈 주제").build());
+
         List<TopicState> result = knowledgeQueryService.knowledgeStates(other.getId()).topics();
-        assertThat(result).hasSize(2).allSatisfy(topic -> {
-            assertThat(topic.status()).isEqualTo(KnowledgeStatus.UNKNOWN);
-            assertThat(topic.masteryScore()).isNull();
-            assertThat(topic.confidenceScore()).isZero();
+
+        assertThat(result).hasSize(2).allSatisfy(topicState -> {
+            assertThat(topicState.status()).isEqualTo(KnowledgeStatus.UNKNOWN);
+            assertThat(topicState.masteryScore()).isNull();
+            assertThat(topicState.confidenceScore()).isZero();
         });
     }
 
     @Test
     @DisplayName("모든 활성 개념이 안정 상태일 때만 주제도 안정 상태로 표시한다")
     void aggregatesStableAndFiltersInactiveTaxonomy() {
-        Fixture f = fixture();
-        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(f, Verdict.CORRECT)));
-        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(f, Verdict.CORRECT)));
-        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(completed(f, Verdict.CORRECT)));
-        Concept inactive = concept(f.topic(), "폐기 개념");
+        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
+        Concept concept = concept(topic, "스레드");
+        Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+        KnowledgeChunk chunk = knowledgeChunk(topic, admin);
+        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(
+                completed(member, question, concept, chunk, Verdict.CORRECT)));
+        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(
+                completed(member, question, concept, chunk, Verdict.CORRECT)));
+        completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(
+                completed(member, question, concept, chunk, Verdict.CORRECT)));
+        Concept inactive = concept(topic, "폐기 개념");
         inactive.deactivate();
         conceptRepository.save(inactive);
         Topic hidden = topicRepository.save(Topic.builder().code("HIDDEN").name("비활성 주제").build());
         concept(hidden, "숨김");
         hidden.deactivate();
         topicRepository.save(hidden);
-        List<TopicState> result = knowledgeQueryService.knowledgeStates(f.member().getId()).topics();
+
+        List<TopicState> result = knowledgeQueryService.knowledgeStates(member.getId()).topics();
+
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().status()).isEqualTo(KnowledgeStatus.STABLE);
         assertThat(result.getFirst().stableCount()).isEqualTo(1);
         assertThat(result.getFirst().concepts()).hasSize(1);
     }
 
-    private Fixture fixture() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
-        Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
-        Concept concept = concept(topic, "스레드");
-        Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
+    private KnowledgeChunk knowledgeChunk(Topic topic, Member admin) {
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
                 .title("스레드 근거").sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
                 .technologyVersion("general").licenseNote("독립 작성")
@@ -166,9 +187,8 @@ class KnowledgeQueryServiceTest {
         document.review(admin);
         document.publish();
         document = knowledgeDocumentRepository.save(document);
-        KnowledgeChunk chunk = knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
+        return knowledgeChunkRepository.save(KnowledgeChunk.create(document, 0, 0, document.getContent().length(),
                 document.getContent(), "test-v1"));
-        return new Fixture(member, admin, topic, concept, question, chunk);
     }
 
     private Concept concept(Topic topic, String name) {
@@ -186,38 +206,30 @@ class KnowledgeQueryServiceTest {
         return questionRepository.save(question);
     }
 
-    private Long completed(Fixture fixture, Verdict verdict) {
-        Long id = pending(fixture).getId();
-        complete(id, fixture, verdict);
+    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = pending(member, question).getId();
+        complete(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Fixture fixture, Verdict verdict) {
+    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(fixture, verdict),
-                    List.of(knowledgeChunkRepository.findById(fixture.chunk().getId()).orElseThrow()));
+            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+                    List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Fixture fixture, Verdict verdict) {
+    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
-                List.of(new ConceptResult(fixture.concept().getId(), verdict, "개념 평가")),
-                List.of(), List.of(), List.of(), List.of(fixture.chunk().getId()), "test", "v1", 1, 1, 1);
-    }
-
-    private Evaluation pending(Fixture fixture) {
-        return pending(fixture.member(), fixture.question());
+                List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
+                List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);
     }
 
     private Evaluation pending(Member member, Question question) {
         Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
-                .requestId(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
+                .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
-    }
-
-    private record Fixture(Member member, Member admin, Topic topic, Concept concept, Question question,
-                           KnowledgeChunk chunk) {
     }
 
 }

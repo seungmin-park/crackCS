@@ -10,6 +10,8 @@
 
 Gradle: Wrapper 사용. 별도 설치 불필요.
 
+최소 버전은 CI와 동일하다. 프런트 Node 버전의 기준 파일은 `front/.nvmrc`, npm 의존성 기준은 `front/package-lock.json`이다.
+
 ## 로컬 실행
 
 백엔드: local profile로 실행. 개발 schema 자동 갱신, 화면 확인용 예제 데이터 준비. DB 파일 위치: `data/`.
@@ -56,6 +58,21 @@ profile별 schema 정책:
 - local profile: `ddl-auto=update` — 개발용 H2 schema 자동 갱신.
 - test profile: `ddl-auto=create-drop` — 테스트용 schema 생성·종료 시 삭제.
 
+운영 PostgreSQL profile 환경 변수:
+
+| 이름 | 필수 조건 | 용도 |
+|---|---|---|
+| `DATABASE_URL` | 기본값 변경 시 | PostgreSQL JDBC URL |
+| `DATABASE_USERNAME` | 기본값 변경 시 | DB 계정 |
+| `DATABASE_PASSWORD` | 항상 | DB 비밀번호 |
+| `SESSION_COOKIE_SECURE` | HTTPS 운영 | session cookie의 Secure 속성. 운영 profile은 기본 `true` |
+| `OPENAI_ENABLED` | 선택 | 기본 `false`. 실제 provider 검증에서만 `true` |
+| `OPENAI_API_KEY` | `OPENAI_ENABLED=true` | provider API key |
+| `OPENAI_MODEL` | 선택 | 평가 모델 이름 |
+| `EVALUATOR_VERSION` | 선택 | 평가 규칙 버전 |
+
+비밀 값은 설정 파일, 실행 명령 인자, 로그에 기록하지 않는다. 실제 OpenAI를 사용하지 않는 실행은 `OPENAI_ENABLED=false`를 유지한다.
+
 버전 기반 DB migration 도구: 미사용. 운영에서 `update` 사용 금지. 운영 DB 도입 전 schema 변경·배포 절차 결정 필요.
 
 Phase 4 답변·평가: USER로 회원가입 후 문제 상세에서 제출. local/test에서만 모의 평가 실행.
@@ -71,6 +88,8 @@ npm run test
 npm run type-check
 npm run build-only
 ```
+
+GitHub Actions는 push와 pull request에서 백엔드 전체 테스트, 프런트 테스트·type-check·production build를 같은 버전 기준으로 실행한다. `postgresTest`는 Docker가 필요한 별도 운영 검증이며 기본 CI에는 포함하지 않는다.
 
 ## 문서
 

@@ -123,7 +123,7 @@ class FollowUpQuestionTest {
     }
 
     private Answer answer(Member member, Question question) {
-        return Answer.builder().member(member).question(question).requestId(UUID.randomUUID().toString())
+        return Answer.builder().member(member).question(question).idempotencyKey(UUID.randomUUID().toString())
                 .content("답변").build();
     }
 

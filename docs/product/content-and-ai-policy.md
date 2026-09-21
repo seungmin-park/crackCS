@@ -143,6 +143,26 @@ PUBLISHED → Retrieval 사용
 
 기존 문서를 덮어쓰지 않고 `document_version`을 올린다. 과거 Evaluation은 당시 사용한 KnowledgeChunk와 문서 버전을 계속 참조해야 한다.
 
+### 파일럿 공개 준비 — OQ-006
+
+- 각 leaf Topic에 `PUBLISHED` 기본 문제 5개 이상
+- 각 leaf Topic의 모든 필수 Concept을 근거로 덮는 `PUBLISHED` KnowledgeDocument 1개 이상
+- 상위 Topic 합계로 leaf Topic의 부족분 대체 금지
+- 문제마다 필수 Concept·가중치·reference answer 검수
+- 문서마다 source URL 또는 문헌 locator, license note, reviewer, review date 기록
+- 버전 의존 문서는 해당되는 `Java 21`, `Spring Boot 4.1.x`, `Spring Framework 7.0.x`, `Jakarta Persistence 3.2` label 기록
+- [reference-v1](../evaluation/reference-v1/README.md)과 실제 공개 문제의 문구 중복·분야 편향 점검
+
+상세 승인표와 rollback 절차는 [Phase 8 콘텐츠 준비 기준](../changes/2026-09-21-phase-8/content-readiness.md)이 소유한다.
+
+### 잘못 공개한 콘텐츠 처리
+
+- 잘못된 공개본은 삭제하거나 본문을 덮어쓰지 않고 `RETIRED`로 전환
+- 정정 내용은 같은 version series의 새 DRAFT로 작성·검수·공개
+- 새 평가는 현재 공개 Chunk만 사용
+- 과거 EvaluationEvidence가 참조한 이전 Chunk와 문서 버전은 보존
+- 과거 평가 재처리가 필요하면 자동 덮어쓰기 없이 대상·이유·결과를 별도 감사 기록
+
 ## 7. 정오 판정과 난이도 정책
 
 ### 정오 판정

@@ -1,6 +1,8 @@
 package com.example.crackcs.auth.security;
 
 import com.example.crackcs.common.web.response.ApiErrorResponse;
+import com.example.crackcs.common.web.RequestIds;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -11,7 +13,6 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.UUID;
 
 @Component
 @RequiredArgsConstructor
@@ -19,8 +20,9 @@ public class SecurityErrorResponseWriter {
 
     private final ObjectMapper objectMapper;
 
-    public void write(HttpServletResponse response, HttpStatus status, String code, String message) throws IOException {
-        ApiErrorResponse body = new ApiErrorResponse(code, message, List.of(), UUID.randomUUID().toString());
+    public void write(HttpServletRequest request, HttpServletResponse response,
+                      HttpStatus status, String code, String message) throws IOException {
+        ApiErrorResponse body = new ApiErrorResponse(code, message, List.of(), RequestIds.current(request));
 
         response.setStatus(status.value());
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());

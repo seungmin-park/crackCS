@@ -12,13 +12,16 @@ crackcs:
     lease-duration: 1m
     openai:
       enabled: ${OPENAI_ENABLED:false}
-      api-key: ${OPENAI_API_KEY}
+      api-key: ${OPENAI_API_KEY:}
       model: ${OPENAI_MODEL:gpt-5.6-terra}
       evaluator-version: ${EVALUATOR_VERSION:os-evaluator-v1}
       timeout: 30s
     monthly-budget-usd: ${OPENAI_MONTHLY_BUDGET_USD:50}
     input-usd-per-million-tokens: ${OPENAI_INPUT_USD_PER_MILLION_TOKENS:2}
     output-usd-per-million-tokens: ${OPENAI_OUTPUT_USD_PER_MILLION_TOKENS:12}
+  followup:
+    openai:
+      enabled: ${OPENAI_ENABLED:false}
 server:
   servlet:
     session:

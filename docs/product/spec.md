@@ -407,9 +407,10 @@ flowchart TD
 
 ### 시스템과 인증
 
+Actuator 운영 엔드포인트는 제품 API가 아니다. 별도 관리 포트의 `/actuator/health`, `/actuator/health/liveness`, `/actuator/health/readiness`, `/actuator/prometheus`를 사용하며 업무 OpenAPI에서 제외한다.
+
 | Method | URI | 권한 | 성공 응답 | 목적 |
 |---|---|---|---|---|
-| GET | `/api/health` | PUBLIC | 200 | 프런트 연결과 기본 상태 확인 |
 | POST | `/api/auth/sign-up` | PUBLIC | 201 | LOCAL 회원가입 |
 | POST | `/api/auth/login` | PUBLIC | 200 | 이메일·비밀번호 로그인 |
 | POST | `/api/auth/logout` | USER | 204 | 현재 인증 상태 무효화 |
@@ -746,7 +747,7 @@ And 새로운 Evaluation만 새 문서 버전을 사용할 수 있다.
 | 비동기 평가 중복 처리 | Knowledge State 중복 갱신 | 멱등 키, Evaluation 유일성, 적용 이벤트 중복 방지 |
 | 인증 정보 유출 | 계정 탈취 | 강한 해시, 비밀정보 분리, 로그 마스킹, 접근 제한 |
 
-## 21. 미결정 사항
+## 21. 결정 및 미결정 사항
 
 | ID | 결정 필요 항목 | 결정 시점 | 기본 제안 |
 |---|---|---|---|
@@ -755,7 +756,7 @@ And 새로운 Evaluation만 새 문서 버전을 사용할 수 있다.
 | OQ-003 | PARTIALLY_CORRECT Concept 충족 기준 | 결정 | [개념별 기준](content-and-ai-policy.md#개념별-판정-기준--oq-003), 누락 50점·핵심 모순 0점·근거 부족 제외 |
 | OQ-004 | Knowledge State 갱신 공식과 STABLE 임계값 | 결정 | [knowledge-v1](content-and-ai-policy.md#지식-상태-공식--oq-004), 최신 가중 평균·숙련도80/신뢰도75 |
 | OQ-005 | AI 평가 동기·비동기 실행 방식 | 결정 | Answer 저장 후 DB lease worker 평가 ([ADR-0005](../adr/0005-phase-5-evaluation-runtime.md)) |
-| OQ-006 | 초기 Topic별 문제·문서 최소 수 | 콘텐츠 입력 전 | 하위 Topic별 공개 문제 5개 이상으로 파일럿 |
+| OQ-006 | 초기 Topic별 문제·문서 최소 수 | 결정 | 각 leaf Topic에 공개 기본 문제 5개 이상, 모든 필수 Concept을 근거로 덮는 공개 KnowledgeDocument 1개 이상 ([준비 기준](../changes/2026-09-21-phase-8/content-readiness.md)) |
 | OQ-007 | AI 생성 문제 기능 도입 시점 | P0 출시 후 | 골든 세트와 관리자 검수 처리량 확인 후 결정 |
 | OQ-008 | 비밀번호 최소 길이와 복잡도 정책 | 결정 | 15~64자 passphrase, 제어 문자 금지, UTF-8 72 byte 이하 ([ADR-0002](../adr/0002-password-policy.md)) |
 

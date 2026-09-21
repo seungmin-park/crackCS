@@ -54,7 +54,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 })
 class AnswerControllerTest {
     private static final long MEMBER_ID = 41L;
-    private static final String REQUEST_ID = "123e4567-e89b-12d3-a456-426614174000";
+    private static final String IDEMPOTENCY_KEY = "123e4567-e89b-12d3-a456-426614174000";
     @Autowired
     private MockMvc mockMvc;
     @Autowired
@@ -72,14 +72,14 @@ class AnswerControllerTest {
     @DisplayName("USER가 답변 원문을 제출하면 회원과 문제 정보를 전달하고 202를 반환한다")
     void submitsAnswer() throws Exception {
         AnswerResult response = evaluatingAnswer(31L, 7L, "문제 본문", "  답변 원문  ");
-        given(answerService.submit(MEMBER_ID, 7L, REQUEST_ID, "  답변 원문  ")).willReturn(response);
-        Map<String, String> request = Map.of("requestId", REQUEST_ID, "content", "  답변 원문  ");
+        given(answerService.submit(MEMBER_ID, 7L, IDEMPOTENCY_KEY, "  답변 원문  ")).willReturn(response);
+        Map<String, String> request = Map.of("idempotencyKey", IDEMPOTENCY_KEY, "content", "  답변 원문  ");
 
         mockMvc.perform(post("/api/questions/{questionId}/answers", 7L)
                         .with(user(userPrincipal()))
                         .with(csrf())
                         .contentType("application/json")
-                        .header("Idempotency-Key", request.get("requestId"))
+                        .header("Idempotency-Key", request.get("idempotencyKey"))
                         .content(objectMapper.writeValueAsString(Map.of("content", request.get("content")))))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.answerId").value(31))
@@ -91,7 +91,7 @@ class AnswerControllerTest {
                 .andExpect(jsonPath("$.evaluation.verdict").isEmpty())
                 .andExpect(jsonPath("$.evaluation.concepts").isArray());
 
-        verify(answerService).submit(MEMBER_ID, 7L, REQUEST_ID, "  답변 원문  ");
+        verify(answerService).submit(MEMBER_ID, 7L, IDEMPOTENCY_KEY, "  답변 원문  ");
     }
 
     @Test
@@ -204,17 +204,17 @@ class AnswerControllerTest {
     }
 
     @Test
-    @DisplayName("같은 요청 식별자로 다른 답변을 제출하면 공통 409 오류를 반환한다")
-    void returnsConflictForReusedRequestId() throws Exception {
-        given(answerService.submit(MEMBER_ID, 7L, REQUEST_ID, "다른 답변"))
+    @DisplayName("같은 멱등성 키로 다른 답변을 제출하면 공통 409 오류를 반환한다")
+    void returnsConflictForReusedIdempotencyKey() throws Exception {
+        given(answerService.submit(MEMBER_ID, 7L, IDEMPOTENCY_KEY, "다른 답변"))
                 .willThrow(new AnswerConflictException());
-        Map<String, String> request = Map.of("requestId", REQUEST_ID, "content", "다른 답변");
+        Map<String, String> request = Map.of("idempotencyKey", IDEMPOTENCY_KEY, "content", "다른 답변");
 
         mockMvc.perform(post("/api/questions/{questionId}/answers", 7L)
                         .with(user(userPrincipal()))
                         .with(csrf())
                         .contentType("application/json")
-                        .header("Idempotency-Key", request.get("requestId"))
+                        .header("Idempotency-Key", request.get("idempotencyKey"))
                         .content(objectMapper.writeValueAsString(Map.of("content", request.get("content")))))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("ANSWER_CONFLICT"))
@@ -223,39 +223,39 @@ class AnswerControllerTest {
     }
 
     @Test
-    @DisplayName("요청 식별자가 UUID 형식이 아니면 Service를 호출하지 않고 400을 반환한다")
-    void rejectsMalformedRequestId() throws Exception {
+    @DisplayName("멱등성 키가 UUID 형식이 아니면 Service를 호출하지 않고 400을 반환한다")
+    void rejectsMalformedIdempotencyKey() throws Exception {
         assertInvalidIdempotencyKey("not-a-uuid");
     }
 
     @Test
-    @DisplayName("요청 식별자가 대문자 UUID이면 Service를 호출하지 않고 400을 반환한다")
-    void rejectsNonCanonicalUppercaseRequestId() throws Exception {
-        assertInvalidIdempotencyKey(REQUEST_ID.toUpperCase());
+    @DisplayName("멱등성 키가 대문자 UUID이면 Service를 호출하지 않고 400을 반환한다")
+    void rejectsNonCanonicalUppercaseIdempotencyKey() throws Exception {
+        assertInvalidIdempotencyKey(IDEMPOTENCY_KEY.toUpperCase());
     }
 
     @Test
     @DisplayName("답변이 공백이면 Service를 호출하지 않고 400을 반환한다")
     void rejectsBlankContent() throws Exception {
-        assertInvalidSubmission(Map.of("requestId", REQUEST_ID, "content", "   "), "content");
+        assertInvalidSubmission(Map.of("idempotencyKey", IDEMPOTENCY_KEY, "content", "   "), "content");
     }
 
     @Test
     @DisplayName("답변이 10000자를 넘으면 Service를 호출하지 않고 400을 반환한다")
     void rejectsContentOverMaximumLength() throws Exception {
-        assertInvalidSubmission(Map.of("requestId", REQUEST_ID, "content", "가".repeat(10_001)), "content");
+        assertInvalidSubmission(Map.of("idempotencyKey", IDEMPOTENCY_KEY, "content", "가".repeat(10_001)), "content");
     }
 
     @Test
     @DisplayName("문제 ID가 양수가 아니면 Service를 호출하지 않고 400을 반환한다")
     void rejectsNonPositiveQuestionId() throws Exception {
-        Map<String, String> request = Map.of("requestId", REQUEST_ID, "content", "답변");
+        Map<String, String> request = Map.of("idempotencyKey", IDEMPOTENCY_KEY, "content", "답변");
 
         mockMvc.perform(post("/api/questions/{questionId}/answers", 0)
                         .with(user(userPrincipal()))
                         .with(csrf())
                         .contentType("application/json")
-                        .header("Idempotency-Key", request.get("requestId"))
+                        .header("Idempotency-Key", request.get("idempotencyKey"))
                         .content(objectMapper.writeValueAsString(Map.of("content", request.get("content")))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
@@ -327,12 +327,12 @@ class AnswerControllerTest {
     @Test
     @DisplayName("CSRF 토큰 없는 답변 제출을 403으로 거부한다")
     void rejectsSubmissionWithoutCsrfToken() throws Exception {
-        Map<String, String> request = Map.of("requestId", REQUEST_ID, "content", "답변");
+        Map<String, String> request = Map.of("idempotencyKey", IDEMPOTENCY_KEY, "content", "답변");
 
         mockMvc.perform(post("/api/questions/{questionId}/answers", 7L)
                         .with(user(userPrincipal()))
                         .contentType("application/json")
-                        .header("Idempotency-Key", request.get("requestId"))
+                        .header("Idempotency-Key", request.get("idempotencyKey"))
                         .content(objectMapper.writeValueAsString(Map.of("content", request.get("content")))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
@@ -343,13 +343,13 @@ class AnswerControllerTest {
     @Test
     @DisplayName("ADMIN의 답변 제출을 403으로 거부한다")
     void rejectsAdminSubmission() throws Exception {
-        Map<String, String> request = Map.of("requestId", REQUEST_ID, "content", "답변");
+        Map<String, String> request = Map.of("idempotencyKey", IDEMPOTENCY_KEY, "content", "답변");
 
         mockMvc.perform(post("/api/questions/{questionId}/answers", 7L)
                         .with(user(adminPrincipal()))
                         .with(csrf())
                         .contentType("application/json")
-                        .header("Idempotency-Key", request.get("requestId"))
+                        .header("Idempotency-Key", request.get("idempotencyKey"))
                         .content(objectMapper.writeValueAsString(Map.of("content", request.get("content")))))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("ACCESS_DENIED"));
@@ -370,11 +370,11 @@ class AnswerControllerTest {
     @Test
     @DisplayName("멱등 키는 헤더로 받고 제출 응답에 답변과 평가 식별자를 포함한다")
     void acceptsDocumentedIdempotencyHeader() throws Exception {
-        given(answerService.submit(MEMBER_ID, 7L, REQUEST_ID, "답변"))
+        given(answerService.submit(MEMBER_ID, 7L, IDEMPOTENCY_KEY, "답변"))
                 .willReturn(evaluatingAnswer(31L, 7L, "질문", "답변"));
         mockMvc.perform(post("/api/questions/{questionId}/answers", 7L)
                         .with(user(userPrincipal())).with(csrf())
-                        .header("Idempotency-Key", REQUEST_ID)
+                        .header("Idempotency-Key", IDEMPOTENCY_KEY)
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(Map.of("content", "답변"))))
                 .andExpect(status().isAccepted())
@@ -397,7 +397,7 @@ class AnswerControllerTest {
                         .with(user(userPrincipal()))
                         .with(csrf())
                         .contentType("application/json")
-                        .header("Idempotency-Key", request.get("requestId"))
+                        .header("Idempotency-Key", request.get("idempotencyKey"))
                         .content(objectMapper.writeValueAsString(Map.of("content", request.get("content")))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))

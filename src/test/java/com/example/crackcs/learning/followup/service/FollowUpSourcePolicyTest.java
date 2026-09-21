@@ -72,7 +72,7 @@ class FollowUpSourcePolicyTest {
         question.review(admin);
         question.publish();
         Answer answer = Answer.builder().member(Member.builder().nickname("학습자").build()).question(question)
-                .requestId(UUID.randomUUID().toString()).content("전송하지 않을 원문").build();
+                .idempotencyKey(UUID.randomUUID().toString()).content("전송하지 않을 원문").build();
         KnowledgeDocument document = KnowledgeDocument.builder().topic(topic).createdByMember(admin)
                 .title("공개 근거").content("공개 근거 원문").sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
                 .technologyVersion("general").licenseNote("직접 작성").build();

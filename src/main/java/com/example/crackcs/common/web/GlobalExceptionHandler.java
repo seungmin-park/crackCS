@@ -2,7 +2,9 @@ package com.example.crackcs.common.web;
 
 import com.example.crackcs.common.web.response.ApiErrorResponse;
 import com.example.crackcs.exception.*;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -14,10 +16,12 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class GlobalExceptionHandler {
+
+    private final HttpServletRequest request;
 
     @ExceptionHandler(AnswerNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleAnswerNotFound(RuntimeException exception) {
@@ -36,7 +40,7 @@ public class GlobalExceptionHandler {
                 "TOO_MANY_LOGIN_ATTEMPTS",
                 exception.getMessage(),
                 List.of(),
-                UUID.randomUUID().toString()
+                RequestIds.current(request)
         );
         return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                 .header("Retry-After", Long.toString(exception.getRetryAfterSeconds()))
@@ -196,7 +200,7 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ApiErrorResponse> error(HttpStatus status, String code, String message,
                                                    List<ApiErrorResponse.FieldErrorResponse> fieldErrors) {
-        ApiErrorResponse response = new ApiErrorResponse(code, message, fieldErrors, UUID.randomUUID().toString());
+        ApiErrorResponse response = new ApiErrorResponse(code, message, fieldErrors, RequestIds.current(request));
         return ResponseEntity.status(status).body(response);
     }
 }

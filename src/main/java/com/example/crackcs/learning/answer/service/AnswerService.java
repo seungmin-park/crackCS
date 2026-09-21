@@ -6,7 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface AnswerService {
-    AnswerResult submit(Long memberId, Long questionId, String requestId, String content);
+    AnswerResult submit(Long memberId, Long questionId, String idempotencyKey, String content);
 
     AnswerResult findById(Long memberId, Long answerId);
 
