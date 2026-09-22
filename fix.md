@@ -636,19 +636,36 @@ DefaultFollowUpQuestionProcessor
 
 ### RED
 
-- [ ] relevance scoring 규칙 테스트
-- [ ] Concept별 근거 보존 테스트
-- [ ] 상대 점수 하한 테스트
-- [ ] 충돌 근거 보존 테스트
-- [ ] 최종 정렬 안정성 테스트
+- [x] relevance scoring 규칙 테스트
+- [x] Concept별 근거 보존 테스트
+- [x] 상대 점수 하한 테스트
+- [x] 충돌 근거 보존 테스트
+- [x] 최종 정렬 안정성 테스트
 
 ### 책임 분리
 
-- [ ] Repository 조회와 검색 알고리즘을 분리
-- [ ] tokenization·scoring·coverage·conflict·selection을 `KnowledgeEvidenceSelector` 후보로 묶음
-- [ ] `DefaultKnowledgeRetrievalService`는 후보 조회와 결과 반환만 조정
-- [ ] 정책 객체는 DB 없는 순수 단위 테스트 가능하게 구성
-- [ ] `result` 지역 변수를 `retrievedChunk` 등으로 구체화
+- [x] Repository 조회와 검색 알고리즘을 분리
+- [x] tokenization·scoring·coverage·conflict·selection을 `KnowledgeEvidenceSelector` 후보로 묶음
+- [x] `DefaultKnowledgeRetrievalService`는 후보 조회와 결과 반환만 조정
+- [x] 정책 객체는 DB 없는 순수 단위 테스트 가능하게 구성
+- [x] `result` 지역 변수를 `retrievedChunk` 등으로 구체화
+
+결정 결과(2026-09-22):
+
+- `KnowledgeEvidenceSelector`: tokenization, relevance scoring, Concept별 예약, 상대 점수 하한, 충돌 근거 구조, 최종 정렬 소유
+- `DefaultKnowledgeRetrievalService`: Topic의 공개·검색 가능 Chunk 조회와 selector 위임만 소유
+- 선택 상태: DB ID가 아닌 `KnowledgeChunk` 객체 집합으로 관리해 미저장 실제 도메인 객체를 사용하는 순수 단위 테스트 지원
+- 정렬: relevance score 내림차순 → document ID → Chunk 순번 유지. 단위 테스트의 미저장 문서는 null-safe 비교
+
+검증 결과(2026-09-22):
+
+- RED: `KnowledgeEvidenceSelector` 누락으로 `compileTestJava` 컴파일 오류 1개 확인
+- `KnowledgeEvidenceSelectorTest`: 5개 성공, 실패·오류·건너뜀 0개
+- `KnowledgeRetrievalServiceTest`: 18개 성공, 실패·오류·건너뜀 0개
+- `./gradlew test --rerun-tasks --console=plain`: 469개 성공, 실패·오류·건너뜀 0개
+- `./gradlew retrievalBenchmark --rerun-tasks --console=plain`: 1개 성공, 실패·오류·건너뜀 0개
+- `./gradlew postgresTest --rerun-tasks --console=plain`: 37개 성공, 실패·오류·건너뜀 0개
+- 외부 OpenAI 호출·프런트 동작: 검색 정책 추출에서 변경되지 않아 미실행
 
 ## 작업 14. TypeScript HTTP·CSRF·세션 만료 책임 분리
 
