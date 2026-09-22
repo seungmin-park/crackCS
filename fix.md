@@ -610,12 +610,27 @@ DefaultFollowUpQuestionProcessor
 
 ## 작업 12. OpenAI Follow-up Adapter 분리
 
-- [ ] 현재 요청 JSON·schema·응답 파싱 계약 테스트로 고정
-- [ ] `OpenAiFollowUpRequestFactory` 추출
-- [ ] `OpenAiFollowUpResponseParser` 추출
-- [ ] 허용 Concept·Evidence 검증 위치를 도메인 결과와 중복되지 않게 정리
-- [ ] Adapter는 요청 생성 → Client 호출 → 결과 파싱만 조정
-- [ ] 복수 output text·잘못된 ID·허용되지 않은 evidence 테스트
+- [x] 현재 요청 JSON·schema·응답 파싱 계약 테스트로 고정
+- [x] `OpenAiFollowUpRequestFactory` 추출
+- [x] `OpenAiFollowUpResponseParser` 추출
+- [x] 허용 Concept·Evidence 검증 위치를 도메인 결과와 중복되지 않게 정리
+- [x] Adapter는 요청 생성 → Client 호출 → 결과 파싱만 조정
+- [x] 복수 output text·잘못된 ID·허용되지 않은 evidence 테스트
+
+결정 결과(2026-09-22):
+
+- `OpenAiFollowUpRequestFactory`: DATA 격리, Responses API 요청과 strict JSON Schema 생성 소유
+- `OpenAiFollowUpResponseParser`: 단일 output text 검증, exact field·ID·token usage 검증, 생성 결과 변환 소유
+- `OpenAiFollowUpQuestionAdapter`: 요청 생성 → 제한 시간 있는 client 호출 → 응답 파싱만 조정
+- 허용 Concept·Evidence 범위 검증: 요청과 생성 결과를 함께 아는 `FollowUpGenerationAttemptExecutor`에서 `FollowUpGenerationResult.validateAgainst(...)`를 한 번 호출
+- `FollowUpOutcomeCoordinator`의 현재 요청 비교는 생성 중 요청 변경을 막는 완료 시점 동시성 방어로 유지
+
+검증 결과(2026-09-22):
+
+- RED: `OpenAiFollowUpResponseParser` 누락으로 `compileTestJava` 컴파일 오류 1개 확인
+- Follow-up Adapter·RequestFactory·ResponseParser·구성·실행기 테스트: 39개 성공, 실패·오류·건너뜀 0개
+- `./gradlew test --rerun-tasks --console=plain`: 464개 성공, 실패·오류·건너뜀 0개
+- PostgreSQL·retrieval benchmark: 외부 OpenAI 호출 경계 분리이며 DB·검색 동작 변경이 없어 미실행
 
 ## 작업 13. 검색 근거 선택 정책 추출
 

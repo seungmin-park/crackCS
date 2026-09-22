@@ -18,8 +18,10 @@ import static org.mockito.Mockito.mock;
 class FollowUpAdapterConfigurationTest {
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
             .withInitializer(context -> context.getBeanFactory().setConversionService(ApplicationConversionService.getSharedInstance()))
-            .withUserConfiguration(JdkOpenAiResponsesClient.class, OpenAiFollowUpQuestionAdapter.class,
-                    StubFollowUpQuestionAdapter.class).withBean(ObjectMapper.class, ObjectMapper::new);
+            .withUserConfiguration(JdkOpenAiResponsesClient.class, OpenAiFollowUpRequestFactory.class,
+                    OpenAiFollowUpResponseParser.class, OpenAiFollowUpQuestionAdapter.class,
+                    StubFollowUpQuestionAdapter.class)
+            .withBean(ObjectMapper.class, ObjectMapper::new);
 
     @Test
     @DisplayName("Worker가 활성화됐는데 생성기가 없으면 시작 단계에서 거부한다")

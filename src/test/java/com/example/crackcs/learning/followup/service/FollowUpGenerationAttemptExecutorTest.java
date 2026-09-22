@@ -45,11 +45,25 @@ class FollowUpGenerationAttemptExecutorTest {
     }
 
     @Test
-    @DisplayName("승인 범위를 벗어난 생성 결과는 영구 실패 결과를 반환한다")
-    void failsInvalidGenerationResult() {
+    @DisplayName("승인되지 않은 근거를 사용한 생성 결과는 영구 실패 결과를 반환한다")
+    void failsGenerationResultWithUnapprovedEvidence() {
         ObjectProvider<FollowUpQuestionGenerator> provider = provider(request -> new FollowUpGenerationResult(
                 "후속 질문", "정답", request.conceptId(), List.of(999L),
-                "test-model", "test-version", 1L, 2L, 3L));
+                "test-model", "follow-up-v1", 1L, 2L, 3L));
+        FollowUpGenerationAttemptExecutor executor = new FollowUpGenerationAttemptExecutor(provider);
+
+        FollowUpGenerationAttemptOutcome outcome = executor.execute(request());
+
+        assertThat(outcome).isEqualTo(
+                new FollowUpGenerationAttemptOutcome.FailureRequired(FollowUpReason.INVALID_RESULT));
+    }
+
+    @Test
+    @DisplayName("선택되지 않은 개념을 사용한 생성 결과는 영구 실패 결과를 반환한다")
+    void failsGenerationResultWithUnapprovedConcept() {
+        ObjectProvider<FollowUpQuestionGenerator> provider = provider(request -> new FollowUpGenerationResult(
+                "후속 질문", "정답", 12L, List.of(7L),
+                "test-model", "follow-up-v1", 1L, 2L, 3L));
         FollowUpGenerationAttemptExecutor executor = new FollowUpGenerationAttemptExecutor(provider);
 
         FollowUpGenerationAttemptOutcome outcome = executor.execute(request());
