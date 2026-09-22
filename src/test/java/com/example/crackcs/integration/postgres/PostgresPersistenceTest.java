@@ -20,11 +20,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 class PostgresPersistenceTest {
     @Autowired DataSource dataSource;
-    @Autowired TopicRepository topics;
+    @Autowired TopicRepository topicRepository;
 
     @AfterEach
     void tearDown() {
-        topics.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
     }
 
     @Test
@@ -39,11 +39,11 @@ class PostgresPersistenceTest {
     @Test
     @DisplayName("PostgreSQL에 생성한 Topic 스키마가 중복 업무 코드를 거부한다")
     void enforcesMappedUniqueConstraintAfterCommit() {
-        Topic saved = topics.save(Topic.builder().code("PG_UNIQUE").name("첫 번째 토픽").build());
+        Topic saved = topicRepository.save(Topic.builder().code("PG_UNIQUE").name("첫 번째 토픽").build());
 
-        assertThatThrownBy(() -> topics.save(Topic.builder().code("PG_UNIQUE").name("중복 토픽").build()))
+        assertThatThrownBy(() -> topicRepository.save(Topic.builder().code("PG_UNIQUE").name("중복 토픽").build()))
                 .isInstanceOf(DataIntegrityViolationException.class);
-        assertThat(topics.findById(saved.getId()).orElseThrow().getName()).isEqualTo("첫 번째 토픽");
-        assertThat(topics.count()).isEqualTo(1);
+        assertThat(topicRepository.findById(saved.getId()).orElseThrow().getName()).isEqualTo("첫 번째 토픽");
+        assertThat(topicRepository.count()).isEqualTo(1);
     }
 }

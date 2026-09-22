@@ -29,20 +29,20 @@ public class OpenAiEvaluationAdapter implements EvaluationPort {
             인용은 DATA에 제공된 evidence chunkId만 사용한다.
             """;
 
-    private final OpenAiResponsesClient client;
+    private final OpenAiResponsesClient openAiResponsesClient;
     private final ObjectMapper objectMapper;
     private final String model;
     private final String evaluatorVersion;
     private final Duration timeout;
 
     public OpenAiEvaluationAdapter(
-            OpenAiResponsesClient client,
+            OpenAiResponsesClient openAiResponsesClient,
             ObjectMapper objectMapper,
             @Value("${crackcs.evaluation.openai.model:gpt-5.6-terra}") String model,
             @Value("${crackcs.evaluation.openai.evaluator-version:os-evaluator-v1}") String evaluatorVersion,
             @Value("${crackcs.evaluation.openai.timeout:30s}") Duration timeout
     ) {
-        this.client = client;
+        this.openAiResponsesClient = openAiResponsesClient;
         this.objectMapper = objectMapper;
         this.model = model;
         this.evaluatorVersion = evaluatorVersion;
@@ -53,7 +53,7 @@ public class OpenAiEvaluationAdapter implements EvaluationPort {
     public EvaluationResult evaluate(EvaluationRequest request) {
         validateRequest(request);
         long started = System.nanoTime();
-        String responseBody = client.createResponse(buildRequest(request), timeout);
+        String responseBody = openAiResponsesClient.createResponse(buildRequest(request), timeout);
         long durationMillis = Duration.ofNanos(System.nanoTime() - started).toMillis();
         return parseResponse(responseBody, durationMillis);
     }

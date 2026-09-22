@@ -43,12 +43,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Tag("retrieval-benchmark")
 @SpringBootTest(properties = {"crackcs.evaluation.worker-enabled=false", "crackcs.followup.worker-enabled=false"})
 class RetrievalBenchmarkTest {
-    @Autowired KnowledgeRetrievalService retrieval;
-    @Autowired KnowledgeChunkService chunkService;
-    @Autowired KnowledgeChunkRepository chunks;
-    @Autowired KnowledgeDocumentRepository documents;
-    @Autowired TopicRepository topics;
-    @Autowired MemberRepository members;
+    @Autowired KnowledgeRetrievalService knowledgeRetrievalService;
+    @Autowired KnowledgeChunkService knowledgeChunkService;
+    @Autowired KnowledgeChunkRepository knowledgeChunkRepository;
+    @Autowired KnowledgeDocumentRepository knowledgeDocumentRepository;
+    @Autowired TopicRepository topicRepository;
+    @Autowired MemberRepository memberRepository;
     @Autowired DataSource dataSource;
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -58,10 +58,10 @@ class RetrievalBenchmarkTest {
 
     @AfterEach
     void tearDown() {
-        chunks.deleteAllInBatch();
-        documents.deleteAllInBatch();
-        topics.deleteAllInBatch();
-        members.deleteAllInBatch();
+        knowledgeChunkRepository.deleteAllInBatch();
+        knowledgeDocumentRepository.deleteAllInBatch();
+        topicRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
     }
 
     @Test
@@ -83,20 +83,20 @@ class RetrievalBenchmarkTest {
             questionById.put(question.get("id").asText(), question);
             String topicKey = question.get("topicKey").asText();
             if (!topicIds.containsKey(topicKey)) {
-                Topic saved = topics.save(Topic.builder().code(topicKey).name(topicKey).build());
+                Topic saved = topicRepository.save(Topic.builder().code(topicKey).name(topicKey).build());
                 topicIds.put(topicKey, saved.getId());
             }
         }
         // This is test-only publication to exercise production filters, not human review of the source files.
-        Member admin = members.save(Member.builder().nickname("검색 실험 전용 관리자")
+        Member admin = memberRepository.save(Member.builder().nickname("검색 실험 전용 관리자")
                 .role(MemberRole.ADMIN).build());
         Map<String, Set<Long>> evidenceIds = new LinkedHashMap<>();
         Map<String, Object> documentMappings = new LinkedHashMap<>();
         Set<String> chunkPolicies = new LinkedHashSet<>();
         for (JsonNode document : readRows("knowledge-documents.jsonl")) {
             String content = String.join("\n", texts(document.get("chunks"), "content"));
-            Topic topic = topics.findById(topicIds.get(document.get("topicKey").asText())).orElseThrow();
-            KnowledgeDocument saved = documents.save(KnowledgeDocument.builder()
+            Topic topic = topicRepository.findById(topicIds.get(document.get("topicKey").asText())).orElseThrow();
+            KnowledgeDocument saved = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
                     .topic(topic).createdByMember(admin).title(document.get("title").asText())
                     .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
                     .technologyVersion(document.get("technologyVersion").asText())
@@ -104,9 +104,9 @@ class RetrievalBenchmarkTest {
                     .content(content).build());
             saved.review(admin);
             saved.publish();
-            documents.save(saved);
-            chunkService.generateChunks(saved.getId());
-            List<KnowledgeChunk> stored = chunkService.findByDocumentId(saved.getId());
+            knowledgeDocumentRepository.save(saved);
+            knowledgeChunkService.generateChunks(saved.getId());
+            List<KnowledgeChunk> stored = knowledgeChunkService.findByDocumentId(saved.getId());
             List<ReferenceChunkMapping.StoredChunk> spans = stored.stream()
                     .map(chunk -> new ReferenceChunkMapping.StoredChunk(saved.getId(), chunk.getId(),
                             chunk.getStartOffset(), chunk.getEndOffset(), chunk.getContent())).toList();
@@ -123,7 +123,7 @@ class RetrievalBenchmarkTest {
                     "documentId", saved.getId(), "checksum", saved.getChecksum(), "chunks", spans));
             stored.forEach(chunk -> chunkPolicies.add(chunk.getChunkPolicyVersion()));
         }
-        assertThat(documents.count()).isEqualTo(60);
+        assertThat(knowledgeDocumentRepository.count()).isEqualTo(60);
         assertThat(evidenceIds).hasSize(120);
         assertThat(evidenceIds.values()).allSatisfy(ids -> assertThat(ids).isNotEmpty());
 
@@ -145,13 +145,14 @@ class RetrievalBenchmarkTest {
                     assertThat(mapped).as("알 수 없는 근거 %s", key.asText()).isNotNull();
                     relevant.addAll(mapped);
                 }
-                RetrievalResult found = retrieval.retrieve(query, k);
+                RetrievalResult found = knowledgeRetrievalService.retrieve(query, k);
                 List<Long> retrieved = found.chunks().stream().map(row -> row.chunk().getId()).toList();
                 assertThat(retrieved).doesNotHaveDuplicates().hasSizeLessThanOrEqualTo(k);
                 assertThat(found.chunks()).allSatisfy(row -> assertThat(row.chunk().getDocument().getTopicId())
                         .isEqualTo(topicIds.get(topicKey)));
                 assertThat(found.insufficientEvidence()).isEqualTo(retrieved.isEmpty());
-                assertThat(retrieval.retrieve(query, k).chunks().stream().map(row -> row.chunk().getId()).toList())
+                assertThat(knowledgeRetrievalService.retrieve(query, k).chunks().stream()
+                        .map(row -> row.chunk().getId()).toList())
                         .containsExactlyElementsOf(retrieved);
                 results.add(new CaseResult(golden.get("id").asText(), question.get("id").asText(),
                         topicKey, splits.get(question.get("id").asText()), golden.get("caseType").asText(),
@@ -172,9 +173,9 @@ class RetrievalBenchmarkTest {
         report.put("database", database);
         report.put("conceptInput", "questions.jsonl concepts.name (same field as production)");
         report.put("chunkPolicies", chunkPolicies);
-        report.put("documents", documents.count());
+        report.put("documents", knowledgeDocumentRepository.count());
         report.put("referenceEvidenceSpans", evidenceIds.size());
-        report.put("persistedChunks", chunks.count());
+        report.put("persistedChunks", knowledgeChunkRepository.count());
         report.put("aiCalls", 0);
         report.put("independentBenchmark", false);
         report.put("irrelevancePolicy", "not in mapped reference IDs; cross-question relevance not independently annotated");

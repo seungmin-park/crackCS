@@ -17,7 +17,7 @@ import java.time.Duration;
 @ConditionalOnExpression("${crackcs.evaluation.openai.enabled:false} or ${crackcs.followup.openai.enabled:false}")
 public class JdkOpenAiResponsesClient implements OpenAiResponsesClient {
 
-    private final HttpClient client;
+    private final HttpClient httpClient;
     private final String apiKey;
     private final URI endpoint;
 
@@ -25,7 +25,7 @@ public class JdkOpenAiResponsesClient implements OpenAiResponsesClient {
             @Value("${crackcs.evaluation.openai.api-key}") String apiKey,
             @Value("${crackcs.evaluation.openai.endpoint:https://api.openai.com/v1/responses}") URI endpoint
     ) {
-        this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+        this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         this.apiKey = apiKey;
         this.endpoint = endpoint;
     }
@@ -39,7 +39,7 @@ public class JdkOpenAiResponsesClient implements OpenAiResponsesClient {
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
         try {
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new OpenAiProviderException("OpenAI response status " + response.statusCode());
             }

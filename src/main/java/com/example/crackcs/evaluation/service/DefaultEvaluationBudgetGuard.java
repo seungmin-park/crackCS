@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Service
 public class DefaultEvaluationBudgetGuard implements EvaluationBudgetGuard {
     private final EvaluationRepository evaluationRepository;
-    private final EvaluationCostPolicy policy;
+    private final EvaluationCostPolicy evaluationCostPolicy;
 
     public DefaultEvaluationBudgetGuard(
             EvaluationRepository evaluationRepository,
@@ -21,7 +21,7 @@ public class DefaultEvaluationBudgetGuard implements EvaluationBudgetGuard {
             @Value("${crackcs.evaluation.output-usd-per-million-tokens:12}") BigDecimal outputPrice
     ) {
         this.evaluationRepository = evaluationRepository;
-        this.policy = new EvaluationCostPolicy(monthlyCapUsd, inputPrice, outputPrice);
+        this.evaluationCostPolicy = new EvaluationCostPolicy(monthlyCapUsd, inputPrice, outputPrice);
     }
 
     @Override
@@ -30,7 +30,7 @@ public class DefaultEvaluationBudgetGuard implements EvaluationBudgetGuard {
         LocalDate firstDay = LocalDate.now().withDayOfMonth(1);
         LocalDateTime from = firstDay.atStartOfDay();
         LocalDateTime until = firstDay.plusMonths(1).atStartOfDay();
-        return policy.canEvaluate(
+        return evaluationCostPolicy.canEvaluate(
                 evaluationRepository.sumInputTokensBetween(from, until),
                 evaluationRepository.sumOutputTokensBetween(from, until)
         );

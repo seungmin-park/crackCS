@@ -18,7 +18,7 @@ class EvaluationAttemptExecutor {
 
     private static final int EVIDENCE_LIMIT = 5;
 
-    private final ObjectProvider<EvaluationPort> evaluationPorts;
+    private final ObjectProvider<EvaluationPort> evaluationPortProvider;
     private final KnowledgeRetrievalService knowledgeRetrievalService;
     private final EvaluationBudgetGuard budgetGuard;
     private final EvaluationOperationLogger operationLogger;
@@ -59,7 +59,7 @@ class EvaluationAttemptExecutor {
 
     private EvaluationPort availablePort() {
         try {
-            return evaluationPorts.getIfAvailable();
+            return evaluationPortProvider.getIfAvailable();
         } catch (RuntimeException unavailable) {
             return null;
         }

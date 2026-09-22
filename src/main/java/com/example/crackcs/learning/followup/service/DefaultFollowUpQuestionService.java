@@ -26,7 +26,7 @@ public class DefaultFollowUpQuestionService implements FollowUpQuestionService {
     private final AnswerRepository answerRepository;
     private final EvaluationRepository evaluationRepository;
     private final FollowUpGenerationRepository followUpGenerationRepository;
-    private final FollowUpSourcePolicy policy;
+    private final FollowUpSourcePolicy followUpSourcePolicy;
 
     public FollowUpQuestionResult findByAnswerId(Long memberId, Long answerId) {
         answerRepository.findByIdAndMemberId(answerId, memberId).orElseThrow(() -> new AnswerNotFoundException(answerId));
@@ -36,7 +36,7 @@ public class DefaultFollowUpQuestionService implements FollowUpQuestionService {
     }
 
     private FollowUpQuestionResult findForEvaluation(Long answerId, Evaluation evaluation) {
-        return policy.findUnavailabilityReason(evaluation)
+        return followUpSourcePolicy.findUnavailabilityReason(evaluation)
                 .map(FollowUpQuestionResult::unavailable)
                 .orElseGet(() -> findGenerationResult(answerId, evaluation));
     }
@@ -63,7 +63,8 @@ public class DefaultFollowUpQuestionService implements FollowUpQuestionService {
 
     private boolean hasAvailableGeneratedQuestion(FollowUpGeneration job, Evaluation evaluation) {
         return job.getQuestion().getStatus() == QuestionStatus.PUBLISHED
-                && new HashSet<>(policy.availableEvidence(evaluation).stream().map(chunk -> chunk.getId()).toList())
+                && new HashSet<>(followUpSourcePolicy.availableEvidence(evaluation).stream()
+                        .map(chunk -> chunk.getId()).toList())
                 .containsAll(job.getEvidenceChunkIds());
     }
 

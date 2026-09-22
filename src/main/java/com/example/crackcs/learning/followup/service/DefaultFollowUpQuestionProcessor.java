@@ -40,8 +40,8 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
     private final EvaluationRepository evaluationRepository;
     private final FollowUpGenerationRepository followUpGenerationRepository;
     private final QuestionRepository questionRepository;
-    private final FollowUpSourcePolicy policy;
-    private final ObjectProvider<FollowUpQuestionGenerator> generators;
+    private final FollowUpSourcePolicy followUpSourcePolicy;
+    private final ObjectProvider<FollowUpQuestionGenerator> followUpQuestionGeneratorProvider;
     private final TransactionTemplate transactionTemplate;
     @Value("${crackcs.followup.lease-duration:1m}")
     private Duration leaseDuration;
@@ -61,7 +61,7 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
         FollowUpRequest request = claimed.orElseThrow();
         FollowUpResult result;
         try {
-            FollowUpQuestionGenerator generator = generators.getIfAvailable();
+            FollowUpQuestionGenerator generator = followUpQuestionGeneratorProvider.getIfAvailable();
             if (generator == null) {
                 failed(answerId, token, FollowUpReason.PROVIDER_ERROR, true);
                 return;
@@ -121,12 +121,12 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
         if (!job.claim(token, now, leaseDuration)) {
             return Optional.empty();
         }
-        Optional<FollowUpReason> reason = policy.findUnavailabilityReason(evaluation);
+        Optional<FollowUpReason> reason = followUpSourcePolicy.findUnavailabilityReason(evaluation);
         if (reason.isPresent()) {
             job.unavailable(token, now, reason.orElseThrow());
             return Optional.empty();
         }
-        return Optional.of(policy.request(evaluation));
+        return Optional.of(followUpSourcePolicy.request(evaluation));
     }
 
     private void complete(Long answerId, String token, FollowUpResult result) {
@@ -137,12 +137,12 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
             return;
         }
         Evaluation evaluation = evaluationRepository.findByAnswerId(answerId).orElseThrow();
-        Optional<FollowUpReason> reason = policy.findUnavailabilityReason(evaluation);
+        Optional<FollowUpReason> reason = followUpSourcePolicy.findUnavailabilityReason(evaluation);
         if (reason.isPresent()) {
             job.unavailable(token, now, reason.orElseThrow());
             return;
         }
-        FollowUpRequest current = policy.request(evaluation);
+        FollowUpRequest current = followUpSourcePolicy.request(evaluation);
         if (!isStillWithinApprovedSource(current, result)) {
             job.unavailable(token, now, FollowUpReason.CONTENT_UNAVAILABLE);
             return;
