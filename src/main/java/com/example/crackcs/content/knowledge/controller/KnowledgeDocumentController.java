@@ -95,7 +95,7 @@ public class KnowledgeDocumentController {
     public KnowledgeDocumentResponse publish(
             @Positive(message = "documentId는 양수여야 합니다.") @PathVariable Long documentId
     ) {
-        return KnowledgeDocumentResponse.from(knowledgeDocumentService.publish(documentId));
+        return KnowledgeDocumentResponse.from(knowledgeDocumentService.publishAsCurrentVersion(documentId));
     }
 
     @PostMapping("/{documentId}/retire")

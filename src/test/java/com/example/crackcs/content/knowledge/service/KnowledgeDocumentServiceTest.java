@@ -47,7 +47,7 @@ class KnowledgeDocumentServiceTest {
         KnowledgeDocument publishedDocument = knowledgeDocumentService.create(
                 contentAdmin.getId(), knowledgeDocumentDraft(topic, "첫 버전 원문"));
         knowledgeDocumentService.review(publishedDocument.getId(), contentAdmin.getId());
-        knowledgeDocumentService.publish(publishedDocument.getId());
+        knowledgeDocumentService.publishAsCurrentVersion(publishedDocument.getId());
 
         KnowledgeDocument nextDocumentVersion = knowledgeDocumentService.createNextVersion(
                 publishedDocument.getId(), contentAdmin.getId(), knowledgeDocumentDraft(topic, "둘째 버전 원문")
@@ -61,12 +61,34 @@ class KnowledgeDocumentServiceTest {
         assertThat(knowledgeDocumentRepository.findAll()).hasSize(2);
 
         knowledgeDocumentService.review(nextDocumentVersion.getId(), contentAdmin.getId());
-        knowledgeDocumentService.publish(nextDocumentVersion.getId());
+        knowledgeDocumentService.publishAsCurrentVersion(nextDocumentVersion.getId());
 
         assertThat(knowledgeDocumentRepository.findById(publishedDocument.getId()).orElseThrow().getStatus())
                 .isEqualTo(KnowledgeDocumentStatus.RETIRED);
         assertThat(knowledgeDocumentRepository.findById(nextDocumentVersion.getId()).orElseThrow().getStatus())
                 .isEqualTo(KnowledgeDocumentStatus.PUBLISHED);
+    }
+
+    @Test
+    @DisplayName("새 문서 버전 공개에 실패하면 이전 공개본과 새 초안 상태를 모두 유지한다")
+    void preservesVersionStatusesWhenPublishingNextVersionFails() {
+        Topic topic = saveTopic();
+        Member contentAdmin = saveAdmin();
+        KnowledgeDocument publishedDocument = knowledgeDocumentService.create(
+                contentAdmin.getId(), knowledgeDocumentDraft(topic, "첫 버전 원문"));
+        knowledgeDocumentService.review(publishedDocument.getId(), contentAdmin.getId());
+        knowledgeDocumentService.publishAsCurrentVersion(publishedDocument.getId());
+        KnowledgeDocument unreviewedNextVersion = knowledgeDocumentService.createNextVersion(
+                publishedDocument.getId(), contentAdmin.getId(), knowledgeDocumentDraft(topic, "둘째 버전 원문")
+        );
+
+        assertThatThrownBy(() -> knowledgeDocumentService.publishAsCurrentVersion(unreviewedNextVersion.getId()))
+                .isInstanceOf(InvalidContentStateException.class);
+
+        assertThat(knowledgeDocumentRepository.findById(publishedDocument.getId()).orElseThrow().getStatus())
+                .isEqualTo(KnowledgeDocumentStatus.PUBLISHED);
+        assertThat(knowledgeDocumentRepository.findById(unreviewedNextVersion.getId()).orElseThrow().getStatus())
+                .isEqualTo(KnowledgeDocumentStatus.DRAFT);
     }
 
     @Test

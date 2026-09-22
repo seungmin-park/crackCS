@@ -113,7 +113,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
 
     @Override
     @Transactional
-    public KnowledgeDocument publish(Long documentId) {
+    public KnowledgeDocument publishAsCurrentVersion(Long documentId) {
         KnowledgeDocument document = findDocument(documentId);
         document.publish();
         knowledgeDocumentRepository.findAllByVersionSeriesIdAndStatus(

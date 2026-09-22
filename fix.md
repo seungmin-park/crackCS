@@ -261,25 +261,58 @@
 
 ### 설계 확인
 
-- [ ] `publish`가 대상 공개와 이전 공개 버전 폐기를 함께 수행한다는 부수 효과 기록
-- [ ] 두 상태 변경이 하나의 원자적 유스케이스임을 테스트로 고정
-- [ ] public 메서드를 둘로 나눠 불변식을 깨지 않도록 설계
-- [ ] `publishAsCurrentVersion` 이름 변경과 version publication 객체 추출 비교
-- [ ] Question과 KnowledgeDocument 사이의 성급한 공용 추상화 금지
+- [x] `publish`가 대상 공개와 이전 공개 버전 폐기를 함께 수행한다는 부수 효과 기록
+- [x] 두 상태 변경이 하나의 원자적 유스케이스임을 테스트로 고정
+- [x] public 메서드를 둘로 나눠 불변식을 깨지 않도록 설계
+- [x] `publishAsCurrentVersion` 이름 변경과 version publication 객체 추출 비교
+- [x] Question과 KnowledgeDocument 사이의 성급한 공용 추상화 금지
 
 ### 구현
 
-- [ ] 선택한 이름이 기존 공개 버전 폐기까지 표현
-- [ ] 필요 시 Question version publication 책임 추출
-- [ ] 필요 시 KnowledgeDocument version publication 책임 추출
-- [ ] domain 상태 전이는 각 aggregate가 계속 소유
-- [ ] Service는 조회·트랜잭션·유스케이스 조정만 소유
+- [x] 선택한 이름이 기존 공개 버전 폐기까지 표현
+- [x] 필요 시 Question version publication 책임 추출
+- [x] 필요 시 KnowledgeDocument version publication 책임 추출
+- [x] domain 상태 전이는 각 aggregate가 계속 소유
+- [x] Service는 조회·트랜잭션·유스케이스 조정만 소유
 
 ### 검증
 
-- [ ] 새 버전 공개 시 이전 버전 폐기 테스트
-- [ ] 공개 실패 시 이전 버전 상태가 유지되는 테스트
-- [ ] 동시 공개 경계의 미검증 범위 기록
+- [x] 새 버전 공개 시 이전 버전 폐기 테스트
+- [x] 공개 실패 시 이전 버전 상태가 유지되는 테스트
+- [x] 동시 공개 경계의 미검증 범위 기록
+
+결정 결과(2026-09-22):
+
+- Service 공개 계약: `publish` → `publishAsCurrentVersion`
+- 의미: 대상 공개와 같은 버전 계열의 기존 공개본 폐기를 한 번에 수행
+- 공개·폐기 분리 public 메서드 미도입: 호출자가 일부 단계만 실행해 현재 공개본 불변식을 깨는 경로 차단
+- `@Transactional` Service 메서드 하나가 조회·대상 공개·이전 공개본 폐기를 원자적 유스케이스로 조정
+- `Question.publish`·`Question.retire`, `KnowledgeDocument.publish`·`KnowledgeDocument.retire` 유지: 상태와 검증 규칙을 소유한 aggregate가 상태 전이 담당
+- Question·KnowledgeDocument publication 객체 미추출: 현재 조정 흐름이 짧고 독립 정책이나 재사용 경계가 없음
+- 공용 publication 추상화 미도입: 두 aggregate의 상태 타입과 공개 조건이 달라 변경 이유가 같지 않음
+
+```text
+Controller
+    ↓
+publishAsCurrentVersion(id)  [한 트랜잭션]
+    ├─ target.publish()      [aggregate 검증 + 상태 전이]
+    ├─ 같은 계열 PUBLISHED 조회
+    └─ previous.retire()     [aggregate 상태 전이]
+    ↓
+전체 commit 또는 rollback
+```
+
+검증 결과(2026-09-22):
+
+- RED: 두 Service에 `publishAsCurrentVersion(Long)` 계약이 없어 테스트 컴파일 오류 9개 확인
+- `QuestionServiceTest`·`KnowledgeDocumentServiceTest`: 15개 성공, 실패 0개
+- 성공 경로: 새 버전 `PUBLISHED`, 이전 공개본 `RETIRED`를 트랜잭션 종료 후 DB 재조회로 확인
+- 실패 경로: 검수되지 않은 새 버전 공개 실패 후 새 버전 `DRAFT`, 이전 공개본 `PUBLISHED` 유지 확인
+- `./gradlew test --rerun-tasks --console=plain`: 448개 성공, 실패 0개
+- `./gradlew postgresTest --rerun-tasks --console=plain`: 37개 성공, 실패 0개
+- 미검증 경계: 같은 계열의 두 초안을 동시에 공개하는 경쟁 조건
+- 현재 위험: 계열 단위 잠금과 현재 공개본 유일 제약이 없어 두 트랜잭션이 각각 `PUBLISHED`로 완료될 가능성
+- 후속 선택지: 버전 계열 단위 비관적 잠금 또는 DB 유일 제약·재시도 정책을 schema migration 도입과 함께 결정
 
 ## 작업 6. Question Concept 연결 책임 정리
 

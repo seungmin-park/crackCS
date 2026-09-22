@@ -36,7 +36,7 @@ public interface QuestionService {
 
     Question review(Long questionId, Long reviewerMemberId);
 
-    Question publish(Long questionId);
+    Question publishAsCurrentVersion(Long questionId);
 
     Question retire(Long questionId);
 

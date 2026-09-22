@@ -91,7 +91,7 @@ public class QuestionController {
 
     @PostMapping("/{questionId}/publish")
     public QuestionResponse publish(@Valid @ModelAttribute QuestionIdRequest request) {
-        return QuestionResponse.from(questionService.publish(request.questionId()));
+        return QuestionResponse.from(questionService.publishAsCurrentVersion(request.questionId()));
     }
 
     @PostMapping("/{questionId}/retire")

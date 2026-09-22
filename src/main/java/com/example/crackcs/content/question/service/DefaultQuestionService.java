@@ -98,7 +98,7 @@ public class DefaultQuestionService implements QuestionService {
 
     @Override
     @Transactional
-    public Question publish(Long questionId) {
+    public Question publishAsCurrentVersion(Long questionId) {
         Question question = findQuestion(questionId);
         question.publish();
         questionRepository.findAllByVersionSeriesIdAndStatus(

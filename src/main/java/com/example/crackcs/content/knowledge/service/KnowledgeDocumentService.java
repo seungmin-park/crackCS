@@ -24,7 +24,7 @@ public interface KnowledgeDocumentService {
 
     KnowledgeDocument review(Long documentId, Long reviewerMemberId);
 
-    KnowledgeDocument publish(Long documentId);
+    KnowledgeDocument publishAsCurrentVersion(Long documentId);
 
     KnowledgeDocument retire(Long documentId);
 }

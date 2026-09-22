@@ -179,7 +179,7 @@ class QuestionServiceTest {
                 question.getId(), List.of(new QuestionConceptCriterion(concept.getId(), BigDecimal.ONE, true))
         );
         questionService.review(question.getId(), admin.getId());
-        Question published = questionService.publish(question.getId());
+        Question published = questionService.publishAsCurrentVersion(question.getId());
 
         assertThat(published.getStatus()).isEqualTo(QuestionStatus.PUBLISHED);
         assertThat(published.getReviewedAt()).isNotNull();
@@ -234,13 +234,13 @@ class QuestionServiceTest {
                 List.of(new QuestionConceptCriterion(concept.getId(), BigDecimal.ONE, true))
         );
         questionService.review(publishedQuestion.getId(), admin.getId());
-        questionService.publish(publishedQuestion.getId());
+        questionService.publishAsCurrentVersion(publishedQuestion.getId());
 
         Question nextQuestionVersion = questionService.createNextVersion(
                 publishedQuestion.getId(), admin.getId(), QuestionDifficulty.INTERMEDIATE, "둘째 문제", "둘째 답안"
         );
         questionService.review(nextQuestionVersion.getId(), admin.getId());
-        questionService.publish(nextQuestionVersion.getId());
+        questionService.publishAsCurrentVersion(nextQuestionVersion.getId());
 
         assertThat(questionRepository.findById(publishedQuestion.getId()).orElseThrow().getStatus())
                 .isEqualTo(QuestionStatus.RETIRED);
@@ -248,6 +248,35 @@ class QuestionServiceTest {
                 .isEqualTo(QuestionStatus.PUBLISHED);
         assertThat(questionRepository.findPublishedNormalById(publishedQuestion.getId())).isEmpty();
         assertThat(questionRepository.findPublishedNormalById(nextQuestionVersion.getId())).isPresent();
+    }
+
+    @Test
+    @DisplayName("새 문제 버전 공개에 실패하면 이전 공개본과 새 초안 상태를 모두 유지한다")
+    void preservesVersionStatusesWhenPublishingNextVersionFails() {
+        Topic topic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        Member admin = saveAdmin();
+        Concept concept = conceptRepository.save(Concept.builder()
+                .topic(topic).code("PROCESS_THREAD").name("프로세스와 스레드").build());
+        Question publishedQuestion = questionService.create(
+                admin.getId(), topic.getId(), QuestionDifficulty.BASIC, "첫 문제", "첫 답안"
+        );
+        questionService.replaceConcepts(
+                publishedQuestion.getId(),
+                List.of(new QuestionConceptCriterion(concept.getId(), BigDecimal.ONE, true))
+        );
+        questionService.review(publishedQuestion.getId(), admin.getId());
+        questionService.publishAsCurrentVersion(publishedQuestion.getId());
+        Question unreviewedNextVersion = questionService.createNextVersion(
+                publishedQuestion.getId(), admin.getId(), QuestionDifficulty.INTERMEDIATE, "둘째 문제", "둘째 답안"
+        );
+
+        assertThatThrownBy(() -> questionService.publishAsCurrentVersion(unreviewedNextVersion.getId()))
+                .isInstanceOf(InvalidContentStateException.class);
+
+        assertThat(questionRepository.findById(publishedQuestion.getId()).orElseThrow().getStatus())
+                .isEqualTo(QuestionStatus.PUBLISHED);
+        assertThat(questionRepository.findById(unreviewedNextVersion.getId()).orElseThrow().getStatus())
+                .isEqualTo(QuestionStatus.DRAFT);
     }
 
     private Topic saveTopic(String code, String name) {
