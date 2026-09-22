@@ -332,7 +332,9 @@ class FollowUpQuestionServiceTest {
             return new StubFollowUpQuestionAdapter().generate(request);
         };
         followUpQuestionProcessor.process(sourceAnswer.answerId());
-        assertThat(followUpGenerationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow().getStatus()).isEqualTo(FollowUpStatus.UNAVAILABLE);
+        FollowUpGeneration generation = followUpGenerationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow();
+        assertThat(generation.getStatus()).isEqualTo(FollowUpStatus.UNAVAILABLE);
+        assertThat(generation.getReason()).isEqualTo(FollowUpReason.CONTENT_UNAVAILABLE);
         assertThat(questionRepository.count()).isEqualTo(1);
     }
 

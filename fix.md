@@ -520,28 +520,67 @@ EvaluationCompletionTransaction  Evaluation
 
 ### RED
 
-- [ ] provider 없음·timeout·invalid result·provider error별 결과 테스트
-- [ ] 저장 충돌 재시도 테스트
-- [ ] source가 완료 전에 바뀌면 CONTENT_UNAVAILABLE이 되는 테스트
-- [ ] lease 만료·다른 token·시도 횟수 소진 테스트
+- [x] provider 없음·timeout·invalid result·provider error별 결과 테스트
+- [x] 저장 충돌 재시도 테스트
+- [x] source가 완료 전에 바뀌면 CONTENT_UNAVAILABLE이 되는 테스트
+- [x] lease 만료·다른 token·시도 횟수 소진 테스트
 
 ### 책임 분리
 
-- [ ] `DefaultFollowUpQuestionProcessor.process`의 모든 수행 작업 목록 확정
-- [ ] 선점과 `FollowUpRequest` 생성을 담당하는 객체 추출 검토
-- [ ] generator 선택·호출·예외 분류를 `FollowUpGenerationAttemptExecutor`로 추출
-- [ ] 저장 재시도와 완료를 `FollowUpCompletionTransaction`으로 추출
-- [ ] `failed(..., boolean retry)` 제거
-- [ ] 재시도와 영구 실패를 의도별 메서드 또는 결과 타입으로 분리
-- [ ] Processor는 선점 → 생성 시도 → 결과 적용만 조정
-- [ ] 임대·시도 횟수·상태 전이는 `FollowUpGeneration`이 계속 소유
+- [x] `DefaultFollowUpQuestionProcessor.process`의 모든 수행 작업 목록 확정
+- [x] 선점과 `FollowUpRequest` 생성을 담당하는 객체 추출 검토
+- [x] generator 선택·호출·예외 분류를 `FollowUpGenerationAttemptExecutor`로 추출
+- [x] 저장 재시도와 완료를 `FollowUpCompletionTransaction`으로 추출
+- [x] `failed(..., boolean retry)` 제거
+- [x] 재시도와 영구 실패를 의도별 메서드 또는 결과 타입으로 분리
+- [x] Processor는 선점 → 생성 시도 → 결과 적용만 조정
+- [x] 임대·시도 횟수·상태 전이는 `FollowUpGeneration`이 계속 소유
 
 ### 검증
 
-- [ ] Follow-up processor 테스트
-- [ ] Follow-up domain 테스트
-- [ ] worker 테스트
-- [ ] 외부 adapter 실패 계약 테스트
+- [x] Follow-up processor 테스트
+- [x] Follow-up domain 테스트
+- [x] worker 테스트
+- [x] 외부 adapter 실패 계약 테스트
+
+결정 결과(2026-09-22):
+
+- `FollowUpGenerationAttemptExecutor` 추출: generator 선택·호출과 provider 없음·timeout·invalid result·provider error 분류 소유
+- `FollowUpGenerationAttemptOutcome` 추가: `Completed`, `RetryRequired`, `FailureRequired`로 후속 행동 명시
+- `FollowUpOutcomeCoordinator` 추출: lease 소유권 확인 후 완료·재시도·영구 실패·source 변경 결과 적용
+- `FollowUpCompletionTransaction` 추출: 같은 provider 결과를 사용해 완료 저장 충돌을 최대 3회 새 트랜잭션에서 재시도
+- `DefaultFollowUpQuestionProcessor`: 선점 → 생성 시도 → 결과 적용 위임만 조정
+- 별도 선점 객체 미추출: 답변·평가 잠금, 생성 작업 선점, 요청 생성은 한 트랜잭션에서 실행되는 하나의 단계이며 다른 호출자·변경 축 없음
+- `failed(..., boolean retry)` 제거: 결과 타입과 `applyRetry`, `applyFailure`가 재시도 의도를 직접 표현
+- `FollowUpGeneration`: lease·시도 횟수·완료·재시도·실패·사용 불가 상태 전이 계속 소유
+
+```text
+DefaultFollowUpQuestionProcessor
+        선점 → 생성 시도 → 결과 적용 위임
+                    ↓             ↓
+ FollowUpGenerationAttemptExecutor  FollowUpOutcomeCoordinator
+ ├─ provider 선택·호출             ├─ lease 소유권 확인
+ └─ 완료·재시도·실패 결과          ├─ source 재검증
+                                   ├─ 완료·재시도·실패 적용
+                                   └─ 저장 실패 분류
+                                            ↓
+                              FollowUpCompletionTransaction
+                              같은 결과로 저장 충돌 재시도
+                                            ↓
+                                  FollowUpGeneration
+                                  상태 불변식·전이
+```
+
+검증 결과(2026-09-22):
+
+- 기준선 Follow-up 테스트: 87개 성공, 실패 0개
+- RED: `FollowUpGenerationAttemptExecutor`, `FollowUpGenerationAttemptOutcome` 누락으로 테스트 컴파일 오류 16개 확인
+- RED: `DefaultFollowUpCompletionTransaction` 누락으로 테스트 컴파일 오류 4개 확인
+- 새 단위 테스트: provider 결과 분류 4개, 완료 저장 재시도 2개 성공
+- Follow-up 관련 도메인·Processor·Worker·Adapter 테스트: 93개 성공, 실패·오류·건너뜀 0개
+- source 폐기 시 `CONTENT_UNAVAILABLE`, 다른 token과 만료 lease 거부, 세 번의 시도 소진, 저장 충돌 3회 제한 확인
+- `./gradlew test postgresTest --rerun-tasks --console=plain`: 기본 458개, PostgreSQL 37개 성공, 실패·오류·건너뜀 0개
+- 기준 데이터 검증: 14개 검사 그룹 PASS
 
 ## 작업 11. OpenAI 평가 Adapter 분리
 
