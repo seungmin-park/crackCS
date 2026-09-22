@@ -5,7 +5,7 @@ import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.exception.InvalidContentStateException;
 import com.example.crackcs.learning.answer.domain.Answer;
 import com.example.crackcs.learning.followup.domain.FollowUpGeneration;
-import com.example.crackcs.learning.followup.domain.FollowUpResult;
+import com.example.crackcs.learning.followup.domain.FollowUpGenerationResult;
 import com.example.crackcs.learning.followup.domain.FollowUpStatus;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
@@ -31,7 +31,7 @@ class FollowUpQuestionTest {
         LocalDateTime now = LocalDateTime.now().plusSeconds(1);
         job.claim("worker", now, Duration.ofMinutes(1));
         assertThatThrownBy(() -> job.complete(
-                "worker", now, generatedFollowUpQuestion, followUpResult(generatedFollowUpQuestion, 1L)))
+                "worker", now, generatedFollowUpQuestion, followUpGenerationResult(generatedFollowUpQuestion, 1L)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(job.getStatus()).isEqualTo(FollowUpStatus.PROCESSING);
         assertThat(job.getQuestion()).isNull();
@@ -46,14 +46,14 @@ class FollowUpQuestionTest {
         LocalDateTime now = LocalDateTime.now().plusSeconds(1);
         job.claim("worker", now, Duration.ofMinutes(1));
         assertThatThrownBy(() -> job.complete(
-                "worker", now, generatedFollowUpQuestion, followUpResult(generatedFollowUpQuestion, 99L)))
+                "worker", now, generatedFollowUpQuestion, followUpGenerationResult(generatedFollowUpQuestion, 99L)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(job.getStatus()).isEqualTo(FollowUpStatus.PROCESSING);
         assertThat(job.getQuestion()).isNull();
     }
 
-    private FollowUpResult followUpResult(Question followUpQuestion, Long conceptId) {
-        return new FollowUpResult(
+    private FollowUpGenerationResult followUpGenerationResult(Question followUpQuestion, Long conceptId) {
+        return new FollowUpGenerationResult(
                 followUpQuestion.getContent(), followUpQuestion.getReferenceAnswer(), conceptId, List.of(7L),
                 "test", "follow-up-v1", 0, 0, 0);
     }

@@ -75,7 +75,7 @@ public class QuestionController {
     public QuestionResponse replaceConcepts(@Valid @ModelAttribute QuestionIdRequest questionIdRequest,
                                             @Valid @RequestBody QuestionConceptReplaceRequest request) {
         return QuestionResponse.from(questionService.replaceConcepts(
-                questionIdRequest.questionId(), request.toData()
+                questionIdRequest.questionId(), request.toCriteria()
         ));
     }
 

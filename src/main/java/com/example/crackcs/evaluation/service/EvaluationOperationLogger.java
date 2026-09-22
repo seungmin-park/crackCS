@@ -27,13 +27,13 @@ public class EvaluationOperationLogger {
             Long evaluationId,
             Long answerId,
             Long memberId,
-            String model,
+            String modelName,
             String evaluatorVersion
     ) {
         log.info(
                 "event=evaluation_completed evaluationId={} answerId={} memberId={} "
                         + "model={} evaluatorVersion={}",
-                evaluationId, answerId, memberId, model, evaluatorVersion
+                evaluationId, answerId, memberId, modelName, evaluatorVersion
         );
     }
 

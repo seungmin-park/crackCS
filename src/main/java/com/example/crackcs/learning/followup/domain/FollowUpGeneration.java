@@ -124,21 +124,22 @@ public class FollowUpGeneration {
         finish(FollowUpStatus.UNAVAILABLE, reason, now);
     }
 
-    public void complete(String token, LocalDateTime now, Question question, FollowUpResult result) {
+    public void complete(String token, LocalDateTime now, Question question,
+                         FollowUpGenerationResult generationResult) {
         requireLease(token, now);
-        requireMatchingQuestion(question, result);
-        recordGeneratedQuestion(question, result);
+        requireMatchingQuestion(question, generationResult);
+        recordGeneratedQuestion(question, generationResult);
         finish(FollowUpStatus.READY, null, now);
     }
 
-    private void recordGeneratedQuestion(Question question, FollowUpResult result) {
+    private void recordGeneratedQuestion(Question question, FollowUpGenerationResult generationResult) {
         this.question = question;
-        this.modelName = result.modelName();
-        this.generatorVersion = result.generatorVersion();
-        this.durationMillis = result.durationMillis();
-        this.inputTokens = result.inputTokens();
-        this.outputTokens = result.outputTokens();
-        this.evidenceChunkIds.addAll(result.evidenceChunkIds());
+        this.modelName = generationResult.modelName();
+        this.generatorVersion = generationResult.generatorVersion();
+        this.durationMillis = generationResult.durationMillis();
+        this.inputTokens = generationResult.inputTokens();
+        this.outputTokens = generationResult.outputTokens();
+        this.evidenceChunkIds.addAll(generationResult.evidenceChunkIds());
     }
 
     public List<Long> getEvidenceChunkIds() {
@@ -175,11 +176,12 @@ public class FollowUpGeneration {
         return attemptCount >= MAX_GENERATION_ATTEMPTS;
     }
 
-    private void requireMatchingQuestion(Question question, FollowUpResult result) {
-        if (!isQuestionFromThisAnswer(question) || result == null) {
+    private void requireMatchingQuestion(Question question, FollowUpGenerationResult generationResult) {
+        if (!isQuestionFromThisAnswer(question) || generationResult == null) {
             throw new IllegalArgumentException("matching follow-up question and result are required");
         }
-        if (!matchesGeneratedContent(question, result) || !containsGeneratedConcept(question, result)) {
+        if (!matchesGeneratedContent(question, generationResult)
+                || !containsGeneratedConcept(question, generationResult)) {
             throw new IllegalArgumentException("matching follow-up question and result are required");
         }
     }
@@ -189,15 +191,15 @@ public class FollowUpGeneration {
                 && sameSourceAnswer(question.getSourceAnswer());
     }
 
-    private boolean matchesGeneratedContent(Question question, FollowUpResult result) {
+    private boolean matchesGeneratedContent(Question question, FollowUpGenerationResult generationResult) {
         return question.getStatus() == QuestionStatus.PUBLISHED
-                && question.getContent().equals(result.content())
-                && question.getReferenceAnswer().equals(result.referenceAnswer());
+                && question.getContent().equals(generationResult.content())
+                && question.getReferenceAnswer().equals(generationResult.referenceAnswer());
     }
 
-    private boolean containsGeneratedConcept(Question question, FollowUpResult result) {
+    private boolean containsGeneratedConcept(Question question, FollowUpGenerationResult generationResult) {
         return question.getQuestionConcepts().stream()
-                .anyMatch(concept -> Objects.equals(concept.getConcept().getId(), result.conceptId()));
+                .anyMatch(concept -> Objects.equals(concept.getConcept().getId(), generationResult.conceptId()));
     }
 
     private boolean isUnavailabilityReason(FollowUpReason reason) {

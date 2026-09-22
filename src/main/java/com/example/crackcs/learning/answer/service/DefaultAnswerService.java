@@ -49,7 +49,7 @@ public class DefaultAnswerService implements AnswerService {
             if (!answer.getQuestion().getId().equals(questionId) || !answer.getContent().equals(content)) {
                 throw new AnswerConflictException();
             }
-            return response(answer);
+            return toAnswerResult(answer);
         }
         Question question = questionRepository.findById(questionId)
                 .filter(candidate -> candidate.getStatus() == QuestionStatus.PUBLISHED)
@@ -67,7 +67,7 @@ public class DefaultAnswerService implements AnswerService {
 
     @Override
     public AnswerResult findById(Long memberId, Long answerId) {
-        return response(ownedAnswer(memberId, answerId));
+        return toAnswerResult(ownedAnswer(memberId, answerId));
     }
 
     @Override
@@ -91,7 +91,7 @@ public class DefaultAnswerService implements AnswerService {
         return answerRepository.findByIdAndMemberId(answerId, memberId).orElseThrow(() -> new AnswerNotFoundException(answerId));
     }
 
-    private AnswerResult response(Answer answer) {
+    private AnswerResult toAnswerResult(Answer answer) {
         return AnswerResult.from(answer, evaluationRepository.findByAnswerId(answer.getId()).orElseThrow());
     }
 }

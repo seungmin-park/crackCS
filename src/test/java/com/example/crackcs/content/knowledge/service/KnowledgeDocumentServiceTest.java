@@ -45,12 +45,12 @@ class KnowledgeDocumentServiceTest {
         Topic topic = saveTopic();
         Member contentAdmin = saveAdmin();
         KnowledgeDocument publishedDocument = knowledgeDocumentService.create(
-                contentAdmin.getId(), knowledgeDocumentData(topic, "첫 버전 원문"));
+                contentAdmin.getId(), knowledgeDocumentDraft(topic, "첫 버전 원문"));
         knowledgeDocumentService.review(publishedDocument.getId(), contentAdmin.getId());
         knowledgeDocumentService.publish(publishedDocument.getId());
 
         KnowledgeDocument nextDocumentVersion = knowledgeDocumentService.createNextVersion(
-                publishedDocument.getId(), contentAdmin.getId(), knowledgeDocumentData(topic, "둘째 버전 원문")
+                publishedDocument.getId(), contentAdmin.getId(), knowledgeDocumentDraft(topic, "둘째 버전 원문")
         );
 
         assertThat(nextDocumentVersion.getDocumentVersion()).isEqualTo(2);
@@ -74,10 +74,10 @@ class KnowledgeDocumentServiceTest {
     void detectsDuplicateNormalizedContent() {
         Topic topic = saveTopic();
         Member contentAdmin = saveAdmin();
-        knowledgeDocumentService.create(contentAdmin.getId(), knowledgeDocumentData(topic, "첫 줄\r\n둘째 줄"));
+        knowledgeDocumentService.create(contentAdmin.getId(), knowledgeDocumentDraft(topic, "첫 줄\r\n둘째 줄"));
 
         assertThatThrownBy(() -> knowledgeDocumentService.create(
-                contentAdmin.getId(), knowledgeDocumentData(topic, "첫 줄\n둘째 줄")))
+                contentAdmin.getId(), knowledgeDocumentDraft(topic, "첫 줄\n둘째 줄")))
                 .isInstanceOf(DuplicateKnowledgeDocumentException.class);
     }
 
@@ -90,13 +90,13 @@ class KnowledgeDocumentServiceTest {
         topicRepository.save(topic);
 
         assertThatThrownBy(() -> knowledgeDocumentService.create(
-                contentAdmin.getId(), knowledgeDocumentData(topic, "원문")))
+                contentAdmin.getId(), knowledgeDocumentDraft(topic, "원문")))
                 .isInstanceOf(InvalidContentStateException.class)
                 .hasMessage("비활성 Topic에는 KnowledgeDocument를 연결할 수 없습니다.");
     }
 
-    private KnowledgeDocumentData knowledgeDocumentData(Topic topic, String content) {
-        return new KnowledgeDocumentData(
+    private KnowledgeDocumentDraft knowledgeDocumentDraft(Topic topic, String content) {
+        return new KnowledgeDocumentDraft(
                 topic.getId(), "문서", KnowledgeSourceType.OFFICIAL_DOC, "https://example.com/docs",
                 "Java 21", "인용 가능", content
         );

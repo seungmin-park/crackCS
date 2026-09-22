@@ -1,7 +1,7 @@
 package com.example.crackcs.content.knowledge.controller.request;
 
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
-import com.example.crackcs.content.knowledge.service.KnowledgeDocumentData;
+import com.example.crackcs.content.knowledge.service.KnowledgeDocumentDraft;
 import jakarta.validation.constraints.*;
 
 public record KnowledgeDocumentRequest(
@@ -32,8 +32,8 @@ public record KnowledgeDocumentRequest(
         @NotBlank(message = "content는 공백일 수 없습니다.")
         String content
 ) {
-    public KnowledgeDocumentData toData() {
-        return new KnowledgeDocumentData(
+    public KnowledgeDocumentDraft toDraft() {
+        return new KnowledgeDocumentDraft(
                 topicId,
                 title,
                 sourceType,

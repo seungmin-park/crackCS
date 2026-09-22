@@ -34,16 +34,16 @@ public class DefaultKnowledgeQueryService implements KnowledgeQueryService {
         Map<Long, List<Concept>> byTopic = conceptRepository.findActiveWithActiveTopic().stream()
                 .collect(Collectors.groupingBy(concept -> concept.getTopic().getId()));
         return new KnowledgeStatesResult(topicRepository.findActiveOrderedById().stream()
-                .map(topic -> response(topic, TopicKnowledgeSummary.from(
+                .map(topic -> toTopicState(topic, TopicKnowledgeSummary.from(
                         byTopic.getOrDefault(topic.getId(), List.of()), memberStates))).toList());
     }
 
-    private TopicState response(Topic topic, TopicKnowledgeSummary knowledge) {
-        List<ConceptState> results = knowledge.concepts().stream().map(concept -> new ConceptState(
+    private TopicState toTopicState(Topic topic, TopicKnowledgeSummary topicKnowledge) {
+        List<ConceptState> conceptStates = topicKnowledge.concepts().stream().map(concept -> new ConceptState(
                 concept.conceptId(), concept.conceptName(), concept.status(), concept.masteryScore(),
                 concept.confidenceScore(), concept.attemptCount(), concept.lastEvaluatedAt())).toList();
-        return new TopicState(topic.getId(), topic.getName(), knowledge.status(), knowledge.masteryScore(),
-                knowledge.confidenceScore(), knowledge.unknownCount(), knowledge.learningCount(),
-                knowledge.stableCount(), results);
+        return new TopicState(topic.getId(), topic.getName(), topicKnowledge.status(), topicKnowledge.masteryScore(),
+                topicKnowledge.confidenceScore(), topicKnowledge.unknownCount(), topicKnowledge.learningCount(),
+                topicKnowledge.stableCount(), conceptStates);
     }
 }

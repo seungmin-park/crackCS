@@ -176,7 +176,7 @@ class QuestionServiceTest {
         );
 
         questionService.replaceConcepts(
-                question.getId(), List.of(new QuestionConceptData(concept.getId(), BigDecimal.ONE, true))
+                question.getId(), List.of(new QuestionConceptCriterion(concept.getId(), BigDecimal.ONE, true))
         );
         questionService.review(question.getId(), admin.getId());
         Question published = questionService.publish(question.getId());
@@ -200,7 +200,7 @@ class QuestionServiceTest {
         );
 
         assertThatThrownBy(() -> questionService.replaceConcepts(
-                question.getId(), List.of(new QuestionConceptData(concept.getId(), BigDecimal.ONE, true))
+                question.getId(), List.of(new QuestionConceptCriterion(concept.getId(), BigDecimal.ONE, true))
         )).isInstanceOf(InvalidContentStateException.class);
     }
 
@@ -231,7 +231,7 @@ class QuestionServiceTest {
         );
         questionService.replaceConcepts(
                 publishedQuestion.getId(),
-                List.of(new QuestionConceptData(concept.getId(), BigDecimal.ONE, true))
+                List.of(new QuestionConceptCriterion(concept.getId(), BigDecimal.ONE, true))
         );
         questionService.review(publishedQuestion.getId(), admin.getId());
         questionService.publish(publishedQuestion.getId());

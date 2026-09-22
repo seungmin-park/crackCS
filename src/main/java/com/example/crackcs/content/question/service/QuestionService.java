@@ -32,7 +32,7 @@ public interface QuestionService {
     Question update(Long questionId, Long topicId, QuestionDifficulty difficulty, String content,
                     String referenceAnswer);
 
-    Question replaceConcepts(Long questionId, List<QuestionConceptData> concepts);
+    Question replaceConcepts(Long questionId, List<QuestionConceptCriterion> criteria);
 
     Question review(Long questionId, Long reviewerMemberId);
 

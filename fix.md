@@ -181,17 +181,41 @@
 
 ## 작업 3. 운영 코드 도메인 타입과 필드 이름 정리
 
-- [ ] `KnowledgeDocumentData`가 초안 입력·수정 명령 중 어떤 개념인지 확정
-- [ ] 역할이 입력 명세라면 `KnowledgeDocumentDraft` 또는 명확한 command 이름 검토
-- [ ] `QuestionConceptData`가 평가 기준 입력인지 연결 정보인지 확정
-- [ ] 필요 시 `QuestionConceptCriterion` 등 도메인 이름으로 변경
-- [ ] `EvaluationAttempt`가 시도인지 시도 결과인지 확인하고 이름 확정
-- [ ] `ClaimedEvaluationWork`가 선점된 실행 스냅샷 역할을 충분히 표현하는지 확인
-- [ ] `FollowUpQuestionResult`와 `FollowUpResult`의 역할 차이가 이름으로 드러나는지 확인
-- [ ] Service의 `response(...)`를 `toXxxResult(...)`로 변경
-- [ ] `unavailable()`을 반환 도메인이 드러나는 이름으로 변경
-- [ ] `model`을 `modelName`으로 변경할지 외부 계약과 함께 확인
-- [ ] 타입 이름 변경 시 production·test·직렬화 호출부 전부 수정
+- [x] `KnowledgeDocumentData`가 초안 입력·수정 명령 중 어떤 개념인지 확정
+- [x] 역할이 입력 명세라면 `KnowledgeDocumentDraft` 또는 명확한 command 이름 검토
+- [x] `QuestionConceptData`가 평가 기준 입력인지 연결 정보인지 확정
+- [x] 필요 시 `QuestionConceptCriterion` 등 도메인 이름으로 변경
+- [x] `EvaluationAttempt`가 시도인지 시도 결과인지 확인하고 이름 확정
+- [x] `ClaimedEvaluationWork`가 선점된 실행 스냅샷 역할을 충분히 표현하는지 확인
+- [x] `FollowUpQuestionResult`와 `FollowUpResult`의 역할 차이가 이름으로 드러나는지 확인
+- [x] Service의 `response(...)`를 `toXxxResult(...)`로 변경
+- [x] `unavailable()`을 반환 도메인이 드러나는 이름으로 변경
+- [x] `model`을 `modelName`으로 변경할지 외부 계약과 함께 확인
+- [x] 타입 이름 변경 시 production·test·직렬화 호출부 전부 수정
+
+결정 결과(2026-09-22):
+
+- `KnowledgeDocumentData` → `KnowledgeDocumentDraft`: 생성·수정·새 버전에 공통으로 전달하는 문서 초안
+- `QuestionConceptData` → `QuestionConceptCriterion`: 개념 ID와 평가 가중치·필수 여부를 묶은 평가 기준
+- `EvaluationAttempt` → `EvaluationAttemptOutcome`: 평가 시도 자체가 아니라 완료·검토·재시도 결과
+- `ClaimedEvaluationWork` 유지: 선점된 평가의 식별자·입력 스냅샷·시도 횟수를 함께 표현
+- `FollowUpResult` → `FollowUpGenerationResult`: 생성기 출력과 조회 유스케이스의 `FollowUpQuestionResult` 구분
+- Service의 `response(...)` → `toAnswerResult(...)`, `toTopicState(...)`, `toRecommendationResult(...)`
+- 추천 Service의 `unavailable()` → `noAvailableQuestionResult()`
+- `FollowUpGeneration.unavailable(...)`, `FollowUpQuestionResult.unavailable(...)` 유지: 각각 상태 변경과 반환 타입이 호출부에 드러남
+- OpenAI adapter·평가 logger의 내부 `model` → `modelName`; 외부 JSON 키 `model`과 설정 키 유지
+
+검증 결과(2026-09-22):
+
+- RED: `KnowledgeDocumentDraft`를 요구하는 테스트 컴파일에서 누락 타입 오류 1개 확인
+- RED: `FollowUpGenerationResult`를 요구하는 테스트 컴파일에서 누락 타입 오류 6개 확인
+- `./gradlew compileJava compileTestJava --console=plain`: 성공
+- 콘텐츠·평가·학습 패키지 테스트: 387개 성공, 실패 0개
+- `./gradlew test --rerun-tasks --console=plain`: 442개 성공, 실패 0개
+- `./gradlew retrievalBenchmark --rerun-tasks --console=plain`: 1개 성공, 실패 0개
+- `./gradlew postgresTest --rerun-tasks --console=plain`: 37개 성공, 실패 0개
+- `./gradlew localServiceLatencyBenchmark --rerun-tasks --console=plain`: 1개 성공, 실패 0개
+- 네 개의 이름 변경 타입 구현과 전체 문자열 리터럴 동일 확인
 
 ## 작업 4. Idempotency-Key 검증 책임 이동
 

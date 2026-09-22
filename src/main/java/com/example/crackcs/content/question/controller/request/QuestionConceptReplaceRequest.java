@@ -1,6 +1,6 @@
 package com.example.crackcs.content.question.controller.request;
 
-import com.example.crackcs.content.question.service.QuestionConceptData;
+import com.example.crackcs.content.question.service.QuestionConceptCriterion;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 
@@ -11,9 +11,9 @@ public record QuestionConceptReplaceRequest(
         @NotNull(message = "concepts는 필수입니다.")
         List<@Valid Item> concepts
 ) {
-    public List<QuestionConceptData> toData() {
+    public List<QuestionConceptCriterion> toCriteria() {
         return concepts.stream()
-                .map(item -> new QuestionConceptData(item.conceptId(), item.weight(), item.required()))
+                .map(item -> new QuestionConceptCriterion(item.conceptId(), item.weight(), item.required()))
                 .toList();
     }
 

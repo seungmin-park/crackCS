@@ -3,14 +3,22 @@ package com.example.crackcs.learning.followup.domain;
 import java.util.HashSet;
 import java.util.List;
 
-public record FollowUpResult(String content, String referenceAnswer, Long conceptId, List<Long> evidenceChunkIds,
-                             String modelName, String generatorVersion, long durationMillis,
-                             long inputTokens, long outputTokens) {
+public record FollowUpGenerationResult(
+        String content,
+        String referenceAnswer,
+        Long conceptId,
+        List<Long> evidenceChunkIds,
+        String modelName,
+        String generatorVersion,
+        long durationMillis,
+        long inputTokens,
+        long outputTokens
+) {
     private static final int MAX_CONTENT_LENGTH = 10_000;
     private static final int MAX_MODEL_NAME_LENGTH = 100;
     private static final String SUPPORTED_GENERATOR_VERSION = "follow-up-v1";
 
-    public FollowUpResult {
+    public FollowUpGenerationResult {
         requireValidQuestion(content, referenceAnswer, conceptId);
         requireValidEvidenceIds(evidenceChunkIds);
         requireValidGenerationMetadata(modelName, generatorVersion, durationMillis, inputTokens, outputTokens);
@@ -36,7 +44,7 @@ public record FollowUpResult(String content, String referenceAnswer, Long concep
     }
 
     private static boolean containsOnlyPositiveIds(List<Long> ids) {
-        return ids.stream().allMatch(FollowUpResult::isPositiveId);
+        return ids.stream().allMatch(FollowUpGenerationResult::isPositiveId);
     }
 
     private static boolean containsDuplicateIds(List<Long> ids) {

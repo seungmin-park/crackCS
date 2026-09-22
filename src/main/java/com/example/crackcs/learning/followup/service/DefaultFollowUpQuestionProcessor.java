@@ -12,7 +12,7 @@ import com.example.crackcs.learning.answer.domain.Answer;
 import com.example.crackcs.learning.answer.repository.AnswerRepository;
 import com.example.crackcs.learning.followup.domain.FollowUpGeneration;
 import com.example.crackcs.learning.followup.domain.FollowUpReason;
-import com.example.crackcs.learning.followup.domain.FollowUpResult;
+import com.example.crackcs.learning.followup.domain.FollowUpGenerationResult;
 import com.example.crackcs.learning.followup.port.FollowUpQuestionGenerator;
 import com.example.crackcs.learning.followup.port.FollowUpRequest;
 import com.example.crackcs.learning.followup.repository.FollowUpGenerationRepository;
@@ -59,18 +59,21 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
             return;
         }
         FollowUpRequest request = claimed.orElseThrow();
-        FollowUpResult result;
+        FollowUpGenerationResult generationResult;
         try {
             FollowUpQuestionGenerator generator = followUpQuestionGeneratorProvider.getIfAvailable();
             if (generator == null) {
                 failed(answerId, token, FollowUpReason.PROVIDER_ERROR, true);
                 return;
             }
-            result = generator.generate(request);
-            if (result == null) {
+            generationResult = generator.generate(request);
+            if (generationResult == null) {
                 throw new IllegalArgumentException("follow-up result is required");
             }
-            result.validateAgainst(request.conceptId(), request.evidence().stream().map(FollowUpRequest.Evidence::chunkId).toList());
+            generationResult.validateAgainst(
+                    request.conceptId(),
+                    request.evidence().stream().map(FollowUpRequest.Evidence::chunkId).toList()
+            );
         } catch (EvaluationTimeoutException timeout) {
             failed(answerId, token, FollowUpReason.PROVIDER_TIMEOUT, true);
             return;
@@ -82,17 +85,17 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
             return;
         }
         try {
-            completeWithRetry(answerId, token, result);
+            completeWithRetry(answerId, token, generationResult);
         } catch (RuntimeException storageFailure) {
             failed(answerId, token, FollowUpReason.PERSISTENCE_ERROR, false);
         }
     }
 
-    private void completeWithRetry(Long answerId, String token, FollowUpResult result) {
+    private void completeWithRetry(Long answerId, String token, FollowUpGenerationResult generationResult) {
         for (int attempt = 1; ; attempt++) {
             try {
                 // process의 NEVER 계약으로 각 시도는 별도 transaction이다. AI 결과는 재사용한다.
-                transactionTemplate.executeWithoutResult(status -> complete(answerId, token, result));
+                transactionTemplate.executeWithoutResult(status -> complete(answerId, token, generationResult));
                 return;
             } catch (OptimisticLockingFailureException | PessimisticLockingFailureException conflict) {
                 if (attempt == MAX_COMPLETION_ATTEMPTS) {
@@ -129,7 +132,7 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
         return Optional.of(followUpSourcePolicy.request(evaluation));
     }
 
-    private void complete(Long answerId, String token, FollowUpResult result) {
+    private void complete(Long answerId, String token, FollowUpGenerationResult generationResult) {
         answerRepository.findLockedById(answerId).orElseThrow();
         FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(answerId).orElseThrow();
         LocalDateTime now = LocalDateTime.now();
@@ -143,18 +146,25 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
             return;
         }
         FollowUpRequest current = followUpSourcePolicy.request(evaluation);
-        if (!isStillWithinApprovedSource(current, result)) {
+        if (!isStillWithinApprovedSource(current, generationResult)) {
             job.unavailable(token, now, FollowUpReason.CONTENT_UNAVAILABLE);
             return;
         }
-        Question question = createGeneratedQuestion(job, evaluation, result);
-        job.complete(token, now, question, result);
+        Question question = createGeneratedQuestion(job, evaluation, generationResult);
+        job.complete(token, now, question, generationResult);
     }
 
-    private Question createGeneratedQuestion(FollowUpGeneration job, Evaluation evaluation, FollowUpResult result) {
-        Concept concept = findGeneratedConcept(evaluation, result.conceptId());
+    private Question createGeneratedQuestion(
+            FollowUpGeneration job,
+            Evaluation evaluation,
+            FollowUpGenerationResult generationResult
+    ) {
+        Concept concept = findGeneratedConcept(evaluation, generationResult.conceptId());
         return questionRepository.save(Question.followUpBuilder().sourceAnswer(job.getAnswer())
-                .concept(concept).content(result.content()).referenceAnswer(result.referenceAnswer()).build());
+                .concept(concept)
+                .content(generationResult.content())
+                .referenceAnswer(generationResult.referenceAnswer())
+                .build());
     }
 
     private Concept findGeneratedConcept(Evaluation evaluation, Long conceptId) {
@@ -172,10 +182,13 @@ public class DefaultFollowUpQuestionProcessor implements FollowUpQuestionProcess
         return evaluation.getStatus() == EvaluationStatus.EVALUATED;
     }
 
-    private boolean isStillWithinApprovedSource(FollowUpRequest current, FollowUpResult result) {
-        return current.conceptId().equals(result.conceptId())
+    private boolean isStillWithinApprovedSource(
+            FollowUpRequest current,
+            FollowUpGenerationResult generationResult
+    ) {
+        return current.conceptId().equals(generationResult.conceptId())
                 && current.evidence().stream().map(FollowUpRequest.Evidence::chunkId).toList()
-                .containsAll(result.evidenceChunkIds());
+                .containsAll(generationResult.evidenceChunkIds());
     }
 
     private void failed(Long answerId, String token, FollowUpReason reason, boolean retry) {

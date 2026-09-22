@@ -23,37 +23,37 @@ class EvaluationAttemptExecutor {
     private final EvaluationBudgetGuard budgetGuard;
     private final EvaluationOperationLogger operationLogger;
 
-    EvaluationAttempt execute(ClaimedEvaluationWork work) {
-        RetrievalResult retrieval = knowledgeRetrievalService.retrieve(work.retrievalQuery(), EVIDENCE_LIMIT);
-        logRetrieval(work, retrieval);
+    EvaluationAttemptOutcome execute(ClaimedEvaluationWork claimedWork) {
+        RetrievalResult retrieval = knowledgeRetrievalService.retrieve(claimedWork.retrievalQuery(), EVIDENCE_LIMIT);
+        logRetrieval(claimedWork, retrieval);
         if (retrieval.insufficientEvidence()) {
-            return new EvaluationAttempt.ReviewRequired("EVIDENCE_NOT_FOUND");
+            return new EvaluationAttemptOutcome.ReviewRequired("EVIDENCE_NOT_FOUND");
         }
         if (retrieval.conflictingEvidence()) {
-            return new EvaluationAttempt.ReviewRequired("EVIDENCE_CONFLICT");
+            return new EvaluationAttemptOutcome.ReviewRequired("EVIDENCE_CONFLICT");
         }
         if (!budgetGuard.canEvaluate()) {
-            return new EvaluationAttempt.ReviewRequired("MONTHLY_BUDGET_EXCEEDED");
+            return new EvaluationAttemptOutcome.ReviewRequired("MONTHLY_BUDGET_EXCEEDED");
         }
 
         EvaluationPort evaluationPort = availablePort();
         if (evaluationPort == null) {
-            return new EvaluationAttempt.RetryRequired("PROVIDER_UNAVAILABLE");
+            return new EvaluationAttemptOutcome.RetryRequired("PROVIDER_UNAVAILABLE");
         }
 
-        EvaluationRequest request = work.request(retrieval);
+        EvaluationRequest request = claimedWork.request(retrieval);
         try {
             EvaluationResult result = evaluationPort.evaluate(request);
             List<Long> evidenceChunkIds = retrieval.chunks().stream()
                     .map(retrieved -> retrieved.chunk().getId())
                     .toList();
-            return new EvaluationAttempt.Completed(result, evidenceChunkIds);
+            return new EvaluationAttemptOutcome.Completed(result, evidenceChunkIds);
         } catch (EvaluationTimeoutException timeout) {
-            return new EvaluationAttempt.RetryRequired("PROVIDER_TIMEOUT");
+            return new EvaluationAttemptOutcome.RetryRequired("PROVIDER_TIMEOUT");
         } catch (IllegalArgumentException invalidResult) {
-            return new EvaluationAttempt.RetryRequired("INVALID_RESULT");
+            return new EvaluationAttemptOutcome.RetryRequired("INVALID_RESULT");
         } catch (RuntimeException providerFailure) {
-            return new EvaluationAttempt.RetryRequired("PROVIDER_ERROR");
+            return new EvaluationAttemptOutcome.RetryRequired("PROVIDER_ERROR");
         }
     }
 
@@ -65,14 +65,14 @@ class EvaluationAttemptExecutor {
         }
     }
 
-    private void logRetrieval(ClaimedEvaluationWork work, RetrievalResult retrieval) {
+    private void logRetrieval(ClaimedEvaluationWork claimedWork, RetrievalResult retrieval) {
         List<Long> evidenceChunkIds = retrieval.chunks().stream()
                 .map(retrieved -> retrieved.chunk().getId())
                 .toList();
         operationLogger.retrievalCompleted(
-                work.evaluationId(),
-                work.answerId(),
-                work.memberId(),
+                claimedWork.evaluationId(),
+                claimedWork.answerId(),
+                claimedWork.memberId(),
                 retrieval.chunks().size(),
                 evidenceChunkIds
         );

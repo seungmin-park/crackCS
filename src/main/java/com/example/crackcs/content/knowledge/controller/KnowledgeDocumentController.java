@@ -48,7 +48,7 @@ public class KnowledgeDocumentController {
             Authentication authentication,
             @Valid @RequestBody KnowledgeDocumentRequest request
     ) {
-        KnowledgeDocument document = knowledgeDocumentService.create(memberId(authentication), request.toData());
+        KnowledgeDocument document = knowledgeDocumentService.create(memberId(authentication), request.toDraft());
         return ResponseEntity.created(URI.create("/api/admin/knowledge-documents/" + document.getId()))
                 .body(KnowledgeDocumentResponse.from(document));
     }
@@ -65,7 +65,7 @@ public class KnowledgeDocumentController {
             @Positive(message = "documentId는 양수여야 합니다.") @PathVariable Long documentId,
             @Valid @RequestBody KnowledgeDocumentRequest request
     ) {
-        return KnowledgeDocumentResponse.from(knowledgeDocumentService.update(documentId, request.toData()));
+        return KnowledgeDocumentResponse.from(knowledgeDocumentService.update(documentId, request.toDraft()));
     }
 
     @PostMapping("/{documentId}/versions")
@@ -75,7 +75,7 @@ public class KnowledgeDocumentController {
             @Valid @RequestBody KnowledgeDocumentRequest request
     ) {
         KnowledgeDocument document = knowledgeDocumentService.createNextVersion(
-                documentId, memberId(authentication), request.toData()
+                documentId, memberId(authentication), request.toDraft()
         );
         return ResponseEntity.created(URI.create("/api/admin/knowledge-documents/" + document.getId()))
                 .body(KnowledgeDocumentResponse.from(document));

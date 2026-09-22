@@ -31,20 +31,20 @@ public class OpenAiEvaluationAdapter implements EvaluationPort {
 
     private final OpenAiResponsesClient openAiResponsesClient;
     private final ObjectMapper objectMapper;
-    private final String model;
+    private final String modelName;
     private final String evaluatorVersion;
     private final Duration timeout;
 
     public OpenAiEvaluationAdapter(
             OpenAiResponsesClient openAiResponsesClient,
             ObjectMapper objectMapper,
-            @Value("${crackcs.evaluation.openai.model:gpt-5.6-terra}") String model,
+            @Value("${crackcs.evaluation.openai.model:gpt-5.6-terra}") String modelName,
             @Value("${crackcs.evaluation.openai.evaluator-version:os-evaluator-v1}") String evaluatorVersion,
             @Value("${crackcs.evaluation.openai.timeout:30s}") Duration timeout
     ) {
         this.openAiResponsesClient = openAiResponsesClient;
         this.objectMapper = objectMapper;
-        this.model = model;
+        this.modelName = modelName;
         this.evaluatorVersion = evaluatorVersion;
         this.timeout = timeout;
     }
@@ -60,7 +60,7 @@ public class OpenAiEvaluationAdapter implements EvaluationPort {
 
     private String buildRequest(EvaluationRequest request) {
         ObjectNode root = objectMapper.createObjectNode();
-        root.put("model", model);
+        root.put("model", modelName);
         root.put("store", false);
         ArrayNode input = root.putArray("input");
         input.add(message("developer", SYSTEM_INSTRUCTION));
@@ -164,7 +164,7 @@ public class OpenAiEvaluationAdapter implements EvaluationPort {
             }
             return new EvaluationResult(
                     verdict, feedback, concepts, strengths, omissions, misconceptions, evidenceIds,
-                    model, evaluatorVersion, durationMillis, inputTokens, outputTokens
+                    modelName, evaluatorVersion, durationMillis, inputTokens, outputTokens
             );
         } catch (IllegalArgumentException failure) {
             if (failure.getMessage() != null && failure.getMessage().contains("provider schema")) {

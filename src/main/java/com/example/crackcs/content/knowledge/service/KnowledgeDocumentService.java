@@ -7,7 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 public interface KnowledgeDocumentService {
 
-    KnowledgeDocument create(Long creatorMemberId, KnowledgeDocumentData data);
+    KnowledgeDocument create(Long creatorMemberId, KnowledgeDocumentDraft draft);
 
     Page<KnowledgeDocument> findAll(
             Long topicId,
@@ -18,9 +18,9 @@ public interface KnowledgeDocumentService {
 
     KnowledgeDocument findById(Long documentId);
 
-    KnowledgeDocument update(Long documentId, KnowledgeDocumentData data);
+    KnowledgeDocument update(Long documentId, KnowledgeDocumentDraft draft);
 
-    KnowledgeDocument createNextVersion(Long documentId, Long creatorMemberId, KnowledgeDocumentData data);
+    KnowledgeDocument createNextVersion(Long documentId, Long creatorMemberId, KnowledgeDocumentDraft draft);
 
     KnowledgeDocument review(Long documentId, Long reviewerMemberId);
 

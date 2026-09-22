@@ -27,19 +27,19 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
 
     @Override
     @Transactional
-    public KnowledgeDocument create(Long creatorMemberId, KnowledgeDocumentData data) {
-        Topic topic = findActiveTopic(data.topicId());
+    public KnowledgeDocument create(Long creatorMemberId, KnowledgeDocumentDraft draft) {
+        Topic topic = findActiveTopic(draft.topicId());
         Member creator = findAdmin(creatorMemberId);
-        ensureUniqueContent(data.content(), null);
+        ensureUniqueContent(draft.content(), null);
         return knowledgeDocumentRepository.save(KnowledgeDocument.builder()
                 .topic(topic)
                 .createdByMember(creator)
-                .title(data.title())
-                .sourceType(data.sourceType())
-                .sourceUrl(data.sourceUrl())
-                .technologyVersion(data.technologyVersion())
-                .licenseNote(data.licenseNote())
-                .content(data.content())
+                .title(draft.title())
+                .sourceType(draft.sourceType())
+                .sourceUrl(draft.sourceUrl())
+                .technologyVersion(draft.technologyVersion())
+                .licenseNote(draft.licenseNote())
+                .content(draft.content())
                 .build());
     }
 
@@ -62,18 +62,18 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
 
     @Override
     @Transactional
-    public KnowledgeDocument update(Long documentId, KnowledgeDocumentData data) {
+    public KnowledgeDocument update(Long documentId, KnowledgeDocumentDraft draft) {
         KnowledgeDocument document = findDocument(documentId);
-        Topic topic = findActiveTopic(data.topicId());
-        ensureUniqueContent(data.content(), documentId);
+        Topic topic = findActiveTopic(draft.topicId());
+        ensureUniqueContent(draft.content(), documentId);
         document.updateDraft(
                 topic,
-                data.title(),
-                data.sourceType(),
-                data.sourceUrl(),
-                data.technologyVersion(),
-                data.licenseNote(),
-                data.content()
+                draft.title(),
+                draft.sourceType(),
+                draft.sourceUrl(),
+                draft.technologyVersion(),
+                draft.licenseNote(),
+                draft.content()
         );
         return document;
     }
@@ -83,23 +83,23 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
     public KnowledgeDocument createNextVersion(
             Long documentId,
             Long creatorMemberId,
-            KnowledgeDocumentData data
+            KnowledgeDocumentDraft draft
     ) {
         KnowledgeDocument source = findDocument(documentId);
-        Topic topic = findActiveTopic(data.topicId());
+        Topic topic = findActiveTopic(draft.topicId());
         Member creator = findAdmin(creatorMemberId);
-        ensureUniqueContent(data.content(), null);
+        ensureUniqueContent(draft.content(), null);
         int nextVersion = knowledgeDocumentRepository.findMaxVersion(source.getVersionSeriesId()) + 1;
         return knowledgeDocumentRepository.save(source.createNextVersion(
                 nextVersion,
                 topic,
                 creator,
-                data.title(),
-                data.sourceType(),
-                data.sourceUrl(),
-                data.technologyVersion(),
-                data.licenseNote(),
-                data.content()
+                draft.title(),
+                draft.sourceType(),
+                draft.sourceUrl(),
+                draft.technologyVersion(),
+                draft.licenseNote(),
+                draft.content()
         ));
     }
 

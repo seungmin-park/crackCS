@@ -2,7 +2,7 @@ package com.example.crackcs.learning.followup.adapter;
 
 import com.example.crackcs.evaluation.adapter.openai.OpenAiResponsesClient;
 import com.example.crackcs.evaluation.domain.Verdict;
-import com.example.crackcs.learning.followup.domain.FollowUpResult;
+import com.example.crackcs.learning.followup.domain.FollowUpGenerationResult;
 import com.example.crackcs.learning.followup.port.FollowUpRequest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -79,12 +79,12 @@ class OpenAiFollowUpQuestionAdapterTest {
             assertThat(timeout).isEqualTo(Duration.ofSeconds(3));
             return response(valid());
         };
-        FollowUpResult followUpResult = adapter(openAiResponsesClient).generate(request());
-        assertThat(followUpResult.content()).isEqualTo("질문");
-        assertThat(followUpResult.conceptId()).isEqualTo(11L);
-        assertThat(followUpResult.evidenceChunkIds()).containsExactly(7L);
-        assertThat(followUpResult.inputTokens()).isEqualTo(10);
-        assertThat(followUpResult.generatorVersion()).isEqualTo("follow-up-v1");
+        FollowUpGenerationResult generationResult = adapter(openAiResponsesClient).generate(request());
+        assertThat(generationResult.content()).isEqualTo("질문");
+        assertThat(generationResult.conceptId()).isEqualTo(11L);
+        assertThat(generationResult.evidenceChunkIds()).containsExactly(7L);
+        assertThat(generationResult.inputTokens()).isEqualTo(10);
+        assertThat(generationResult.generatorVersion()).isEqualTo("follow-up-v1");
     }
 
     @Test

@@ -41,7 +41,9 @@ public class DefaultRecommendationService implements RecommendationService {
         return questionRepository.findAvailableForRecommendation(QuestionStatus.PUBLISHED, QuestionType.NORMAL,
                         QuestionOrigin.ADMIN)
                 .stream().flatMap(question -> candidates(question, memberStates, lastAnswered))
-                .min(Comparator.naturalOrder()).map(this::response).orElseGet(this::unavailable);
+                .min(Comparator.naturalOrder())
+                .map(this::toRecommendationResult)
+                .orElseGet(this::noAvailableQuestionResult);
     }
 
     private Stream<RecommendationCandidate> candidates(Question question, Map<Long, KnowledgeState> statesByConceptId,
@@ -51,14 +53,14 @@ public class DefaultRecommendationService implements RecommendationService {
                 lastAnswered.get(question.getId())));
     }
 
-    private RecommendationResult response(RecommendationCandidate candidate) {
+    private RecommendationResult toRecommendationResult(RecommendationCandidate candidate) {
         return new RecommendationResult(candidate.question().getId(), candidate.question().getContent(),
                 candidate.concept().getId(), candidate.concept().getName(),
                 candidate.isUnassessed() ? Reason.UNASSESSED_CONCEPT : Reason.LOW_MASTERY,
                 candidate.isUnassessed() ? "아직 평가하지 않은 개념을 확인해 보세요." : "숙련도가 낮은 개념부터 다시 연습해 보세요.");
     }
 
-    private RecommendationResult unavailable() {
+    private RecommendationResult noAvailableQuestionResult() {
         return new RecommendationResult(null, null, null, null, Reason.NO_AVAILABLE_QUESTION,
                 "현재 학습할 수 있는 공개 문제가 없습니다.");
     }

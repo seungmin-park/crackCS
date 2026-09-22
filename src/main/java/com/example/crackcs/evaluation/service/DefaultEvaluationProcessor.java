@@ -61,65 +61,65 @@ public class DefaultEvaluationProcessor implements EvaluationProcessor {
         if (claimed.isEmpty()) {
             return;
         }
-        ClaimedEvaluationWork work = claimed.orElseThrow();
-        applyAttempt(work, evaluationAttemptExecutor.execute(work));
+        ClaimedEvaluationWork claimedWork = claimed.orElseThrow();
+        applyAttemptOutcome(claimedWork, evaluationAttemptExecutor.execute(claimedWork));
     }
 
-    private void applyAttempt(ClaimedEvaluationWork work, EvaluationAttempt attempt) {
-        switch (attempt) {
-            case EvaluationAttempt.Completed completed -> complete(work, completed);
-            case EvaluationAttempt.ReviewRequired review -> applyReview(work, review.reason());
-            case EvaluationAttempt.RetryRequired retry -> applyRetry(work, retry.reason());
+    private void applyAttemptOutcome(ClaimedEvaluationWork claimedWork, EvaluationAttemptOutcome outcome) {
+        switch (outcome) {
+            case EvaluationAttemptOutcome.Completed completed -> complete(claimedWork, completed);
+            case EvaluationAttemptOutcome.ReviewRequired review -> applyReview(claimedWork, review.reason());
+            case EvaluationAttemptOutcome.RetryRequired retry -> applyRetry(claimedWork, retry.reason());
         }
     }
 
-    private void applyReview(ClaimedEvaluationWork work, String reason) {
-        if (requireReviewIfOwned(work.evaluationId(), reason)) {
-            logFailure(work, reason);
+    private void applyReview(ClaimedEvaluationWork claimedWork, String reason) {
+        if (requireReviewIfOwned(claimedWork.evaluationId(), reason)) {
+            logFailure(claimedWork, reason);
         }
     }
 
-    private void applyRetry(ClaimedEvaluationWork work, String reason) {
-        if (retryOrFail(work.evaluationId(), work.attemptCount(), reason)) {
-            logFailure(work, reason);
+    private void applyRetry(ClaimedEvaluationWork claimedWork, String reason) {
+        if (retryOrFail(claimedWork.evaluationId(), claimedWork.attemptCount(), reason)) {
+            logFailure(claimedWork, reason);
         }
     }
 
-    private void complete(ClaimedEvaluationWork work, EvaluationAttempt.Completed completed) {
+    private void complete(ClaimedEvaluationWork claimedWork, EvaluationAttemptOutcome.Completed completed) {
         try {
             // A storage conflict retries completion using this same provider result in a fresh transaction.
             AtomicBoolean completionApplied = new AtomicBoolean();
             evaluationCompletionTransaction.execute(() -> completionApplied.set(
-                    completeIfOwned(work.evaluationId(), completed.result(), completed.evidenceChunkIds())));
+                    completeIfOwned(claimedWork.evaluationId(), completed.evaluationResult(), completed.evidenceChunkIds())));
             if (completionApplied.get()) {
                 evaluationOperationLogger.evaluationCompleted(
-                        work.evaluationId(),
-                        work.answerId(),
-                        work.memberId(),
-                        completed.result().modelName(),
-                        completed.result().evaluatorVersion()
+                        claimedWork.evaluationId(),
+                        claimedWork.answerId(),
+                        claimedWork.memberId(),
+                        completed.evaluationResult().modelName(),
+                        completed.evaluationResult().evaluatorVersion()
                 );
             }
         } catch (DataIntegrityViolationException permanentStorageFailure) {
-            if (failIfOwned(work.evaluationId(), "PERSISTENCE_ERROR")) {
-                logFailure(work, "PERSISTENCE_ERROR");
+            if (failIfOwned(claimedWork.evaluationId(), "PERSISTENCE_ERROR")) {
+                logFailure(claimedWork, "PERSISTENCE_ERROR");
             }
         } catch (ConcurrencyFailureException exhaustedConflict) {
-            if (retryOrFail(work.evaluationId(), work.attemptCount(), "PERSISTENCE_CONFLICT")) {
-                logFailure(work, "PERSISTENCE_CONFLICT");
+            if (retryOrFail(claimedWork.evaluationId(), claimedWork.attemptCount(), "PERSISTENCE_CONFLICT")) {
+                logFailure(claimedWork, "PERSISTENCE_CONFLICT");
             }
         } catch (IllegalArgumentException invalidResult) {
-            if (retryOrFail(work.evaluationId(), work.attemptCount(), "INVALID_RESULT")) {
-                logFailure(work, "INVALID_RESULT");
+            if (retryOrFail(claimedWork.evaluationId(), claimedWork.attemptCount(), "INVALID_RESULT")) {
+                logFailure(claimedWork, "INVALID_RESULT");
             }
         }
     }
 
-    private void logFailure(ClaimedEvaluationWork work, String failureCode) {
+    private void logFailure(ClaimedEvaluationWork claimedWork, String failureCode) {
         evaluationOperationLogger.evaluationFailed(
-                work.evaluationId(),
-                work.answerId(),
-                work.memberId(),
+                claimedWork.evaluationId(),
+                claimedWork.answerId(),
+                claimedWork.memberId(),
                 failureCode
         );
     }

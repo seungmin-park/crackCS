@@ -27,7 +27,7 @@ import com.example.crackcs.learning.answer.service.result.AnswerResult;
 import com.example.crackcs.learning.followup.adapter.StubFollowUpQuestionAdapter;
 import com.example.crackcs.learning.followup.domain.FollowUpGeneration;
 import com.example.crackcs.learning.followup.domain.FollowUpReason;
-import com.example.crackcs.learning.followup.domain.FollowUpResult;
+import com.example.crackcs.learning.followup.domain.FollowUpGenerationResult;
 import com.example.crackcs.learning.followup.domain.FollowUpStatus;
 import com.example.crackcs.learning.followup.port.FollowUpQuestionGenerator;
 import com.example.crackcs.learning.followup.port.FollowUpRequest;
@@ -312,7 +312,7 @@ class FollowUpQuestionServiceTest {
     void rejectsUnapprovedEvidence() {
         AnswerResult sourceAnswer = sourceAnswer();
         evaluate(sourceAnswer.answerId());
-        port.behavior = request -> new FollowUpResult("질문", "정답", request.conceptId(), List.of(Long.MAX_VALUE),
+        port.behavior = request -> new FollowUpGenerationResult("질문", "정답", request.conceptId(), List.of(Long.MAX_VALUE),
                 "test", "follow-up-v1", 0, 0, 0);
         followUpQuestionProcessor.process(sourceAnswer.answerId());
         FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow();
@@ -549,9 +549,9 @@ class FollowUpQuestionServiceTest {
     }
 
     static class ControlledPort implements FollowUpQuestionGenerator {
-        private Function<FollowUpRequest, FollowUpResult> behavior = new StubFollowUpQuestionAdapter()::generate;
+        private Function<FollowUpRequest, FollowUpGenerationResult> behavior = new StubFollowUpQuestionAdapter()::generate;
 
-        public FollowUpResult generate(FollowUpRequest request) {
+        public FollowUpGenerationResult generate(FollowUpRequest request) {
             return behavior.apply(request);
         }
 
