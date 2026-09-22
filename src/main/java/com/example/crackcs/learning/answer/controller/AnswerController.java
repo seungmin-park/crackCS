@@ -6,6 +6,7 @@ import com.example.crackcs.learning.answer.controller.request.AnswerIdRequest;
 import com.example.crackcs.learning.answer.controller.request.AnswerQuestionIdRequest;
 import com.example.crackcs.learning.answer.controller.request.AnswerSearchRequest;
 import com.example.crackcs.learning.answer.controller.request.AnswerSubmitRequest;
+import com.example.crackcs.learning.answer.controller.request.IdempotencyKeyHeader;
 import com.example.crackcs.learning.answer.controller.response.AnswerResponse;
 import com.example.crackcs.learning.answer.controller.response.EvaluationResponse;
 import com.example.crackcs.learning.answer.service.AnswerService;
@@ -25,9 +26,10 @@ public class AnswerController {
     public AnswerResponse submit(@AuthenticationPrincipal AuthenticatedMember member,
                                  @Valid @ModelAttribute AnswerQuestionIdRequest path,
                                  @Valid @RequestBody AnswerSubmitRequest request,
-                                 @RequestHeader("Idempotency-Key") String idempotencyKey) {
+                                 @RequestHeader("Idempotency-Key") String idempotencyKeyHeader) {
+        IdempotencyKeyHeader idempotencyKey = IdempotencyKeyHeader.from(idempotencyKeyHeader);
         return AnswerResponse.from(
-                answerService.submit(member.memberId(), path.questionId(), request.validatedIdempotencyKey(idempotencyKey),
+                answerService.submit(member.memberId(), path.questionId(), idempotencyKey.value(),
                         request.content()));
     }
 

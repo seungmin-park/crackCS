@@ -221,23 +221,41 @@
 
 ### RED
 
-- [ ] body DTO 없이도 헤더 형식 검증 계약을 보여주는 최소 테스트 작성
-- [ ] 잘못된 UUID, 대문자 UUID, 누락 헤더 실패 테스트 작성
-- [ ] 기존 `AnswerSubmitRequest`가 외부 header를 검증하지 않아야 한다는 구조 확인
-- [ ] 테스트가 누락된 책임 때문에 실패하는지 확인
+- [x] body DTO 없이도 헤더 형식 검증 계약을 보여주는 최소 테스트 작성
+- [x] 잘못된 UUID, 대문자 UUID, 누락 헤더 실패 테스트 작성
+- [x] 기존 `AnswerSubmitRequest`가 외부 header를 검증하지 않아야 한다는 구조 확인
+- [x] 테스트가 누락된 책임 때문에 실패하는지 확인
 
 ### GREEN
 
-- [ ] `AnswerSubmitRequest.validatedIdempotencyKey(String)` 제거
-- [ ] Idempotency-Key 형식·정규화를 소유할 값 객체 또는 HTTP 경계 validator 추가
-- [ ] `AnswerController`가 body와 header를 독립적으로 검증해 Service에 전달
-- [ ] 최소 구현으로 관련 Controller 테스트 통과
+- [x] `AnswerSubmitRequest.validatedIdempotencyKey(String)` 제거
+- [x] Idempotency-Key 형식·정규화를 소유할 값 객체 또는 HTTP 경계 validator 추가
+- [x] `AnswerController`가 body와 header를 독립적으로 검증해 Service에 전달
+- [x] 최소 구현으로 관련 Controller 테스트 통과
 
 ### REFACTOR
 
-- [ ] 값 객체 이름과 패키지가 HTTP 전용인지 도메인 공용인지 책임에 맞게 조정
-- [ ] Controller에 정규식·오류 메시지가 다시 분산되지 않았는지 확인
-- [ ] 관련 테스트 재실행
+- [x] 값 객체 이름과 패키지가 HTTP 전용인지 도메인 공용인지 책임에 맞게 조정
+- [x] Controller에 정규식·오류 메시지가 다시 분산되지 않았는지 확인
+- [x] 관련 테스트 재실행
+
+결정 결과(2026-09-22):
+
+- `controller.request.IdempotencyKeyHeader` 추가: HTTP 헤더의 소문자 canonical UUID 계약 소유
+- `AnswerSubmitRequest`: body의 `content` validation만 소유
+- `AnswerController`: header 값 객체와 body DTO를 독립적으로 검증한 뒤 Service에 문자열 전달
+- `Answer`: HTTP 경계를 우회한 생성도 막도록 기존 canonical UUID 불변식 유지
+- 누락 헤더: 기존 `MissingRequestHeaderException` 공통 처리 유지
+- Controller·DTO의 정규식과 헤더 오류 메시지 제거
+
+검증 결과(2026-09-22):
+
+- RED: `IdempotencyKeyHeader`가 없어 테스트 컴파일 오류 4개 확인
+- `IdempotencyKeyHeaderTest`: 3개 성공, 실패 0개
+- `AnswerControllerTest`: 23개 성공, 실패 0개
+- 답변 패키지 테스트: 52개 성공, 실패 0개
+- `./gradlew test --rerun-tasks --console=plain`: 446개 성공, 실패 0개
+- `./gradlew postgresTest --rerun-tasks --console=plain`: 37개 성공, 실패 0개
 
 ## 작업 5. Question·KnowledgeDocument 공개 버전 책임 정리
 

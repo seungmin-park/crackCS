@@ -235,6 +235,23 @@ class AnswerControllerTest {
     }
 
     @Test
+    @DisplayName("멱등성 키 헤더가 없으면 Service를 호출하지 않고 400을 반환한다")
+    void rejectsMissingIdempotencyKeyHeader() throws Exception {
+        mockMvc.perform(post("/api/questions/7/answers")
+                        .with(user(userPrincipal()))
+                        .with(csrf())
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of("content", "답변"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value("필수 요청 헤더가 누락되었습니다."))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("Idempotency-Key"))
+                .andExpect(jsonPath("$.fieldErrors[0].reason").value("필수 헤더입니다."));
+
+        verifyNoInteractions(answerService);
+    }
+
+    @Test
     @DisplayName("답변이 공백이면 Service를 호출하지 않고 400을 반환한다")
     void rejectsBlankContent() throws Exception {
         assertInvalidSubmission(Map.of("idempotencyKey", IDEMPOTENCY_KEY, "content", "   "), "content");
