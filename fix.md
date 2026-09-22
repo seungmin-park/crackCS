@@ -460,28 +460,61 @@ DefaultKnowledgeChunkService
 
 ### RED
 
-- [ ] 성공 완료 시 평가 결과와 지식 상태가 함께 반영되는 테스트 유지
-- [ ] 무결성 오류가 영구 실패로 바뀌는 테스트 확인
-- [ ] 동시성 충돌이 재시도 또는 최종 실패로 바뀌는 테스트 확인
-- [ ] invalid result가 재시도 정책을 따르는 테스트 확인
-- [ ] lease 소유자가 아니면 적용하지 않는 테스트 확인
+- [x] 성공 완료 시 평가 결과와 지식 상태가 함께 반영되는 테스트 유지
+- [x] 무결성 오류가 영구 실패로 바뀌는 테스트 확인
+- [x] 동시성 충돌이 재시도 또는 최종 실패로 바뀌는 테스트 확인
+- [x] invalid result가 재시도 정책을 따르는 테스트 확인
+- [x] lease 소유자가 아니면 적용하지 않는 테스트 확인
 
 ### 책임 분리
 
-- [ ] `DefaultEvaluationProcessor.complete`가 수행하는 성공·예외·상태 전이·로그 작업 분해
-- [ ] `complete`보다 실제 의도가 드러나는 이름으로 변경
-- [ ] `EvaluationCompletionTransaction`의 기존 책임과 새 책임 경계 확정
-- [ ] 필요 시 `EvaluationCompletionCoordinator` 추출
-- [ ] 필요 시 실패 코드와 retry/fail 결정을 담당하는 정책 추출
-- [ ] Processor는 선점 → 시도 → 결과 적용 흐름만 조정
-- [ ] Evaluation 상태 불변식은 `Evaluation`이 계속 소유
+- [x] `DefaultEvaluationProcessor.complete`가 수행하는 성공·예외·상태 전이·로그 작업 분해
+- [x] `complete`보다 실제 의도가 드러나는 이름으로 변경
+- [x] `EvaluationCompletionTransaction`의 기존 책임과 새 책임 경계 확정
+- [x] 필요 시 `EvaluationCompletionCoordinator` 추출
+- [x] 필요 시 실패 코드와 retry/fail 결정을 담당하는 정책 추출
+- [x] Processor는 선점 → 시도 → 결과 적용 흐름만 조정
+- [x] Evaluation 상태 불변식은 `Evaluation`이 계속 소유
 
 ### 검증
 
-- [ ] 평가 관련 단위 테스트
-- [ ] 평가 Service 통합 테스트
-- [ ] 지식 상태 원자성 테스트
-- [ ] worker scheduling 테스트
+- [x] 평가 관련 단위 테스트
+- [x] 평가 Service 통합 테스트
+- [x] 지식 상태 원자성 테스트
+- [x] worker scheduling 테스트
+
+결정 결과(2026-09-22):
+
+- `EvaluationOutcomeCoordinator` 추출: 완료·검토·재시도 결과를 lease 소유자에게만 적용하고 결과 로그 기록
+- `DefaultEvaluationProcessor`: 로컬 중복 실행 방지 → 선점 → 외부 평가 시도 → 결과 적용 위임만 조정
+- `EvaluationCompletionTransaction`: 새 트랜잭션과 학습 상태 저장 충돌 재시도만 소유
+- `Evaluation`: 완료·검토·재시도·실패 상태 전이와 시도 횟수 불변식 계속 소유
+- `complete` 제거, 결과 종류를 드러내는 `applyCompleted`로 변경
+- worker ID: 선점 주체인 Processor가 생성하고 결과 적용 시 명시적으로 전달
+- 별도 실패 정책 미추출: 세 저장 예외의 코드·처리가 완료 적용 흐름 한 곳에서만 사용되며 아직 독립 변경 축이나 공유 요구 없음
+
+```text
+DefaultEvaluationProcessor
+        선점 → 평가 시도 → 결과 적용 위임
+                              ↓
+                EvaluationOutcomeCoordinator
+                ├─ lease 소유권 확인
+                ├─ 완료·검토·재시도 적용
+                ├─ 저장 예외 분류
+                └─ 성공·실패 로그
+                     ↓             ↓
+EvaluationCompletionTransaction  Evaluation
+새 트랜잭션·충돌 재시도          상태 불변식·전이
+```
+
+검증 결과(2026-09-22):
+
+- 기존 공개 동작을 먼저 실행해 책임 이동 전 기준선 GREEN 확인
+- `EvaluationTest`, `EvaluationCompletionTransactionTest`, `KnowledgeCompletionTest`, `KnowledgeCompletionFailureTest`, `WorkerSchedulingTest`: 31개 성공, 실패 0개
+- 성공 결과와 지식 상태의 같은 트랜잭션 반영, 영구 무결성 오류, 저장 충돌, invalid result, lease 상실 계약 유지
+- 새 내부 객체의 존재가 아니라 `EvaluationProcessor.process`에서 관찰되는 상태·로그를 검증
+- `./gradlew test postgresTest --rerun-tasks --console=plain`: 기본 452개, PostgreSQL 37개 성공, 실패·오류·건너뜀 0개
+- 기준 데이터 검증: 14개 검사 그룹 PASS
 
 ## 작업 10. Follow-up 선점·외부 실행·완료 책임 분리
 
