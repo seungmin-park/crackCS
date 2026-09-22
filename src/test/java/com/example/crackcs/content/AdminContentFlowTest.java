@@ -112,33 +112,37 @@ class AdminContentFlowTest {
     void preservesDocumentVersionThroughApi() throws Exception {
         AuthenticatedMember admin = savePrincipal(MemberRole.ADMIN, "admin-version");
         long topicId = createTopic(admin, "JAVA", "Java");
-        long firstId = createDocument(admin, topicId, "Java 문서", "첫 버전");
-        mockMvc.perform(post("/api/admin/knowledge-documents/{id}/review", firstId)
+        long publishedDocumentId = createDocument(admin, topicId, "Java 문서", "첫 버전");
+        mockMvc.perform(post("/api/admin/knowledge-documents/{id}/review", publishedDocumentId)
                 .with(user(admin)).with(csrf())).andExpect(status().isOk());
-        mockMvc.perform(post("/api/admin/knowledge-documents/{id}/publish", firstId)
+        mockMvc.perform(post("/api/admin/knowledge-documents/{id}/publish", publishedDocumentId)
                 .with(user(admin)).with(csrf())).andExpect(status().isOk());
 
-        Map<String, Object> nextVersion = documentRequest(topicId, "Java 문서", "둘째 버전");
-        MvcResult result = mockMvc.perform(post("/api/admin/knowledge-documents/{id}/versions", firstId)
+        Map<String, Object> nextVersionRequest = documentRequest(topicId, "Java 문서", "둘째 버전");
+        MvcResult nextVersionResponse = mockMvc.perform(
+                        post("/api/admin/knowledge-documents/{id}/versions", publishedDocumentId)
                         .with(user(admin)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(nextVersion)))
+                        .content(objectMapper.writeValueAsString(nextVersionRequest)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.documentVersion").value(2))
                 .andExpect(jsonPath("$.status").value("DRAFT"))
                 .andReturn();
-        long secondId = body(result).get("id").asLong();
+        long nextDocumentVersionId = responseBody(nextVersionResponse).get("id").asLong();
 
-        mockMvc.perform(post("/api/admin/knowledge-documents/{id}/review", secondId)
+        mockMvc.perform(post("/api/admin/knowledge-documents/{id}/review", nextDocumentVersionId)
                 .with(user(admin)).with(csrf())).andExpect(status().isOk());
-        mockMvc.perform(post("/api/admin/knowledge-documents/{id}/publish", secondId)
+        mockMvc.perform(post("/api/admin/knowledge-documents/{id}/publish", nextDocumentVersionId)
                         .with(user(admin)).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PUBLISHED"));
 
-        assertThat(knowledgeDocumentRepository.findById(firstId).orElseThrow().getContent()).isEqualTo("첫 버전");
-        assertThat(knowledgeDocumentRepository.findById(firstId).orElseThrow().getStatus().name()).isEqualTo("RETIRED");
-        assertThat(knowledgeDocumentRepository.findById(secondId).orElseThrow().getContent()).isEqualTo("둘째 버전");
+        assertThat(knowledgeDocumentRepository.findById(publishedDocumentId).orElseThrow().getContent())
+                .isEqualTo("첫 버전");
+        assertThat(knowledgeDocumentRepository.findById(publishedDocumentId).orElseThrow().getStatus().name())
+                .isEqualTo("RETIRED");
+        assertThat(knowledgeDocumentRepository.findById(nextDocumentVersionId).orElseThrow().getContent())
+                .isEqualTo("둘째 버전");
     }
 
     @Test
@@ -147,8 +151,8 @@ class AdminContentFlowTest {
         AuthenticatedMember admin = savePrincipal(MemberRole.ADMIN, "admin-question-version");
         long topicId = createTopic(admin, "NETWORK_VERSION", "네트워크 버전");
         long conceptId = createConcept(admin, topicId, "TCP_VERSION", "TCP 버전");
-        long firstId = createQuestion(admin, topicId);
-        mockMvc.perform(put("/api/admin/questions/{id}/concepts", firstId)
+        long publishedQuestionId = createQuestion(admin, topicId);
+        mockMvc.perform(put("/api/admin/questions/{id}/concepts", publishedQuestionId)
                         .with(user(admin)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
@@ -159,12 +163,13 @@ class AdminContentFlowTest {
                                 ))
                         ))))
                 .andExpect(status().isOk());
-        mockMvc.perform(post("/api/admin/questions/{id}/review", firstId)
+        mockMvc.perform(post("/api/admin/questions/{id}/review", publishedQuestionId)
                 .with(user(admin)).with(csrf())).andExpect(status().isOk());
-        mockMvc.perform(post("/api/admin/questions/{id}/publish", firstId)
+        mockMvc.perform(post("/api/admin/questions/{id}/publish", publishedQuestionId)
                 .with(user(admin)).with(csrf())).andExpect(status().isOk());
 
-        MvcResult result = mockMvc.perform(post("/api/admin/questions/{id}/versions", firstId)
+        MvcResult nextVersionResponse = mockMvc.perform(
+                        post("/api/admin/questions/{id}/versions", publishedQuestionId)
                         .with(user(admin)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
@@ -177,22 +182,22 @@ class AdminContentFlowTest {
                 .andExpect(jsonPath("$.status").value("DRAFT"))
                 .andExpect(jsonPath("$.concepts[0].conceptId").value(conceptId))
                 .andReturn();
-        long secondId = body(result).get("id").asLong();
+        long nextQuestionVersionId = responseBody(nextVersionResponse).get("id").asLong();
 
-        mockMvc.perform(post("/api/admin/questions/{id}/review", secondId)
+        mockMvc.perform(post("/api/admin/questions/{id}/review", nextQuestionVersionId)
                 .with(user(admin)).with(csrf())).andExpect(status().isOk());
-        mockMvc.perform(post("/api/admin/questions/{id}/publish", secondId)
+        mockMvc.perform(post("/api/admin/questions/{id}/publish", nextQuestionVersionId)
                         .with(user(admin)).with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PUBLISHED"));
 
-        assertThat(questionRepository.findById(firstId).orElseThrow().getStatus().name())
+        assertThat(questionRepository.findById(publishedQuestionId).orElseThrow().getStatus().name())
                 .isEqualTo("RETIRED");
-        assertThat(questionRepository.findById(secondId).orElseThrow().getContent())
+        assertThat(questionRepository.findById(nextQuestionVersionId).orElseThrow().getContent())
                 .isEqualTo("TCP 신뢰성의 다음 버전 질문");
-        mockMvc.perform(get("/api/questions/{id}", firstId).with(user(admin)))
+        mockMvc.perform(get("/api/questions/{id}", publishedQuestionId).with(user(admin)))
                 .andExpect(status().isNotFound());
-        mockMvc.perform(get("/api/questions/{id}", secondId).with(user(admin)))
+        mockMvc.perform(get("/api/questions/{id}", nextQuestionVersionId).with(user(admin)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("TCP 신뢰성의 다음 버전 질문"));
     }
@@ -216,17 +221,17 @@ class AdminContentFlowTest {
     }
 
     private long createTopic(AuthenticatedMember admin, String code, String name) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/admin/topics")
+        MvcResult createTopicResponse = mockMvc.perform(post("/api/admin/topics")
                         .with(user(admin)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of("code", code, "name", name))))
                 .andExpect(status().isCreated())
                 .andReturn();
-        return body(result).get("id").asLong();
+        return responseBody(createTopicResponse).get("id").asLong();
     }
 
     private long createConcept(AuthenticatedMember admin, long topicId, String code, String name) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/admin/concepts")
+        MvcResult createConceptResponse = mockMvc.perform(post("/api/admin/concepts")
                         .with(user(admin)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
@@ -234,18 +239,18 @@ class AdminContentFlowTest {
                         ))))
                 .andExpect(status().isCreated())
                 .andReturn();
-        return body(result).get("id").asLong();
+        return responseBody(createConceptResponse).get("id").asLong();
     }
 
     private long createDocument(AuthenticatedMember admin, long topicId, String title, String content)
             throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/admin/knowledge-documents")
+        MvcResult createDocumentResponse = mockMvc.perform(post("/api/admin/knowledge-documents")
                         .with(user(admin)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(documentRequest(topicId, title, content))))
                 .andExpect(status().isCreated())
                 .andReturn();
-        return body(result).get("id").asLong();
+        return responseBody(createDocumentResponse).get("id").asLong();
     }
 
     private Map<String, Object> documentRequest(long topicId, String title, String content) {
@@ -261,7 +266,7 @@ class AdminContentFlowTest {
     }
 
     private long createQuestion(AuthenticatedMember admin, long topicId) throws Exception {
-        MvcResult result = mockMvc.perform(post("/api/admin/questions")
+        MvcResult createQuestionResponse = mockMvc.perform(post("/api/admin/questions")
                         .with(user(admin)).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(Map.of(
@@ -272,20 +277,20 @@ class AdminContentFlowTest {
                         ))))
                 .andExpect(status().isCreated())
                 .andReturn();
-        return body(result).get("id").asLong();
+        return responseBody(createQuestionResponse).get("id").asLong();
     }
 
     private AuthenticatedMember savePrincipal(MemberRole role, String loginPrefix) {
-        Member member = memberRepository.save(Member.builder().nickname(loginPrefix).role(role).build());
-        AuthAccount account = authAccountRepository.save(AuthAccount.builder()
-                .member(member)
+        Member principalMember = memberRepository.save(Member.builder().nickname(loginPrefix).role(role).build());
+        AuthAccount principalAccount = authAccountRepository.save(AuthAccount.builder()
+                .member(principalMember)
                 .loginId(loginPrefix + "@example.com")
                 .passwordHash("{noop}password")
                 .build());
-        return AuthenticatedMember.from(account);
+        return AuthenticatedMember.from(principalAccount);
     }
 
-    private JsonNode body(MvcResult result) throws Exception {
-        return objectMapper.readTree(result.getResponse().getContentAsString());
+    private JsonNode responseBody(MvcResult mvcResult) throws Exception {
+        return objectMapper.readTree(mvcResult.getResponse().getContentAsString());
     }
 }

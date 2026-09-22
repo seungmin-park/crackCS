@@ -107,10 +107,10 @@ class KnowledgeStateTest {
     @DisplayName("회원과 개념은 모두 필수다")
     void rejectsInvalidIdentity() {
         assertThatIllegalArgumentException().isThrownBy(() -> KnowledgeState.builder().build());
-        assertThatIllegalArgumentException().isThrownBy(() -> KnowledgeState.builder().member(member()).build());
+        assertThatIllegalArgumentException().isThrownBy(() -> KnowledgeState.builder().member(learner()).build());
     }
 
-    private Member member() {
+    private Member learner() {
         return Member.builder().nickname("회원").build();
     }
 
@@ -120,6 +120,6 @@ class KnowledgeStateTest {
     }
 
     private KnowledgeState state() {
-        return KnowledgeState.builder().member(member()).concept(concept()).build();
+        return KnowledgeState.builder().member(learner()).concept(concept()).build();
     }
 }

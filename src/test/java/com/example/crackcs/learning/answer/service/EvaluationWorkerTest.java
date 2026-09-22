@@ -109,10 +109,10 @@ class EvaluationWorkerTest {
     @Test
     @DisplayName("별도 알림 없이 저장된 평가 대기를 찾아 자동으로 평가를 확정한다")
     void discoversDurablePendingWork() throws Exception {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
         AnswerResult response = answerService.submit(
-                member.getId(),
+                learner.getId(),
                 question.getId(),
                 UUID.randomUUID().toString(),
                 "답변"
@@ -120,7 +120,7 @@ class EvaluationWorkerTest {
 
         awaitEvaluation(response.answerId());
 
-        assertThat(answerService.findEvaluation(member.getId(), response.answerId()).concepts()).hasSize(1);
+        assertThat(answerService.findEvaluation(learner.getId(), response.answerId()).concepts()).hasSize(1);
         assertThat(port.calledOutsideTransaction).isTrue();
     }
 
@@ -147,7 +147,7 @@ class EvaluationWorkerTest {
         ));
         question.review(admin);
         question.publish();
-        Question saved = questionRepository.save(question);
+        Question savedQuestion = questionRepository.save(question);
         KnowledgeDocument document = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
                 .topic(topic).createdByMember(admin).title("스레드 공개 근거")
                 .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
@@ -157,7 +157,7 @@ class EvaluationWorkerTest {
         document.publish();
         knowledgeDocumentRepository.save(document);
         knowledgeChunkService.generateChunks(document.getId());
-        return saved;
+        return savedQuestion;
     }
 
     @TestConfiguration

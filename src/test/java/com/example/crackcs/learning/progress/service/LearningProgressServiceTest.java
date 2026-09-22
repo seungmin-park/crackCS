@@ -88,24 +88,24 @@ class LearningProgressServiceTest {
     @Test
     @DisplayName("진도는 회원의 전체 풀이 수와 최근 7일 수 및 최신 다섯 답변의 현재 평가 상태를 반환한다")
     void returnsRecentProgressWithCurrentEvaluationStatus() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long old = completed(member, question, concept, chunk, Verdict.INCORRECT);
+        Long old = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.INCORRECT);
         // submittedAt은 생성 시 확정되는 불변 값이므로 과거 풀이 이력의 시간 경계만 SQL로 준비한다.
         jdbcTemplate.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(8),
                 evaluationRepository.findById(old).orElseThrow().getAnswer().getId());
         for (int index = 0; index < 4; index++) {
-            pending(member, question);
+            savePendingEvaluation(learner, question);
         }
-        Long latest = completed(member, question, concept, chunk, Verdict.CORRECT);
+        Long latest = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT);
         Member other = memberRepository.save(Member.builder().nickname("다른 학습자").build());
-        pending(other, question);
+        savePendingEvaluation(other, question);
 
-        LearningProgressResult progress = learningProgressService.progress(member.getId());
+        LearningProgressResult progress = learningProgressService.progress(learner.getId());
 
         assertThat(progress.totalAnswers()).isEqualTo(6);
         assertThat(progress.recentAnswerCount()).isEqualTo(5);
@@ -146,27 +146,27 @@ class LearningProgressServiceTest {
         return questionRepository.save(question);
     }
 
-    private Evaluation pending(Member member, Question question) {
-        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
+    private Evaluation savePendingEvaluation(Member learner, Question question) {
+        Answer answer = answerRepository.save(Answer.builder().member(learner).question(question)
                 .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
-    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
-        Long id = pending(member, question).getId();
-        complete(id, concept, chunk, verdict);
+    private Long saveCompletedEvaluation(Member learner, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = savePendingEvaluation(learner, question).getId();
+        completeEvaluation(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private void completeEvaluation(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+            evaluation.completeWithEvidence(evaluationResult(concept, chunk, verdict),
                     List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private EvaluationResult evaluationResult(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
                 List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
                 List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);

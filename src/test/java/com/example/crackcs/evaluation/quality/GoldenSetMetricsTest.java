@@ -22,54 +22,54 @@ class GoldenSetMetricsTest {
                 observation(Verdict.INCORRECT, Verdict.CORRECT)
         );
 
-        GoldenSetMetrics.Result result = GoldenSetMetrics.calculate(observations);
+        GoldenSetMetrics.Result metrics = GoldenSetMetrics.calculate(observations);
 
-        assertThat(result.detailedAgreement()).isEqualTo(0.5);
-        assertThat(result.binaryAgreement()).isEqualTo(2.0 / 3);
-        assertThat(result.falseCorrectRate()).isEqualTo(0.5);
+        assertThat(metrics.detailedAgreement()).isEqualTo(0.5);
+        assertThat(metrics.binaryAgreement()).isEqualTo(2.0 / 3);
+        assertThat(metrics.falseCorrectRate()).isEqualTo(0.5);
     }
 
     @Test
     @DisplayName("검토 필요가 정답인 사례는 삼종 판정과 이진 정확도에서 제외한다")
     void excludesExpectedReviewFromClassification() {
-        GoldenSetMetrics.Result result = GoldenSetMetrics.calculate(List.of(
+        GoldenSetMetrics.Result metrics = GoldenSetMetrics.calculate(List.of(
                 observation(Verdict.CORRECT, Verdict.CORRECT),
                 observation(Verdict.INCORRECT, Verdict.CORRECT),
                 observation(Verdict.NEEDS_REVIEW, Verdict.NEEDS_REVIEW)));
 
-        assertThat(result.detailedAgreement()).isEqualTo(0.5);
-        assertThat(result.binaryAgreement()).isEqualTo(0.5);
-        assertThat(result.falseCorrectRate()).isEqualTo(1.0);
+        assertThat(metrics.detailedAgreement()).isEqualTo(0.5);
+        assertThat(metrics.binaryAgreement()).isEqualTo(0.5);
+        assertThat(metrics.falseCorrectRate()).isEqualTo(1.0);
     }
 
     @Test
     @DisplayName("채점 가능한 답변에 대한 검토 필요 응답은 정확한 판정으로 계산하지 않는다")
     void countsUnexpectedReviewAsMismatch() {
-        GoldenSetMetrics.Result result = GoldenSetMetrics.calculate(List.of(
+        GoldenSetMetrics.Result metrics = GoldenSetMetrics.calculate(List.of(
                 observation(Verdict.INCORRECT, Verdict.NEEDS_REVIEW)));
 
-        assertThat(result.detailedAgreement()).isEqualTo(0.0);
-        assertThat(result.binaryAgreement()).isEqualTo(0.0);
-        assertThat(result.falseCorrectRate()).isEqualTo(0.0);
+        assertThat(metrics.detailedAgreement()).isEqualTo(0.0);
+        assertThat(metrics.binaryAgreement()).isEqualTo(0.0);
+        assertThat(metrics.falseCorrectRate()).isEqualTo(0.0);
     }
 
     @Test
     @DisplayName("명백한 오답이 없으면 오답 정답 판정 비율을 계산하지 않는다")
     void doesNotReportZeroWithoutIncorrectSamples() {
-        GoldenSetMetrics.Result result = GoldenSetMetrics.calculate(List.of(
+        GoldenSetMetrics.Result metrics = GoldenSetMetrics.calculate(List.of(
                 observation(Verdict.PARTIALLY_CORRECT, Verdict.CORRECT)));
 
-        assertThat(result.falseCorrectRate()).isNull();
-        assertThat(result.binaryAgreement()).isNull();
+        assertThat(metrics.falseCorrectRate()).isNull();
+        assertThat(metrics.binaryAgreement()).isNull();
     }
 
     @Test
     @DisplayName("검토 필요 사례만 있으면 삼종 판정 일치율을 계산하지 않는다")
     void doesNotReportClassificationForReviewOnly() {
-        GoldenSetMetrics.Result result = GoldenSetMetrics.calculate(List.of(
+        GoldenSetMetrics.Result metrics = GoldenSetMetrics.calculate(List.of(
                 observation(Verdict.NEEDS_REVIEW, Verdict.NEEDS_REVIEW)));
 
-        assertThat(result.detailedAgreement()).isNull();
+        assertThat(metrics.detailedAgreement()).isNull();
     }
 
     @Test
@@ -85,10 +85,10 @@ class GoldenSetMetricsTest {
     @Test
     @DisplayName("부분 정답 응답을 이진 판정의 오답 적중으로 처리하지 않는다")
     void doesNotCollapsePartialIntoIncorrect() {
-        GoldenSetMetrics.Result result = GoldenSetMetrics.calculate(List.of(
+        GoldenSetMetrics.Result metrics = GoldenSetMetrics.calculate(List.of(
                 observation(Verdict.INCORRECT, Verdict.PARTIALLY_CORRECT)));
 
-        assertThat(result.binaryAgreement()).isEqualTo(0.0);
+        assertThat(metrics.binaryAgreement()).isEqualTo(0.0);
     }
 
     @Test

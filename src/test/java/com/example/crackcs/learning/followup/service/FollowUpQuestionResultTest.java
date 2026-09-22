@@ -46,10 +46,10 @@ class FollowUpQuestionResultTest {
     @Test
     @DisplayName("재시도 대기 결과는 직전 실패 사유를 유지할 수 있다")
     void preservesPreviousFailureDuringRetry() {
-        FollowUpQuestionResult result = FollowUpQuestionResult.withoutQuestion(
+        FollowUpQuestionResult followUpQuestionResult = FollowUpQuestionResult.withoutQuestion(
                 FollowUpStatus.PENDING, FollowUpReason.PROVIDER_TIMEOUT);
 
-        assertThat(result.reason()).isEqualTo(FollowUpReason.PROVIDER_TIMEOUT);
-        assertThat(result.question()).isNull();
+        assertThat(followUpQuestionResult.reason()).isEqualTo(FollowUpReason.PROVIDER_TIMEOUT);
+        assertThat(followUpQuestionResult.question()).isNull();
     }
 }

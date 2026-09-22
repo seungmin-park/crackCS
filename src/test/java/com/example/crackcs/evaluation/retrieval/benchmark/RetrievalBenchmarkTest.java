@@ -51,7 +51,7 @@ class RetrievalBenchmarkTest {
     @Autowired MemberRepository memberRepository;
     @Autowired DataSource dataSource;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final Path reference = Path.of(System.getProperty(
             "reference.directory", "docs/evaluation/reference-v1"));
     private final Path referenceData = reference.resolve("data");
@@ -67,143 +67,149 @@ class RetrievalBenchmarkTest {
     @Test
     @DisplayName("확정 자료를 실제 분할과 DB ID로 연결해 검색 기준선을 측정한다")
     void measuresFrozenReferenceWithProductionChunkingAndRetrieval() throws Exception {
-        JsonNode standard = mapper.readTree(reference.resolve("manifest.json").toFile());
+        JsonNode referenceManifest = objectMapper.readTree(reference.resolve("manifest.json").toFile());
         // Also protect direct IDE execution, which does not run Gradle's preflight task.
         for (String filename : List.of("questions.jsonl", "golden-set.jsonl", "knowledge-documents.jsonl",
                 "sources.json", "experiment-splits.json")) {
             String actualHash = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256")
                     .digest(Files.readAllBytes(referenceData.resolve(filename))));
             assertThat(actualHash).as("확정 이후 변경된 자료 %s", filename)
-                    .isEqualTo(standard.get("artifacts").get(filename).asText());
+                    .isEqualTo(referenceManifest.get("artifacts").get(filename).asText());
         }
-        List<JsonNode> questionRows = readRows("questions.jsonl");
+        List<JsonNode> referenceQuestions = readRows("questions.jsonl");
         Map<String, JsonNode> questionById = new LinkedHashMap<>();
         Map<String, Long> topicIds = new LinkedHashMap<>();
-        for (JsonNode question : questionRows) {
+        for (JsonNode question : referenceQuestions) {
             questionById.put(question.get("id").asText(), question);
             String topicKey = question.get("topicKey").asText();
             if (!topicIds.containsKey(topicKey)) {
-                Topic saved = topicRepository.save(Topic.builder().code(topicKey).name(topicKey).build());
-                topicIds.put(topicKey, saved.getId());
+                Topic savedTopic = topicRepository.save(Topic.builder().code(topicKey).name(topicKey).build());
+                topicIds.put(topicKey, savedTopic.getId());
             }
         }
         // This is test-only publication to exercise production filters, not human review of the source files.
-        Member admin = memberRepository.save(Member.builder().nickname("검색 실험 전용 관리자")
+        Member benchmarkAdmin = memberRepository.save(Member.builder().nickname("검색 실험 전용 관리자")
                 .role(MemberRole.ADMIN).build());
-        Map<String, Set<Long>> evidenceIds = new LinkedHashMap<>();
-        Map<String, Object> documentMappings = new LinkedHashMap<>();
+        Map<String, Set<Long>> chunkIdsByEvidenceId = new LinkedHashMap<>();
+        Map<String, Object> storedDocumentMappings = new LinkedHashMap<>();
         Set<String> chunkPolicies = new LinkedHashSet<>();
         for (JsonNode document : readRows("knowledge-documents.jsonl")) {
             String content = String.join("\n", texts(document.get("chunks"), "content"));
             Topic topic = topicRepository.findById(topicIds.get(document.get("topicKey").asText())).orElseThrow();
-            KnowledgeDocument saved = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
-                    .topic(topic).createdByMember(admin).title(document.get("title").asText())
+            KnowledgeDocument savedDocument = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
+                    .topic(topic).createdByMember(benchmarkAdmin).title(document.get("title").asText())
                     .sourceType(KnowledgeSourceType.INTERNAL_SUMMARY)
                     .technologyVersion(document.get("technologyVersion").asText())
                     .licenseNote("격리된 테스트 전용; 정답 기준의 독립 사람 검수나 운영 공개 아님")
                     .content(content).build());
-            saved.review(admin);
-            saved.publish();
-            knowledgeDocumentRepository.save(saved);
-            knowledgeChunkService.generateChunks(saved.getId());
-            List<KnowledgeChunk> stored = knowledgeChunkService.findByDocumentId(saved.getId());
-            List<ReferenceChunkMapping.StoredChunk> spans = stored.stream()
-                    .map(chunk -> new ReferenceChunkMapping.StoredChunk(saved.getId(), chunk.getId(),
+            savedDocument.review(benchmarkAdmin);
+            savedDocument.publish();
+            knowledgeDocumentRepository.save(savedDocument);
+            knowledgeChunkService.generateChunks(savedDocument.getId());
+            List<KnowledgeChunk> storedChunks = knowledgeChunkService.findByDocumentId(savedDocument.getId());
+            List<ReferenceChunkMapping.StoredChunk> storedChunkSpans = storedChunks.stream()
+                    .map(chunk -> new ReferenceChunkMapping.StoredChunk(savedDocument.getId(), chunk.getId(),
                             chunk.getStartOffset(), chunk.getEndOffset(), chunk.getContent())).toList();
-            List<ReferenceChunkMapping.Evidence> expected = new ArrayList<>();
+            List<ReferenceChunkMapping.Evidence> referenceEvidence = new ArrayList<>();
             int offset = 0;
             for (JsonNode evidence : document.get("chunks")) {
                 String body = evidence.get("content").asText();
-                expected.add(new ReferenceChunkMapping.Evidence(evidence.get("id").asText(),
+                referenceEvidence.add(new ReferenceChunkMapping.Evidence(evidence.get("id").asText(),
                         offset, offset + body.length(), body));
                 offset += body.length() + 1;
             }
-            evidenceIds.putAll(ReferenceChunkMapping.connect(saved.getId(), content, expected, spans));
-            documentMappings.put(document.get("id").asText(), Map.of(
-                    "documentId", saved.getId(), "checksum", saved.getChecksum(), "chunks", spans));
-            stored.forEach(chunk -> chunkPolicies.add(chunk.getChunkPolicyVersion()));
+            chunkIdsByEvidenceId.putAll(ReferenceChunkMapping.connect(
+                    savedDocument.getId(), content, referenceEvidence, storedChunkSpans));
+            storedDocumentMappings.put(document.get("id").asText(), Map.of(
+                    "documentId", savedDocument.getId(), "checksum", savedDocument.getChecksum(),
+                    "chunks", storedChunkSpans));
+            storedChunks.forEach(chunk -> chunkPolicies.add(chunk.getChunkPolicyVersion()));
         }
         assertThat(knowledgeDocumentRepository.count()).isEqualTo(60);
-        assertThat(evidenceIds).hasSize(120);
-        assertThat(evidenceIds.values()).allSatisfy(ids -> assertThat(ids).isNotEmpty());
+        assertThat(chunkIdsByEvidenceId).hasSize(120);
+        assertThat(chunkIdsByEvidenceId.values()).allSatisfy(ids -> assertThat(ids).isNotEmpty());
 
-        Map<String, String> splits = readSplits();
-        List<CaseResult> results = new ArrayList<>();
-        List<JsonNode> cases = readRows("golden-set.jsonl").stream()
+        Map<String, String> splitByQuestionId = readSplits();
+        List<CaseResult> caseResults = new ArrayList<>();
+        List<JsonNode> goldenCases = readRows("golden-set.jsonl").stream()
                 .filter(row -> !row.get("caseType").asText().equals("INSUFFICIENT_EVIDENCE")).toList();
-        assertThat(cases).hasSize(180);
+        assertThat(goldenCases).hasSize(180);
         for (int k : List.of(1, 3, 5)) {
-            for (JsonNode golden : cases) {
-                JsonNode question = questionById.get(golden.get("questionId").asText());
+            for (JsonNode goldenCase : goldenCases) {
+                JsonNode question = questionById.get(goldenCase.get("questionId").asText());
                 String topicKey = question.get("topicKey").asText();
-                RetrievalQuery query = new RetrievalQuery(topicIds.get(topicKey),
+                RetrievalQuery retrievalQuery = new RetrievalQuery(topicIds.get(topicKey),
                         texts(question.get("concepts"), "name"), question.get("content").asText(),
-                        question.get("referenceAnswer").asText(), golden.get("answer").asText());
-                Set<Long> relevant = new LinkedHashSet<>();
-                for (JsonNode key : golden.get("providedEvidenceIds")) {
-                    Set<Long> mapped = evidenceIds.get(key.asText());
-                    assertThat(mapped).as("알 수 없는 근거 %s", key.asText()).isNotNull();
-                    relevant.addAll(mapped);
+                        question.get("referenceAnswer").asText(), goldenCase.get("answer").asText());
+                Set<Long> relevantChunkIds = new LinkedHashSet<>();
+                for (JsonNode key : goldenCase.get("providedEvidenceIds")) {
+                    Set<Long> mappedChunkIds = chunkIdsByEvidenceId.get(key.asText());
+                    assertThat(mappedChunkIds).as("알 수 없는 근거 %s", key.asText()).isNotNull();
+                    relevantChunkIds.addAll(mappedChunkIds);
                 }
-                RetrievalResult found = knowledgeRetrievalService.retrieve(query, k);
-                List<Long> retrieved = found.chunks().stream().map(row -> row.chunk().getId()).toList();
-                assertThat(retrieved).doesNotHaveDuplicates().hasSizeLessThanOrEqualTo(k);
-                assertThat(found.chunks()).allSatisfy(row -> assertThat(row.chunk().getDocument().getTopicId())
+                RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(retrievalQuery, k);
+                List<Long> retrievedChunkIds = retrievalResult.chunks().stream()
+                        .map(row -> row.chunk().getId()).toList();
+                assertThat(retrievedChunkIds).doesNotHaveDuplicates().hasSizeLessThanOrEqualTo(k);
+                assertThat(retrievalResult.chunks()).allSatisfy(row -> assertThat(row.chunk().getDocument().getTopicId())
                         .isEqualTo(topicIds.get(topicKey)));
-                assertThat(found.insufficientEvidence()).isEqualTo(retrieved.isEmpty());
-                assertThat(knowledgeRetrievalService.retrieve(query, k).chunks().stream()
+                assertThat(retrievalResult.insufficientEvidence()).isEqualTo(retrievedChunkIds.isEmpty());
+                assertThat(knowledgeRetrievalService.retrieve(retrievalQuery, k).chunks().stream()
                         .map(row -> row.chunk().getId()).toList())
-                        .containsExactlyElementsOf(retrieved);
-                results.add(new CaseResult(golden.get("id").asText(), question.get("id").asText(),
-                        topicKey, splits.get(question.get("id").asText()), golden.get("caseType").asText(),
-                        k, relevant.stream().sorted().toList(), retrieved,
-                        RetrievalQualityMetrics.calculate(relevant, retrieved), found.conflictingEvidence()));
+                        .containsExactlyElementsOf(retrievedChunkIds);
+                caseResults.add(new CaseResult(goldenCase.get("id").asText(), question.get("id").asText(),
+                        topicKey, splitByQuestionId.get(question.get("id").asText()),
+                        goldenCase.get("caseType").asText(), k, relevantChunkIds.stream().sorted().toList(),
+                        retrievedChunkIds, RetrievalQualityMetrics.calculate(relevantChunkIds, retrievedChunkIds),
+                        retrievalResult.conflictingEvidence()));
             }
         }
-        assertThat(results).hasSize(540);
-        String database;
+        assertThat(caseResults).hasSize(540);
+        String databaseProductName;
         try (Connection connection = dataSource.getConnection()) {
-            database = connection.getMetaData().getDatabaseProductName();
+            databaseProductName = connection.getMetaData().getDatabaseProductName();
         }
-        assertThat(database).isEqualTo(System.getProperty("benchmark.database", "H2"));
-        Map<String, Object> report = new LinkedHashMap<>();
-        report.put("measuredAt", Instant.now().toString());
-        report.put("referenceVersion", standard.get("version").asText());
-        report.put("referenceArtifacts", standard.get("artifacts"));
-        report.put("database", database);
-        report.put("conceptInput", "questions.jsonl concepts.name (same field as production)");
-        report.put("chunkPolicies", chunkPolicies);
-        report.put("documents", knowledgeDocumentRepository.count());
-        report.put("referenceEvidenceSpans", evidenceIds.size());
-        report.put("persistedChunks", knowledgeChunkRepository.count());
-        report.put("aiCalls", 0);
-        report.put("independentBenchmark", false);
-        report.put("irrelevancePolicy", "not in mapped reference IDs; cross-question relevance not independently annotated");
-        report.put("summaries", summaries(results));
-        report.put("evidenceMapping", evidenceIds);
-        report.put("documentMapping", documentMappings);
-        report.put("cases", results);
-        Path output = Path.of(System.getProperty("benchmark.output", "build/reports/retrieval/h2"));
-        Files.createDirectories(output);
-        mapper.writerWithDefaultPrettyPrinter().writeValue(output.resolve("baseline.json").toFile(), report);
-        System.out.println("Retrieval measurement: " + mapper.writeValueAsString(report.get("summaries")));
+        assertThat(databaseProductName).isEqualTo(System.getProperty("benchmark.database", "H2"));
+        Map<String, Object> benchmarkReport = new LinkedHashMap<>();
+        benchmarkReport.put("measuredAt", Instant.now().toString());
+        benchmarkReport.put("referenceVersion", referenceManifest.get("version").asText());
+        benchmarkReport.put("referenceArtifacts", referenceManifest.get("artifacts"));
+        benchmarkReport.put("database", databaseProductName);
+        benchmarkReport.put("conceptInput", "questions.jsonl concepts.name (same field as production)");
+        benchmarkReport.put("chunkPolicies", chunkPolicies);
+        benchmarkReport.put("documents", knowledgeDocumentRepository.count());
+        benchmarkReport.put("referenceEvidenceSpans", chunkIdsByEvidenceId.size());
+        benchmarkReport.put("persistedChunks", knowledgeChunkRepository.count());
+        benchmarkReport.put("aiCalls", 0);
+        benchmarkReport.put("independentBenchmark", false);
+        benchmarkReport.put("irrelevancePolicy", "not in mapped reference IDs; cross-question relevance not independently annotated");
+        benchmarkReport.put("summaries", summaries(caseResults));
+        benchmarkReport.put("evidenceMapping", chunkIdsByEvidenceId);
+        benchmarkReport.put("documentMapping", storedDocumentMappings);
+        benchmarkReport.put("cases", caseResults);
+        Path benchmarkOutput = Path.of(System.getProperty("benchmark.output", "build/reports/retrieval/h2"));
+        Files.createDirectories(benchmarkOutput);
+        objectMapper.writerWithDefaultPrettyPrinter()
+                .writeValue(benchmarkOutput.resolve("baseline.json").toFile(), benchmarkReport);
+        System.out.println("Retrieval measurement: "
+                + objectMapper.writeValueAsString(benchmarkReport.get("summaries")));
     }
 
     private List<JsonNode> readRows(String filename) throws Exception {
         return Files.readAllLines(referenceData.resolve(filename)).stream().filter(line -> !line.isBlank())
-                .map(mapper::readTree).toList();
+                .map(objectMapper::readTree).toList();
     }
 
-    private List<String> texts(JsonNode rows, String field) {
-        List<String> result = new ArrayList<>();
-        for (JsonNode row : rows) {
-            result.add(row.get(field).asText());
+    private List<String> texts(JsonNode nodes, String field) {
+        List<String> texts = new ArrayList<>();
+        for (JsonNode node : nodes) {
+            texts.add(node.get(field).asText());
         }
-        return result;
+        return texts;
     }
 
     private Map<String, String> readSplits() {
-        JsonNode manifest = mapper.readTree(referenceData.resolve("experiment-splits.json").toFile());
+        JsonNode manifest = objectMapper.readTree(referenceData.resolve("experiment-splits.json").toFile());
         Map<String, String> splits = new LinkedHashMap<>();
         for (JsonNode group : manifest.get("groups")) {
             for (JsonNode id : group.get("questionIds")) {
@@ -213,16 +219,17 @@ class RetrievalBenchmarkTest {
         return splits;
     }
 
-    private List<Map<String, Object>> summaries(List<CaseResult> results) {
+    private List<Map<String, Object>> summaries(List<CaseResult> caseResults) {
         List<Map<String, Object>> summaries = new ArrayList<>();
         for (int k : List.of(1, 3, 5)) {
             for (String scope : List.of("all", "development", "evaluation-candidate", "CS", "JAVA", "SPRING", "JPA", "AX")) {
-                List<CaseResult> selected = results.stream().filter(row -> row.k() == k)
+                List<CaseResult> scopedCaseResults = caseResults.stream().filter(row -> row.k() == k)
                         .filter(row -> scope.equals("all") || scope.equals(row.split()) || scope.equals(row.topic())).toList();
-                RetrievalBenchmarkStatistics statistics = RetrievalBenchmarkStatistics.summarize(selected.stream()
+                RetrievalBenchmarkStatistics statistics = RetrievalBenchmarkStatistics.summarize(scopedCaseResults.stream()
                         .map(row -> new RetrievalBenchmarkStatistics.Observation(row.metrics(), row.retrievedIds().size())).toList());
                 summaries.add(Map.of("k", k, "scope", scope, "statistics", statistics,
-                        "conflictingEvidenceQueries", selected.stream().filter(CaseResult::conflictingEvidence).count()));
+                        "conflictingEvidenceQueries",
+                        scopedCaseResults.stream().filter(CaseResult::conflictingEvidence).count()));
             }
         }
         return summaries;

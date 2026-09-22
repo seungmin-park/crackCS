@@ -85,9 +85,9 @@ class AdminTaxonomyServiceTest {
 
         conceptService.update(concept.getId(), topic.getId(), "THREAD", "프로세스와 스레드", "변경 설명");
 
-        Concept found = conceptService.findById(concept.getId());
-        assertThat(found.getName()).isEqualTo("프로세스와 스레드");
-        assertThat(found.getDescription()).isEqualTo("변경 설명");
+        Concept updatedConcept = conceptService.findById(concept.getId());
+        assertThat(updatedConcept.getName()).isEqualTo("프로세스와 스레드");
+        assertThat(updatedConcept.getDescription()).isEqualTo("변경 설명");
     }
 
     @Test
@@ -98,7 +98,7 @@ class AdminTaxonomyServiceTest {
 
         conceptService.deactivate(concept.getId());
 
-        Concept found = conceptService.findById(concept.getId());
-        assertThat(found.isActive()).isFalse();
+        Concept deactivatedConcept = conceptService.findById(concept.getId());
+        assertThat(deactivatedConcept.isActive()).isFalse();
     }
 }

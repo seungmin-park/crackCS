@@ -110,7 +110,7 @@ class RecommendationServiceTest {
     @Test
     @DisplayName("문제에 활성 개념이 있어도 다른 연결 개념이 비활성이면 문제 전체를 추천에서 제외한다")
     void excludesQuestionWithMixedActiveAndInactiveConcepts() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
@@ -130,34 +130,34 @@ class RecommendationServiceTest {
         questionRepository.save(question);
         disabled.deactivate();
         conceptRepository.save(disabled);
-        assertThat(recommendationService.recommendation(member.getId()).reason()).isEqualTo(Reason.NO_AVAILABLE_QUESTION);
+        assertThat(recommendationService.recommendation(learner.getId()).reason()).isEqualTo(Reason.NO_AVAILABLE_QUESTION);
     }
 
     @Test
     @DisplayName("추천 후보 안에서는 미평가 개념을 숙련도가 낮은 개념보다 먼저 선택한다")
     void recommendsUnassessedBeforeLowMastery() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question originalQuestion = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
         completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(
-                completed(member, originalQuestion, concept, chunk, Verdict.INCORRECT)));
+                saveCompletedEvaluation(learner, originalQuestion, concept, chunk, Verdict.INCORRECT)));
         Concept unseen = concept(topic, "프로세스");
         Question question = question(admin, topic, unseen, "프로세스 문제");
 
-        RecommendationResult result = recommendationService.recommendation(member.getId());
+        RecommendationResult recommendationResult = recommendationService.recommendation(learner.getId());
 
-        assertThat(result.questionId()).isEqualTo(question.getId());
-        assertThat(result.conceptId()).isEqualTo(unseen.getId());
-        assertThat(result.reason()).isEqualTo(Reason.UNASSESSED_CONCEPT);
+        assertThat(recommendationResult.questionId()).isEqualTo(question.getId());
+        assertThat(recommendationResult.conceptId()).isEqualTo(unseen.getId());
+        assertThat(recommendationResult.reason()).isEqualTo(Reason.UNASSESSED_CONCEPT);
     }
 
     @Test
     @DisplayName("미평가 개념에 풀 수 있는 문제가 없으면 평가된 개념의 문제를 추천한다")
     void skipsUnassessedWithoutAvailableQuestion() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
@@ -165,71 +165,73 @@ class RecommendationServiceTest {
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
         concept(topic, "문제가 없는 개념");
         completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(
-                completed(member, question, concept, chunk, Verdict.INCORRECT)));
+                saveCompletedEvaluation(learner, question, concept, chunk, Verdict.INCORRECT)));
 
-        RecommendationResult result = recommendationService.recommendation(member.getId());
+        RecommendationResult recommendationResult = recommendationService.recommendation(learner.getId());
 
-        assertThat(result.questionId()).isEqualTo(question.getId());
-        assertThat(result.reason()).isEqualTo(Reason.LOW_MASTERY);
+        assertThat(recommendationResult.questionId()).isEqualTo(question.getId());
+        assertThat(recommendationResult.reason()).isEqualTo(Reason.LOW_MASTERY);
     }
 
     @Test
     @DisplayName("숙련도가 같으면 미풀이 문제 다음 오래전에 푼 문제와 문제 식별자 순으로 추천한다")
     void breaksTiesByLastAnswerThenQuestionId() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
-        Question first = question(admin, topic, concept, "스레드는 무엇인가요?");
+        Question firstAnsweredQuestion = question(admin, topic, concept, "스레드는 무엇인가요?");
         knowledgeChunk(topic, admin);
-        Question second = question(admin, topic, concept, "두 번째 문제");
-        Question third = question(admin, topic, concept, "세 번째 문제");
-        Evaluation firstAnswer = pending(member, first);
-        assertThat(recommendationService.recommendation(member.getId()).questionId()).isEqualTo(second.getId());
-        pending(member, second);
-        Evaluation thirdAnswer = pending(member, third);
+        Question unansweredQuestion = question(admin, topic, concept, "두 번째 문제");
+        Question oldestAnsweredQuestion = question(admin, topic, concept, "세 번째 문제");
+        Evaluation firstQuestionEvaluation = savePendingEvaluation(learner, firstAnsweredQuestion);
+        assertThat(recommendationService.recommendation(learner.getId()).questionId())
+                .isEqualTo(unansweredQuestion.getId());
+        savePendingEvaluation(learner, unansweredQuestion);
+        Evaluation oldestQuestionEvaluation = savePendingEvaluation(learner, oldestAnsweredQuestion);
         // submittedAt은 생성 시 확정되는 불변 값이므로 과거 풀이 이력의 시간 경계만 SQL로 준비한다.
         jdbcTemplate.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(2),
-                thirdAnswer.getAnswer().getId());
+                oldestQuestionEvaluation.getAnswer().getId());
         jdbcTemplate.update("update answer set submitted_at = ? where id = ?", LocalDateTime.now().minusDays(1),
-                firstAnswer.getAnswer().getId());
-        assertThat(recommendationService.recommendation(member.getId()).questionId()).isEqualTo(third.getId());
+                firstQuestionEvaluation.getAnswer().getId());
+        assertThat(recommendationService.recommendation(learner.getId()).questionId())
+                .isEqualTo(oldestAnsweredQuestion.getId());
     }
 
     @Test
     @DisplayName("문제에 연결된 개념 중 미평가와 개념 식별자 순으로 추천 이유를 선택한다")
     void choosesBestConceptWithinQuestion() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question originalQuestion = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
         completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(
-                completed(member, originalQuestion, concept, chunk, Verdict.CORRECT)));
-        Concept second = concept(topic, "두 번째 개념");
-        Concept third = concept(topic, "세 번째 개념");
+                saveCompletedEvaluation(learner, originalQuestion, concept, chunk, Verdict.CORRECT)));
+        Concept lowerIdUnassessedConcept = concept(topic, "두 번째 개념");
+        Concept higherIdUnassessedConcept = concept(topic, "세 번째 개념");
         // Published questions are immutable, so a new reviewed question owns this concept set.
         Question question = Question.builder().topic(topic).createdByMember(admin)
                 .difficulty(QuestionDifficulty.BASIC)
                 .content("여러 개념 문제").referenceAnswer("답").build();
         question.replaceConcepts(List.of(
                 new QuestionConceptAssignment(concept, new BigDecimal("0.34"), true),
-                new QuestionConceptAssignment(third, new BigDecimal("0.33"), true),
-                new QuestionConceptAssignment(second, new BigDecimal("0.33"), true)
+                new QuestionConceptAssignment(higherIdUnassessedConcept, new BigDecimal("0.33"), true),
+                new QuestionConceptAssignment(lowerIdUnassessedConcept, new BigDecimal("0.33"), true)
         ));
         question.review(admin);
         question.publish();
         questionRepository.save(question);
-        RecommendationResult result = recommendationService.recommendation(member.getId());
-        assertThat(result.questionId()).isEqualTo(question.getId());
-        assertThat(result.conceptId()).isEqualTo(second.getId());
+        RecommendationResult recommendationResult = recommendationService.recommendation(learner.getId());
+        assertThat(recommendationResult.questionId()).isEqualTo(question.getId());
+        assertThat(recommendationResult.conceptId()).isEqualTo(lowerIdUnassessedConcept.getId());
     }
 
     @Test
     @DisplayName("폐기 문제와 비활성 개념 또는 주제를 연결한 문제는 추천하지 않는다")
     void excludesUnavailableQuestions() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
@@ -245,13 +247,13 @@ class RecommendationServiceTest {
         question(admin, otherTopic, concept(otherTopic, "개념"), "비활성 주제 문제");
         otherTopic.deactivate();
         topicRepository.save(otherTopic);
-        RecommendationResult result = recommendationService.recommendation(member.getId());
-        assertThat(result.reason()).isEqualTo(Reason.NO_AVAILABLE_QUESTION);
-        assertThat(result.questionId()).isNull();
-        assertThat(result.title()).isNull();
-        assertThat(result.conceptId()).isNull();
-        assertThat(result.conceptName()).isNull();
-        assertThat(result.reasonText()).isNotBlank();
+        RecommendationResult recommendationResult = recommendationService.recommendation(learner.getId());
+        assertThat(recommendationResult.reason()).isEqualTo(Reason.NO_AVAILABLE_QUESTION);
+        assertThat(recommendationResult.questionId()).isNull();
+        assertThat(recommendationResult.title()).isNull();
+        assertThat(recommendationResult.conceptId()).isNull();
+        assertThat(recommendationResult.conceptName()).isNull();
+        assertThat(recommendationResult.reasonText()).isNotBlank();
     }
 
     private KnowledgeChunk knowledgeChunk(Topic topic, Member admin) {
@@ -281,27 +283,27 @@ class RecommendationServiceTest {
         return questionRepository.save(question);
     }
 
-    private Evaluation pending(Member member, Question question) {
-        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
+    private Evaluation savePendingEvaluation(Member learner, Question question) {
+        Answer answer = answerRepository.save(Answer.builder().member(learner).question(question)
                 .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
-    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
-        Long id = pending(member, question).getId();
-        complete(id, concept, chunk, verdict);
+    private Long saveCompletedEvaluation(Member learner, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = savePendingEvaluation(learner, question).getId();
+        completeEvaluation(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private void completeEvaluation(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+            evaluation.completeWithEvidence(evaluationResult(concept, chunk, verdict),
                     List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private EvaluationResult evaluationResult(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
                 List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
                 List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);

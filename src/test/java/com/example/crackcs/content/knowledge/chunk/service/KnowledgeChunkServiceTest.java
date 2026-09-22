@@ -56,9 +56,9 @@ class KnowledgeChunkServiceTest {
         document.publish();
         document = knowledgeDocumentRepository.save(document);
 
-        ChunkGenerationResult result = knowledgeChunkService.generateChunks(document.getId());
+        ChunkGenerationResult chunkGenerationResult = knowledgeChunkService.generateChunks(document.getId());
 
-        assertThat(result.reused()).isFalse();
+        assertThat(chunkGenerationResult.reused()).isFalse();
         assertThat(knowledgeChunkRepository.findAllByDocument_IdOrderBySequenceNo(document.getId()))
                 .extracting(KnowledgeChunk::getContent)
                 .containsExactly("프로세스 설명.", "스레드 설명.");
@@ -78,9 +78,9 @@ class KnowledgeChunkServiceTest {
         document = knowledgeDocumentRepository.save(document);
         knowledgeChunkService.generateChunks(document.getId());
 
-        ChunkGenerationResult second = knowledgeChunkService.generateChunks(document.getId());
+        ChunkGenerationResult reusedGeneration = knowledgeChunkService.generateChunks(document.getId());
 
-        assertThat(second.reused()).isTrue();
+        assertThat(reusedGeneration.reused()).isTrue();
         assertThat(knowledgeChunkRepository.count()).isEqualTo(1);
     }
 

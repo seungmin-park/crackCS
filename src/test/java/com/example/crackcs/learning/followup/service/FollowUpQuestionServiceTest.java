@@ -121,8 +121,8 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("일시적 완료 저장 충돌은 AI 재호출 없이 새 트랜잭션에서 복구한다")
     void retriesCompletionWithoutRegenerating() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
         AtomicInteger calls = new AtomicInteger();
         port.behavior = request -> {
             calls.incrementAndGet();
@@ -130,9 +130,9 @@ class FollowUpQuestionServiceTest {
         };
         completionFailures.failNextCompletions(1);
 
-        followUpQuestionProcessor.process(source.answerId());
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
 
-        assertThat(followUpGenerationRepository.findByAnswerId(source.answerId()).orElseThrow().getStatus()).isEqualTo(FollowUpStatus.READY);
+        assertThat(followUpGenerationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow().getStatus()).isEqualTo(FollowUpStatus.READY);
         assertThat(calls.get()).isEqualTo(1);
         assertThat(questionRepository.count()).isEqualTo(2);
     }
@@ -140,13 +140,13 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("완료 저장 충돌이 제한 횟수를 넘으면 질문을 남기지 않고 실패로 종료한다")
     void boundsCompletionRetries() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
         completionFailures.failNextCompletions(10);
 
-        followUpQuestionProcessor.process(source.answerId());
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
 
-        FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(source.answerId()).orElseThrow();
+        FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow();
         assertThat(job.getStatus()).isEqualTo(FollowUpStatus.FAILED);
         assertThat(job.getReason()).isEqualTo(FollowUpReason.PERSISTENCE_ERROR);
         assertThat(completionFailures.failureCount).isEqualTo(3);
@@ -156,10 +156,10 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("외부 트랜잭션에서는 후속 생성을 시작하지 않는다")
     void rejectsCallerTransactionBeforeClaim() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
 
-        assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(status -> followUpQuestionProcessor.process(source.answerId())))
+        assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(status -> followUpQuestionProcessor.process(sourceAnswer.answerId())))
                 .isInstanceOf(IllegalTransactionStateException.class);
         assertThat(followUpGenerationRepository.count()).isZero();
         assertThat(questionRepository.count()).isEqualTo(1);
@@ -193,24 +193,24 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("평가 처리 중에는 생성 작업을 만들지 않고 대기 상태를 유지한다")
     void waitsForProcessingEvaluation() {
-        AnswerResult source = source();
-        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findByAnswerId(source.answerId()).orElseThrow()
+        AnswerResult sourceAnswer = sourceAnswer();
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow()
                 .claim("evaluation-worker", LocalDateTime.now(), Duration.ofMinutes(1)));
-        followUpQuestionProcessor.process(source.answerId());
-        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).status()).isEqualTo(FollowUpStatus.PENDING);
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
+        assertThat(followUpQuestionService.findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).status()).isEqualTo(FollowUpStatus.PENDING);
         assertThat(followUpGenerationRepository.count()).isZero();
     }
 
     @Test
     @DisplayName("실패한 평가는 후속 생성 대상에서 제외한다")
     void excludesFailedEvaluation() {
-        AnswerResult source = source();
-        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findByAnswerId(source.answerId())
+        AnswerResult sourceAnswer = sourceAnswer();
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findByAnswerId(sourceAnswer.answerId())
                 .orElseThrow().fail("PROVIDER_ERROR"));
 
-        followUpQuestionProcessor.process(source.answerId());
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
 
-        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).reason())
+        assertThat(followUpQuestionService.findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).reason())
                 .isEqualTo(FollowUpReason.EVALUATION_NOT_ELIGIBLE);
         assertThat(followUpGenerationRepository.count()).isZero();
     }
@@ -218,13 +218,13 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("검토가 필요한 평가는 후속 생성 대상에서 제외한다")
     void excludesEvaluationNeedingReview() {
-        AnswerResult source = source();
-        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findByAnswerId(source.answerId())
+        AnswerResult sourceAnswer = sourceAnswer();
+        transactionTemplate.executeWithoutResult(status -> evaluationRepository.findByAnswerId(sourceAnswer.answerId())
                 .orElseThrow().requireReview("EVIDENCE_NOT_FOUND"));
 
-        followUpQuestionProcessor.process(source.answerId());
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
 
-        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).reason())
+        assertThat(followUpQuestionService.findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).reason())
                 .isEqualTo(FollowUpReason.EVALUATION_NOT_ELIGIBLE);
         assertThat(followUpGenerationRepository.count()).isZero();
     }
@@ -232,11 +232,12 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("관리자 문제 목록과 상세에도 개인 후속 질문을 노출하지 않는다")
     void hidesFollowUpsFromAdminCatalog() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
-        followUpQuestionProcessor.process(source.answerId());
-        Long id = followUpQuestionService.findByAnswerId(owner(source), source.answerId()).question().id();
-        assertThat(questionRepository.findNormalWithConceptsById(id)).isEmpty();
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
+        Long followUpQuestionId = followUpQuestionService
+                .findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).question().id();
+        assertThat(questionRepository.findNormalWithConceptsById(followUpQuestionId)).isEmpty();
         assertThat(questionRepository.findNormalByConditions(null, null, null, null, PageRequest.of(0, 20))
                 .getTotalElements()).isEqualTo(1);
     }
@@ -244,8 +245,8 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("동시에 같은 답변을 처리해도 AI 호출과 후속 질문은 하나이다")
     void concurrentProcessingClaimsOnce() throws Exception {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
         CountDownLatch entered = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
         AtomicInteger calls = new AtomicInteger();
@@ -265,12 +266,12 @@ class FollowUpQuestionServiceTest {
         };
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         try {
-            Future<?> first = executorService.submit(() -> followUpQuestionProcessor.process(source.answerId()));
+            Future<?> first = executorService.submit(() -> followUpQuestionProcessor.process(sourceAnswer.answerId()));
             try {
                 assertThat(entered.await(5, TimeUnit.SECONDS)).isTrue();
-                Future<?> second = executorService.submit(() -> followUpQuestionProcessor.process(source.answerId()));
+                Future<?> second = executorService.submit(() -> followUpQuestionProcessor.process(sourceAnswer.answerId()));
                 second.get(5, TimeUnit.SECONDS);
-                assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).status()).isEqualTo(FollowUpStatus.PROCESSING);
+                assertThat(followUpQuestionService.findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).status()).isEqualTo(FollowUpStatus.PROCESSING);
             } finally {
                 release.countDown();
             }
@@ -281,7 +282,7 @@ class FollowUpQuestionServiceTest {
             executorService.awaitTermination(5, TimeUnit.SECONDS);
         }
         assertThat(calls.get()).isEqualTo(1);
-        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).status()).isEqualTo(FollowUpStatus.READY);
+        assertThat(followUpQuestionService.findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).status()).isEqualTo(FollowUpStatus.READY);
         assertThat(followUpGenerationRepository.count()).isEqualTo(1);
         assertThat(questionRepository.count()).isEqualTo(2);
     }
@@ -289,19 +290,19 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("타임아웃 세 번 이후 실패해도 기존 평가와 숙련도는 유지한다")
     void timeoutPreservesEvaluation() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
         port.behavior = request -> {
             throw new EvaluationTimeoutException();
         };
         for (int attempt = 0; attempt < 4; attempt++) {
-            followUpQuestionProcessor.process(source.answerId());
+            followUpQuestionProcessor.process(sourceAnswer.answerId());
         }
-        FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(source.answerId()).orElseThrow();
+        FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow();
         assertThat(job.getAttemptCount()).isEqualTo(3);
         assertThat(job.getStatus()).isEqualTo(FollowUpStatus.FAILED);
         assertThat(job.getReason()).isEqualTo(FollowUpReason.PROVIDER_TIMEOUT);
-        assertThat(evaluationRepository.findByAnswerId(source.answerId()).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
+        assertThat(evaluationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(1);
         assertThat(questionRepository.count()).isEqualTo(1);
     }
@@ -309,12 +310,12 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("승인하지 않은 근거 출력은 재시도 없이 거부한다")
     void rejectsUnapprovedEvidence() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
         port.behavior = request -> new FollowUpResult("질문", "정답", request.conceptId(), List.of(Long.MAX_VALUE),
                 "test", "follow-up-v1", 0, 0, 0);
-        followUpQuestionProcessor.process(source.answerId());
-        FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(source.answerId()).orElseThrow();
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
+        FollowUpGeneration job = followUpGenerationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow();
         assertThat(job.getStatus()).isEqualTo(FollowUpStatus.FAILED);
         assertThat(job.getReason()).isEqualTo(FollowUpReason.INVALID_RESULT);
         assertThat(job.getAttemptCount()).isEqualTo(1);
@@ -324,47 +325,47 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("AI 응답을 기다리는 동안 근거가 폐기되면 저장하지 않는다")
     void rechecksEvidenceAtCompletion() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
         port.behavior = request -> {
             transactionTemplate.executeWithoutResult(status -> knowledgeDocumentRepository.findAll().forEach(KnowledgeDocument::retire));
             return new StubFollowUpQuestionAdapter().generate(request);
         };
-        followUpQuestionProcessor.process(source.answerId());
-        assertThat(followUpGenerationRepository.findByAnswerId(source.answerId()).orElseThrow().getStatus()).isEqualTo(FollowUpStatus.UNAVAILABLE);
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
+        assertThat(followUpGenerationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow().getStatus()).isEqualTo(FollowUpStatus.UNAVAILABLE);
         assertThat(questionRepository.count()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("작업 완료 저장이 실패하면 후속 질문 삽입도 함께 롤백한다")
     void completionFailureRollsBackQuestion() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
         jdbcTemplate.execute("alter table follow_up_generation add constraint test_reject_ready check (status <> 'READY')");
-        followUpQuestionProcessor.process(source.answerId());
-        assertThat(followUpGenerationRepository.findByAnswerId(source.answerId()).orElseThrow().getReason()).isEqualTo(FollowUpReason.PERSISTENCE_ERROR);
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
+        assertThat(followUpGenerationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow().getReason()).isEqualTo(FollowUpReason.PERSISTENCE_ERROR);
         assertThat(questionRepository.count()).isEqualTo(1);
-        assertThat(evaluationRepository.findByAnswerId(source.answerId()).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
+        assertThat(evaluationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
     }
 
     @Test
     @DisplayName("Worker는 작업 생성이 누락된 완료 평가를 다시 찾아 처리한다")
     void pollingRecoversMissingJob() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
         assertThat(followUpGenerationRepository.count()).isZero();
         new FollowUpWorker(followUpGenerationRepository, followUpQuestionProcessor, port).processPending();
-        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).status()).isEqualTo(FollowUpStatus.READY);
+        assertThat(followUpQuestionService.findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).status()).isEqualTo(FollowUpStatus.READY);
     }
 
     @Test
     @DisplayName("같은 원본 답변의 두 번째 후속 질문은 DB 유일 제약으로 막는다")
     void databaseRejectsDuplicateQuestion() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
-        followUpQuestionProcessor.process(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
         assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(status -> {
-            Answer answer = answerRepository.findById(source.answerId()).orElseThrow();
+            Answer answer = answerRepository.findById(sourceAnswer.answerId()).orElseThrow();
             questionRepository.save(Question.followUpBuilder().sourceAnswer(answer)
                     .concept(answer.getQuestion().getQuestionConcepts().iterator().next().getConcept())
                     .content("중복").referenceAnswer("정답").build());
@@ -375,9 +376,9 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("원본 답변이 없는 NORMAL 문제 여러 개는 nullable 유일 제약을 통과한다")
     void databaseAllowsMultipleNormalQuestions() {
-        AnswerResult source = source();
+        AnswerResult sourceAnswer = sourceAnswer();
         transactionTemplate.executeWithoutResult(status -> {
-            Question original = questionRepository.findById(source.questionId()).orElseThrow();
+            Question original = questionRepository.findById(sourceAnswer.questionId()).orElseThrow();
             questionRepository.save(Question.builder().topic(original.getTopic()).createdByMember(original.getCreatedByMember())
                     .difficulty(QuestionDifficulty.BASIC).content("두 번째 기본").referenceAnswer("정답").build());
         });
@@ -387,9 +388,9 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("DB에서 읽은 원본 답변에서도 후속 질문의 개념을 연결한다")
     void createsFromPersistedSource() {
-        AnswerResult source = source();
+        AnswerResult sourceAnswer = sourceAnswer();
         transactionTemplate.executeWithoutResult(status -> {
-            Answer answer = answerRepository.findById(source.answerId()).orElseThrow();
+            Answer answer = answerRepository.findById(sourceAnswer.answerId()).orElseThrow();
             Question question = Question.followUpBuilder().sourceAnswer(answer)
                     .concept(answer.getQuestion().getQuestionConcepts().iterator().next().getConcept())
                     .content("질문").referenceAnswer("정답").build();
@@ -401,69 +402,80 @@ class FollowUpQuestionServiceTest {
     @Test
     @DisplayName("평가 대기 중 조회는 후속 질문을 만들지 않고 대기 상태를 반환한다")
     void pendingReadHasNoGenerationSideEffect() {
-        AnswerResult answer = source();
-        assertThat(followUpQuestionService.findByAnswerId(owner(answer), answer.answerId()).status()).isEqualTo(FollowUpStatus.PENDING);
+        AnswerResult sourceAnswer = sourceAnswer();
+        assertThat(followUpQuestionService
+                .findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).status())
+                .isEqualTo(FollowUpStatus.PENDING);
         assertThat(questionRepository.count()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("없는 답변과 타인의 답변은 같은 조회 실패로 숨긴다")
     void hidesUnownedAnswers() {
-        AnswerResult answer = source();
-        assertThatThrownBy(() -> followUpQuestionService.findByAnswerId(-1L, answer.answerId())).isInstanceOf(AnswerNotFoundException.class);
-        assertThatThrownBy(() -> followUpQuestionService.findByAnswerId(owner(answer), -1L)).isInstanceOf(AnswerNotFoundException.class);
+        AnswerResult sourceAnswer = sourceAnswer();
+        assertThatThrownBy(() -> followUpQuestionService.findByAnswerId(-1L, sourceAnswer.answerId()))
+                .isInstanceOf(AnswerNotFoundException.class);
+        assertThatThrownBy(() -> followUpQuestionService.findByAnswerId(answerOwnerId(sourceAnswer), -1L))
+                .isInstanceOf(AnswerNotFoundException.class);
     }
 
     @Test
     @DisplayName("기본 평가에서 후속 답변 평가까지 이어지고 재조회와 재처리는 같은 질문을 유지한다")
     void completesLearningLoopOnce() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
-        followUpQuestionProcessor.process(source.answerId());
-        FollowUpQuestionResult result = followUpQuestionService.findByAnswerId(owner(source), source.answerId());
-        assertThat(result.status()).isEqualTo(FollowUpStatus.READY);
-        Long followUpId = result.question().id();
-        followUpQuestionProcessor.process(source.answerId());
-        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).question().id()).isEqualTo(followUpId);
-        assertThat(questionRepository.findPublishedNormalById(followUpId)).isEmpty();
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
+        FollowUpQuestionResult followUpQuestionResult = followUpQuestionService.findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId());
+        assertThat(followUpQuestionResult.status()).isEqualTo(FollowUpStatus.READY);
+        Long followUpQuestionId = followUpQuestionResult.question().id();
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
+        assertThat(followUpQuestionService
+                .findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).question().id())
+                .isEqualTo(followUpQuestionId);
+        assertThat(questionRepository.findPublishedNormalById(followUpQuestionId)).isEmpty();
         assertThat(questionRepository.findPublishedNormalQuestions(null, null, PageRequest.of(0, 20)).getTotalElements()).isEqualTo(1);
-        Member other = memberRepository.save(Member.builder().nickname("다른 회원").build());
-        assertThatThrownBy(() -> answerService.submit(other.getId(), followUpId, UUID.randomUUID().toString(), "답변"))
+        Member otherMember = memberRepository.save(Member.builder().nickname("다른 회원").build());
+        assertThatThrownBy(() -> answerService.submit(
+                otherMember.getId(), followUpQuestionId, UUID.randomUUID().toString(), "답변"))
                 .isInstanceOf(QuestionNotFoundException.class);
-        AnswerResult followUp = answerService.submit(owner(source), followUpId, UUID.randomUUID().toString(),
+        AnswerResult followUpAnswer = answerService.submit(
+                answerOwnerId(sourceAnswer), followUpQuestionId, UUID.randomUUID().toString(),
                 "스레드는 프로세스 자원을 공유하는 실행 단위입니다.");
-        evaluate(followUp.answerId());
-        assertThat(evaluationRepository.findByAnswerId(followUp.answerId()).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
+        evaluate(followUpAnswer.answerId());
+        assertThat(evaluationRepository.findByAnswerId(followUpAnswer.answerId()).orElseThrow().getStatus())
+                .isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(2);
         assertThat(knowledgeStateRepository.findAll()).singleElement().satisfies(state -> assertThat(state.getAttemptCount()).isEqualTo(2));
-        assertThat(recommendationService.recommendation(owner(source)).questionId()).isEqualTo(source.questionId());
-        assertThat(followUpQuestionService.findByAnswerId(owner(source), followUp.answerId()).reason()).isEqualTo(FollowUpReason.FOLLOW_UP_LIMIT);
-        followUpQuestionProcessor.process(followUp.answerId());
+        assertThat(recommendationService.recommendation(answerOwnerId(sourceAnswer)).questionId()).isEqualTo(sourceAnswer.questionId());
+        assertThat(followUpQuestionService
+                .findByAnswerId(answerOwnerId(sourceAnswer), followUpAnswer.answerId()).reason())
+                .isEqualTo(FollowUpReason.FOLLOW_UP_LIMIT);
+        followUpQuestionProcessor.process(followUpAnswer.answerId());
         assertThat(questionRepository.count()).isEqualTo(2);
     }
 
     @Test
     @DisplayName("근거 문서 폐기 후에는 후속 생성을 사용할 수 없다")
     void rejectsRetiredEvidence() {
-        AnswerResult source = source();
-        evaluate(source.answerId());
+        AnswerResult sourceAnswer = sourceAnswer();
+        evaluate(sourceAnswer.answerId());
         transactionTemplate.executeWithoutResult(status -> knowledgeDocumentRepository.findAll().forEach(KnowledgeDocument::retire));
-        followUpQuestionProcessor.process(source.answerId());
-        assertThat(followUpQuestionService.findByAnswerId(owner(source), source.answerId()).reason()).isEqualTo(FollowUpReason.CONTENT_UNAVAILABLE);
-        assertThat(evaluationRepository.findByAnswerId(source.answerId()).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
+        followUpQuestionProcessor.process(sourceAnswer.answerId());
+        assertThat(followUpQuestionService.findByAnswerId(answerOwnerId(sourceAnswer), sourceAnswer.answerId()).reason()).isEqualTo(FollowUpReason.CONTENT_UNAVAILABLE);
+        assertThat(evaluationRepository.findByAnswerId(sourceAnswer.answerId()).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
     }
 
     private void evaluate(Long answerId) {
         evaluationProcessor.process(evaluationRepository.findByAnswerId(answerId).orElseThrow().getId());
     }
 
-    private Long owner(AnswerResult answer) {
-        return answerRepository.findById(answer.answerId()).orElseThrow().getMember().getId();
+    private Long answerOwnerId(AnswerResult answerResult) {
+        return answerRepository.findById(answerResult.answerId()).orElseThrow().getMember().getId();
     }
 
-    private AnswerResult source() {
+    private AnswerResult sourceAnswer() {
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Topic topic = topicRepository.save(Topic.builder().code("OS").name("운영체제").build());
         Concept concept = conceptRepository.save(Concept.builder().topic(topic).code("THREAD").name("스레드").build());
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
@@ -479,7 +491,7 @@ class FollowUpQuestionServiceTest {
         document.publish();
         knowledgeDocumentRepository.save(document);
         knowledgeChunkService.generateChunks(document.getId());
-        return answerService.submit(member.getId(), question.getId(), UUID.randomUUID().toString(),
+        return answerService.submit(learner.getId(), question.getId(), UUID.randomUUID().toString(),
                 "스레드는 프로세스 자원을 공유하는 실행 단위입니다.");
     }
 

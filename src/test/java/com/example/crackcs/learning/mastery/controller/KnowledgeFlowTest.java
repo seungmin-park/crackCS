@@ -85,7 +85,7 @@ class KnowledgeFlowTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper mapper;
+    private ObjectMapper objectMapper;
 
     @Autowired
     private EvaluationProcessor evaluationProcessor;
@@ -107,13 +107,13 @@ class KnowledgeFlowTest {
     @Test
     @DisplayName("신규 회원은 추천 문제를 풀고 완료 평가가 반영된 지식 지도와 학습 홈을 조회한다")
     void progressesFromRecommendationThroughCommittedEvaluation() throws Exception {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         knowledgeChunk(topic, admin);
-        AuthenticatedMember principal = principal(member);
+        AuthenticatedMember principal = principal(learner);
 
         mockMvc.perform(get("/api/recommendations/next-question").with(user(principal)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.questionId").value(question.getId()))
@@ -124,11 +124,11 @@ class KnowledgeFlowTest {
         MvcResult submission = mockMvc.perform(post("/api/questions/{id}/answers", question.getId())
                         .with(user(principal)).with(csrf()).header("Idempotency-Key", UUID.randomUUID().toString())
                         .contentType("application/json")
-                        .content(mapper.writeValueAsString(Map.of("content", "스레드는 프로세스 자원을 공유하는 실행 단위다."))))
+                        .content(objectMapper.writeValueAsString(Map.of("content", "스레드는 프로세스 자원을 공유하는 실행 단위다."))))
                 .andExpect(status().isAccepted()).andReturn();
-        Long evaluationId = mapper.readTree(submission.getResponse().getContentAsString()).get("evaluationId").asLong();
+        Long evaluationId = objectMapper.readTree(submission.getResponse().getContentAsString()).get("evaluationId").asLong();
         evaluationProcessor.process(evaluationId);
-        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId()).orElseThrow()
+        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), concept.getId()).orElseThrow()
                 .getAttemptCount()).isEqualTo(1);
         mockMvc.perform(get("/api/members/me/knowledge-states").with(user(principal)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.topics[0].concepts[0].status").value("LEARNING"))
@@ -139,15 +139,15 @@ class KnowledgeFlowTest {
                 .andExpect(jsonPath("$.recentEvaluations[0].status").value("EVALUATED"))
                 .andExpect(jsonPath("$.recommendation.reason").value("LOW_MASTERY"));
         Member other = memberRepository.save(Member.builder().nickname("다른 학습자").build());
-        mockMvc.perform(get("/api/members/me/progress").param("memberId", member.getId().toString())
+        mockMvc.perform(get("/api/members/me/progress").param("memberId", learner.getId().toString())
                         .with(user(principal(other))))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalAnswers").value(0))
                 .andExpect(jsonPath("$.topics[0].concepts[0].status").value("UNKNOWN"));
     }
 
-    private AuthenticatedMember principal(Member member) {
-        return AuthenticatedMember.from(AuthAccount.builder().member(member)
-                .loginId("learner" + member.getId() + "@example.com").passwordHash("hash").build());
+    private AuthenticatedMember principal(Member learner) {
+        return AuthenticatedMember.from(AuthAccount.builder().member(learner)
+                .loginId("learner" + learner.getId() + "@example.com").passwordHash("hash").build());
     }
 
     private KnowledgeChunk knowledgeChunk(Topic topic, Member admin) {

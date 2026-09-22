@@ -38,7 +38,7 @@ class AuthControllerTest {
     @Test
     @DisplayName("유효한 이메일과 비밀번호 및 닉네임으로 회원가입하면 201을 반환한다")
     void signsUpMember() throws Exception {
-        Member member = member(1L, "크랙러", MemberRole.USER, MemberStatus.ACTIVE);
+        Member registeredMember = mockMember(1L, "크랙러", MemberRole.USER, MemberStatus.ACTIVE);
         SignUpRequest request = new SignUpRequest(
                 "user@example.com",
                 "correct horse battery staple",
@@ -48,7 +48,7 @@ class AuthControllerTest {
                 request.email(),
                 request.password(),
                 request.nickname()
-        )).willReturn(member);
+        )).willReturn(registeredMember);
 
         mockMvc.perform(post("/api/auth/sign-up")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -103,12 +103,12 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.message").value("이미 가입된 이메일입니다."));
     }
 
-    private Member member(Long id, String nickname, MemberRole role, MemberStatus status) {
-        Member member = mock(Member.class);
-        given(member.getId()).willReturn(id);
-        given(member.getNickname()).willReturn(nickname);
-        given(member.getRole()).willReturn(role);
-        given(member.getStatus()).willReturn(status);
-        return member;
+    private Member mockMember(Long id, String nickname, MemberRole role, MemberStatus status) {
+        Member mockedMember = mock(Member.class);
+        given(mockedMember.getId()).willReturn(id);
+        given(mockedMember.getNickname()).willReturn(nickname);
+        given(mockedMember.getRole()).willReturn(role);
+        given(mockedMember.getStatus()).willReturn(status);
+        return mockedMember;
     }
 }

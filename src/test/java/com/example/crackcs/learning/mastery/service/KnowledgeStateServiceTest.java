@@ -110,11 +110,11 @@ class KnowledgeStateServiceTest {
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
             start.countDown();
             for (int finished = 0; finished < 2; finished++) {
-                Future<Void> result = completed.poll(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
-                if (result == null) {
+                Future<Void> completedTask = completed.poll(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                if (completedTask == null) {
                     throw new TimeoutException("Concurrent tasks exceeded the shared deadline");
                 }
-                result.get();
+                completedTask.get();
             }
         } catch (Exception | Error failure) {
             taskFailure = failure;
@@ -171,19 +171,19 @@ class KnowledgeStateServiceTest {
     @Test
     @DisplayName("학습 상태 유일키 충돌은 여덟 번까지 재시도하고 매번 롤백한다")
     void limitsRetriesForKnowledgeStateConstraint() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long evaluationId = completed(member, question, concept, chunk, Verdict.CORRECT);
+        Long evaluationId = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT);
         AtomicInteger attempts = new AtomicInteger();
 
         assertThatThrownBy(() -> retry.execute(() -> {
             attempts.incrementAndGet();
             knowledgeStateService.applyInCurrentTransaction(evaluationId);
-            knowledgeStateRepository.save(KnowledgeState.builder().member(member).concept(concept).build());
+            knowledgeStateRepository.save(KnowledgeState.builder().member(learner).concept(concept).build());
         })).isInstanceOf(ConcurrencyFailureException.class).hasCauseInstanceOf(DataIntegrityViolationException.class);
 
         assertThat(attempts.get()).isEqualTo(8);
@@ -194,13 +194,13 @@ class KnowledgeStateServiceTest {
     @Test
     @DisplayName("평가 개념 적용 기록 유일키 충돌은 여덟 번까지 재시도하고 매번 롤백한다")
     void limitsRetriesForAppliedEvaluationConceptConstraint() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long evaluationId = completed(member, question, concept, chunk, Verdict.CORRECT);
+        Long evaluationId = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT);
         AtomicInteger attempts = new AtomicInteger();
 
         assertThatThrownBy(() -> retry.execute(() -> {
@@ -220,22 +220,22 @@ class KnowledgeStateServiceTest {
     @Test
     @DisplayName("다른 트랜잭션이 먼저 상태를 변경하면 오래된 버전을 거부하고 새 트랜잭션으로 재시도한다")
     void retriesARealStaleVersionInANewTransaction() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
         retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(
-                completed(member, question, concept, chunk, Verdict.CORRECT)));
+                saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT)));
         AtomicInteger attempts = new AtomicInteger();
         LocalDateTime now = LocalDateTime.now();
         retry.execute(() -> {
-            KnowledgeState stale = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(),
+            KnowledgeState stale = knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(),
                     concept.getId()).orElseThrow();
             if (attempts.incrementAndGet() == 1) {
                 retry.execute(() -> {
-                    KnowledgeState concurrent = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(),
+                    KnowledgeState concurrent = knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(),
                             concept.getId()).orElseThrow();
                     concurrent.observe(1001L, Verdict.INCORRECT, now);
                 });
@@ -243,16 +243,17 @@ class KnowledgeStateServiceTest {
             stale.observe(1002L, Verdict.PARTIALLY_CORRECT, now.plusSeconds(1));
         });
         assertThat(attempts.get()).isEqualTo(2);
-        KnowledgeState saved = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
+        KnowledgeState savedState = knowledgeStateRepository
+                .findByMemberIdAndConceptId(learner.getId(), concept.getId())
                 .orElseThrow();
-        assertThat(saved.getAttemptCount()).isEqualTo(3);
-        assertThat(saved.getMasteryScore()).isEqualTo(50);
+        assertThat(savedState.getAttemptCount()).isEqualTo(3);
+        assertThat(savedState.getMasteryScore()).isEqualTo(50);
     }
 
     @Test
     @DisplayName("완료 평가의 선택 개념이 검토 필요이면 해당 개념만 반영에서 제외한다")
     void excludesOnlyOptionalNeedsReviewConcept() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept required = concept(topic, "스레드");
@@ -268,7 +269,7 @@ class KnowledgeStateServiceTest {
         question.review(admin);
         question.publish();
         question = questionRepository.save(question);
-        Long id = pending(member, question).getId();
+        Long id = savePendingEvaluation(learner, question).getId();
         transactionTemplate.executeWithoutResult(status -> evaluationRepository.findById(id).orElseThrow().completeWithEvidence(
                 new EvaluationResult(Verdict.CORRECT, "평가 완료",
                         List.of(new ConceptResult(required.getId(), Verdict.CORRECT, "정확"),
@@ -276,24 +277,24 @@ class KnowledgeStateServiceTest {
                         List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1),
                 List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow())));
         retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(id));
-        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), required.getId())).isPresent();
-        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), optional.getId())).isEmpty();
+        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), required.getId())).isPresent();
+        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), optional.getId())).isEmpty();
         assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(1);
     }
 
     @Test
     @DisplayName("완료 평가를 반복 반영해도 관측과 적용 기록은 한 번만 저장한다")
     void appliesExactlyOnce() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long id = completed(member, question, concept, chunk, Verdict.INCORRECT);
+        Long id = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.INCORRECT);
         retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(id));
         retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(id));
-        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), concept.getId())
                 .orElseThrow();
         assertThat(state.getAttemptCount()).isEqualTo(1);
         assertThat(state.getMasteryScore()).isZero();
@@ -303,17 +304,17 @@ class KnowledgeStateServiceTest {
     @Test
     @DisplayName("서로 다른 평가의 동시 최초 반영은 관측을 둘 다 저장한다")
     void handlesConcurrentCreation() throws Exception {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long first = completed(member, question, concept, chunk, Verdict.CORRECT);
-        Long second = completed(member, question, concept, chunk, Verdict.INCORRECT);
+        Long first = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT);
+        Long second = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.INCORRECT);
         concurrently(() -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(first)),
                 () -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(second)));
-        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), concept.getId())
                 .orElseThrow();
         assertThat(state.getAttemptCount()).isEqualTo(2);
         assertThat(state.getMasteryScore()).isCloseTo(100.0 / 3, within(0.0001));
@@ -323,21 +324,21 @@ class KnowledgeStateServiceTest {
     @Test
     @DisplayName("기존 상태의 동시 갱신과 같은 평가의 재전달에도 관측을 잃거나 중복하지 않는다")
     void handlesConcurrentUpdatesAndDuplicateDelivery() throws Exception {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
         retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(
-                completed(member, question, concept, chunk, Verdict.CORRECT)));
-        Long second = completed(member, question, concept, chunk, Verdict.CORRECT);
-        Long third = completed(member, question, concept, chunk, Verdict.INCORRECT);
+                saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT)));
+        Long second = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT);
+        Long third = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.INCORRECT);
         concurrently(() -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(second)),
                 () -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(third)));
         concurrently(() -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(second)),
                 () -> retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(second)));
-        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), concept.getId())
                 .orElseThrow();
         assertThat(state.getAttemptCount()).isEqualTo(3);
         assertThat(state.getMasteryScore()).isEqualTo(50);
@@ -347,16 +348,16 @@ class KnowledgeStateServiceTest {
     @Test
     @DisplayName("실패와 검토 필요 및 처리 중 평가는 학습 관측에서 제외한다")
     void excludesIneligibleEvaluations() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long pending = pending(member, question).getId();
-        Long failed = pending(member, question).getId();
+        Long pending = savePendingEvaluation(learner, question).getId();
+        Long failed = savePendingEvaluation(learner, question).getId();
         transactionTemplate.executeWithoutResult(status -> evaluationRepository.findById(failed).orElseThrow().fail("TEST_FAILURE"));
-        Long review = completed(member, question, concept, chunk, Verdict.NEEDS_REVIEW);
+        Long review = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.NEEDS_REVIEW);
         retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(pending));
         retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(failed));
         retry.execute(() -> knowledgeStateService.applyInCurrentTransaction(review));
@@ -367,15 +368,15 @@ class KnowledgeStateServiceTest {
     @Test
     @DisplayName("평가 완료 후 트랜잭션이 실패하면 상태와 적용 기록도 함께 롤백한다")
     void rollsBackCompletionAndStateTogether() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long id = pending(member, question).getId();
+        Long id = savePendingEvaluation(learner, question).getId();
         assertThatThrownBy(() -> transactionTemplate.executeWithoutResult(status -> {
-            complete(id, concept, chunk, Verdict.CORRECT);
+            completeEvaluation(id, concept, chunk, Verdict.CORRECT);
             knowledgeStateService.applyInCurrentTransaction(id);
             assertThat(knowledgeStateRepository.count()).isEqualTo(1);
             throw new IllegalStateException("force rollback");
@@ -453,27 +454,27 @@ class KnowledgeStateServiceTest {
         return questionRepository.save(question);
     }
 
-    private Evaluation pending(Member member, Question question) {
-        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
+    private Evaluation savePendingEvaluation(Member learner, Question question) {
+        Answer answer = answerRepository.save(Answer.builder().member(learner).question(question)
                 .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
-    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
-        Long id = pending(member, question).getId();
-        complete(id, concept, chunk, verdict);
+    private Long saveCompletedEvaluation(Member learner, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = savePendingEvaluation(learner, question).getId();
+        completeEvaluation(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private void completeEvaluation(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+            evaluation.completeWithEvidence(evaluationResult(concept, chunk, verdict),
                     List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private EvaluationResult evaluationResult(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
                 List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
                 List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);

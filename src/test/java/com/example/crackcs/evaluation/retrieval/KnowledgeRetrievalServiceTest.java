@@ -106,12 +106,12 @@ class KnowledgeRetrievalServiceTest {
         knowledgeDocumentRepository.save(retired);
         publishAndChunk(topic, admin, "무관", "파일 시스템은 디렉터리를 관리한다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("프로세스"), "프로세스란?", "주소 공간", "모르겠습니다."
         ), 5);
 
-        assertThat(result.chunks()).isEmpty();
-        assertThat(result.insufficientEvidence()).isTrue();
+        assertThat(retrievalResult.chunks()).isEmpty();
+        assertThat(retrievalResult.insufficientEvidence()).isTrue();
     }
 
     @Test
@@ -122,14 +122,14 @@ class KnowledgeRetrievalServiceTest {
         KnowledgeDocument evidence = publishAndChunk(topic, admin, "요청량 제한",
                 "토큰 버킷은 초당 요청량과 순간 허용량을 제한한다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("부하 제어"), "요청 폭주를 어떻게 완화하는가?",
                 "토큰 버킷은 초당 요청량과 순간 허용량을 제한한다.", "잘 모르겠습니다."
         ), 5);
 
-        assertThat(result.chunks()).extracting(row -> row.chunk().getDocumentId())
+        assertThat(retrievalResult.chunks()).extracting(row -> row.chunk().getDocumentId())
                 .containsExactly(evidence.getId());
-        assertThat(result.insufficientEvidence()).isFalse();
+        assertThat(retrievalResult.insufficientEvidence()).isFalse();
     }
 
     @Test
@@ -141,12 +141,12 @@ class KnowledgeRetrievalServiceTest {
                 "캐시 TTL 만료는 유효기간을 제한하고 ETag 재검증은 변경 여부를 확인한다.");
         publishAndChunk(topic, admin, "캐시 비용", "캐시 서버의 운영 비용은 장비 가격에 따라 달라진다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("캐시"), "캐시 만료와 재검증의 차이는?",
                 "TTL 만료는 유효기간을 제한하고 ETag 재검증은 변경 여부를 확인한다.", "만료되면 다시 요청한다."
         ), 5);
 
-        assertThat(result.chunks()).extracting(row -> row.chunk().getDocumentId())
+        assertThat(retrievalResult.chunks()).extracting(row -> row.chunk().getDocumentId())
                 .containsExactly(evidence.getId());
     }
 
@@ -157,13 +157,13 @@ class KnowledgeRetrievalServiceTest {
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         publishAndChunk(topic, admin, "장비", "서버 장비 가격과 구매 비용");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("백업"), "스냅샷 복구", "데이터 시점 보존",
                 "서버 장비 가격과 구매 비용"
         ), 5);
 
-        assertThat(result.chunks()).isEmpty();
-        assertThat(result.insufficientEvidence()).isTrue();
+        assertThat(retrievalResult.chunks()).isEmpty();
+        assertThat(retrievalResult.insufficientEvidence()).isTrue();
     }
 
     @Test
@@ -174,12 +174,12 @@ class KnowledgeRetrievalServiceTest {
         KnowledgeDocument expiration = publishAndChunk(topic, admin, "만료", "TTL 만료는 유효기간을 제한한다.");
         KnowledgeDocument validation = publishAndChunk(topic, admin, "재검증", "ETag 재검증은 변경 여부를 확인한다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("TTL", "ETag"), "캐시 정책의 차이는?",
                 "TTL 만료는 유효기간을 제한한다. ETag 재검증은 변경 여부를 확인한다.", "모르겠습니다."
         ), 5);
 
-        assertThat(result.chunks()).extracting(row -> row.chunk().getDocumentId())
+        assertThat(retrievalResult.chunks()).extracting(row -> row.chunk().getDocumentId())
                 .containsExactlyInAnyOrder(expiration.getId(), validation.getId());
     }
 
@@ -194,12 +194,12 @@ class KnowledgeRetrievalServiceTest {
                 + "공간 임대와 제조 업체와 물류 운송과 보험 요율에 따라 달라진다.";
         publishAndChunk(topic, admin, "장비 비용", distractingAnswer);
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("캐시"), "캐시 만료와 재검증의 차이는?",
                 "TTL 만료는 유효기간을 제한하고 ETag 재검증은 변경 여부를 확인한다.", distractingAnswer
         ), 1);
 
-        assertThat(result.chunks()).extracting(row -> row.chunk().getDocumentId())
+        assertThat(retrievalResult.chunks()).extracting(row -> row.chunk().getDocumentId())
                 .containsExactly(evidence.getId());
     }
 
@@ -211,13 +211,13 @@ class KnowledgeRetrievalServiceTest {
         publishAndChunk(topic, admin, "정책 A", "캐시 재검증은 서버 확인이 필요하다.");
         publishAndChunk(topic, admin, "정책 B", "캐시 재검증은 서버 확인이 필요 없다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("캐시"), "캐시 재검증은 서버 확인이 필요한가?",
                 "캐시 재검증은 서버 확인이 필요하다.", "모르겠습니다."
         ), 5);
 
-        assertThat(result.chunks()).hasSize(2);
-        assertThat(result.conflictingEvidence()).isTrue();
+        assertThat(retrievalResult.chunks()).hasSize(2);
+        assertThat(retrievalResult.conflictingEvidence()).isTrue();
     }
 
     @Test
@@ -230,12 +230,12 @@ class KnowledgeRetrievalServiceTest {
         KnowledgeDocument expiration = publishAndChunk(topic, admin, "만료", expirationText);
         KnowledgeDocument validation = publishAndChunk(topic, admin, "재검증", "ETag 재검증은 변경 여부를 확인한다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("TTL", "ETag"), "TTL 만료와 ETag 재검증을 비교하세요.",
                 expirationText + " ETag 재검증은 변경 여부를 확인한다.", "모르겠습니다."
         ), 5);
 
-        assertThat(result.chunks()).extracting(row -> row.chunk().getDocumentId())
+        assertThat(retrievalResult.chunks()).extracting(row -> row.chunk().getDocumentId())
                 .containsExactlyInAnyOrder(expiration.getId(), validation.getId());
     }
 
@@ -246,13 +246,13 @@ class KnowledgeRetrievalServiceTest {
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         publishAndChunk(topic, admin, "비용", "다음 단계는 서버 비용을 산정하는 작업이다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("캐시"), "다음 설명에서 캐시 정책을 비교하세요.",
                 "TTL 만료는 유효기간을 제한한다.", "모르겠습니다."
         ), 5);
 
-        assertThat(result.chunks()).isEmpty();
-        assertThat(result.insufficientEvidence()).isTrue();
+        assertThat(retrievalResult.chunks()).isEmpty();
+        assertThat(retrievalResult.insufficientEvidence()).isTrue();
     }
 
     @Test
@@ -266,12 +266,12 @@ class KnowledgeRetrievalServiceTest {
         publishAndChunk(topic, admin, "만료의 다른 출처", expirationText + " 별도 출처의 설명이다.");
         KnowledgeDocument validation = publishAndChunk(topic, admin, "재검증", "ETag 재검증은 변경 여부를 확인한다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("TTL", "ETag"), "TTL 만료와 ETag 재검증을 비교하세요.",
                 expirationText + " ETag 재검증은 변경 여부를 확인한다.", "모르겠습니다."
         ), 2);
 
-        assertThat(result.chunks()).extracting(row -> row.chunk().getDocumentId())
+        assertThat(retrievalResult.chunks()).extracting(row -> row.chunk().getDocumentId())
                 .containsExactly(expiration.getId(), validation.getId());
     }
 
@@ -285,13 +285,13 @@ class KnowledgeRetrievalServiceTest {
         publishAndChunk(topic, admin, "상세 근거", detailedEvidence);
         publishAndChunk(topic, admin, "반대 근거", "캐시 재검증은 서버 확인이 필요 없다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("캐시"), "캐시 재검증은 서버 확인이 필요한가?",
                 detailedEvidence, "모르겠습니다."
         ), 2);
 
-        assertThat(result.conflictingEvidence()).isTrue();
-        assertThat(result.chunks()).hasSize(2);
+        assertThat(retrievalResult.conflictingEvidence()).isTrue();
+        assertThat(retrievalResult.chunks()).hasSize(2);
     }
 
     @Test
@@ -304,12 +304,12 @@ class KnowledgeRetrievalServiceTest {
         KnowledgeDocument expiration = publishAndChunk(topic, admin, "만료", expirationText);
         publishAndChunk(topic, admin, "비용", "ETag 다음 단계의 비용 산정");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("TTL", "ETag"), "다음 설명에서 TTL과 ETag를 비교하세요.",
                 expirationText + " ETag 재검증은 변경 여부를 확인한다.", "모르겠습니다."
         ), 5);
 
-        assertThat(result.chunks()).extracting(row -> row.chunk().getDocumentId())
+        assertThat(retrievalResult.chunks()).extracting(row -> row.chunk().getDocumentId())
                 .containsExactly(expiration.getId());
     }
 
@@ -324,14 +324,14 @@ class KnowledgeRetrievalServiceTest {
         publishAndChunk(topic, admin, "장비 구매",
                 "서버 확인이 필요 없다. 신규 장비의 구매 비용과 임대 장소와 전력 설비와 보험 계약을 따로 검토한다.");
 
-        RetrievalResult result = knowledgeRetrievalService.retrieve(new RetrievalQuery(
+        RetrievalResult retrievalResult = knowledgeRetrievalService.retrieve(new RetrievalQuery(
                 topic.getId(), List.of("캐시"), "캐시 재검증은 서버 확인이 필요한가?",
                 reference, "모르겠습니다."
         ), 5);
 
-        assertThat(result.chunks()).extracting(row -> row.chunk().getDocumentId())
+        assertThat(retrievalResult.chunks()).extracting(row -> row.chunk().getDocumentId())
                 .containsExactly(evidence.getId());
-        assertThat(result.conflictingEvidence()).isFalse();
+        assertThat(retrievalResult.conflictingEvidence()).isFalse();
     }
 
     private KnowledgeDocument publishAndChunk(Topic topic, Member admin, String title, String content) {

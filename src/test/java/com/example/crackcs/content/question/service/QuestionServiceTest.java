@@ -226,27 +226,28 @@ class QuestionServiceTest {
         Member admin = saveAdmin();
         Concept concept = conceptRepository.save(Concept.builder()
                 .topic(topic).code("PROCESS_THREAD").name("프로세스와 스레드").build());
-        Question first = questionService.create(
+        Question publishedQuestion = questionService.create(
                 admin.getId(), topic.getId(), QuestionDifficulty.BASIC, "첫 문제", "첫 답안"
         );
         questionService.replaceConcepts(
-                first.getId(), List.of(new QuestionConceptData(concept.getId(), BigDecimal.ONE, true))
+                publishedQuestion.getId(),
+                List.of(new QuestionConceptData(concept.getId(), BigDecimal.ONE, true))
         );
-        questionService.review(first.getId(), admin.getId());
-        questionService.publish(first.getId());
+        questionService.review(publishedQuestion.getId(), admin.getId());
+        questionService.publish(publishedQuestion.getId());
 
-        Question second = questionService.createNextVersion(
-                first.getId(), admin.getId(), QuestionDifficulty.INTERMEDIATE, "둘째 문제", "둘째 답안"
+        Question nextQuestionVersion = questionService.createNextVersion(
+                publishedQuestion.getId(), admin.getId(), QuestionDifficulty.INTERMEDIATE, "둘째 문제", "둘째 답안"
         );
-        questionService.review(second.getId(), admin.getId());
-        questionService.publish(second.getId());
+        questionService.review(nextQuestionVersion.getId(), admin.getId());
+        questionService.publish(nextQuestionVersion.getId());
 
-        assertThat(questionRepository.findById(first.getId()).orElseThrow().getStatus())
+        assertThat(questionRepository.findById(publishedQuestion.getId()).orElseThrow().getStatus())
                 .isEqualTo(QuestionStatus.RETIRED);
-        assertThat(questionRepository.findById(second.getId()).orElseThrow().getStatus())
+        assertThat(questionRepository.findById(nextQuestionVersion.getId()).orElseThrow().getStatus())
                 .isEqualTo(QuestionStatus.PUBLISHED);
-        assertThat(questionRepository.findPublishedNormalById(first.getId())).isEmpty();
-        assertThat(questionRepository.findPublishedNormalById(second.getId())).isPresent();
+        assertThat(questionRepository.findPublishedNormalById(publishedQuestion.getId())).isEmpty();
+        assertThat(questionRepository.findPublishedNormalById(nextQuestionVersion.getId())).isPresent();
     }
 
     private Topic saveTopic(String code, String name) {

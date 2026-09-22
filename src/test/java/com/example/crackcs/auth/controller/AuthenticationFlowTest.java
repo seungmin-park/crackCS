@@ -82,12 +82,12 @@ class AuthenticationFlowTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.nickname").value("크랙러"))
                 .andExpect(jsonPath("$.role").value("USER"));
-        AuthAccount account = authAccountRepository.findByProviderAndLoginId(
+        AuthAccount authenticatedAccount = authAccountRepository.findByProviderAndLoginId(
                         AuthProvider.LOCAL,
                         "user@example.com"
                 )
                 .orElseThrow();
-        assertThat(account.getLastLoginAt()).isNotNull();
+        assertThat(authenticatedAccount.getLastLoginAt()).isNotNull();
     }
 
     @Test
@@ -120,9 +120,9 @@ class AuthenticationFlowTest {
     @DisplayName("비활성 회원은 올바른 비밀번호로도 로그인할 수 없다")
     void rejectsInactiveMemberLogin(MemberStatus memberStatus) throws Exception {
         String email = memberStatus.name().toLowerCase() + "@example.com";
-        Member member = authService.register(email, PASSWORD, "비활성 회원");
-        member.changeStatus(memberStatus);
-        memberRepository.save(member);
+        Member inactiveMember = authService.register(email, PASSWORD, "비활성 회원");
+        inactiveMember.changeStatus(memberStatus);
+        memberRepository.save(inactiveMember);
         CsrfFixture csrf = issueCsrfToken();
 
         mockMvc.perform(post("/api/auth/login")
@@ -231,19 +231,19 @@ class AuthenticationFlowTest {
     }
 
     private CsrfFixture issueCsrfToken() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/auth/csrf"))
+        MvcResult csrfResponse = mockMvc.perform(get("/api/auth/csrf"))
                 .andExpect(status().isOk())
                 .andReturn();
-        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        JsonNode responseBody = objectMapper.readTree(csrfResponse.getResponse().getContentAsString());
         return new CsrfFixture(
-                sessionOf(result),
-                body.get("headerName").asText(),
-                body.get("token").asText()
+                sessionOf(csrfResponse),
+                responseBody.get("headerName").asText(),
+                responseBody.get("token").asText()
         );
     }
 
-    private MockHttpSession sessionOf(MvcResult result) {
-        return (MockHttpSession) result.getRequest().getSession(false);
+    private MockHttpSession sessionOf(MvcResult mvcResult) {
+        return (MockHttpSession) mvcResult.getRequest().getSession(false);
     }
 
     private String loginJson(String email, String password) throws Exception {

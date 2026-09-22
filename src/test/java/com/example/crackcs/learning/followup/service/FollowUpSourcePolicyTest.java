@@ -59,15 +59,17 @@ class FollowUpSourcePolicyTest {
         Member admin = Member.builder().nickname("관리자").role(MemberRole.ADMIN).build();
         Topic topic = Topic.builder().code("OS").name("운영체제").build();
         ReflectionTestUtils.setField(topic, "id", 1L);
-        Concept first = concept(topic, 10L);
-        Concept second = concept(topic, 20L);
-        Concept third = concept(topic, 30L);
+        Concept firstPriorityConcept = concept(topic, 10L);
+        Concept secondPriorityConcept = concept(topic, 20L);
+        Concept thirdPriorityConcept = concept(topic, 30L);
         Question question = Question.builder().topic(topic).createdByMember(admin).difficulty(QuestionDifficulty.BASIC)
                 .content("원본 문제").referenceAnswer("모범 답안").build();
         question.replaceConcepts(List.of(
-                new QuestionConceptAssignment(first, new BigDecimal("0.20"), firstRequired),
-                new QuestionConceptAssignment(second, new BigDecimal(secondWeight), !firstRequired),
-                new QuestionConceptAssignment(third, new BigDecimal("0.80").subtract(new BigDecimal(secondWeight)), !firstRequired)
+                new QuestionConceptAssignment(firstPriorityConcept, new BigDecimal("0.20"), firstRequired),
+                new QuestionConceptAssignment(
+                        secondPriorityConcept, new BigDecimal(secondWeight), !firstRequired),
+                new QuestionConceptAssignment(thirdPriorityConcept,
+                        new BigDecimal("0.80").subtract(new BigDecimal(secondWeight)), !firstRequired)
         ));
         question.review(admin);
         question.publish();

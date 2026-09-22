@@ -23,15 +23,15 @@ class AnswerTest {
     @Test
     @DisplayName("공개된 문제의 답변 원문과 멱등성 키를 변경 없이 보존한다")
     void createsImmutableSubmissionForPublishedQuestion() {
-        Member member = user("학습자");
+        Member learner = user("학습자");
         Question question = publishedQuestion();
         String idempotencyKey = UUID.randomUUID().toString();
         String content = "  공백도 답변 원문의 일부입니다.  ";
 
-        Answer answer = Answer.builder().member(member).question(question)
+        Answer answer = Answer.builder().member(learner).question(question)
                 .idempotencyKey(idempotencyKey).content(content).build();
 
-        assertThat(answer.getMember()).isSameAs(member);
+        assertThat(answer.getMember()).isSameAs(learner);
         assertThat(answer.getQuestion()).isSameAs(question);
         assertThat(answer.getIdempotencyKey()).isEqualTo(idempotencyKey);
         assertThat(answer.getContent()).isEqualTo(content);
@@ -60,12 +60,12 @@ class AnswerTest {
     @DisplayName("공백 답변과 10000자를 넘는 답변을 거부한다")
     void rejectsInvalidContent() {
         Question question = publishedQuestion();
-        Member member = user("학습자");
+        Member learner = user("학습자");
         String idempotencyKey = UUID.randomUUID().toString();
 
-        assertThatThrownBy(() -> Answer.builder().member(member).question(question)
+        assertThatThrownBy(() -> Answer.builder().member(learner).question(question)
                 .idempotencyKey(idempotencyKey).content("   ").build()).isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> Answer.builder().member(member).question(question)
+        assertThatThrownBy(() -> Answer.builder().member(learner).question(question)
                 .idempotencyKey(idempotencyKey).content("가".repeat(10_001)).build()).isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -80,9 +80,9 @@ class AnswerTest {
     @Test
     @DisplayName("비활성 회원은 도메인 생성에서도 답변을 제출할 수 없다")
     void rejectsInactiveSubmission() {
-        Member member = user("학습자");
-        member.changeStatus(MemberStatus.BLOCKED);
-        assertThatThrownBy(() -> Answer.builder().member(member).question(publishedQuestion())
+        Member learner = user("학습자");
+        learner.changeStatus(MemberStatus.BLOCKED);
+        assertThatThrownBy(() -> Answer.builder().member(learner).question(publishedQuestion())
                 .idempotencyKey(UUID.randomUUID().toString()).content("답변").build())
                 .isInstanceOf(IllegalArgumentException.class);
     }

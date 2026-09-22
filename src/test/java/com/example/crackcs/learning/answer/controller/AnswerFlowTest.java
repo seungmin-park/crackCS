@@ -47,7 +47,7 @@ class AnswerFlowTest {
     private MockMvc mockMvc;
 
     @Autowired
-    private ObjectMapper mapper;
+    private ObjectMapper objectMapper;
 
     @Autowired
     private MemberRepository memberRepository;
@@ -80,13 +80,13 @@ class AnswerFlowTest {
     @Test
     @DisplayName("공개 문제에 답변을 제출하면 평가 진행 상태를 반환한다")
     void submitsAnswerForEvaluation() throws Exception {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
         mockMvc.perform(post("/api/questions/{id}/answers", question.getId())
-                        .with(user(principal(member))).with(csrf())
+                        .with(user(principal(learner))).with(csrf())
                         .contentType("application/json")
                         .header("Idempotency-Key", UUID.randomUUID().toString())
-                        .content(mapper.writeValueAsString(Map.of("content", "답변 원문"))))
+                        .content(objectMapper.writeValueAsString(Map.of("content", "답변 원문"))))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.content").value("답변 원문"))
                 .andExpect(jsonPath("$.evaluation.status").value("EVALUATING"));
@@ -95,19 +95,19 @@ class AnswerFlowTest {
     @Test
     @DisplayName("같은 요청을 동시에 제출해도 답변과 평가가 한 개씩만 저장된다")
     void deduplicatesConcurrentRequests() throws Exception {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
         String key = UUID.randomUUID().toString();
-        String body = mapper.writeValueAsString(Map.of("content", "같은 원문"));
+        String body = objectMapper.writeValueAsString(Map.of("content", "같은 원문"));
         CyclicBarrier barrier = new CyclicBarrier(2);
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
             Callable<Long> submit = () -> {
                 barrier.await(5, TimeUnit.SECONDS);
                 String response = mockMvc.perform(post("/api/questions/{id}/answers", question.getId())
-                                .with(user(principal(member))).with(csrf()).header("Idempotency-Key", key)
+                                .with(user(principal(learner))).with(csrf()).header("Idempotency-Key", key)
                                 .contentType("application/json").content(body))
                         .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
-                return mapper.readTree(response).get("answerId").asLong();
+                return objectMapper.readTree(response).get("answerId").asLong();
             };
             Future<Long> first = executor.submit(submit);
             Future<Long> second = executor.submit(submit);
@@ -127,18 +127,18 @@ class AnswerFlowTest {
         String response = mockMvc.perform(post("/api/questions/{id}/answers", question.getId())
                         .with(user(principal(owner))).with(csrf()).contentType("application/json")
                         .header("Idempotency-Key", UUID.randomUUID().toString())
-                        .content(mapper.writeValueAsString(Map.of("content", "개인 답변"))))
+                        .content(objectMapper.writeValueAsString(Map.of("content", "개인 답변"))))
                 .andExpect(status().isAccepted()).andReturn().getResponse().getContentAsString();
-        long id = mapper.readTree(response).get("answerId").asLong();
+        long id = objectMapper.readTree(response).get("answerId").asLong();
         mockMvc.perform(get("/api/answers/{id}", id).with(user(principal(stranger))))
                 .andExpect(status().isNotFound()).andExpect(jsonPath("$.code").value("ANSWER_NOT_FOUND"));
         mockMvc.perform(get("/api/answers/{id}/evaluation", id).with(user(principal(stranger))))
                 .andExpect(status().isNotFound());
     }
 
-    private AuthenticatedMember principal(Member member) {
+    private AuthenticatedMember principal(Member learner) {
         return AuthenticatedMember.from(
-                AuthAccount.builder().member(member).loginId("learner@example.com").passwordHash("hash").build());
+                AuthAccount.builder().member(learner).loginId("learner@example.com").passwordHash("hash").build());
     }
 
     private Question publishedQuestion() {

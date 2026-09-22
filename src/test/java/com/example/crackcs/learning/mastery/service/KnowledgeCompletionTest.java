@@ -120,11 +120,11 @@ class KnowledgeCompletionTest {
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutSeconds);
             start.countDown();
             for (int finished = 0; finished < 2; finished++) {
-                Future<Void> result = completed.poll(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
-                if (result == null) {
+                Future<Void> completedTask = completed.poll(Math.max(0, deadline - System.nanoTime()), TimeUnit.NANOSECONDS);
+                if (completedTask == null) {
                     throw new TimeoutException("Concurrent tasks exceeded the shared deadline");
                 }
-                result.get();
+                completedTask.get();
             }
         } catch (Exception | Error failure) {
             taskFailure = failure;
@@ -185,18 +185,18 @@ class KnowledgeCompletionTest {
     @Test
     @DisplayName("학습 상태가 없을 때 동시에 완료하는 두 평가를 모두 반영한다")
     void completesConcurrentEvaluationsIntoNewState() throws Exception {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long first = pending(member, question).getId();
-        Long second = pending(member, question).getId();
+        Long first = savePendingEvaluation(learner, question).getId();
+        Long second = savePendingEvaluation(learner, question).getId();
 
         concurrently(() -> evaluationProcessor.process(first), () -> evaluationProcessor.process(second));
 
-        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), concept.getId())
                 .orElseThrow();
         assertThat(state.getAttemptCount()).isEqualTo(2);
         assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(2);
@@ -208,20 +208,20 @@ class KnowledgeCompletionTest {
     @Test
     @DisplayName("기존 학습 상태가 있을 때 동시에 완료하는 두 평가를 모두 추가 반영한다")
     void completesConcurrentEvaluationsIntoExistingState() throws Exception {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long initial = completed(member, question, concept, chunk, Verdict.CORRECT);
+        Long initial = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT);
         completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(initial));
-        Long first = pending(member, question).getId();
-        Long second = pending(member, question).getId();
+        Long first = savePendingEvaluation(learner, question).getId();
+        Long second = savePendingEvaluation(learner, question).getId();
 
         concurrently(() -> evaluationProcessor.process(first), () -> evaluationProcessor.process(second));
 
-        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
+        KnowledgeState state = knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), concept.getId())
                 .orElseThrow();
         assertThat(state.getAttemptCount()).isEqualTo(3);
         assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(3);
@@ -298,27 +298,27 @@ class KnowledgeCompletionTest {
         return questionRepository.save(question);
     }
 
-    private Evaluation pending(Member member, Question question) {
-        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
+    private Evaluation savePendingEvaluation(Member learner, Question question) {
+        Answer answer = answerRepository.save(Answer.builder().member(learner).question(question)
                 .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
-    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
-        Long id = pending(member, question).getId();
-        complete(id, concept, chunk, verdict);
+    private Long saveCompletedEvaluation(Member learner, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = savePendingEvaluation(learner, question).getId();
+        completeEvaluation(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private void completeEvaluation(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+            evaluation.completeWithEvidence(evaluationResult(concept, chunk, verdict),
                     List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private EvaluationResult evaluationResult(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
                 List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
                 List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);

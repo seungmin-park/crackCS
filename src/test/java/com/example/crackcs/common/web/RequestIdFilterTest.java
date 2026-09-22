@@ -47,13 +47,13 @@ class RequestIdFilterTest {
     @Test
     @DisplayName("유효하지 않은 요청 ID는 새 UUID로 교체한다")
     void replacesInvalidRequestId() throws Exception {
-        MvcResult result = mockMvc.perform(get("/api/questions").header("X-Request-Id", "not-a-uuid"))
+        MvcResult requestResult = mockMvc.perform(get("/api/questions").header("X-Request-Id", "not-a-uuid"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().exists("X-Request-Id"))
                 .andReturn();
 
-        String responseRequestId = result.getResponse().getHeader("X-Request-Id");
-        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        String responseRequestId = requestResult.getResponse().getHeader("X-Request-Id");
+        JsonNode body = objectMapper.readTree(requestResult.getResponse().getContentAsString());
 
         assertThat(responseRequestId).isNotEqualTo("not-a-uuid");
         assertThat(UUID.fromString(responseRequestId).toString()).isEqualTo(responseRequestId);

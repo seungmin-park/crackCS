@@ -74,7 +74,7 @@ class KnowledgeAnswerSerializationTest {
     private AnswerService answerService;
 
     @Autowired
-    private ObjectMapper mapper;
+    private ObjectMapper objectMapper;
 
     @AfterEach
     void cleanUp() {
@@ -91,17 +91,17 @@ class KnowledgeAnswerSerializationTest {
     @Test
     @DisplayName("평가 조회 응답은 Service 트랜잭션 종료 후에도 근거와 피드백 목록을 직렬화한다")
     void serializesFeedbackOutsideTransaction() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long id = completed(member, question, concept, chunk, Verdict.CORRECT);
+        Long id = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT);
         Long answerId = evaluationRepository.findById(id).orElseThrow().getAnswer().getId();
 
-        AnswerEvaluationResult result = answerService.findEvaluation(member.getId(), answerId);
-        String json = mapper.writeValueAsString(EvaluationResponse.from(result));
+        AnswerEvaluationResult answerEvaluationResult = answerService.findEvaluation(learner.getId(), answerId);
+        String json = objectMapper.writeValueAsString(EvaluationResponse.from(answerEvaluationResult));
 
         assertThat(json).contains("\"strengths\":[]", "\"omissions\":[]", "\"misconceptions\":[]", "\"evidence\":[{");
     }
@@ -133,28 +133,28 @@ class KnowledgeAnswerSerializationTest {
         return questionRepository.save(question);
     }
 
-    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
-        Long id = pending(member, question).getId();
-        complete(id, concept, chunk, verdict);
+    private Long saveCompletedEvaluation(Member learner, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = savePendingEvaluation(learner, question).getId();
+        completeEvaluation(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private void completeEvaluation(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+            evaluation.completeWithEvidence(evaluationResult(concept, chunk, verdict),
                     List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private EvaluationResult evaluationResult(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
                 List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
                 List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);
     }
 
-    private Evaluation pending(Member member, Question question) {
-        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
+    private Evaluation savePendingEvaluation(Member learner, Question question) {
+        Answer answer = answerRepository.save(Answer.builder().member(learner).question(question)
                 .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }

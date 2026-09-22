@@ -133,36 +133,51 @@
 
 ### 인증·회원
 
-- [ ] `result`, `value`, `data`, `account`, `member`가 시나리오 역할을 드러내는지 검사
-- [ ] 생성 회원·인증 회원·차단 회원·관리자 이름 구분
-- [ ] `mapper` 같은 협력 객체를 `objectMapper`로 구체화
+- [x] `result`, `value`, `data`, `account`, `member`가 시나리오 역할을 드러내는지 검사
+- [x] 생성 회원·인증 회원·차단 회원·관리자 이름 구분
+- [x] `mapper` 같은 협력 객체를 `objectMapper`로 구체화
 
 ### 콘텐츠
 
-- [ ] 원본 문제·새 버전 문제·후속 문제 이름 구분
-- [ ] 작성자·검수자·학습자 역할 이름 구분
-- [ ] `data()` helper를 반환 개념이 드러나는 이름으로 변경
-- [ ] `saved`, `found`, `result`가 여러 대상을 가리키지 않는지 검사
+- [x] 원본 문제·새 버전 문제·후속 문제 이름 구분
+- [x] 작성자·검수자·학습자 역할 이름 구분
+- [x] `data()` helper를 반환 개념이 드러나는 이름으로 변경
+- [x] `saved`, `found`, `result`가 여러 대상을 가리키지 않는지 검사
 
 ### 평가·검색
 
-- [ ] `result`를 `evaluationResult`, `retrievalResult`, `benchmarkResult` 등으로 구분
-- [ ] 기준 자료와 DB 저장 자료 이름 구분
-- [ ] `rows`, `values`, `selected`를 실제 데이터 의미로 변경
-- [ ] benchmark helper 이름이 읽기·매핑·요약 책임을 드러내는지 확인
+- [x] `result`를 `evaluationResult`, `retrievalResult`, `benchmarkResult` 등으로 구분
+- [x] 기준 자료와 DB 저장 자료 이름 구분
+- [x] `rows`, `values`, `selected`를 실제 데이터 의미로 변경
+- [x] benchmark helper 이름이 읽기·매핑·요약 책임을 드러내는지 확인
 
 ### 학습
 
-- [ ] 답변 제출 결과·평가 결과·후속 질문 생성 결과 이름 구분
-- [ ] 반복되는 `result()` helper를 생성하는 도메인 결과 이름으로 변경
-- [ ] `owner(source)`처럼 내부 구현을 읽어야 이해되는 helper 제거 또는 이름 변경
-- [ ] `complete(...)` helper가 준비·실행·검증을 함께 숨기는지 검사
+- [x] 답변 제출 결과·평가 결과·후속 질문 생성 결과 이름 구분
+- [x] 반복되는 `result()` helper를 생성하는 도메인 결과 이름으로 변경
+- [x] `owner(source)`처럼 내부 구현을 읽어야 이해되는 helper 제거 또는 이름 변경
+- [x] `complete(...)` helper가 준비·실행·검증을 함께 숨기는지 검사
 
 ### 검증
 
-- [ ] 패키지별 테스트 실행
-- [ ] 테스트 메서드 수·성공·실패 기록
-- [ ] 이름 변경 외 동작 변경이 없는지 diff 확인
+- [x] 패키지별 테스트 실행
+- [x] 테스트 메서드 수·성공·실패 기록
+- [x] 이름 변경 외 동작 변경이 없는지 diff 확인
+
+검증 결과(2026-09-22):
+
+- RED: helper·변수 선언 이름을 먼저 변경한 뒤 `./gradlew compileTestJava --console=plain` 실행, 남은 기존 참조로 컴파일 오류 62개 확인
+- GREEN: 모든 참조를 역할 이름으로 맞춘 뒤 `./gradlew compileTestJava --console=plain` 성공
+- 인증·회원·공통 패키지: 54개 성공, 실패 0개
+- 콘텐츠 패키지: 119개 성공, 실패 0개
+- 평가·검색 패키지: 78개 성공, 실패 0개
+- 학습 패키지: 190개 성공, 실패 0개
+- `./gradlew test --rerun-tasks --console=plain`: 442개 성공, 실패 0개
+- `./gradlew localServiceLatencyBenchmark --rerun-tasks --console=plain`: 1개 성공, 실패 0개
+- `./gradlew retrievalBenchmark --rerun-tasks --console=plain`: 1개 성공, 실패 0개
+- `./gradlew postgresTest --rerun-tasks --console=plain`: 37개 성공, 실패 0개
+- 테스트 코드 45개 파일의 역할 이름만 변경. 운영 코드·fixture 값·assertion 의미 변경 없음
+- `MemberTest`의 `member`는 단일 테스트 대상 자체를 가리키므로 유지
 
 ## 작업 3. 운영 코드 도메인 타입과 필드 이름 정리
 

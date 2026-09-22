@@ -13,49 +13,49 @@ class AuthAccountTest {
     @Test
     @DisplayName("LOCAL 인증 계정은 이메일을 정규화하고 해시만 보관한다")
     void createsLocalAccountWithNormalizedLoginId() {
-        Member member = Member.builder().nickname("크랙러").build();
+        Member localMember = Member.builder().nickname("크랙러").build();
 
-        AuthAccount account = AuthAccount.builder()
-                .member(member)
+        AuthAccount localAccount = AuthAccount.builder()
+                .member(localMember)
                 .loginId("  USER@Example.COM ")
                 .passwordHash("{bcrypt}encoded-password")
                 .build();
 
-        assertThat(account.getProvider()).isEqualTo(AuthProvider.LOCAL);
-        assertThat(account.getLoginId()).isEqualTo("user@example.com");
-        assertThat(account.getPasswordHash()).isEqualTo("{bcrypt}encoded-password");
-        assertThat(account.getCreatedAt()).isNotNull();
-        assertThat(account.getLastLoginAt()).isNull();
+        assertThat(localAccount.getProvider()).isEqualTo(AuthProvider.LOCAL);
+        assertThat(localAccount.getLoginId()).isEqualTo("user@example.com");
+        assertThat(localAccount.getPasswordHash()).isEqualTo("{bcrypt}encoded-password");
+        assertThat(localAccount.getCreatedAt()).isNotNull();
+        assertThat(localAccount.getLastLoginAt()).isNull();
     }
 
     @Test
     @DisplayName("활성 회원의 로그인 성공 시각을 기록한다")
     void recordsSuccessfulLogin() {
-        AuthAccount account = AuthAccount.builder()
+        AuthAccount activeAccount = AuthAccount.builder()
                 .member(Member.builder().nickname("크랙러").build())
                 .loginId("user@example.com")
                 .passwordHash("{bcrypt}encoded-password")
                 .build();
 
-        account.recordSuccessfulLogin();
+        activeAccount.recordSuccessfulLogin();
 
-        assertThat(account.getLastLoginAt()).isNotNull();
+        assertThat(activeAccount.getLastLoginAt()).isNotNull();
     }
 
     @Test
     @DisplayName("비활성 회원의 로그인 성공 시각은 기록할 수 없다")
     void rejectsLoginRecordForInactiveMember() {
-        Member member = Member.builder().nickname("차단 회원").build();
-        member.changeStatus(MemberStatus.BLOCKED);
-        AuthAccount account = AuthAccount.builder()
-                .member(member)
+        Member blockedMember = Member.builder().nickname("차단 회원").build();
+        blockedMember.changeStatus(MemberStatus.BLOCKED);
+        AuthAccount blockedAccount = AuthAccount.builder()
+                .member(blockedMember)
                 .loginId("blocked@example.com")
                 .passwordHash("{bcrypt}encoded-password")
                 .build();
 
-        assertThatThrownBy(account::recordSuccessfulLogin)
+        assertThatThrownBy(blockedAccount::recordSuccessfulLogin)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("inactive member must not authenticate");
-        assertThat(account.getLastLoginAt()).isNull();
+        assertThat(blockedAccount.getLastLoginAt()).isNull();
     }
 }

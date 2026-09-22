@@ -121,7 +121,7 @@ class LocalServiceLatencyBenchmarkTest {
     @Test
     @DisplayName("고정 데이터에서 Service 조회와 평가 접수 및 완료의 로컬 p95를 기록한다")
     void writesLocalPerformanceBaseline() throws IOException {
-        Member member = memberRepository.save(Member.builder().nickname("성능 학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("성능 학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code("PERF").name("성능 기준").build());
         Concept concept = conceptRepository.save(
@@ -151,27 +151,27 @@ class LocalServiceLatencyBenchmarkTest {
         document = knowledgeDocumentRepository.save(document);
         knowledgeChunkService.generateChunks(document.getId());
 
-        AnswerResult evaluatedAnswer = submit(member, question, "기준 답변 0");
+        AnswerResult evaluatedAnswer = submit(learner, question, "기준 답변 0");
         evaluationProcessor.process(evaluatedAnswer.evaluationId());
         for (int index = 1; index < FIXTURE_SIZE; index++) {
-            submit(member, question, "기준 답변 " + index);
+            submit(learner, question, "기준 답변 " + index);
         }
 
         Map<String, Measurement> measurements = new LinkedHashMap<>();
         measurements.put("answerHistory", measure(
-                () -> answerService.findAll(member.getId(), PageRequest.of(0, FIXTURE_SIZE))));
+                () -> answerService.findAll(learner.getId(), PageRequest.of(0, FIXTURE_SIZE))));
         measurements.put("knowledgeMap", measure(
-                () -> knowledgeQueryService.knowledgeStates(member.getId())));
+                () -> knowledgeQueryService.knowledgeStates(learner.getId())));
         measurements.put("recommendation", measure(
-                () -> recommendationService.recommendation(member.getId())));
+                () -> recommendationService.recommendation(learner.getId())));
 
         for (int index = 0; index < WARMUP_COUNT; index++) {
-            AnswerResult warmup = submit(member, question, "접수 예열 " + index);
+            AnswerResult warmup = submit(learner, question, "접수 예열 " + index);
             evaluationProcessor.process(warmup.evaluationId());
         }
         List<Long> evaluationIds = new ArrayList<>();
         measurements.put("answerSubmission", measureSamples(() ->
-                evaluationIds.add(submit(member, question, "접수 측정 " + evaluationIds.size()).evaluationId())));
+                evaluationIds.add(submit(learner, question, "접수 측정 " + evaluationIds.size()).evaluationId())));
         measurements.put("evaluationCompletion", measureSamples(new Runnable() {
             private int index;
 
@@ -261,9 +261,9 @@ class LocalServiceLatencyBenchmarkTest {
         return file;
     }
 
-    private AnswerResult submit(Member member, Question question, String content) {
+    private AnswerResult submit(Member learner, Question question, String content) {
         return answerService.submit(
-                member.getId(),
+                learner.getId(),
                 question.getId(),
                 UUID.randomUUID().toString(),
                 content

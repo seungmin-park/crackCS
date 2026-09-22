@@ -26,11 +26,12 @@ class FollowUpQuestionTest {
     @Test
     @DisplayName("원본 답변 식별자가 아직 없어도 다른 답변의 질문으로 작업을 완료할 수 없다")
     void generationRejectsDifferentTransientSource() {
-        FollowUpGeneration job = FollowUpGeneration.builder().answer(source()).build();
-        Question question = followUp(source());
+        FollowUpGeneration job = FollowUpGeneration.builder().answer(sourceAnswer()).build();
+        Question generatedFollowUpQuestion = followUpQuestion(sourceAnswer());
         LocalDateTime now = LocalDateTime.now().plusSeconds(1);
         job.claim("worker", now, Duration.ofMinutes(1));
-        assertThatThrownBy(() -> job.complete("worker", now, question, result(question, 1L)))
+        assertThatThrownBy(() -> job.complete(
+                "worker", now, generatedFollowUpQuestion, followUpResult(generatedFollowUpQuestion, 1L)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(job.getStatus()).isEqualTo(FollowUpStatus.PROCESSING);
         assertThat(job.getQuestion()).isNull();
@@ -39,33 +40,35 @@ class FollowUpQuestionTest {
     @Test
     @DisplayName("도메인 완료 메서드도 저장할 질문과 생성 결과의 개념 일치를 검증한다")
     void generationRejectsMismatchedConcept() {
-        Answer source = source();
-        Question question = followUp(source);
-        FollowUpGeneration job = FollowUpGeneration.builder().answer(source).build();
+        Answer sourceAnswer = sourceAnswer();
+        Question generatedFollowUpQuestion = followUpQuestion(sourceAnswer);
+        FollowUpGeneration job = FollowUpGeneration.builder().answer(sourceAnswer).build();
         LocalDateTime now = LocalDateTime.now().plusSeconds(1);
         job.claim("worker", now, Duration.ofMinutes(1));
-        assertThatThrownBy(() -> job.complete("worker", now, question, result(question, 99L)))
+        assertThatThrownBy(() -> job.complete(
+                "worker", now, generatedFollowUpQuestion, followUpResult(generatedFollowUpQuestion, 99L)))
                 .isInstanceOf(IllegalArgumentException.class);
         assertThat(job.getStatus()).isEqualTo(FollowUpStatus.PROCESSING);
         assertThat(job.getQuestion()).isNull();
     }
 
-    private FollowUpResult result(Question question, Long conceptId) {
-        return new FollowUpResult(question.getContent(), question.getReferenceAnswer(), conceptId, List.of(7L),
+    private FollowUpResult followUpResult(Question followUpQuestion, Long conceptId) {
+        return new FollowUpResult(
+                followUpQuestion.getContent(), followUpQuestion.getReferenceAnswer(), conceptId, List.of(7L),
                 "test", "follow-up-v1", 0, 0, 0);
     }
 
     @Test
     @DisplayName("후속 질문은 원본 답변과 단일 필수 개념을 가진 개인 AI 질문이다")
     void createsPrivateFollowUp() {
-        Answer source = source();
-        Question question = followUp(source);
-        assertThat(question.getType()).isEqualTo(QuestionType.FOLLOW_UP);
-        assertThat(question.getOrigin()).isEqualTo(QuestionOrigin.SYSTEM_FOLLOW_UP);
-        assertThat(question.getSourceAnswer()).isSameAs(source);
-        assertThat(question.getStatus()).isEqualTo(QuestionStatus.PUBLISHED);
-        assertThat(question.getCreatedAt()).isEqualTo(question.getUpdatedAt());
-        assertThat(question.getQuestionConcepts()).singleElement().satisfies(concept -> {
+        Answer sourceAnswer = sourceAnswer();
+        Question generatedFollowUpQuestion = followUpQuestion(sourceAnswer);
+        assertThat(generatedFollowUpQuestion.getType()).isEqualTo(QuestionType.FOLLOW_UP);
+        assertThat(generatedFollowUpQuestion.getOrigin()).isEqualTo(QuestionOrigin.SYSTEM_FOLLOW_UP);
+        assertThat(generatedFollowUpQuestion.getSourceAnswer()).isSameAs(sourceAnswer);
+        assertThat(generatedFollowUpQuestion.getStatus()).isEqualTo(QuestionStatus.PUBLISHED);
+        assertThat(generatedFollowUpQuestion.getCreatedAt()).isEqualTo(generatedFollowUpQuestion.getUpdatedAt());
+        assertThat(generatedFollowUpQuestion.getQuestionConcepts()).singleElement().satisfies(concept -> {
             assertThat(concept.isRequired()).isTrue();
             assertThat(concept.getWeight()).isEqualByComparingTo("1");
         });
@@ -81,34 +84,35 @@ class FollowUpQuestionTest {
     @Test
     @DisplayName("후속 답변으로 다시 후속 질문을 만들 수 없다")
     void rejectsSecondFollowUp() {
-        Answer source = source();
-        Answer next = answer(source.getMember(), followUp(source));
-        assertThatThrownBy(() -> followUp(next)).isInstanceOf(InvalidContentStateException.class);
+        Answer sourceAnswer = sourceAnswer();
+        Answer followUpAnswer = answer(sourceAnswer.getMember(), followUpQuestion(sourceAnswer));
+        assertThatThrownBy(() -> followUpQuestion(followUpAnswer)).isInstanceOf(InvalidContentStateException.class);
     }
 
     @Test
     @DisplayName("다른 회원은 도메인을 직접 호출해도 후속 답변을 만들 수 없다")
     void rejectsOtherMember() {
-        Question question = followUp(source());
-        assertThatThrownBy(() -> answer(Member.builder().nickname("타인").build(), question))
+        Question generatedFollowUpQuestion = followUpQuestion(sourceAnswer());
+        assertThatThrownBy(() -> answer(Member.builder().nickname("타인").build(), generatedFollowUpQuestion))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     @DisplayName("후속 질문은 관리자 새 버전으로 복제할 수 없다")
     void rejectsAdminCopy() {
-        Question question = followUp(source());
-        assertThatThrownBy(() -> question.createNextVersion(2, admin(), QuestionDifficulty.BASIC, "복제", "정답"))
+        Question generatedFollowUpQuestion = followUpQuestion(sourceAnswer());
+        assertThatThrownBy(() -> generatedFollowUpQuestion.createNextVersion(
+                2, admin(), QuestionDifficulty.BASIC, "복제", "정답"))
                 .isInstanceOf(InvalidContentStateException.class);
     }
 
-    private Question followUp(Answer source) {
-        return Question.followUpBuilder().sourceAnswer(source)
-                .concept(source.getQuestion().getQuestionConcepts().iterator().next().getConcept())
+    private Question followUpQuestion(Answer sourceAnswer) {
+        return Question.followUpBuilder().sourceAnswer(sourceAnswer)
+                .concept(sourceAnswer.getQuestion().getQuestionConcepts().iterator().next().getConcept())
                 .content("적용 질문").referenceAnswer("적용 답안").build();
     }
 
-    private Answer source() {
+    private Answer sourceAnswer() {
         Topic topic = Topic.builder().code("OS").name("운영체제").build();
         Question question = Question.builder().topic(topic).createdByMember(admin())
                 .difficulty(QuestionDifficulty.BASIC).content("원본").referenceAnswer("정답").build();

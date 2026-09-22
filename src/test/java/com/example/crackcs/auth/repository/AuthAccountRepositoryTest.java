@@ -25,24 +25,24 @@ class AuthAccountRepositoryTest {
     @Test
     @DisplayName("LOCAL 인증 계정을 회원과 함께 저장하고 이메일로 조회한다")
     void savesAndFindsLocalAccount() {
-        Member member = memberRepository.save(Member.builder()
+        Member savedMember = memberRepository.save(Member.builder()
                 .nickname("크랙러")
                 .build());
         authAccountRepository.save(AuthAccount.builder()
-                .member(member)
+                .member(savedMember)
                 .loginId("user@example.com")
                 .passwordHash("{bcrypt}encoded-password")
                 .build());
 
-        AuthAccount found = authAccountRepository.findByProviderAndLoginId(
+        AuthAccount foundAccount = authAccountRepository.findByProviderAndLoginId(
                         AuthProvider.LOCAL,
                         "user@example.com"
                 )
                 .orElseThrow();
 
-        assertThat(found.getMemberId()).isEqualTo(member.getId());
-        assertThat(found.getMember().getNickname()).isEqualTo("크랙러");
-        assertThat(found.getPasswordHash()).isEqualTo("{bcrypt}encoded-password");
+        assertThat(foundAccount.getMemberId()).isEqualTo(savedMember.getId());
+        assertThat(foundAccount.getMember().getNickname()).isEqualTo("크랙러");
+        assertThat(foundAccount.getPasswordHash()).isEqualTo("{bcrypt}encoded-password");
     }
 
     @Test

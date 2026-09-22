@@ -298,29 +298,30 @@ class QuestionTest {
     @DisplayName("PUBLISHED 문제에서 같은 계열의 다음 DRAFT 버전을 만든다")
     void createsNextVersionFromPublishedQuestion() {
         Topic topic = createTopic();
-        Question published = createQuestion(topic, "기존 질문", "기존 답안");
-        published.replaceConcepts(List.of(new QuestionConceptAssignment(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true)));
-        published.review(createAdmin());
-        published.publish();
+        Question publishedQuestion = createQuestion(topic, "기존 질문", "기존 답안");
+        publishedQuestion.replaceConcepts(List.of(new QuestionConceptAssignment(
+                createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true)));
+        publishedQuestion.review(createAdmin());
+        publishedQuestion.publish();
 
-        Question next = published.createNextVersion(
+        Question nextQuestionVersion = publishedQuestion.createNextVersion(
                 2, createAdmin(), QuestionDifficulty.ADVANCED, "변경 질문", "변경 답안"
         );
 
-        assertThat(published.getContent()).isEqualTo("기존 질문");
-        assertThat(published.getStatus()).isEqualTo(QuestionStatus.PUBLISHED);
-        assertThat(next.getStatus()).isEqualTo(QuestionStatus.DRAFT);
-        assertThat(next.getQuestionVersion()).isEqualTo(2);
-        assertThat(next.getVersionSeriesId()).isEqualTo(published.getVersionSeriesId());
-        assertThat(next.getQuestionConcepts()).hasSize(1);
-        assertThat(next.getQuestionConcepts()).allSatisfy(copied -> {
-            assertThat(copied.getQuestion()).isSameAs(next);
-            assertThat(copied.getWeight()).isEqualByComparingTo("1.00");
-            assertThat(copied.isRequired()).isTrue();
+        assertThat(publishedQuestion.getContent()).isEqualTo("기존 질문");
+        assertThat(publishedQuestion.getStatus()).isEqualTo(QuestionStatus.PUBLISHED);
+        assertThat(nextQuestionVersion.getStatus()).isEqualTo(QuestionStatus.DRAFT);
+        assertThat(nextQuestionVersion.getQuestionVersion()).isEqualTo(2);
+        assertThat(nextQuestionVersion.getVersionSeriesId()).isEqualTo(publishedQuestion.getVersionSeriesId());
+        assertThat(nextQuestionVersion.getQuestionConcepts()).hasSize(1);
+        assertThat(nextQuestionVersion.getQuestionConcepts()).allSatisfy(copiedConcept -> {
+            assertThat(copiedConcept.getQuestion()).isSameAs(nextQuestionVersion);
+            assertThat(copiedConcept.getWeight()).isEqualByComparingTo("1.00");
+            assertThat(copiedConcept.isRequired()).isTrue();
         });
-        assertThat(next.getReviewedByMember()).isNull();
-        assertThat(next.getReviewedAt()).isNull();
-        assertThat(next.getUpdatedAt()).isEqualTo(next.getCreatedAt());
+        assertThat(nextQuestionVersion.getReviewedByMember()).isNull();
+        assertThat(nextQuestionVersion.getReviewedAt()).isNull();
+        assertThat(nextQuestionVersion.getUpdatedAt()).isEqualTo(nextQuestionVersion.getCreatedAt());
     }
 
     @Test

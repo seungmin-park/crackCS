@@ -47,14 +47,14 @@ class OpenAiEvaluationAdapterTest {
                 "gpt-5.6-terra", "os-evaluator-v1", Duration.ofSeconds(30)
         );
 
-        EvaluationResult result = adapter.evaluate(request("프로세스는 자원을 소유한다."));
+        EvaluationResult evaluationResult = adapter.evaluate(request("프로세스는 자원을 소유한다."));
 
-        assertThat(result.verdict()).isEqualTo(Verdict.CORRECT);
-        assertThat(result.concepts()).extracting(concept -> concept.conceptId()).containsExactly(11L);
-        assertThat(result.evidenceChunkIds()).containsExactly(21L);
-        assertThat(result.inputTokens()).isEqualTo(800L);
-        assertThat(result.outputTokens()).isEqualTo(200L);
-        assertThat(result.modelName()).isEqualTo("gpt-5.6-terra");
+        assertThat(evaluationResult.verdict()).isEqualTo(Verdict.CORRECT);
+        assertThat(evaluationResult.concepts()).extracting(concept -> concept.conceptId()).containsExactly(11L);
+        assertThat(evaluationResult.evidenceChunkIds()).containsExactly(21L);
+        assertThat(evaluationResult.inputTokens()).isEqualTo(800L);
+        assertThat(evaluationResult.outputTokens()).isEqualTo(200L);
+        assertThat(evaluationResult.modelName()).isEqualTo("gpt-5.6-terra");
     }
 
     @Test

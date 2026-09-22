@@ -160,25 +160,25 @@ class KnowledgeDocumentTest {
     @Test
     @DisplayName("PUBLISHED 문서는 직접 수정할 수 없고 같은 계열의 다음 DRAFT 버전을 만든다")
     void createsNextVersionWithoutOverwritingPublishedVersion() {
-        KnowledgeDocument published = createDocument("기존 원문");
-        published.review(admin("검수자"));
-        published.publish();
+        KnowledgeDocument publishedDocument = createDocument("기존 원문");
+        publishedDocument.review(admin("검수자"));
+        publishedDocument.publish();
 
-        assertThatThrownBy(() -> published.updateDraft(
+        assertThatThrownBy(() -> publishedDocument.updateDraft(
                 topic(), "변경", KnowledgeSourceType.INTERNAL_SUMMARY, null,
                 "Java 22", "내부", "변경 원문"
         )).isInstanceOf(InvalidContentStateException.class);
 
-        KnowledgeDocument next = published.createNextVersion(
+        KnowledgeDocument nextDocumentVersion = publishedDocument.createNextVersion(
                 2, topic(), admin("새 등록자"), "문서 제목", KnowledgeSourceType.OFFICIAL_DOC,
                 "https://example.com/docs", "Java 22", "인용 가능", "새 원문"
         );
 
-        assertThat(published.getStatus()).isEqualTo(KnowledgeDocumentStatus.PUBLISHED);
-        assertThat(published.getContent()).isEqualTo("기존 원문");
-        assertThat(next.getStatus()).isEqualTo(KnowledgeDocumentStatus.DRAFT);
-        assertThat(next.getDocumentVersion()).isEqualTo(2);
-        assertThat(next.getVersionSeriesId()).isEqualTo(published.getVersionSeriesId());
+        assertThat(publishedDocument.getStatus()).isEqualTo(KnowledgeDocumentStatus.PUBLISHED);
+        assertThat(publishedDocument.getContent()).isEqualTo("기존 원문");
+        assertThat(nextDocumentVersion.getStatus()).isEqualTo(KnowledgeDocumentStatus.DRAFT);
+        assertThat(nextDocumentVersion.getDocumentVersion()).isEqualTo(2);
+        assertThat(nextDocumentVersion.getVersionSeriesId()).isEqualTo(publishedDocument.getVersionSeriesId());
     }
 
     private KnowledgeDocument createDocument(String content) {

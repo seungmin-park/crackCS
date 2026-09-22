@@ -42,10 +42,12 @@ class TopicKnowledgeSummaryTest {
     @Test
     @DisplayName("모든 개념이 미평가이면 주제도 미평가이고 숙련도를 계산하지 않는다")
     void representsEntirelyUnassessedTopicAsUnknown() {
-        ConceptKnowledge first = new ConceptKnowledge(1L, "스레드", KnowledgeStatus.UNKNOWN, null, 0, 0, null);
-        ConceptKnowledge second = new ConceptKnowledge(2L, "프로세스", KnowledgeStatus.UNKNOWN, null, 0, 0, null);
+        ConceptKnowledge threadKnowledge = new ConceptKnowledge(
+                1L, "스레드", KnowledgeStatus.UNKNOWN, null, 0, 0, null);
+        ConceptKnowledge processKnowledge = new ConceptKnowledge(
+                2L, "프로세스", KnowledgeStatus.UNKNOWN, null, 0, 0, null);
 
-        TopicKnowledgeSummary summary = new TopicKnowledgeSummary(List.of(first, second));
+        TopicKnowledgeSummary summary = new TopicKnowledgeSummary(List.of(threadKnowledge, processKnowledge));
 
         assertThat(summary.status()).isEqualTo(KnowledgeStatus.UNKNOWN);
         assertThat(summary.masteryScore()).isNull();

@@ -14,23 +14,23 @@ class ReferenceChunkMappingTest {
     @Test
     @DisplayName("두 근거가 합쳐진 실제 Chunk는 동일한 DB ID에 연결한다")
     void mapsMergedEvidenceToOnePersistedChunk() {
-        Map<String, Set<Long>> result = ReferenceChunkMapping.connect(7L, "가나다\n라마바",
+        Map<String, Set<Long>> referenceChunkIdsByEvidence = ReferenceChunkMapping.connect(7L, "가나다\n라마바",
                 List.of(new ReferenceChunkMapping.Evidence("K1", 0, 3, "가나다"),
                         new ReferenceChunkMapping.Evidence("K2", 4, 7, "라마바")),
                 List.of(new ReferenceChunkMapping.StoredChunk(7L, 91L, 0, 7, "가나다\n라마바")));
 
-        assertThat(result).containsEntry("K1", Set.of(91L)).containsEntry("K2", Set.of(91L));
+        assertThat(referenceChunkIdsByEvidence).containsEntry("K1", Set.of(91L)).containsEntry("K2", Set.of(91L));
     }
 
     @Test
     @DisplayName("하나의 근거가 분할되면 이를 덮는 모든 실제 Chunk에 연결한다")
     void mapsSplitEvidenceAcrossChunks() {
-        Map<String, Set<Long>> result = ReferenceChunkMapping.connect(7L, "abcdef",
+        Map<String, Set<Long>> referenceChunkIdsByEvidence = ReferenceChunkMapping.connect(7L, "abcdef",
                 List.of(new ReferenceChunkMapping.Evidence("K1", 0, 6, "abcdef")),
                 List.of(new ReferenceChunkMapping.StoredChunk(7L, 91L, 0, 4, "abcd"),
                         new ReferenceChunkMapping.StoredChunk(7L, 92L, 3, 6, "def")));
 
-        assertThat(result).containsEntry("K1", Set.of(91L, 92L));
+        assertThat(referenceChunkIdsByEvidence).containsEntry("K1", Set.of(91L, 92L));
     }
 
     @Test

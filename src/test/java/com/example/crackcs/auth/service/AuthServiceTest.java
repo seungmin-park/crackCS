@@ -48,16 +48,16 @@ class AuthServiceTest {
     @Test
     @DisplayName("회원과 LOCAL 인증 계정을 한 트랜잭션에서 생성하고 비밀번호를 해시한다")
     void registersMemberAndHashedLocalAccount() {
-        Member member = authService.register("USER@Example.com", RAW_PASSWORD, "크랙러");
+        Member registeredMember = authService.register("USER@Example.com", RAW_PASSWORD, "크랙러");
 
-        AuthAccount account = authAccountRepository.findByProviderAndLoginId(
+        AuthAccount localAccount = authAccountRepository.findByProviderAndLoginId(
                         AuthProvider.LOCAL,
                         "user@example.com"
                 )
                 .orElseThrow();
-        assertThat(account.getMemberId()).isEqualTo(member.getId());
-        assertThat(account.getPasswordHash()).isNotEqualTo(RAW_PASSWORD);
-        assertThat(passwordEncoder.matches(RAW_PASSWORD, account.getPasswordHash())).isTrue();
+        assertThat(localAccount.getMemberId()).isEqualTo(registeredMember.getId());
+        assertThat(localAccount.getPasswordHash()).isNotEqualTo(RAW_PASSWORD);
+        assertThat(passwordEncoder.matches(RAW_PASSWORD, localAccount.getPasswordHash())).isTrue();
     }
 
     @Test

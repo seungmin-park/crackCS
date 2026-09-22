@@ -39,11 +39,11 @@ class PostgresPersistenceTest {
     @Test
     @DisplayName("PostgreSQL에 생성한 Topic 스키마가 중복 업무 코드를 거부한다")
     void enforcesMappedUniqueConstraintAfterCommit() {
-        Topic saved = topicRepository.save(Topic.builder().code("PG_UNIQUE").name("첫 번째 토픽").build());
+        Topic savedTopic = topicRepository.save(Topic.builder().code("PG_UNIQUE").name("첫 번째 토픽").build());
 
         assertThatThrownBy(() -> topicRepository.save(Topic.builder().code("PG_UNIQUE").name("중복 토픽").build()))
                 .isInstanceOf(DataIntegrityViolationException.class);
-        assertThat(topicRepository.findById(saved.getId()).orElseThrow().getName()).isEqualTo("첫 번째 토픽");
+        assertThat(topicRepository.findById(savedTopic.getId()).orElseThrow().getName()).isEqualTo("첫 번째 토픽");
         assertThat(topicRepository.count()).isEqualTo(1);
     }
 }

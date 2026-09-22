@@ -19,19 +19,19 @@ class StubEvaluationAdapterTest {
     @Test
     @DisplayName("설정이 없으면 모든 Concept을 정답으로 평가한다")
     void defaultsToCorrect() {
-        EvaluationResult result = new StubEvaluationAdapter("CORRECT").evaluate(request);
+        EvaluationResult evaluationResult = new StubEvaluationAdapter("CORRECT").evaluate(request);
 
-        assertThat(result.verdict()).isEqualTo(Verdict.CORRECT);
-        assertThat(result.concepts()).extracting("conceptId").containsExactly(1L, 2L);
+        assertThat(evaluationResult.verdict()).isEqualTo(Verdict.CORRECT);
+        assertThat(evaluationResult.concepts()).extracting("conceptId").containsExactly(1L, 2L);
     }
 
     @Test
     @DisplayName("서버 설정으로 검토 필요 결과를 재현한다")
     void producesConfiguredNeedsReview() {
-        EvaluationResult result = new StubEvaluationAdapter("NEEDS_REVIEW").evaluate(request);
+        EvaluationResult evaluationResult = new StubEvaluationAdapter("NEEDS_REVIEW").evaluate(request);
 
-        assertThat(result.verdict()).isEqualTo(Verdict.NEEDS_REVIEW);
-        assertThat(result.concepts()).allMatch(concept -> concept.verdict() == Verdict.NEEDS_REVIEW);
+        assertThat(evaluationResult.verdict()).isEqualTo(Verdict.NEEDS_REVIEW);
+        assertThat(evaluationResult.concepts()).allMatch(concept -> concept.verdict() == Verdict.NEEDS_REVIEW);
     }
 
     @Test

@@ -146,28 +146,28 @@ class KnowledgeCompletionFailureTest {
     @Test
     @DisplayName("영구 저장 오류는 평가를 실패로 확정하고 AI를 다시 호출하지 않는다")
     void failsPermanentStorageErrorsWithoutAnotherProviderCall() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         knowledgeChunk(topic, admin);
-        Long evaluationId = pending(member, question).getId();
+        Long evaluationId = savePendingEvaluation(learner, question).getId();
         jdbcTemplate.execute(
                 "alter table knowledge_state add constraint test_reject_knowledge_observation check (attempt_count = 0)");
 
         evaluationProcessor.process(evaluationId);
         evaluationProcessor.process(evaluationId);
 
-        Evaluation saved = evaluationRepository.findById(evaluationId).orElseThrow();
-        assertThat(saved.getStatus()).isEqualTo(EvaluationStatus.FAILED);
-        assertThat(saved.getFailureReason()).isEqualTo("PERSISTENCE_ERROR");
-        assertThat(saved.getAttemptCount()).isEqualTo(1);
-        assertThat(saved.getLeaseOwner()).isNull();
+        Evaluation savedEvaluation = evaluationRepository.findById(evaluationId).orElseThrow();
+        assertThat(savedEvaluation.getStatus()).isEqualTo(EvaluationStatus.FAILED);
+        assertThat(savedEvaluation.getFailureReason()).isEqualTo("PERSISTENCE_ERROR");
+        assertThat(savedEvaluation.getAttemptCount()).isEqualTo(1);
+        assertThat(savedEvaluation.getLeaseOwner()).isNull();
         assertThat(port.calls.get()).isEqualTo(1);
         assertThat(knowledgeStateRepository.count()).isZero();
         assertThat(appliedEvaluationConceptRepository.count()).isZero();
-        Evaluation details = evaluationRepository.findByAnswerId(saved.getAnswer().getId()).orElseThrow();
+        Evaluation details = evaluationRepository.findByAnswerId(savedEvaluation.getAnswer().getId()).orElseThrow();
         assertThat(details.getConcepts()).isEmpty();
         assertThat(details.getEvidence()).isEmpty();
     }
@@ -175,22 +175,22 @@ class KnowledgeCompletionFailureTest {
     @Test
     @DisplayName("완료 잠금 재시도를 소진하면 저장 충돌 사유로 예약하고 잠금 해제 후 완료한다")
     void labelsExhaustedLockConflictsAsPersistenceConflicts() throws Exception {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         KnowledgeChunk chunk = knowledgeChunk(topic, admin);
-        Long initialId = completed(member, question, concept, chunk, Verdict.CORRECT);
+        Long initialId = saveCompletedEvaluation(learner, question, concept, chunk, Verdict.CORRECT);
         completionTransaction.execute(() -> knowledgeStateService.applyInCurrentTransaction(initialId));
-        Long evaluationId = pending(member, question).getId();
+        Long evaluationId = savePendingEvaluation(learner, question).getId();
         CountDownLatch locked = new CountDownLatch(1);
         CountDownLatch release = new CountDownLatch(1);
 
         try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
             Future<?> holder = executor.submit(() -> transactionTemplate.executeWithoutResult(status -> {
                 jdbcTemplate.queryForObject("select id from knowledge_state where member_id = ? and concept_id = ? for update",
-                        Long.class, member.getId(), concept.getId());
+                        Long.class, learner.getId(), concept.getId());
                 locked.countDown();
                 await(release);
             }));
@@ -203,7 +203,7 @@ class KnowledgeCompletionFailureTest {
                 assertThat(scheduled.getFailureReason()).isEqualTo("PERSISTENCE_CONFLICT");
                 assertThat(scheduled.getAttemptCount()).isEqualTo(1);
                 assertThat(port.calls.get()).isEqualTo(1);
-                assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
+                assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), concept.getId())
                         .orElseThrow().getAttemptCount()).isEqualTo(1);
                 assertThat(appliedEvaluationConceptRepository.count()).isEqualTo(1);
             } finally {
@@ -216,20 +216,20 @@ class KnowledgeCompletionFailureTest {
 
         assertThat(evaluationRepository.findById(evaluationId).orElseThrow().getStatus()).isEqualTo(EvaluationStatus.EVALUATED);
         assertThat(port.calls.get()).isEqualTo(2);
-        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(member.getId(), concept.getId())
+        assertThat(knowledgeStateRepository.findByMemberIdAndConceptId(learner.getId(), concept.getId())
                 .orElseThrow().getAttemptCount()).isEqualTo(2);
     }
 
     @Test
     @DisplayName("AI 제공자 오류는 기존 재시도 정책과 안전한 오류 사유를 유지한다")
     void preservesProviderFailureRetries() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         knowledgeChunk(topic, admin);
-        Long evaluationId = pending(member, question).getId();
+        Long evaluationId = savePendingEvaluation(learner, question).getId();
         port.unavailable = true;
 
         evaluationProcessor.process(evaluationId);
@@ -251,13 +251,13 @@ class KnowledgeCompletionFailureTest {
     @Test
     @DisplayName("잘못된 provider 결과는 부분 평가를 남기지 않고 원문을 보존한다")
     void rejectsInvalidProviderResultWithoutPartialState() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         knowledgeChunk(topic, admin);
-        Evaluation pending = pending(member, question);
+        Evaluation pending = savePendingEvaluation(learner, question);
         Long evaluationId = pending.getId();
         Long answerId = pending.getAnswer().getId();
         port.invalidResult = true;
@@ -280,13 +280,13 @@ class KnowledgeCompletionFailureTest {
     @Test
     @DisplayName("완료 전에 lease를 잃으면 성공 로그를 남기지 않는다")
     void doesNotLogCompletionAfterLosingLease() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         knowledgeChunk(topic, admin);
-        Long evaluationId = pending(member, question).getId();
+        Long evaluationId = savePendingEvaluation(learner, question).getId();
         operationAppender.start();
         operationLogger.addAppender(operationAppender);
         port.beforeEvaluate = () -> jdbcTemplate.update(
@@ -296,24 +296,24 @@ class KnowledgeCompletionFailureTest {
 
         evaluationProcessor.process(evaluationId);
 
-        Evaluation saved = evaluationRepository.findById(evaluationId).orElseThrow();
+        Evaluation savedEvaluation = evaluationRepository.findById(evaluationId).orElseThrow();
         String messages = operationAppender.list.stream()
                 .map(ILoggingEvent::getFormattedMessage)
                 .reduce("", (left, right) -> left + "\n" + right);
-        assertThat(saved.getStatus()).isEqualTo(EvaluationStatus.PROCESSING);
+        assertThat(savedEvaluation.getStatus()).isEqualTo(EvaluationStatus.PROCESSING);
         assertThat(messages).doesNotContain("event=evaluation_completed");
     }
 
     @Test
     @DisplayName("실패 결정 전에 lease를 잃으면 실패 로그를 남기지 않는다")
     void doesNotLogFailureAfterLosingLease() {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Member admin = memberRepository.save(Member.builder().nickname("관리자").role(MemberRole.ADMIN).build());
         Topic topic = topicRepository.save(Topic.builder().code(UUID.randomUUID().toString()).name("운영체제").build());
         Concept concept = concept(topic, "스레드");
         Question question = question(admin, topic, concept, "스레드는 무엇인가요?");
         knowledgeChunk(topic, admin);
-        Long evaluationId = pending(member, question).getId();
+        Long evaluationId = savePendingEvaluation(learner, question).getId();
         operationAppender.start();
         operationLogger.addAppender(operationAppender);
         port.beforeEvaluate = () -> jdbcTemplate.update(
@@ -324,11 +324,11 @@ class KnowledgeCompletionFailureTest {
 
         evaluationProcessor.process(evaluationId);
 
-        Evaluation saved = evaluationRepository.findById(evaluationId).orElseThrow();
+        Evaluation savedEvaluation = evaluationRepository.findById(evaluationId).orElseThrow();
         String messages = operationAppender.list.stream()
                 .map(ILoggingEvent::getFormattedMessage)
                 .reduce("", (left, right) -> left + "\n" + right);
-        assertThat(saved.getStatus()).isEqualTo(EvaluationStatus.PROCESSING);
+        assertThat(savedEvaluation.getStatus()).isEqualTo(EvaluationStatus.PROCESSING);
         assertThat(messages).doesNotContain("event=evaluation_failed");
     }
 
@@ -359,27 +359,27 @@ class KnowledgeCompletionFailureTest {
         return questionRepository.save(question);
     }
 
-    private Evaluation pending(Member member, Question question) {
-        Answer answer = answerRepository.save(Answer.builder().member(member).question(question)
+    private Evaluation savePendingEvaluation(Member learner, Question question) {
+        Answer answer = answerRepository.save(Answer.builder().member(learner).question(question)
                 .idempotencyKey(UUID.randomUUID().toString()).content("스레드는 실행 단위").build());
         return evaluationRepository.save(Evaluation.builder().answer(answer).build());
     }
 
-    private Long completed(Member member, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
-        Long id = pending(member, question).getId();
-        complete(id, concept, chunk, verdict);
+    private Long saveCompletedEvaluation(Member learner, Question question, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+        Long id = savePendingEvaluation(learner, question).getId();
+        completeEvaluation(id, concept, chunk, verdict);
         return id;
     }
 
-    private void complete(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private void completeEvaluation(Long id, Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         transactionTemplate.executeWithoutResult(status -> {
             Evaluation evaluation = evaluationRepository.findById(id).orElseThrow();
-            evaluation.completeWithEvidence(result(concept, chunk, verdict),
+            evaluation.completeWithEvidence(evaluationResult(concept, chunk, verdict),
                     List.of(knowledgeChunkRepository.findById(chunk.getId()).orElseThrow()));
         });
     }
 
-    private EvaluationResult result(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
+    private EvaluationResult evaluationResult(Concept concept, KnowledgeChunk chunk, Verdict verdict) {
         return new EvaluationResult(verdict, "평가 완료",
                 List.of(new ConceptResult(concept.getId(), verdict, "개념 평가")),
                 List.of(), List.of(), List.of(), List.of(chunk.getId()), "test", "v1", 1, 1, 1);

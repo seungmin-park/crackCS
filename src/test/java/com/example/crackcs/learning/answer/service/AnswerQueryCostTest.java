@@ -107,11 +107,11 @@ class AnswerQueryCostTest {
     @ValueSource(ints = {1, 25})
     @DisplayName("답변 목록 query 수는 페이지의 답변 수에 비례해 증가하지 않는다")
     void loadsAnswerPageWithoutPerAnswerQueries(int answerCount) {
-        Member member = memberRepository.save(Member.builder().nickname("학습자").build());
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
         for (int index = 0; index < answerCount; index++) {
             AnswerResult answer = answerService.submit(
-                    member.getId(),
+                    learner.getId(),
                     question.getId(),
                     UUID.randomUUID().toString(),
                     "답변 " + index
@@ -121,7 +121,7 @@ class AnswerQueryCostTest {
         Statistics hibernateStatistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         hibernateStatistics.clear();
 
-        Page<AnswerResult> page = answerService.findAll(member.getId(), PageRequest.of(0, answerCount));
+        Page<AnswerResult> page = answerService.findAll(learner.getId(), PageRequest.of(0, answerCount));
 
         assertThat(page.getContent()).hasSize(answerCount);
         assertThat(page.getContent().getFirst().evaluation().concepts()).hasSize(1);
@@ -139,7 +139,7 @@ class AnswerQueryCostTest {
         ));
         question.review(admin);
         question.publish();
-        Question saved = questionRepository.save(question);
+        Question savedQuestion = questionRepository.save(question);
         KnowledgeDocument document = knowledgeDocumentRepository.save(KnowledgeDocument.builder()
                 .topic(topic)
                 .createdByMember(admin)
@@ -153,6 +153,6 @@ class AnswerQueryCostTest {
         document.publish();
         knowledgeDocumentRepository.save(document);
         knowledgeChunkService.generateChunks(document.getId());
-        return saved;
+        return savedQuestion;
     }
 }

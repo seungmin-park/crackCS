@@ -99,12 +99,13 @@ class FollowUpQuestionControllerTest {
     }
 
     private AuthenticatedMember principal() {
-        AuthenticatedMember member = mock(AuthenticatedMember.class);
-        given(member.memberId()).willReturn(41L);
-        given(member.getUsername()).willReturn("learner");
-        given(member.getPassword()).willReturn("unused");
-        given(member.isEnabled()).willReturn(true);
-        given(member.getAuthorities()).willAnswer(invocation -> List.of(new SimpleGrantedAuthority("ROLE_USER")));
-        return member;
+        AuthenticatedMember authenticatedMember = mock(AuthenticatedMember.class);
+        given(authenticatedMember.memberId()).willReturn(41L);
+        given(authenticatedMember.getUsername()).willReturn("learner");
+        given(authenticatedMember.getPassword()).willReturn("unused");
+        given(authenticatedMember.isEnabled()).willReturn(true);
+        given(authenticatedMember.getAuthorities())
+                .willAnswer(invocation -> List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        return authenticatedMember;
     }
 }

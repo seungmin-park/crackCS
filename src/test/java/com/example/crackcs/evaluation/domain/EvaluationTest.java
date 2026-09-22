@@ -162,9 +162,9 @@ class EvaluationTest {
     void rejectsEvidenceThatWasNotProvidedToEvaluator() {
         Evaluation evaluation = Evaluation.builder().answer(answerWithConcepts()).build();
         KnowledgeChunk provided = chunk(21L, "프로세스는 자원을 소유한다.");
-        EvaluationResult result = detailedResult(List.of(22L));
+        EvaluationResult evaluationResult = detailedResult(List.of(22L));
 
-        assertThatThrownBy(() -> evaluation.completeWithEvidence(result, List.of(provided)))
+        assertThatThrownBy(() -> evaluation.completeWithEvidence(evaluationResult, List.of(provided)))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("evidence must reference only provided chunks");
 

@@ -14,31 +14,31 @@ class RetrievalBenchmarkStatisticsTest {
     @Test
     @DisplayName("검색 누락을 평균 회수율에 포함하고 무관 비율의 질의 평균과 전체 비율을 구분한다")
     void includesEmptyResultsAndSeparatesMacroFromMicro() {
-        RetrievalBenchmarkStatistics result = RetrievalBenchmarkStatistics.summarize(List.of(
+        RetrievalBenchmarkStatistics benchmarkStatistics = RetrievalBenchmarkStatistics.summarize(List.of(
                 new RetrievalBenchmarkStatistics.Observation(
                         RetrievalQualityMetrics.calculate(Set.of(10L, 20L), List.of(10L, 30L)), 2),
                 new RetrievalBenchmarkStatistics.Observation(
                         RetrievalQualityMetrics.calculate(Set.of(40L), List.of()), 0)));
 
-        assertThat(result.queries()).isEqualTo(2);
-        assertThat(result.macroRecallAtK()).isEqualTo(0.25);
-        assertThat(result.macroIrrelevantChunkRate()).isEqualTo(0.25);
-        assertThat(result.microIrrelevantChunkRate()).isEqualTo(0.5);
-        assertThat(result.emptyResults()).isEqualTo(1);
-        assertThat(result.requiresEmbeddingExperiment()).isTrue();
+        assertThat(benchmarkStatistics.queries()).isEqualTo(2);
+        assertThat(benchmarkStatistics.macroRecallAtK()).isEqualTo(0.25);
+        assertThat(benchmarkStatistics.macroIrrelevantChunkRate()).isEqualTo(0.25);
+        assertThat(benchmarkStatistics.microIrrelevantChunkRate()).isEqualTo(0.5);
+        assertThat(benchmarkStatistics.emptyResults()).isEqualTo(1);
+        assertThat(benchmarkStatistics.requiresEmbeddingExperiment()).isTrue();
     }
 
     @Test
     @DisplayName("검색 결과가 전부 없어도 회수율 미달을 숨기지 않는다")
     void emptyRetrievalIsNotQualitySuccess() {
-        RetrievalBenchmarkStatistics result = RetrievalBenchmarkStatistics.summarize(List.of(
+        RetrievalBenchmarkStatistics benchmarkStatistics = RetrievalBenchmarkStatistics.summarize(List.of(
                 new RetrievalBenchmarkStatistics.Observation(
                         RetrievalQualityMetrics.calculate(Set.of(10L), List.of()), 0)));
 
-        assertThat(result.macroRecallAtK()).isZero();
-        assertThat(result.microIrrelevantChunkRate()).isZero();
-        assertThat(result.emptyResults()).isEqualTo(1);
-        assertThat(result.requiresEmbeddingExperiment()).isTrue();
+        assertThat(benchmarkStatistics.macroRecallAtK()).isZero();
+        assertThat(benchmarkStatistics.microIrrelevantChunkRate()).isZero();
+        assertThat(benchmarkStatistics.emptyResults()).isEqualTo(1);
+        assertThat(benchmarkStatistics.requiresEmbeddingExperiment()).isTrue();
     }
 
     @Test
