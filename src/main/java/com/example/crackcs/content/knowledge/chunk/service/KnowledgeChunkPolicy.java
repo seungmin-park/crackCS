@@ -1,22 +1,29 @@
 package com.example.crackcs.content.knowledge.chunk.service;
 
+import com.example.crackcs.content.knowledge.domain.ContentChecksum;
+
 import java.util.ArrayList;
 import java.util.List;
 
-public class KnowledgeChunker {
+public final class KnowledgeChunkPolicy {
 
     private final int maxLength;
     private final int overlap;
+    private final String policyVersion;
 
-    public KnowledgeChunker(int maxLength, int overlap) {
+    public KnowledgeChunkPolicy(int maxLength, int overlap, String policyVersion) {
         if (maxLength < 1) {
             throw new IllegalArgumentException("maxLength must be positive");
         }
         if (overlap < 0 || overlap >= maxLength) {
             throw new IllegalArgumentException("overlap must be between 0 and maxLength");
         }
+        if (policyVersion == null || policyVersion.isBlank()) {
+            throw new IllegalArgumentException("policyVersion must not be blank");
+        }
         this.maxLength = maxLength;
         this.overlap = overlap;
+        this.policyVersion = policyVersion.trim();
     }
 
     public List<ChunkSlice> split(String content) {
@@ -33,7 +40,23 @@ public class KnowledgeChunker {
         return List.copyOf(slices);
     }
 
-    private void addParagraphSlices(String source, int paragraphStart, int paragraphEnd, List<ChunkSlice> slices) {
+    public String generationKey(String documentChecksum) {
+        if (documentChecksum == null || documentChecksum.isBlank()) {
+            throw new IllegalArgumentException("documentChecksum must not be blank");
+        }
+        return ContentChecksum.sha256(documentChecksum + ":" + policyVersion);
+    }
+
+    public String policyVersion() {
+        return policyVersion;
+    }
+
+    private void addParagraphSlices(
+            String source,
+            int paragraphStart,
+            int paragraphEnd,
+            List<ChunkSlice> slices
+    ) {
         int start = paragraphStart;
         while (start < paragraphEnd) {
             int end = Math.min(start + maxLength, paragraphEnd);

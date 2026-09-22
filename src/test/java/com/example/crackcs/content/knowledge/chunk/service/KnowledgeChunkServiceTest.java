@@ -76,11 +76,18 @@ class KnowledgeChunkServiceTest {
         document.review(admin);
         document.publish();
         document = knowledgeDocumentRepository.save(document);
-        knowledgeChunkService.generateChunks(document.getId());
+        ChunkGenerationResult createdGeneration = knowledgeChunkService.generateChunks(document.getId());
 
         ChunkGenerationResult reusedGeneration = knowledgeChunkService.generateChunks(document.getId());
 
+        assertThat(createdGeneration.chunks())
+                .extracting(KnowledgeChunk::getGenerationKey)
+                .containsOnly(createdGeneration.generationKey());
         assertThat(reusedGeneration.reused()).isTrue();
+        assertThat(reusedGeneration.generationKey()).isEqualTo(createdGeneration.generationKey());
+        assertThat(reusedGeneration.chunks())
+                .extracting(KnowledgeChunk::getId)
+                .containsExactlyElementsOf(createdGeneration.chunks().stream().map(KnowledgeChunk::getId).toList());
         assertThat(knowledgeChunkRepository.count()).isEqualTo(1);
     }
 

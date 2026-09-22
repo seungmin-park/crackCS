@@ -408,14 +408,53 @@ KnowledgeDocumentContent.from
 
 ## 작업 8. KnowledgeChunk 분할 정책 추출
 
-- [ ] `generateChunks`의 조회·검증·재사용·분할·저장 단계를 구분
-- [ ] `new KnowledgeChunker(1000, 150)` 직접 생성 제거
-- [ ] max length·overlap·policy version을 한 정책 객체가 소유
-- [ ] `KnowledgeChunker` 또는 새 Port를 Service에 주입
-- [ ] Service는 유스케이스 조정과 저장만 수행
-- [ ] 동일 generation key 재사용 테스트
-- [ ] 정책 변경 시 새 generation key 생성 테스트
-- [ ] 문단 경계·overlap 단위 테스트
+- [x] `generateChunks`의 조회·검증·재사용·분할·저장 단계를 구분
+- [x] `new KnowledgeChunker(1000, 150)` 직접 생성 제거
+- [x] max length·overlap·policy version을 한 정책 객체가 소유
+- [x] `KnowledgeChunker` 또는 새 Port를 Service에 주입
+- [x] Service는 유스케이스 조정과 저장만 수행
+- [x] 동일 generation key 재사용 테스트
+- [x] 정책 변경 시 새 generation key 생성 테스트
+- [x] 문단 경계·overlap 단위 테스트
+
+결정 결과(2026-09-22):
+
+- `KnowledgeChunker` → `KnowledgeChunkPolicy`: max length·overlap·policy version·분할·generation key 계산 소유
+- 기본 정책 Bean: max length 1000, overlap 150, `paragraph-1000-overlap-150-v1`
+- `KnowledgeChunkConfiguration`: 운영 기본 정책 조립
+- `DefaultKnowledgeChunkService`: 정책 Bean 주입, 직접 생성과 정책 상수 제거
+- Service 흐름: 공개 문서 조회·검증 → 기존 결과 재사용 → 정책 분할 → Chunk 조립 → 저장
+- 기존 Chunk가 있는 문서: 평가 근거 보존을 위해 저장된 generation key와 Chunk 재사용
+- 정책 변경: 아직 Chunk가 없는 문서는 새 policy version을 포함한 새 generation key 사용
+- 기존 문서의 여러 정책 세대 동시 저장 미도입: DB 유일 제약과 검색 대상 세대 선택 변경이 함께 필요하므로 범위 제외
+
+```text
+KnowledgeChunkConfiguration
+        ↓ 기본값 조립
+KnowledgeChunkPolicy
+        ├─ maxLength
+        ├─ overlap
+        ├─ policyVersion
+        ├─ split(content)
+        └─ generationKey(documentChecksum)
+                 ↓ 주입
+DefaultKnowledgeChunkService
+        ├─ 문서 조회·공개 상태 검증
+        ├─ 기존 결과 재사용
+        ├─ Chunk 조립
+        └─ 저장
+```
+
+검증 결과(2026-09-22):
+
+- RED: `KnowledgeChunkPolicy`가 없어 정책 테스트 컴파일 오류 1개 확인
+- `KnowledgeChunkPolicyTest`: 문단 경계·overlap·고정 generation key·버전 변경 key 4개 성공
+- `KnowledgeChunkServiceTest`: 생성 key와 저장 Chunk key 일치, 동일 요청의 key·Chunk 재사용 확인
+- 관련 정책·도메인·Service 테스트: 9개 성공, 실패 0개
+- `./gradlew test --rerun-tasks --console=plain`: 452개 성공, 실패 0개
+- `./gradlew retrievalBenchmark --rerun-tasks --console=plain`: 1개 성공, 실패 0개
+- H2 retrieval: policy version 유지, Recall@K 1.0, 무관 Chunk 비율 0, 빈 결과 0
+- `./gradlew postgresTest --rerun-tasks --console=plain`: 37개 성공, 실패 0개
 
 ## 작업 9. Evaluation 완료·실패 처리 책임 분리
 
