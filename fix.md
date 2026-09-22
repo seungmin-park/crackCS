@@ -584,14 +584,29 @@ DefaultFollowUpQuestionProcessor
 
 ## 작업 11. OpenAI 평가 Adapter 분리
 
-- [ ] 현재 `OpenAiEvaluationAdapter`의 요청 생성·호출·응답 파싱 책임 테스트로 고정
-- [ ] `OpenAiEvaluationRequestFactory` 추출
-- [ ] JSON Schema 생성 메서드를 RequestFactory로 이동
-- [ ] `OpenAiEvaluationResponseParser` 추출
-- [ ] output text 탐색·필드 검증·도메인 변환을 ResponseParser로 이동
-- [ ] Adapter는 검증된 요청 생성 → Client 호출 → 결과 파싱만 조정
-- [ ] `client`, `model` 등 필드 이름 구체화
-- [ ] 정상 응답·누락 필드·추가 필드·잘못된 usage 테스트
+- [x] 현재 `OpenAiEvaluationAdapter`의 요청 생성·호출·응답 파싱 책임 테스트로 고정
+- [x] `OpenAiEvaluationRequestFactory` 추출
+- [x] JSON Schema 생성 메서드를 RequestFactory로 이동
+- [x] `OpenAiEvaluationResponseParser` 추출
+- [x] output text 탐색·필드 검증·도메인 변환을 ResponseParser로 이동
+- [x] Adapter는 검증된 요청 생성 → Client 호출 → 결과 파싱만 조정
+- [x] `client`, `model` 등 필드 이름 구체화
+- [x] 정상 응답·누락 필드·추가 필드·잘못된 usage 테스트
+
+결정 결과(2026-09-22):
+
+- `OpenAiEvaluationRequestFactory`: 입력 검증, DATA 격리, Responses API 요청과 strict JSON Schema 생성 소유
+- `OpenAiEvaluationResponseParser`: output text 탐색, exact field 검증, 평가 결과 변환, token usage 검증 소유
+- `OpenAiEvaluationAdapter`: 요청 생성 → 제한 시간 있는 client 호출 → 응답 파싱만 조정
+- `openAiResponsesClient`, `openAiEvaluationRequestFactory`, `openAiEvaluationResponseParser`, `modelName`으로 협력 객체와 설정 역할 명시
+- token usage는 문자열 강제 변환을 허용하지 않고 0 이상의 `long` 정수만 허용
+
+검증 결과(2026-09-22):
+
+- RED: `OpenAiEvaluationResponseParser` 누락으로 `compileTestJava` 컴파일 오류 1개 확인
+- OpenAI 평가 Adapter·RequestFactory·ResponseParser 테스트: 8개 성공, 실패 0개
+- `./gradlew test --rerun-tasks --console=plain`: 461개 성공, 실패·건너뜀 0개
+- PostgreSQL·retrieval benchmark: 외부 호출 경계 분리이며 DB·검색 동작 변경이 없어 미실행
 
 ## 작업 12. OpenAI Follow-up Adapter 분리
 
