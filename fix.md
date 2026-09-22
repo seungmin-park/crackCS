@@ -316,14 +316,44 @@ publishAsCurrentVersion(id)  [한 트랜잭션]
 
 ## 작업 6. Question Concept 연결 책임 정리
 
-- [ ] `DefaultQuestionService.toAssignment`의 실제 책임 목록 작성
-- [ ] Service와 `Question.replaceConcepts`의 활성 Concept·Topic 일치 검증 중복 확인
-- [ ] Service는 Concept 조회와 assignment 조립만 수행하도록 축소
-- [ ] 연결 가능성 최종 판단은 `Question`이 소유
-- [ ] `toAssignment`를 의도가 드러나는 이름으로 변경
-- [ ] 비활성 Concept 실패 테스트 유지
-- [ ] 다른 Topic Concept 실패 테스트 유지
-- [ ] 중복 Concept 실패 테스트 유지
+- [x] `DefaultQuestionService.toAssignment`의 실제 책임 목록 작성
+- [x] Service와 `Question.replaceConcepts`의 활성 Concept·Topic 일치 검증 중복 확인
+- [x] Service는 Concept 조회와 assignment 조립만 수행하도록 축소
+- [x] 연결 가능성 최종 판단은 `Question`이 소유
+- [x] `toAssignment`를 의도가 드러나는 이름으로 변경
+- [x] 비활성 Concept 실패 테스트 유지
+- [x] 다른 Topic Concept 실패 테스트 유지
+- [x] 중복 Concept 실패 테스트 유지
+
+결정 결과(2026-09-22):
+
+- 기존 `toAssignment`: Concept 조회, 미존재 예외 변환, 활성 상태 검사, Question과 Topic 일치 검사, assignment 조립 담당
+- 검증 중복 확인: Service와 `Question.requireAssignableConcept`가 활성 상태·Topic 일치를 같은 메시지로 각각 검사
+- `toAssignment` → `resolveConceptAssignment`: criterion의 Concept ID 조회와 `QuestionConceptAssignment` 조립만 담당
+- `Question.replaceConcepts`: DRAFT 상태, null, Concept 활성 상태, Topic 일치, 중복 Concept, 가중치 검증 후 전체 교체 담당
+- `Question.hasSameTopicAs`: Service용 public 보조 계약 제거, aggregate 내부 검증 메서드로 축소
+- 별도 연결 정책 객체 미추출: 판단에 Question의 Topic과 기존 상태가 필요하므로 상태 소유 aggregate가 규칙도 소유
+
+```text
+QuestionConceptCriterion
+        ↓ ID 해석
+DefaultQuestionService.resolveConceptAssignment
+        ↓ Concept + weight + required 조립
+Question.replaceConcepts
+        ├─ 연결 가능성 전체 검증
+        └─ 검증 성공 후 기존 연결 교체
+```
+
+검증 결과(2026-09-22):
+
+- 순수 책임 이동으로 새 외부 동작 없음: private 구조를 검사하는 인위적 RED 테스트 미추가
+- mutation 확인: Question의 활성·Topic·중복 방어를 임시 제거했을 때 대응 테스트 3개가 각각 예상 실패
+- 임시 mutation 복구 후 `QuestionTest` 25개, `QuestionServiceTest` 11개 성공
+- 비활성 Concept: 도메인 단위 테스트와 Service 통합 테스트 유지
+- 다른 Topic·중복 Concept: 도메인 단위 테스트 유지
+- 부분 수정 방지: 여러 교체 입력 중 후속 검증 실패 시 기존 연결·수정 시각 유지 테스트 유지
+- `./gradlew test --rerun-tasks --console=plain`: 447개 성공, 실패 0개
+- `./gradlew postgresTest --rerun-tasks --console=plain`: 37개 성공, 실패 0개
 
 ## 작업 7. 문서 내용 정규화·checksum 책임 통합
 

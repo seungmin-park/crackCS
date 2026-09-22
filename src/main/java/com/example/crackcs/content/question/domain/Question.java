@@ -263,7 +263,7 @@ public class Question {
         return validatedConcept;
     }
 
-    public boolean hasSameTopicAs(Concept concept) {
+    private boolean hasSameTopicAs(Concept concept) {
         return concept != null && samePersistentTopic(topic, concept.getTopic());
     }
 

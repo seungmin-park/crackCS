@@ -82,7 +82,7 @@ public class DefaultQuestionService implements QuestionService {
     public Question replaceConcepts(Long questionId, List<QuestionConceptCriterion> criteria) {
         Question question = findQuestion(questionId);
         List<QuestionConceptAssignment> assignments = criteria.stream()
-                .map(criterion -> toAssignment(question, criterion))
+                .map(this::resolveConceptAssignment)
                 .toList();
         question.replaceConcepts(assignments);
         return question;
@@ -137,15 +137,9 @@ public class DefaultQuestionService implements QuestionService {
         ));
     }
 
-    private QuestionConceptAssignment toAssignment(Question question, QuestionConceptCriterion criterion) {
+    private QuestionConceptAssignment resolveConceptAssignment(QuestionConceptCriterion criterion) {
         Concept concept = conceptRepository.findById(criterion.conceptId())
                 .orElseThrow(() -> new ConceptNotFoundException(criterion.conceptId()));
-        if (!concept.isActive()) {
-            throw new InvalidContentStateException("비활성 Concept은 문제에 연결할 수 없습니다.");
-        }
-        if (!question.hasSameTopicAs(concept)) {
-            throw new InvalidContentStateException("문제와 같은 Topic의 Concept만 연결할 수 있습니다.");
-        }
         return new QuestionConceptAssignment(concept, criterion.weight(), criterion.required());
     }
 
