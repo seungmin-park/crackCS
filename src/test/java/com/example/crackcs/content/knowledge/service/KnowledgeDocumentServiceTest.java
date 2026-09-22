@@ -96,11 +96,33 @@ class KnowledgeDocumentServiceTest {
     void detectsDuplicateNormalizedContent() {
         Topic topic = saveTopic();
         Member contentAdmin = saveAdmin();
-        knowledgeDocumentService.create(contentAdmin.getId(), knowledgeDocumentDraft(topic, "첫 줄\r\n둘째 줄"));
+        knowledgeDocumentService.create(
+                contentAdmin.getId(), knowledgeDocumentDraft(topic, "  첫 줄\r\n둘째 줄  "));
 
         assertThatThrownBy(() -> knowledgeDocumentService.create(
                 contentAdmin.getId(), knowledgeDocumentDraft(topic, "첫 줄\n둘째 줄")))
                 .isInstanceOf(DuplicateKnowledgeDocumentException.class);
+    }
+
+    @Test
+    @DisplayName("다른 문서를 정규화 결과가 같은 원문으로 수정할 수 없다")
+    void rejectsUpdateToDuplicateNormalizedContent() {
+        Topic topic = saveTopic();
+        Member contentAdmin = saveAdmin();
+        knowledgeDocumentService.create(
+                contentAdmin.getId(), knowledgeDocumentDraft(topic, "첫 줄\r\n둘째 줄"));
+        KnowledgeDocument documentToUpdate = knowledgeDocumentService.create(
+                contentAdmin.getId(), knowledgeDocumentDraft(topic, "수정 전 원문"));
+        String checksumBeforeUpdate = documentToUpdate.getChecksum();
+
+        assertThatThrownBy(() -> knowledgeDocumentService.update(
+                documentToUpdate.getId(), knowledgeDocumentDraft(topic, "  첫 줄\n둘째 줄  ")))
+                .isInstanceOf(DuplicateKnowledgeDocumentException.class);
+
+        KnowledgeDocument unchangedDocument = knowledgeDocumentRepository.findById(documentToUpdate.getId())
+                .orElseThrow();
+        assertThat(unchangedDocument.getContent()).isEqualTo("수정 전 원문");
+        assertThat(unchangedDocument.getChecksum()).isEqualTo(checksumBeforeUpdate);
     }
 
     @Test

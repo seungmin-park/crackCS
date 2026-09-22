@@ -136,8 +136,9 @@ public class KnowledgeDocument {
         this.documentVersion = requirePositiveVersion(documentVersion);
         this.technologyVersion = normalizeOptionalText(technologyVersion, "technologyVersion", 100);
         this.licenseNote = normalizeOptionalText(licenseNote, "licenseNote", 500);
-        this.content = normalizeContent(content);
-        this.checksum = ContentChecksum.sha256(this.content);
+        KnowledgeDocumentContent documentContent = KnowledgeDocumentContent.from(content);
+        this.content = documentContent.value();
+        this.checksum = documentContent.checksum();
         this.status = KnowledgeDocumentStatus.DRAFT;
 
         LocalDateTime now = LocalDateTime.now();
@@ -159,17 +160,6 @@ public class KnowledgeDocument {
         if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme()))
                 || uri.getHost() == null) {
             throw new IllegalArgumentException("sourceUrl must be a valid HTTP URL");
-        }
-        return normalized;
-    }
-
-    private static String normalizeContent(String content) {
-        String normalized = requireText(content, "content", Integer.MAX_VALUE)
-                .replace("\r\n", "\n")
-                .replace('\r', '\n')
-                .strip();
-        if (normalized.isBlank()) {
-            throw new IllegalArgumentException("content must not be blank");
         }
         return normalized;
     }
@@ -265,8 +255,7 @@ public class KnowledgeDocument {
                 technologyVersion, "technologyVersion", 100
         );
         String validatedLicenseNote = normalizeOptionalText(licenseNote, "licenseNote", 500);
-        String validatedContent = normalizeContent(content);
-        String validatedChecksum = ContentChecksum.sha256(validatedContent);
+        KnowledgeDocumentContent validatedContent = KnowledgeDocumentContent.from(content);
 
         this.topic = validatedTopic;
         this.title = validatedTitle;
@@ -274,8 +263,8 @@ public class KnowledgeDocument {
         this.sourceUrl = validatedSourceUrl;
         this.technologyVersion = validatedTechnologyVersion;
         this.licenseNote = validatedLicenseNote;
-        this.content = validatedContent;
-        this.checksum = validatedChecksum;
+        this.content = validatedContent.value();
+        this.checksum = validatedContent.checksum();
         clearReview();
         this.updatedAt = LocalDateTime.now();
     }

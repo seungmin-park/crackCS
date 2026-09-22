@@ -17,7 +17,7 @@ class KnowledgeDocumentTest {
     @Test
     @DisplayName("최초 KnowledgeDocument는 버전 1의 DRAFT로 생성되고 원문 checksum을 계산한다")
     void createsFirstDraftWithChecksum() {
-        KnowledgeDocument document = createDocument("첫 줄\r\n둘째 줄");
+        KnowledgeDocument document = createDocument("  첫 줄\r\n둘째 줄  ");
 
         assertThat(document.getDocumentVersion()).isEqualTo(1);
         assertThat(document.getStatus()).isEqualTo(KnowledgeDocumentStatus.DRAFT);
@@ -130,11 +130,13 @@ class KnowledgeDocumentTest {
 
         document.updateDraft(
                 topic(), "변경 제목", KnowledgeSourceType.INTERNAL_SUMMARY, null,
-                "Spring Boot 4.1", "내부 작성", "변경 원문"
+                "Spring Boot 4.1", "내부 작성", "  변경\r원문  "
         );
 
         assertThat(document.getTitle()).isEqualTo("변경 제목");
-        assertThat(document.getChecksum()).isEqualTo(ContentChecksum.sha256("변경 원문"));
+        assertThat(document.getContent()).isEqualTo("변경\n원문");
+        assertThat(document.getChecksum())
+                .isEqualTo("687950e742e77c1ae6a3ee4567e3fcd95ff047f268aceedec9ec2814d12b1d44");
         assertThat(document.getReviewedByMember()).isNull();
         assertThat(document.getReviewedAt()).isNull();
     }

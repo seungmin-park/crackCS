@@ -359,17 +359,52 @@ Question.replaceConcepts
 
 ### RED
 
-- [ ] 줄바꿈 차이와 앞뒤 공백이 같은 문서로 판정되는 테스트 확인 또는 추가
-- [ ] 생성·수정·중복 조회가 같은 정규화 규칙을 쓰는 테스트 추가
-- [ ] 잘못된 내용에서 checksum만 먼저 계산해 부분 처리되지 않는 테스트 확인
+- [x] 줄바꿈 차이와 앞뒤 공백이 같은 문서로 판정되는 테스트 확인 또는 추가
+- [x] 생성·수정·중복 조회가 같은 정규화 규칙을 쓰는 테스트 추가
+- [x] 잘못된 내용에서 checksum만 먼저 계산해 부분 처리되지 않는 테스트 확인
 
 ### GREEN/REFACTOR
 
-- [ ] `DefaultKnowledgeDocumentService.ensureUniqueContent`의 정규화 중복 제거
-- [ ] 정규화된 내용과 checksum을 함께 소유할 값 객체 또는 도메인 정책 검토
-- [ ] `KnowledgeDocument`와 Service가 동일한 계산 경로 사용
-- [ ] Service는 checksum 중복 조회만 조정
-- [ ] 기존 DB column과 API 계약 유지
+- [x] `DefaultKnowledgeDocumentService.ensureUniqueContent`의 정규화 중복 제거
+- [x] 정규화된 내용과 checksum을 함께 소유할 값 객체 또는 도메인 정책 검토
+- [x] `KnowledgeDocument`와 Service가 동일한 계산 경로 사용
+- [x] Service는 checksum 중복 조회만 조정
+- [x] 기존 DB column과 API 계약 유지
+
+결정 결과(2026-09-22):
+
+- `KnowledgeDocumentContent` 값 객체 추가: 정규화된 원문과 그 값으로 계산한 checksum을 한 쌍으로 소유
+- 생성 경로 제한: private 생성자와 `from(rawContent)` 정적 팩터리 사용
+- 정규화 규칙: CRLF·CR을 LF로 통일한 뒤 앞뒤 공백 제거
+- 잘못된 원문: null·공백 입력은 checksum 계산·Repository 조회·Entity 변경 전에 거부
+- `KnowledgeDocument`: 생성과 수정 모두 값 객체가 제공한 content/checksum을 함께 반영
+- `DefaultKnowledgeDocumentService`: 값 객체 생성 후 checksum 중복 조회만 조정
+- `ensureUniqueContent` → `ensureUniqueChecksum`: 문자열 정규화·hash 계산 제거
+- `ContentChecksum` 유지: KnowledgeChunk도 사용하는 범용 SHA-256 도구이며 문서 정규화 정책은 소유하지 않음
+- DB `content`·`checksum` column과 HTTP 요청·응답 필드 변경 없음
+
+```text
+raw content
+    ↓
+KnowledgeDocumentContent.from
+    ├─ null·blank 검증
+    ├─ 줄바꿈·앞뒤 공백 정규화
+    └─ 정규화된 값의 checksum 계산
+          ↓
+    content + checksum
+       ├─ Service: checksum 중복 조회
+       └─ Entity: 두 필드 함께 저장·수정
+```
+
+검증 결과(2026-09-22):
+
+- RED: `KnowledgeDocumentContent`가 없어 값 객체 테스트 컴파일 오류 3개 확인
+- `KnowledgeDocumentContentTest`: 정규화·고정 SHA-256·공백 입력 거부 2개 성공
+- `KnowledgeDocumentTest`: 생성·수정 정규화와 checksum 일치, 실패 시 content·checksum·updatedAt 유지 확인
+- `KnowledgeDocumentServiceTest`: 생성·수정 시 줄바꿈·앞뒤 공백이 같은 중복으로 판정되고 실패 대상 상태 유지 확인
+- 관련 값 객체·도메인·Service 테스트: 17개 성공, 실패 0개
+- `./gradlew test --rerun-tasks --console=plain`: 450개 성공, 실패 0개
+- `./gradlew postgresTest --rerun-tasks --console=plain`: 37개 성공, 실패 0개
 
 ## 작업 8. KnowledgeChunk 분할 정책 추출
 

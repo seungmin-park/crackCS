@@ -1,7 +1,7 @@
 package com.example.crackcs.content.knowledge.service;
 
-import com.example.crackcs.content.knowledge.domain.ContentChecksum;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
+import com.example.crackcs.content.knowledge.domain.KnowledgeDocumentContent;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocumentStatus;
 import com.example.crackcs.content.knowledge.repository.KnowledgeDocumentRepository;
 import com.example.crackcs.content.topic.domain.Topic;
@@ -30,7 +30,8 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
     public KnowledgeDocument create(Long creatorMemberId, KnowledgeDocumentDraft draft) {
         Topic topic = findActiveTopic(draft.topicId());
         Member creator = findAdmin(creatorMemberId);
-        ensureUniqueContent(draft.content(), null);
+        KnowledgeDocumentContent documentContent = KnowledgeDocumentContent.from(draft.content());
+        ensureUniqueChecksum(documentContent.checksum(), null);
         return knowledgeDocumentRepository.save(KnowledgeDocument.builder()
                 .topic(topic)
                 .createdByMember(creator)
@@ -39,7 +40,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
                 .sourceUrl(draft.sourceUrl())
                 .technologyVersion(draft.technologyVersion())
                 .licenseNote(draft.licenseNote())
-                .content(draft.content())
+                .content(documentContent.value())
                 .build());
     }
 
@@ -65,7 +66,8 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
     public KnowledgeDocument update(Long documentId, KnowledgeDocumentDraft draft) {
         KnowledgeDocument document = findDocument(documentId);
         Topic topic = findActiveTopic(draft.topicId());
-        ensureUniqueContent(draft.content(), documentId);
+        KnowledgeDocumentContent documentContent = KnowledgeDocumentContent.from(draft.content());
+        ensureUniqueChecksum(documentContent.checksum(), documentId);
         document.updateDraft(
                 topic,
                 draft.title(),
@@ -73,7 +75,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
                 draft.sourceUrl(),
                 draft.technologyVersion(),
                 draft.licenseNote(),
-                draft.content()
+                documentContent.value()
         );
         return document;
     }
@@ -88,7 +90,8 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
         KnowledgeDocument source = findDocument(documentId);
         Topic topic = findActiveTopic(draft.topicId());
         Member creator = findAdmin(creatorMemberId);
-        ensureUniqueContent(draft.content(), null);
+        KnowledgeDocumentContent documentContent = KnowledgeDocumentContent.from(draft.content());
+        ensureUniqueChecksum(documentContent.checksum(), null);
         int nextVersion = knowledgeDocumentRepository.findMaxVersion(source.getVersionSeriesId()) + 1;
         return knowledgeDocumentRepository.save(source.createNextVersion(
                 nextVersion,
@@ -99,7 +102,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
                 draft.sourceUrl(),
                 draft.technologyVersion(),
                 draft.licenseNote(),
-                draft.content()
+                documentContent.value()
         ));
     }
 
@@ -132,11 +135,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
         return document;
     }
 
-    private void ensureUniqueContent(String content, Long currentId) {
-        String normalizedContent = content == null
-                ? ""
-                : content.replace("\r\n", "\n").replace('\r', '\n').strip();
-        String checksum = ContentChecksum.sha256(normalizedContent);
+    private void ensureUniqueChecksum(String checksum, Long currentId) {
         boolean duplicated = currentId == null
                 ? knowledgeDocumentRepository.existsByChecksum(checksum)
                 : knowledgeDocumentRepository.existsByChecksumAndIdNot(checksum, currentId);
