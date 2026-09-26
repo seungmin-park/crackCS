@@ -47,34 +47,34 @@ export function fetchAdminQuestions(filters: { topicId?: number; status?: Conten
   return get(`/api/admin/questions${queryString(filters)}`);
 }
 
-export function fetchAdminQuestion(id: number): Promise<AdminQuestion> {
-  return get(`/api/admin/questions/${id}`);
+export function fetchAdminQuestion(questionId: number): Promise<AdminQuestion> {
+  return get(`/api/admin/questions/${questionId}`);
 }
 
 export function createAdminQuestion(input: AdminQuestionInput): Promise<AdminQuestion> {
   return post("/api/admin/questions", input);
 }
 
-export function updateAdminQuestion(id: number, input: AdminQuestionInput): Promise<AdminQuestion> {
-  return patch(`/api/admin/questions/${id}`, input);
+export function updateAdminQuestion(questionId: number, input: AdminQuestionInput): Promise<AdminQuestion> {
+  return patch(`/api/admin/questions/${questionId}`, input);
 }
 
-export function replaceQuestionConcepts(id: number, concepts: Array<{ conceptId: number; weight: number; required: boolean }>): Promise<AdminQuestion> {
-  return put(`/api/admin/questions/${id}/concepts`, { concepts });
+export function replaceQuestionConcepts(questionId: number, concepts: Array<{ conceptId: number; weight: number; required: boolean }>): Promise<AdminQuestion> {
+  return put(`/api/admin/questions/${questionId}/concepts`, { concepts });
 }
 
-export function reviewQuestion(id: number): Promise<AdminQuestion> {
-  return post(`/api/admin/questions/${id}/review`);
+export function reviewQuestion(questionId: number): Promise<AdminQuestion> {
+  return post(`/api/admin/questions/${questionId}/review`);
 }
 
-export function publishQuestion(id: number): Promise<AdminQuestion> {
-  return post(`/api/admin/questions/${id}/publish`);
+export function publishQuestion(questionId: number): Promise<AdminQuestion> {
+  return post(`/api/admin/questions/${questionId}/publish`);
 }
 
-export function retireQuestion(id: number): Promise<AdminQuestion> {
-  return post(`/api/admin/questions/${id}/retire`);
+export function retireQuestion(questionId: number): Promise<AdminQuestion> {
+  return post(`/api/admin/questions/${questionId}/retire`);
 }
 
-export function createQuestionVersion(id: number, input: Omit<AdminQuestionInput, "topicId">): Promise<AdminQuestion> {
-  return post(`/api/admin/questions/${id}/versions`, input);
+export function createQuestionVersion(questionId: number, input: Omit<AdminQuestionInput, "topicId">): Promise<AdminQuestion> {
+  return post(`/api/admin/questions/${questionId}/versions`, input);
 }

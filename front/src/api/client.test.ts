@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { ApiClientError, get, post, setSessionExpiredHandler } from "@/api/client";
+import { ApiClientError, clearCsrfToken, get, post, setSessionExpiredHandler } from "@/api/client";
 
 describe("HTTP 인증 만료 경계", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     setSessionExpiredHandler(undefined);
+    clearCsrfToken();
   });
 
   it("보호 요청의 401은 세션 만료를 알린 뒤 원래 오류를 전달한다", async () => {
@@ -79,5 +80,25 @@ describe("HTTP 인증 만료 경계", () => {
       code: "INTERNAL_SERVER_ERROR",
       requestId: "1e85b909-2114-47be-a1c3-1fa47a4a7235",
     });
+  });
+
+  it("쓰기 요청은 CSRF 토큰을 재사용하고 초기화 후 다시 조회한다", async () => {
+    const fetchRequest = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "first", headerName: "X-CSRF-TOKEN" })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ token: "second", headerName: "X-CSRF-TOKEN" })))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchRequest);
+
+    await post("/api/first");
+    await post("/api/second");
+    clearCsrfToken();
+    await post("/api/third");
+
+    expect(fetchRequest).toHaveBeenCalledTimes(5);
+    expect(fetchRequest.mock.calls[1]?.[1].headers["X-CSRF-TOKEN"]).toBe("first");
+    expect(fetchRequest.mock.calls[2]?.[1].headers["X-CSRF-TOKEN"]).toBe("first");
+    expect(fetchRequest.mock.calls[4]?.[1].headers["X-CSRF-TOKEN"]).toBe("second");
   });
 });

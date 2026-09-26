@@ -14,6 +14,6 @@ export function fetchAdminMembers(filters: { status?: MemberStatus } & PageReque
   return get(`/api/admin/members${queryString(filters)}`);
 }
 
-export function updateMemberStatus(id: number, status: MemberStatus): Promise<AdminMember> {
-  return patch(`/api/admin/members/${id}/status`, { status });
+export function updateMemberStatus(memberId: number, status: MemberStatus): Promise<AdminMember> {
+  return patch(`/api/admin/members/${memberId}/status`, { status });
 }

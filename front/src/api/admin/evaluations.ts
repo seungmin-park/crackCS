@@ -33,6 +33,6 @@ export function fetchAdminEvaluations(filters: { status?: AdminEvaluationStatus 
   return get(`/api/admin/evaluations${queryString(filters)}`);
 }
 
-export function fetchAdminEvaluation(id: number): Promise<AdminEvaluationDetail> {
-  return get(`/api/admin/evaluations/${id}`);
+export function fetchAdminEvaluation(evaluationId: number): Promise<AdminEvaluationDetail> {
+  return get(`/api/admin/evaluations/${evaluationId}`);
 }

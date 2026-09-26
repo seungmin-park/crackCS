@@ -671,19 +671,31 @@ DefaultFollowUpQuestionProcessor
 
 ### RED
 
-- [ ] GET과 write 요청의 인증 정책 테스트 유지
-- [ ] CSRF token 캐시·초기화 테스트 유지
-- [ ] 401 session expiration 처리 테스트 유지
-- [ ] expiration side effect 실패가 원래 HTTP 오류를 가리지 않는 테스트 유지
+- [x] GET과 write 요청의 인증 정책 테스트 유지
+- [x] CSRF token 캐시·초기화 테스트 유지
+- [x] 401 session expiration 처리 테스트 유지
+- [x] expiration side effect 실패가 원래 HTTP 오류를 가리지 않는 테스트 유지
 
 ### 책임 분리
 
-- [ ] `api/client.ts`의 전송·오류 변환·CSRF·세션 만료 책임 구분
-- [ ] `csrfTokenStore.ts` 또는 동등한 작은 모듈 추출
-- [ ] session expiration callback 소유 모듈 추출 검토
-- [ ] `request`는 HTTP 요청과 응답 변환에 집중
-- [ ] 전역 mutable 상태 소유 위치 명확화
-- [ ] API 함수의 `id`를 `questionId`, `documentId`, `evaluationId`, `memberId`로 구체화
+- [x] `api/client.ts`의 전송·오류 변환·CSRF·세션 만료 책임 구분
+- [x] `csrfTokenStore.ts` 또는 동등한 작은 모듈 추출
+- [x] session expiration callback 소유 모듈 추출 검토
+- [x] `request`는 HTTP 요청과 응답 변환에 집중
+- [x] 전역 mutable 상태 소유 위치 명확화
+- [x] API 함수의 `id`를 `questionId`, `documentId`, `evaluationId`, `memberId`로 구체화
+
+결정 결과(2026-09-26):
+
+- CSRF 캐시: `api/csrfTokenStore.ts` 소유. 요청 함수가 토큰 조회 방법을 전달
+- 만료 콜백: `api/sessionExpiration.ts` 소유. 요청 시작 시 guard 캡처, 401에서 실행
+- HTTP 오류: `api/client.ts`에서 구성. 만료 후속 처리 실패 시 원래 오류 유지
+- `clearCsrfToken`·`setSessionExpiredHandler`: 기존 호출 계약을 위해 client에서 재수출
+
+검증 결과(2026-09-26):
+
+- RED: 새 CSRF 저장소 테스트에서 모듈 누락 오류 확인
+- 관련 Vitest 14개 성공, 실패 0개; `npm run type-check` 성공
 
 ## 작업 15. 인증 세션 데이터 정리 책임 분리
 

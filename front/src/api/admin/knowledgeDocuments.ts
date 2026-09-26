@@ -57,30 +57,30 @@ export function createKnowledgeDocument(input: KnowledgeDocumentInput): Promise<
   return post("/api/admin/knowledge-documents", input);
 }
 
-export function updateKnowledgeDocument(id: number, input: KnowledgeDocumentInput): Promise<KnowledgeDocument> {
-  return patch(`/api/admin/knowledge-documents/${id}`, input);
+export function updateKnowledgeDocument(documentId: number, input: KnowledgeDocumentInput): Promise<KnowledgeDocument> {
+  return patch(`/api/admin/knowledge-documents/${documentId}`, input);
 }
 
-export function createKnowledgeDocumentVersion(id: number, input: KnowledgeDocumentInput): Promise<KnowledgeDocument> {
-  return post(`/api/admin/knowledge-documents/${id}/versions`, input);
+export function createKnowledgeDocumentVersion(documentId: number, input: KnowledgeDocumentInput): Promise<KnowledgeDocument> {
+  return post(`/api/admin/knowledge-documents/${documentId}/versions`, input);
 }
 
-export function reviewKnowledgeDocument(id: number): Promise<KnowledgeDocument> {
-  return post(`/api/admin/knowledge-documents/${id}/review`);
+export function reviewKnowledgeDocument(documentId: number): Promise<KnowledgeDocument> {
+  return post(`/api/admin/knowledge-documents/${documentId}/review`);
 }
 
-export function publishKnowledgeDocument(id: number): Promise<KnowledgeDocument> {
-  return post(`/api/admin/knowledge-documents/${id}/publish`);
+export function publishKnowledgeDocument(documentId: number): Promise<KnowledgeDocument> {
+  return post(`/api/admin/knowledge-documents/${documentId}/publish`);
 }
 
-export function retireKnowledgeDocument(id: number): Promise<KnowledgeDocument> {
-  return post(`/api/admin/knowledge-documents/${id}/retire`);
+export function retireKnowledgeDocument(documentId: number): Promise<KnowledgeDocument> {
+  return post(`/api/admin/knowledge-documents/${documentId}/retire`);
 }
 
-export function generateKnowledgeChunks(id: number): Promise<{ generationKey: string; reused: boolean; chunks: KnowledgeChunk[] }> {
-  return post(`/api/admin/knowledge-documents/${id}/chunks`);
+export function generateKnowledgeChunks(documentId: number): Promise<{ generationKey: string; reused: boolean; chunks: KnowledgeChunk[] }> {
+  return post(`/api/admin/knowledge-documents/${documentId}/chunks`);
 }
 
-export function fetchKnowledgeChunks(id: number): Promise<KnowledgeChunk[]> {
-  return get(`/api/admin/knowledge-documents/${id}/chunks`);
+export function fetchKnowledgeChunks(documentId: number): Promise<KnowledgeChunk[]> {
+  return get(`/api/admin/knowledge-documents/${documentId}/chunks`);
 }

@@ -29,17 +29,8 @@ export type RequestPolicy = {
   authentication?: RequestAuthentication;
 };
 
-type SessionExpiredGuard = () => void | Promise<void>;
-type SessionExpiredHandler = () => SessionExpiredGuard;
-
-let sessionExpiredHandler: SessionExpiredHandler | undefined;
-
-export function setSessionExpiredHandler(handler: SessionExpiredHandler | undefined): void {
-  sessionExpiredHandler = handler;
-}
-
 export async function get<T>(path: string, policy?: RequestPolicy): Promise<T> {
-  const expirationGuard = captureExpirationGuard(policy);
+  const expirationGuard = captureExpirationGuard(policy?.authentication ?? "required");
   return request<T>(path, { method: "GET" }, policy, expirationGuard);
 }
 
@@ -56,35 +47,13 @@ export async function put<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function write<T>(path: string, method: "POST" | "PATCH" | "PUT", body?: unknown, headers?: Record<string, string>, policy?: RequestPolicy): Promise<T> {
-  const expirationGuard = captureExpirationGuard(policy);
-  const csrf = await fetchCsrfToken();
+  const expirationGuard = captureExpirationGuard(policy?.authentication ?? "required");
+  const csrf = await getCsrfToken(() => request<CsrfToken>("/api/auth/csrf", { method: "GET" }, { authentication: "anonymous" }));
   return request<T>(path, {
     method,
     headers: { ...headers, [csrf.headerName]: csrf.token },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   }, policy, expirationGuard);
-}
-
-export function clearCsrfToken(): void {
-  cachedCsrfToken = undefined;
-}
-
-type CsrfToken = {
-  token: string;
-  headerName: string;
-};
-
-let cachedCsrfToken: CsrfToken | undefined;
-
-async function fetchCsrfToken(): Promise<CsrfToken> {
-  if (!cachedCsrfToken) {
-    cachedCsrfToken = await request<CsrfToken>("/api/auth/csrf", { method: "GET" }, { authentication: "anonymous" });
-  }
-  return cachedCsrfToken;
-}
-
-function captureExpirationGuard(policy: RequestPolicy = {}): SessionExpiredGuard | undefined {
-  return (policy.authentication ?? "required") === "required" ? sessionExpiredHandler?.() : undefined;
 }
 
 async function request<T>(path: string, init: RequestInit, policy: RequestPolicy = {}, expirationGuard?: SessionExpiredGuard): Promise<T> {
@@ -108,11 +77,7 @@ async function request<T>(path: string, init: RequestInit, policy: RequestPolicy
       body.requestId,
     );
     if (response.status === 401 && (policy.authentication ?? "required") === "required") {
-      try {
-        await expirationGuard?.();
-      } catch {
-        // Session cleanup and navigation are best-effort side effects; the HTTP error is authoritative.
-      }
+      await notifySessionExpired(expirationGuard);
     }
     throw error;
   }
@@ -130,3 +95,7 @@ async function parseError(response: Response): Promise<ApiErrorBody> {
     return {};
   }
 }
+import { clearCsrfToken, getCsrfToken, type CsrfToken } from "@/api/csrfTokenStore";
+import { captureExpirationGuard, notifySessionExpired, setSessionExpiredHandler, type SessionExpiredGuard } from "@/api/sessionExpiration";
+
+export { clearCsrfToken, setSessionExpiredHandler };
