@@ -21,21 +21,21 @@ const loadError = ref(false);
 let loadGeneration = 0;
 let disposed = false;
 
-async function load() {
+async function loadMembers() {
   if (disposed) return;
   const generation = ++loadGeneration;
   loading.value = true;
   loadError.value = false;
   try {
-    const result = await fetchAdminMembers({ ...(statusFilter.value ? { status: statusFilter.value } : {}), page: page.value, size: ADMIN_PAGE_SIZE });
+    const memberPage = await fetchAdminMembers({ ...(statusFilter.value ? { status: statusFilter.value } : {}), page: page.value, size: ADMIN_PAGE_SIZE });
     if (generation === loadGeneration) {
-      const validPage = normalizedPage(page.value, result.totalPages);
+      const validPage = normalizedPage(page.value, memberPage.totalPages);
       if (validPage !== page.value) {
         await replaceAdminQuery(router, route.query, { page: validPage });
         return;
       }
-      members.value = result.content; page.value = result.page;
-      totalPages.value = result.totalPages; totalElements.value = result.totalElements;
+      members.value = memberPage.content; page.value = memberPage.page;
+      totalPages.value = memberPage.totalPages; totalElements.value = memberPage.totalElements;
     }
   } catch {
     if (generation === loadGeneration) loadError.value = true;
@@ -52,15 +52,15 @@ async function changePage(nextPage: number) {
 watch(() => route.query, () => {
   statusFilter.value = queryStringValue(route.query, "status") as MemberStatus | "";
   page.value = queryPage(route.query);
-  void load();
+  void loadMembers();
 }, { deep: true });
-async function change(member: AdminMember, status: MemberStatus) {
+async function changeMemberStatus(member: AdminMember, status: MemberStatus) {
   const targetId = member.id;
   const targetStatus = status;
-  const result = await feedback.execute(() => updateMemberStatus(targetId, targetStatus), "회원 상태를 변경했습니다.");
-  if (result && !disposed) await load();
+  const updatedMember = await feedback.execute(() => updateMemberStatus(targetId, targetStatus), "회원 상태를 변경했습니다.");
+  if (updatedMember && !disposed) await loadMembers();
 }
-onMounted(load);
+onMounted(loadMembers);
 onBeforeUnmount(() => { disposed = true; loadGeneration++; });
 </script>
 
@@ -69,9 +69,9 @@ onBeforeUnmount(() => { disposed = true; loadGeneration++; });
     <header class="admin-page-heading"><div><p class="eyebrow">MEMBERS</p><h1>회원</h1></div><p>BLOCKED와 WITHDRAWN 회원은 다음 인증부터 로그인할 수 없습니다.</p></header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter"><option value="">전체</option><option>ACTIVE</option><option>BLOCKED</option><option>WITHDRAWN</option></select></label></div>
-    <p v-if="loadError" class="admin-error">회원 목록을 불러오지 못했습니다. <button type="button" data-retry="list" @click="load">다시 시도</button></p>
+    <p v-if="loadError" class="admin-error">회원 목록을 불러오지 못했습니다. <button type="button" data-retry="list" @click="loadMembers">다시 시도</button></p>
     <p v-if="loading" class="admin-loading">회원을 불러오는 중…</p>
-    <ul v-else class="admin-list"><li v-for="member in members" :key="member.id"><div><strong>{{ member.nickname }}</strong><small>#{{ member.id }} · {{ member.role }} · {{ member.status }}</small></div><select :value="member.status" :disabled="feedback.submitting.value" @change="change(member, ($event.target as HTMLSelectElement).value as MemberStatus)"><option>ACTIVE</option><option>BLOCKED</option><option>WITHDRAWN</option></select></li></ul>
+    <ul v-else class="admin-list"><li v-for="member in members" :key="member.id"><div><strong>{{ member.nickname }}</strong><small>#{{ member.id }} · {{ member.role }} · {{ member.status }}</small></div><select :value="member.status" :disabled="feedback.submitting.value" @change="changeMemberStatus(member, ($event.target as HTMLSelectElement).value as MemberStatus)"><option>ACTIVE</option><option>BLOCKED</option><option>WITHDRAWN</option></select></li></ul>
     <AdminPagination :page="page" :total-pages="totalPages" :total-elements="totalElements" @change="changePage" />
   </section>
 </template>

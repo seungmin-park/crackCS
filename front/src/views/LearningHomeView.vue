@@ -13,26 +13,26 @@ onBeforeUnmount(() => { active = false; });
 function resultLabel(value: RecentEvaluation) {
   return presentEvaluation(value.status, value.verdict).label;
 }
-async function load() {
+async function loadLearningProgress() {
   loading.value = true;
   failed.value = false;
   try {
-    const result = await fetchProgress();
-    if (active) progress.value = result;
+    const learningProgress = await fetchProgress();
+    if (active) progress.value = learningProgress;
   } catch {
     if (active) failed.value = true;
   } finally {
     if (active) loading.value = false;
   }
 }
-void load();
+void loadLearningProgress();
 </script>
 
 <template>
   <main class="learning-shell">
     <header class="page-intro"><p class="eyebrow">한 질문씩, 내 언어로</p><h1>오늘의 학습</h1><p>아직 살펴보지 않은 개념부터, 다시 설명하고 싶은 개념까지.</p></header>
     <p v-if="loading" role="status" aria-busy="true">학습 현황을 불러오는 중…</p>
-    <QuestionState v-else-if="failed" kind="error" title="학습 현황을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="load" />
+    <QuestionState v-else-if="failed" kind="error" title="학습 현황을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadLearningProgress" />
     <template v-else-if="progress">
       <section class="learning-summary" aria-label="풀이 현황"><p>전체 풀이 {{ progress.totalAnswers }}회</p><p>최근 7일 {{ progress.recentAnswerCount }}회</p></section>
       <p v-if="progress.totalAnswers === 0" class="learning-welcome">첫 답변을 남겨 나의 지식 지도를 채워 보세요.</p>

@@ -54,24 +54,24 @@ const presentation = computed(() => presentEvaluation(
       </ul>
       <section v-if="evaluation.strengths?.length">
         <h3>잘 설명한 점</h3>
-        <ul><li v-for="item in evaluation.strengths" :key="item">{{ item }}</li></ul>
+        <ul><li v-for="strength in evaluation.strengths" :key="strength">{{ strength }}</li></ul>
       </section>
       <section v-if="evaluation.omissions?.length">
         <h3>빠진 점</h3>
-        <ul><li v-for="item in evaluation.omissions" :key="item">{{ item }}</li></ul>
+        <ul><li v-for="omission in evaluation.omissions" :key="omission">{{ omission }}</li></ul>
       </section>
       <section v-if="evaluation.misconceptions?.length">
         <h3>바로잡을 점</h3>
-        <ul><li v-for="item in evaluation.misconceptions" :key="item">{{ item }}</li></ul>
+        <ul><li v-for="misconception in evaluation.misconceptions" :key="misconception">{{ misconception }}</li></ul>
       </section>
       <section v-if="evaluation.evidence?.length" class="evaluation-evidence">
         <h3>판정 근거</h3>
-        <article v-for="item in evaluation.evidence" :key="item.chunkId">
+        <article v-for="evidence in evaluation.evidence" :key="evidence.chunkId">
           <strong>
-            {{ item.documentTitle }} · v{{ item.documentVersion }} ·
-            {{ item.startOffset }}–{{ item.endOffset }}
+            {{ evidence.documentTitle }} · v{{ evidence.documentVersion }} ·
+            {{ evidence.startOffset }}–{{ evidence.endOffset }}
           </strong>
-          <p>{{ item.content }}</p>
+          <p>{{ evidence.content }}</p>
         </article>
       </section>
     </template>

@@ -765,16 +765,27 @@ DefaultFollowUpQuestionProcessor
 
 ## 작업 18. Vue 이름과 메서드 책임 정리
 
-- [ ] `load()`를 `loadKnowledgeMap`, `loadLearningProgress`, `loadMembers` 등으로 구체화
-- [ ] `result`를 `questionPage`, `memberPage`, `evaluationPage`, `learningProgress` 등으로 구체화
-- [ ] `selected`를 선택 대상이 드러나는 이름으로 변경
-- [ ] `submit()`을 `submitLogin`, `submitSignUp` 등으로 구체화
-- [ ] `item`을 `topic`, `concept`, `member`, `question`으로 변경
-- [ ] `change`를 `changeMemberStatus`처럼 구체화
-- [ ] `filterBy`가 난이도 필터 변경임을 이름으로 표현
-- [ ] Vue 메서드가 여러 화면 작업을 함께 수행하면 private 함수 또는 composable 추출 검토
-- [ ] Vue 컴포넌트 자체에는 SOLID를 강제하지 않음
-- [ ] 컴포넌트 테스트와 template binding 확인
+- [x] `load()`를 `loadKnowledgeMap`, `loadLearningProgress`, `loadMembers` 등으로 구체화
+- [x] `result`를 `questionPage`, `memberPage`, `evaluationPage`, `learningProgress` 등으로 구체화
+- [x] `selected`를 선택 대상이 드러나는 이름으로 변경
+- [x] `submit()`을 `submitLogin`, `submitSignUp` 등으로 구체화
+- [x] `item`을 `topic`, `concept`, `member`, `question`으로 변경
+- [x] `change`를 `changeMemberStatus`처럼 구체화
+- [x] `filterBy`가 난이도 필터 변경임을 이름으로 표현
+- [x] Vue 메서드가 여러 화면 작업을 함께 수행하면 private 함수 또는 composable 추출 검토
+- [x] Vue 컴포넌트 자체에는 SOLID를 강제하지 않음
+- [x] 컴포넌트 테스트와 template binding 확인
+
+결정 결과(2026-09-26):
+
+- 화면 조회 함수·결과·선택 변수·제출 함수·반복 변수의 도메인 대상을 이름에 반영
+- 분류 화면의 Topic·Concept 병렬 조회는 한 화면의 목록 갱신 책임이므로 유지
+- Vue 화면의 이벤트 조정은 화면 책임으로 유지. 16·17번에서 독립 상태를 가진 기준·Chunk 편집만 추출
+
+검증 결과(2026-09-26):
+
+- Vue 화면·컴포넌트의 단독 `load`·`submit`·`filterBy`·`result`·`selected`·`item`·`change` 재검색 결과 0건
+- `npm run type-check` 성공, Vitest 291개 성공·실패 0개, `npm run build` 성공
 
 ## 작업 19. 유지 판정이 필요한 주요 클래스
 

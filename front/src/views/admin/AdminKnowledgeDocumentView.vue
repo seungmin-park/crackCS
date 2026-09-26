@@ -54,7 +54,7 @@ let listGeneration = 0;
 let relationGeneration = 0;
 let disposed = false;
 
-async function load() {
+async function loadKnowledgeDocuments() {
   if (disposed) return;
   const generation = ++listGeneration;
   loading.value = true;
@@ -93,12 +93,12 @@ async function loadRelations() {
   relationLoading.value = true;
   relationError.value = false;
   try {
-    const result = await fetchAllPages((candidatePage, size) => fetchTopics({
+    const activeTopics = await fetchAllPages((candidatePage, size) => fetchTopics({
       active: true,
       page: candidatePage,
       size
     }));
-    if (generation === relationGeneration) topics.value = result;
+    if (generation === relationGeneration) topics.value = activeTopics;
   } catch {
     if (generation === relationGeneration) relationError.value = true;
   } finally {
@@ -127,7 +127,7 @@ watch(() => route.query, () => {
   routeStatus = nextStatus;
   statusFilter.value = nextStatus;
   page.value = queryPage(route.query);
-  void load();
+  void loadKnowledgeDocuments();
 }, {
   deep: true
 });
@@ -147,10 +147,10 @@ const {
   reviewSelectedDocument,
   publishSelectedDocument,
   retireSelectedDocument,
-} = useKnowledgeDocumentEditor(load);
+} = useKnowledgeDocumentEditor(loadKnowledgeDocuments);
 
 onMounted(() => {
-  void load();
+  void loadKnowledgeDocuments();
   void loadRelations();
 });
 onBeforeUnmount(() => {
@@ -174,7 +174,7 @@ onBeforeUnmount(() => {
         data-retry="relations" @click="loadRelations">다시 시도</button></p>
     <p v-else-if="relationLoading" class="admin-loading">관계 후보를 불러오는 중…</p>
     <p v-if="loadError" class="admin-error">문서 목록을 불러오지 못했습니다. <button type="button"
-        data-retry="list" @click="load">다시 시도</button></p>
+        data-retry="list" @click="loadKnowledgeDocuments">다시 시도</button></p>
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter">
           <option value="">전체</option>
           <option>DRAFT</option>

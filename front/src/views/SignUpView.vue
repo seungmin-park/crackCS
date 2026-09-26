@@ -13,7 +13,7 @@ const submitting = ref(false);
 let active = true;
 onUnmounted(() => { active = false; });
 
-async function submit() {
+async function submitSignUp() {
   if (submitting.value) return;
   Object.keys(fieldErrors).forEach((field) => delete fieldErrors[field]);
   generalError.value = "";
@@ -64,7 +64,7 @@ async function submit() {
         <p>이메일, 비밀번호, 닉네임으로 시작하세요.</p>
       </div>
 
-      <form novalidate @submit.prevent="submit">
+      <form novalidate @submit.prevent="submitSignUp">
         <label class="form-field">
           <span>이메일</span>
           <input

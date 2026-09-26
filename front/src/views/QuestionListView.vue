@@ -4,7 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import { difficultyLabel, fetchQuestions, type PublicQuestionPage, type QuestionDifficulty } from "@/api/questions";
 import QuestionState from "@/components/QuestionState.vue";
 
-const result = ref<PublicQuestionPage>();
+const questionPage = ref<PublicQuestionPage>();
 const route = useRoute();
 const router = useRouter();
 const page = computed(() => {
@@ -40,14 +40,14 @@ async function loadQuestions() {
       void router.replace({ query: { ...route.query, page: String(lastPage + 1) } });
       return;
     }
-    result.value = response;
+    questionPage.value = response;
   } catch {
     if (!disposed && currentRequest === requestId) failed.value = true;
   } finally {
     if (!disposed && currentRequest === requestId) loading.value = false;
   }
 }
-function filterBy(value: QuestionDifficulty | undefined) {
+function changeDifficultyFilter(value: QuestionDifficulty | undefined) {
   void router.push({ query: { ...route.query, page: "1", difficulty: value } });
 }
 function goToPage(value: number) {
@@ -67,7 +67,7 @@ onBeforeUnmount(() => {
       <div class="library-filters">
         <button v-for="filter in filters" :key="filter.value ?? 'all'" type="button"
           :data-filter="filter.value ?? 'all'" :aria-pressed="difficulty === filter.value"
-          @click="filterBy(filter.value)">
+          @click="changeDifficultyFilter(filter.value)">
           <span>{{ filter.title }}</span><small>{{ filter.description }}</small>
         </button>
       </div>
@@ -82,22 +82,22 @@ onBeforeUnmount(() => {
       </header>
       <div class="section-heading library-toolbar">
         <h2>{{ difficulty ? difficultyLabel(difficulty) + ' 문제' : '전체 문제' }}</h2>
-        <span v-if="!loading && !failed && result" role="status">전체 {{ result.totalElements }}문제</span>
+        <span v-if="!loading && !failed && questionPage" role="status">전체 {{ questionPage.totalElements }}문제</span>
       </div>
       <section v-if="loading" class="question-skeletons" aria-label="문제 목록을 불러오는 중" aria-busy="true">
         <div v-for="index in 5" :key="index" class="skeleton-line" />
       </section>
       <QuestionState v-else-if="failed" kind="error" title="문제를 불러오지 못했어요"
         description="서버 연결을 확인한 뒤 다시 시도해 주세요." action-label="다시 불러오기" @action="loadQuestions" />
-      <QuestionState v-else-if="!result?.content.length" kind="empty"
+      <QuestionState v-else-if="!questionPage?.content.length" kind="empty"
         :title="difficulty ? '이 난이도에는 아직 문제가 없어요' : '아직 공개된 문제가 없어요'"
         :description="difficulty ? '다른 난이도를 선택해 문제를 둘러보세요.' : '새로운 문제가 준비되면 이곳에 표시됩니다.'" />
       <template v-else>
         <div class="question-table-heading" aria-hidden="true"><span>번호</span><span>질문</span><span>주제</span><span>난이도</span><span /></div>
         <ol class="question-list">
-          <li v-for="(question, index) in result.content" :key="question.id">
+          <li v-for="(question, index) in questionPage.content" :key="question.id">
             <RouterLink class="question-row" :to="{ path: `/questions/${question.id}`, query: route.query }">
-              <span class="question-number">{{ String(result.page * result.size + index + 1).padStart(2, '0') }}</span>
+              <span class="question-number">{{ String(questionPage.page * questionPage.size + index + 1).padStart(2, '0') }}</span>
               <h3>{{ question.content }}</h3>
               <span class="question-topic">{{ question.topic.name }}</span>
               <span class="difficulty-pill" :data-difficulty="question.difficulty">{{ difficultyLabel(question.difficulty) }}</span>
@@ -106,10 +106,10 @@ onBeforeUnmount(() => {
           </li>
         </ol>
       </template>
-      <nav v-if="!failed && result && result.totalPages > 1" class="pagination" aria-label="문제 목록 페이지">
+      <nav v-if="!failed && questionPage && questionPage.totalPages > 1" class="pagination" aria-label="문제 목록 페이지">
         <button type="button" aria-label="이전 페이지" :disabled="loading || page === 0" @click="goToPage(page - 1)">← 이전</button>
-        <span aria-live="polite">{{ page + 1 }} / {{ result.totalPages }}</span>
-        <button type="button" aria-label="다음 페이지" :disabled="loading || page + 1 >= result.totalPages" @click="goToPage(page + 1)">다음 →</button>
+        <span aria-live="polite">{{ page + 1 }} / {{ questionPage.totalPages }}</span>
+        <button type="button" aria-label="다음 페이지" :disabled="loading || page + 1 >= questionPage.totalPages" @click="goToPage(page + 1)">다음 →</button>
       </nav>
       <div class="library-footnote"><span aria-hidden="true">↳</span><p>정의를 떠올리고, 차이를 짚고, 예시를 연결해 보세요.<br /><span>짧아도 괜찮습니다. 설명할 수 있는 만큼부터 시작하세요.</span></p></div>
     </section>

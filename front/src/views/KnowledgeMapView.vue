@@ -10,19 +10,19 @@ const failed = ref(false);
 let active = true;
 onBeforeUnmount(() => { active = false; });
 
-async function load() {
+async function loadKnowledgeMap() {
   loading.value = true;
   failed.value = false;
   try {
-    const result = await fetchKnowledgeStates();
-    if (active) topics.value = result.topics;
+    const knowledgeMap = await fetchKnowledgeStates();
+    if (active) topics.value = knowledgeMap.topics;
   } catch {
     if (active) failed.value = true;
   } finally {
     if (active) loading.value = false;
   }
 }
-void load();
+void loadKnowledgeMap();
 </script>
 
 <template>
@@ -34,7 +34,7 @@ void load();
       <p>숙련도 80 이상·신뢰도 75 이상이면 안정 상태예요. 두 점수의 범위는 0~100입니다.</p>
     </aside>
     <p v-if="loading" role="status" aria-busy="true">지식 지도를 불러오는 중…</p>
-    <QuestionState v-else-if="failed" kind="error" title="지식 지도를 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="load" />
+    <QuestionState v-else-if="failed" kind="error" title="지식 지도를 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadKnowledgeMap" />
     <KnowledgeTopics v-else :topics="topics" details />
   </main>
 </template>

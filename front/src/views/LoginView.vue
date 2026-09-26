@@ -15,7 +15,7 @@ const registered = route.query.registered === "true";
 let active = true;
 onUnmounted(() => { active = false; });
 
-async function submit() {
+async function submitLogin() {
   if (submitting.value) return;
   errorMessage.value = "";
   submitting.value = true;
@@ -64,7 +64,7 @@ async function submit() {
         계정이 만들어졌습니다. 이제 로그인해 주세요.
       </p>
 
-      <form novalidate @submit.prevent="submit">
+      <form novalidate @submit.prevent="submitLogin">
         <label class="form-field">
           <span>이메일</span>
           <input

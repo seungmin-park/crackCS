@@ -60,7 +60,7 @@ let loadGeneration = 0;
 let relationGeneration = 0;
 let disposed = false;
 
-async function load() {
+async function loadQuestions() {
   if (disposed) return;
   const generation = ++loadGeneration;
   loading.value = true;
@@ -142,7 +142,7 @@ watch(() => route.query, () => {
   routeStatus = nextStatus;
   statusFilter.value = nextStatus;
   page.value = queryPage(route.query);
-  void load();
+  void loadQuestions();
 }, {
   deep: true
 });
@@ -165,10 +165,10 @@ const {
   publishSelectedQuestion,
   retireSelectedQuestion,
   newVersion
-} = useAdminQuestionEditor(concepts, load);
+} = useAdminQuestionEditor(concepts, loadQuestions);
 
 onMounted(() => {
-  void load();
+  void loadQuestions();
   void loadRelations();
 });
 onBeforeUnmount(() => {
@@ -189,7 +189,7 @@ onBeforeUnmount(() => {
     </header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
     <p v-if="loadError" class="admin-error">문제 목록을 불러오지 못했습니다. <button type="button"
-        data-retry="list" @click="load">다시 시도</button></p>
+        data-retry="list" @click="loadQuestions">다시 시도</button></p>
     <p v-if="detailError" class="admin-error">문제 상세를 불러오지 못했습니다.</p>
     <p v-if="relationError" class="admin-error">관계 후보를 불러오지 못했습니다. <button type="button"
         data-retry="relations" @click="loadRelations">다시 시도</button></p>

@@ -45,7 +45,7 @@ let loadGeneration = 0;
 let relationGeneration = 0;
 let disposed = false;
 
-async function load() {
+async function loadTaxonomy() {
   if (disposed) return;
   const generation = ++loadGeneration;
   loading.value = true;
@@ -73,13 +73,13 @@ async function load() {
   }
 }
 
-async function loadRelations() {
+async function loadActiveTopics() {
   if (disposed) return;
   const generation = ++relationGeneration;
   relationLoading.value = true; relationError.value = false;
   try {
-    const result = await fetchAllPages((candidatePage, size) => fetchTopics({ active: true, page: candidatePage, size }));
-    if (generation === relationGeneration) topicOptions.value = result;
+    const activeTopics = await fetchAllPages((candidatePage, size) => fetchTopics({ active: true, page: candidatePage, size }));
+    if (generation === relationGeneration) topicOptions.value = activeTopics;
   } catch { if (generation === relationGeneration) relationError.value = true; }
   finally { if (generation === relationGeneration) relationLoading.value = false; }
 }
@@ -91,7 +91,7 @@ async function changePage(key: "topicPage" | "conceptPage", nextPage: number) {
 watch(() => route.query, () => {
   topicPage.value = queryPage(route.query, "topicPage");
   conceptPage.value = queryPage(route.query, "conceptPage");
-  void load();
+  void loadTaxonomy();
 }, { deep: true });
 
 function editTopic(topic: Topic) {
@@ -112,37 +112,37 @@ async function submitTopic() {
     name: topicForm.name,
     ...(topicForm.parentId ? { parentId: Number(topicForm.parentId) } : {}),
   };
-  const result = await feedback.execute(
+  const savedTopic = await feedback.execute(
     () => topicEditingId.value ? updateTopic(topicEditingId.value, input) : createTopic(input),
     topicEditingId.value ? "Topic을 수정했습니다." : "Topic을 등록했습니다.",
   );
-  if (result && !disposed) {
+  if (savedTopic && !disposed) {
     topicEditingId.value = undefined;
     Object.assign(topicForm, { parentId: "", code: "", name: "" });
-    await Promise.all([load(), loadRelations()]);
+    await Promise.all([loadTaxonomy(), loadActiveTopics()]);
   }
 }
 
 async function submitConcept() {
   const input = { topicId: Number(conceptForm.topicId), code: conceptForm.code, name: conceptForm.name, description: conceptForm.description };
-  const result = await feedback.execute(
+  const savedConcept = await feedback.execute(
     () => conceptEditingId.value ? updateConcept(conceptEditingId.value, input) : createConcept(input),
     conceptEditingId.value ? "Concept을 수정했습니다." : "Concept을 등록했습니다.",
   );
-  if (result && !disposed) { conceptEditingId.value = undefined; Object.assign(conceptForm, { topicId: "", code: "", name: "", description: "" }); await load(); }
+  if (savedConcept && !disposed) { conceptEditingId.value = undefined; Object.assign(conceptForm, { topicId: "", code: "", name: "", description: "" }); await loadTaxonomy(); }
 }
 
 async function deactivate(kind: "topic" | "concept", id: number) {
-  const result = await feedback.execute(
+  const deactivatedEntry = await feedback.execute(
     () => kind === "topic" ? deactivateTopic(id) : deactivateConcept(id),
     `${kind === "topic" ? "Topic" : "Concept"}을 비활성화했습니다.`,
   );
-  if (disposed || (result === undefined && feedback.formError.value)) return;
-  if (kind === "topic") await Promise.all([load(), loadRelations()]);
-  else await load();
+  if (disposed || (deactivatedEntry === undefined && feedback.formError.value)) return;
+  if (kind === "topic") await Promise.all([loadTaxonomy(), loadActiveTopics()]);
+  else await loadTaxonomy();
 }
 
-onMounted(() => { void load(); void loadRelations(); });
+onMounted(() => { void loadTaxonomy(); void loadActiveTopics(); });
 onBeforeUnmount(() => { disposed = true; loadGeneration++; relationGeneration++; });
 </script>
 
@@ -150,31 +150,31 @@ onBeforeUnmount(() => { disposed = true; loadGeneration++; relationGeneration++;
   <section>
     <header class="admin-page-heading"><div><p class="eyebrow">TAXONOMY</p><h1>분류와 개념</h1></div><p>비활성 분류는 기존 이력을 보존하지만 새 콘텐츠에는 연결할 수 없습니다.</p></header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
-    <p v-if="relationError" class="admin-error">관계 후보를 불러오지 못했습니다. <button type="button" data-retry="relations" @click="loadRelations">다시 시도</button></p>
+    <p v-if="relationError" class="admin-error">관계 후보를 불러오지 못했습니다. <button type="button" data-retry="relations" @click="loadActiveTopics">다시 시도</button></p>
     <p v-else-if="relationLoading" class="admin-loading">관계 후보를 불러오는 중…</p>
-    <p v-if="loadError" class="admin-error">분류 체계를 불러오지 못했습니다. <button type="button" data-retry="list" @click="load">다시 시도</button></p>
+    <p v-if="loadError" class="admin-error">분류 체계를 불러오지 못했습니다. <button type="button" data-retry="list" @click="loadTaxonomy">다시 시도</button></p>
     <p v-if="loading" class="admin-loading">분류 체계를 불러오는 중…</p>
     <div v-else class="admin-two-column">
       <section class="admin-panel">
         <h2>Topic</h2>
         <form class="admin-form" @submit.prevent="submitTopic">
-          <label>상위 Topic<select v-model="topicForm.parentId"><option value="">없음</option><option v-for="item in topicOptions.filter(t => t.active && t.id !== topicEditingId)" :key="item.id" :value="item.id">{{ item.name }}</option></select></label>
+          <label>상위 Topic<select v-model="topicForm.parentId"><option value="">없음</option><option v-for="topic in topicOptions.filter(candidate => candidate.active && candidate.id !== topicEditingId)" :key="topic.id" :value="topic.id">{{ topic.name }}</option></select></label>
           <label>코드<input v-model="topicForm.code" required /><small>{{ feedback.fieldErrors.value.code }}</small></label>
           <label>이름<input v-model="topicForm.name" required /><small>{{ feedback.fieldErrors.value.name }}</small></label>
           <button class="admin-primary" :disabled="feedback.submitting.value">{{ topicEditingId ? "Topic 수정" : "Topic 등록" }}</button>
         </form>
-        <ul class="admin-list"><li v-for="item in topics" :key="item.id" :class="{ inactive: !item.active }"><div><strong>{{ item.name }}</strong><small>{{ item.code }} · {{ item.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editTopic(item)">편집</button><button v-if="item.active" :disabled="feedback.submitting.value" @click="deactivate('topic', item.id)">비활성화</button></div></li></ul>
+        <ul class="admin-list"><li v-for="topic in topics" :key="topic.id" :class="{ inactive: !topic.active }"><div><strong>{{ topic.name }}</strong><small>{{ topic.code }} · {{ topic.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editTopic(topic)">편집</button><button v-if="topic.active" :disabled="feedback.submitting.value" @click="deactivate('topic', topic.id)">비활성화</button></div></li></ul>
         <AdminPagination :page="topicPage" :total-pages="topicTotalPages" :total-elements="topicTotalElements" data-page-key="topicPage" @change="changePage('topicPage', $event)" />
       </section>
       <section class="admin-panel">
         <h2>Concept</h2>
         <form class="admin-form" @submit.prevent="submitConcept">
-          <label>Topic<select v-model="conceptForm.topicId" required><option value="" disabled>선택</option><option v-for="item in topicOptions.filter(t => t.active)" :key="item.id" :value="item.id">{{ item.name }}</option></select></label>
+          <label>Topic<select v-model="conceptForm.topicId" required><option value="" disabled>선택</option><option v-for="topic in topicOptions.filter(candidate => candidate.active)" :key="topic.id" :value="topic.id">{{ topic.name }}</option></select></label>
           <label>코드<input v-model="conceptForm.code" required /></label><label>이름<input v-model="conceptForm.name" required /></label>
           <label>설명<textarea v-model="conceptForm.description" rows="3" /></label>
           <button class="admin-primary" :disabled="feedback.submitting.value">{{ conceptEditingId ? "Concept 수정" : "Concept 등록" }}</button>
         </form>
-        <ul class="admin-list"><li v-for="item in concepts" :key="item.id" :class="{ inactive: !item.active }"><div><strong>{{ item.name }}</strong><small>{{ item.code }} · {{ item.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editConcept(item)">편집</button><button v-if="item.active" :disabled="feedback.submitting.value" @click="deactivate('concept', item.id)">비활성화</button></div></li></ul>
+        <ul class="admin-list"><li v-for="concept in concepts" :key="concept.id" :class="{ inactive: !concept.active }"><div><strong>{{ concept.name }}</strong><small>{{ concept.code }} · {{ concept.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editConcept(concept)">편집</button><button v-if="concept.active" :disabled="feedback.submitting.value" @click="deactivate('concept', concept.id)">비활성화</button></div></li></ul>
         <AdminPagination :page="conceptPage" :total-pages="conceptTotalPages" :total-elements="conceptTotalElements" data-page-key="conceptPage" @change="changePage('conceptPage', $event)" />
       </section>
     </div>

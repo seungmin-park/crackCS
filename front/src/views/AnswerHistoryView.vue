@@ -26,15 +26,15 @@ async function loadAnswers() {
   loading.value = true;
   error.value = false;
   try {
-    const result = await fetchMyAnswers({ page: requestedPage, size: 20 });
+    const answerPage = await fetchMyAnswers({ page: requestedPage, size: 20 });
     if (disposed || activeGeneration !== generation) return;
-    const lastPage = Math.max(result.totalPages - 1, 0);
+    const lastPage = Math.max(answerPage.totalPages - 1, 0);
     if (requestedPage > lastPage) {
       void router.replace({ query: { ...route.query, page: String(lastPage) } });
       return;
     }
-    answers.value = result.content;
-    totalPages.value = result.totalPages;
+    answers.value = answerPage.content;
+    totalPages.value = answerPage.totalPages;
   } catch {
     if (!disposed && activeGeneration === generation) error.value = true;
   } finally {
