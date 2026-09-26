@@ -1,6 +1,5 @@
 package com.example.crackcs.evaluation.retrieval;
 
-import com.example.crackcs.content.knowledge.chunk.domain.KnowledgeChunk;
 import com.example.crackcs.content.knowledge.chunk.repository.KnowledgeChunkRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

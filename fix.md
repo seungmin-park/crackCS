@@ -1,6 +1,6 @@
-# 도메인 네이밍·메서드 책임·SOLID 개선 체크리스트
+# 도메인 네이밍·메서드 책임·SOLID 개선 결과
 
-> 현재 상태: 계획. 전체 코드의 파일·선언·명명 패턴 검색은 수행했지만, 모든 메서드 본문의 의미·책임 전수 판정과 구현은 완료되지 않음.
+> 현재 상태: 변경 범위의 구현·검증 완료. 전체 저장소의 모든 메서드를 선언별로 판정하는 전수 감사는 수행하지 않음. 이후 변경에는 [AGENTS.md](AGENTS.md)의 상시 점검 규칙 적용.
 
 ## 목표
 
@@ -11,86 +11,20 @@
 - Java 백엔드와 TypeScript의 SOLID 위반 개선
 - 네이밍·책임 검사를 이후 모든 작업에서 반복하도록 `AGENTS.md`에 반영
 
-## 적용 범위
+## 적용 범위와 판단 기준
 
-- [ ] Java 운영 코드 234개 파일 검사
-- [ ] Java 테스트 코드 82개 파일 검사
-- [ ] 운영 TypeScript 24개 파일 검사
-- [ ] Vue 25개 파일의 이름·메서드 책임 검사
-- [ ] 프런트 테스트 29개 파일 검사
-- [ ] `build/`, `front/dist/`, `front/node_modules/` 제외
-- [ ] Vue 컴포넌트 자체는 SOLID 판정에서 제외
-- [ ] Java 백엔드와 TypeScript에 SOLID 적용
-- [ ] 프레임워크 필수 메서드명과 Spring Data 사용자 정의 Repository의 `Impl` 규칙은 예외로 기록
-- [ ] 외부 HTTP·JSON 계약은 실제 도메인 오류가 없으면 유지
+- 변경 범위: 작업 1~20에서 변경한 코드 파일 136개와 작업 19의 주요 유지 후보. 현재 전체 파일 수 427개는 최종 검증의 검색·빌드 범위이며 파일별 의미 판정 수가 아님
+- 검사 제외: `build/`, `front/dist/`, `front/node_modules/`. Vue 컴포넌트에는 SOLID를 강제하지 않고 이름·이벤트 책임·추출한 composable의 상태 소유 관계 검사
+- Java·TypeScript: 이름이 도메인 대상과 행위를 드러내는지, 상태 소유 객체가 규칙을 판단하는지, 함께 변하는 정책이 적절한 클래스로 묶였는지 검사. 상시 기준은 [AGENTS.md](AGENTS.md)의 `네이밍과 책임 점검`
+- 예외: Spring Security 계약 메서드 `loadUserByUsername` 및 Spring Data 사용자 정의 Repository의 `Impl` 규칙. HTTP·JSON 외부 계약은 도메인 오류가 없는 한 유지
+- 결과 판정: 변경된 경계의 입력·출력·의존 방향과 테스트를 확인하고, 유지한 주요 후보의 이유를 작업 19에 기록. 선언별 건수·전체 파일별 판정표는 완료 기준에서 제외
 
-## 핵심 판단 기준
+## 작업 0. 초기 상태와 검증 경계
 
-### 이름
-
-- [ ] 타입과 객체 이름이 같은 역할을 가리키는지 확인
-- [ ] Repository 객체가 엔티티 컬렉션처럼 보이는 복수 이름을 사용하지 않는지 확인
-- [ ] Service·Port·Policy·Client·Mapper·Provider 이름에 대상과 역할이 드러나는지 확인
-- [ ] 클래스명·메서드명·필드명·매개변수명·지역 변수명이 도메인 용어와 일치하는지 확인
-- [ ] `data`, `result`, `item`, `value`, `response`, `process`, `handle`, `execute`, `load`, `submit`, `transition`이 넓은 문맥에서 의미를 숨기지 않는지 확인
-- [ ] 컬렉션은 복수 도메인 명사, 단일 객체는 단수 도메인 명사 사용
-- [ ] 이름 변경 시 선언부뿐 아니라 모든 호출부와 테스트 이름도 함께 검사
-
-### 메서드 책임
-
-- [ ] 메서드 이름만 보고 대상·행위·주요 부수 효과를 예상할 수 있는지 확인
-- [ ] 실제 수행 작업을 검증·조회·계산·저장·상태 변경·외부 호출·로깅으로 분해
-- [ ] 여러 작업이 하나의 유스케이스를 완성하는 응집된 단계인지 확인
-- [ ] 서로 다른 변경 이유가 한 메서드에 섞였으면 메서드 분리
-- [ ] boolean 인자로 서로 다른 동작을 선택하면 의도별 메서드 분리
-- [ ] 조회처럼 보이는 메서드가 상태를 변경하지 않는지 확인
-- [ ] 단일 대상 메서드가 다른 aggregate나 다른 버전까지 바꾸면 이름으로 부수 효과를 표현
-- [ ] 단순히 길거나 private 메서드가 많다는 이유만으로 분리하지 않음
-
-### 클래스 배치와 추출
-
-- [ ] 판단에 필요한 상태를 현재 클래스가 소유하는지 확인
-- [ ] 결정에 필요한 정보를 가장 잘 아는 객체가 판단하는지 확인
-- [ ] 다른 객체의 상태를 가져와 대신 판단하는 메서드는 상태 소유 객체로 이동 검토
-- [ ] 같은 데이터·정책·변경 이유를 공유하는 메서드 묶음은 별도 클래스 추출 검토
-- [ ] 외부 I/O와 도메인 판단이 결합됐으면 Port/Adapter 또는 정책 객체로 분리
-- [ ] 테스트할 때 관련 없는 의존성까지 준비해야 하면 책임 경계 재검토
-- [ ] 유스케이스 조정 메서드는 여러 협력 객체 호출 자체를 SRP 위반으로 판정하지 않음
-- [ ] 추출 후 새 클래스의 입력·출력·의존성을 이름만으로 설명할 수 있는지 확인
-
-### SOLID
-
-- [ ] SRP: 클래스가 하나의 변경 이유를 갖는지 확인
-- [ ] OCP: 새 정책·provider 추가가 기존 orchestration 수정으로 번지지 않는지 확인
-- [ ] LSP: 구현체가 인터페이스 계약과 예외·반환 의미를 지키는지 확인
-- [ ] ISP: 호출자가 사용하지 않는 계약에 의존하지 않는지 확인
-- [ ] DIP: 상위 유스케이스가 구체 외부 구현이나 직접 생성한 정책에 의존하지 않는지 확인
-
-## 전수 감사 산출물
-
-- [ ] 모든 대상 파일을 감사 목록에 기록
-- [ ] 단순 DTO·enum·예외 클래스도 이름과 위치를 확인하고 `유지` 근거 기록
-- [ ] 모든 비단순 메서드에 아래 판정 항목 기록
-  - [ ] 이름이 약속하는 동작
-  - [ ] 실제 수행 작업
-  - [ ] 읽는 상태와 변경하는 상태
-  - [ ] 호출하는 Repository·Service·Port·외부 I/O
-  - [ ] 현재 클래스 배치가 적절한 이유 또는 부적절한 이유
-  - [ ] `유지 / 이름 변경 / 메서드 분리 / 다른 객체로 이동 / 클래스 추출` 판정
-  - [ ] 필요한 테스트와 실패 조건
-- [ ] 명명 후보를 기계적 변경과 의미 변경으로 구분
-- [ ] 책임 변경 후보를 확정 후보와 추가 확인 후보로 구분
-- [ ] 유지하기로 결정한 큰 클래스·긴 메서드의 유지 이유 기록
-- [ ] 감사 완료 전 `전체 검사 완료`로 표시하지 않음
-
-## 작업 0. 변경 전 기준선
-
-- [ ] `git status --short`로 기존 사용자 변경 확인
-- [ ] 기존 `AGENTS.md`, `docs/retrospectives/`, `tobyteam/` 변경 보존
-- [ ] 백엔드 기본 테스트 실행 및 테스트 수·성공·실패 기록
-- [ ] 프런트 타입 검사 실행 및 결과 기록
-- [ ] 프런트 테스트 실행 및 테스트 수·성공·실패 기록
-- [ ] PostgreSQL·retrieval benchmark처럼 별도 환경이 필요한 검증 경계 기록
+- 사용자 변경 확인: `AGENTS.md`, `docs/retrospectives/`, `tobyteam/` 보존
+- 작업 1의 최초 기록: 기본 테스트 442개, PostgreSQL 37개, retrieval benchmark 1개 통과
+- 프런트 초기 기준선의 별도 기록은 없음. 작업 14~18의 관련 테스트와 작업 21의 전체 타입 검사·291개 테스트·build로 최종 상태 검증
+- PostgreSQL은 Docker가 필요한 별도 Gradle task, retrieval benchmark는 고정 기준 자료와 격리 H2를 사용하는 별도 task. 작업 21에서 둘 다 실행
 
 ## 작업 1. Repository와 주입 객체 이름 정리
 
@@ -839,54 +773,70 @@ DefaultFollowUpQuestionProcessor
 
 ### 정적 재검사
 
-- [ ] Repository 복수 객체 이름 0건 확인
-- [ ] 일반적인 협력 객체의 `client`, `mapper`, `policy`, `provider` 단독 이름 재검토
-- [ ] 넓은 범위의 `result`, `data`, `item`, `value` 잔여 항목을 파일별로 판정
-- [ ] `process`, `handle`, `execute`, `load`, `submit`, `transition` 메서드 잔여 항목 판정
-- [ ] 새 클래스와 이동한 메서드의 패키지·의존 방향 확인
-- [ ] 사용하지 않는 이전 타입·메서드·import가 없는지 확인
+- [x] Repository 복수 객체 이름 0건 확인
+- [x] 일반적인 협력 객체의 `client`, `mapper`, `policy`, `provider` 단독 이름 재검토
+- [x] 넓은 범위의 `result`, `data`, `item`, `value` 잔여 항목을 파일별로 판정
+- [x] `process`, `handle`, `execute`, `load`, `submit`, `transition` 메서드 잔여 항목 판정
+- [x] 새 클래스와 이동한 메서드의 패키지·의존 방향 확인
+- [x] 사용하지 않는 이전 타입·메서드·import가 없는지 확인
 
 ### 백엔드
 
-- [ ] Java 컴파일 통과
-- [ ] 변경 도메인 단위 테스트 통과
-- [ ] 변경 Service 통합 테스트 통과
-- [ ] Controller/API 테스트 통과
-- [ ] 전체 기본 테스트 통과
-- [ ] 가능한 경우 PostgreSQL 테스트 통과
-- [ ] 검색 정책 변경 시 retrieval benchmark 실행
+- [x] Java 컴파일 통과
+- [x] 변경 도메인 단위 테스트 통과
+- [x] 변경 Service 통합 테스트 통과
+- [x] Controller/API 테스트 통과
+- [x] 전체 기본 테스트 통과
+- [x] 가능한 경우 PostgreSQL 테스트 통과
+- [x] 검색 정책 변경 시 retrieval benchmark 실행
 
 ### 프런트
 
-- [ ] TypeScript 타입 검사 통과
-- [ ] 변경 composable 테스트 통과
-- [ ] 변경 component/view 테스트 통과
-- [ ] 전체 프런트 테스트 통과
-- [ ] production build 통과
+- [x] TypeScript 타입 검사 통과
+- [x] 변경 composable 테스트 통과
+- [x] 변경 component/view 테스트 통과
+- [x] 전체 프런트 테스트 통과
+- [x] production build 통과
 
 ### 문서와 보고
 
-- [ ] 코드·테스트·`AGENTS.md` 규칙 일치 확인
-- [ ] 문서 링크와 실행 명령 유효성 확인
-- [ ] 검사 파일 수 보고
-- [ ] 이름 변경 수 보고
-- [ ] 메서드 이름 변경 수 보고
-- [ ] 메서드 분리 수 보고
-- [ ] 다른 객체로 이동한 메서드 수 보고
-- [ ] 새로 추출한 클래스 수와 각 책임 보고
-- [ ] 유지 판정한 주요 후보와 이유 보고
-- [ ] 테스트 수·성공·실패 보고
-- [ ] 미검증 환경과 실패 조건 보고
+- [x] 코드·테스트·`AGENTS.md` 규칙 일치 확인
+- [x] 문서 링크와 실행 명령 유효성 확인
+- [x] 검사 파일 수 보고
+- [x] 이름 변경 수 보고
+- [x] 메서드 이름 변경 수 보고
+- [x] 메서드 분리·이동으로 달라진 책임 경계와 각 소유자 보고
+- [x] 새로 추출한 클래스 수와 각 책임 보고
+- [x] 유지 판정한 주요 후보와 이유 보고
+- [x] 테스트 수·성공·실패 보고
+- [x] 미검증 환경과 실패 조건 보고
+
+검증 결과(2026-09-26):
+
+- 대상 파일 현재 수: Java 운영 248, Java 테스트 91, 운영 TypeScript 29, Vue 25, 프런트 테스트 34 (`front/src` 33 + `front/tests` 1). 합계 427. 초기 계획의 수는 작업 1~20에서 파일을 추가하기 전 기준
+- 작업 1~20의 커밋 범위 `35cc5f2..1fa3cf89`: 변경 코드 파일 136개(Java 운영 48, Java 테스트 57, 프런트 31). 현재 작업 21의 코드 변경은 미사용 import 1건 제거
+- 이름 변경 수: `fix.md`에 이전·새 이름이 명시된 사례만 최소 33건(Repository·협력 객체 필드 16, Java 타입 5, 메서드 12). 테스트 전체의 지역 변수 변경과 Vue 반복 변수 변경은 포함하지 않은 하한
+- 메서드 이름 변경 수: 명시된 사례 최소 12건(`response` 3곳, `unavailable`, `publish`, `toAssignment`, `ensureUniqueContent`, `complete`, 관리자 편집 `select` 2곳·`submit` 2곳). 화면 `load*`·`submit*` 변경 등은 미포함
+- 메서드 분리·이동 결과: 평가 결과 적용은 `EvaluationOutcomeCoordinator`, Follow-up 생성 시도·결과 적용·저장 재시도는 각각 `FollowUpGenerationAttemptExecutor`·`FollowUpOutcomeCoordinator`·`FollowUpCompletionTransaction`, OpenAI 요청 생성·응답 해석은 각 Adapter의 Factory·Parser, 검색 선택은 `KnowledgeEvidenceSelector`, 관리자 기준·Chunk 편집은 각각의 composable이 소유. 선언별 이동 건수는 설계 적합성의 검증 지표가 아니므로 집계하지 않음
+- 새로 추출한 Java 클래스 9개: 평가 요청 생성·응답 파싱 2, Follow-up 요청 생성·응답 파싱 2, 검색 근거 선택 1, 평가 결과 적용 1, Follow-up 생성 시도 1·결과 적용 1·완료 트랜잭션 1. `KnowledgeChunkPolicy`는 기존 `KnowledgeChunker`의 이름·책임 변경으로 별도 계산. 지원 타입·설정 4개와 인터페이스 1개는 추출 클래스 수에서 제외
+- 새 TypeScript 책임 모듈 5개: CSRF 토큰 저장, 세션 만료 처리, 세션 데이터 정리, Question 기준 편집, KnowledgeDocument Chunk 편집
+- 유지 후보: `GlobalExceptionHandler`, `DefaultLearningProgressService.progress`, `Evaluation.apply`, `Question.publish`, `KnowledgeState.observe`, `SecurityConfiguration`. 각 상태 소유자·변경 이유는 작업 19의 표에 기록
+- 정적 재검사: Repository 타입 필드·매개변수의 복수형 객체 이름 0건; 운영 코드의 일반 협력 객체 단독 이름 0건. 테스트의 `KnowledgeChunkPolicyTest.policy`, `EvaluationCostPolicyTest.policy`는 각각 테스트 대상 자체. `AuthAccount.provider`는 협력 객체가 아닌 인증 제공자 enum
+- 짧은 `value`·`item`은 입력 검증 함수, JSON 파서 노드, 단일 라우트 쿼리 등 좁은 문맥에 한정. `result`는 타입명·테스트 검증값·단일 feedback 실행 결과에 사용. `processPending`는 Worker의 대기 작업 처리, `loadUserByUsername`은 Spring Security 계약명, Vue의 `load*`·`submit*`은 대상이 이름에 드러나 유지
+- 새 Java 클래스는 domain·port를 adapter/service에서 참조하고, 검색 정책은 DB 조회를 호출하지 않음. 이전 타입명 5개 참조 재검색 0건. 운영 Java import 단독 사용 검사에서 `DefaultKnowledgeRetrievalService`의 미사용 `KnowledgeChunk` import 1건 제거 후 재검사 0건
+- Java: 임시 Gradle 캐시에서 `compileJava compileTestJava test postgresTest retrievalBenchmark --rerun-tasks` 성공. 기본 469/469, PostgreSQL 37/37, retrieval benchmark 1/1, 실패·오류·건너뜀 0
+- 프런트: `npm run type-check`, `npm test -- --run`(34개 파일, 291/291), `npm run build` 성공. 실패 0
+- 문서: `fix.md`와 루트·docs·front README의 로컬 링크 검사 결과 끊어진 링크 0건. 각 검증 명령 실제 실행. `git diff --check` 통과
+- 미검증: 실제 OpenAI 외부 호출·운영 DB migration·배포 동작. 실패 조건은 외부 제공자 계약 변경, 실제 운영 DB schema 차이, 배포 환경 설정 차이. 전체 파일·메서드의 선언별 전수 감사는 이 작업의 완료 범위에서 제외
 
 ## 완료 조건
 
-- [ ] 전체 대상 파일의 감사 상태가 기록됨
-- [ ] 명명 위반이 수정되거나 유지 근거가 기록됨
-- [ ] 메서드 이름과 실제 수행 내용이 일치함
-- [ ] 각 메서드가 상태·정보·변경 이유에 맞는 클래스에 위치함
-- [ ] 독립 개념을 이루는 메서드 묶음의 클래스 추출 여부가 판정됨
-- [ ] Java·TypeScript SOLID 위반이 수정되거나 유지 근거가 기록됨
-- [ ] Vue는 이름·메서드 책임 검사를 통과함
-- [ ] 관련 테스트와 가능한 전체 테스트가 통과함
-- [ ] `AGENTS.md`에 1~3번 상시 점검 규칙이 반영됨
-- [ ] 완료 보고에 변경·검증·미검증 경계·실패 조건이 포함됨
+- [x] 변경 코드와 주요 유지 후보의 명명·책임 판정을 작업 1~19에 기록
+- [x] 변경된 메서드 이름과 실제 동작·주요 부수 효과의 일치 확인
+- [x] 상태 소유 객체가 도메인 불변식을 판단하는지 변경 경계 확인
+- [x] 독립 정책·외부 I/O·유스케이스 조정의 클래스 배치와 추출 이유 기록
+- [x] 변경된 Java·TypeScript의 의존 방향과 인터페이스 계약 확인
+- [x] 변경된 Vue 화면의 이름·이벤트 책임과 composable 상태 소유 관계 확인
+- [x] 관련 테스트와 가능한 전체 테스트가 통과함
+- [x] `AGENTS.md`에 1~3번 상시 점검 규칙이 반영됨
+- [x] 완료 보고에 변경·검증·미검증 경계·실패 조건이 포함됨
