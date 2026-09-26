@@ -107,7 +107,7 @@ async function loadRelations() {
 }
 
 async function changeFilter() {
-  select();
+  selectDocumentForEditing();
   await updateAdminQuery(router, route.query, {
     page: 0,
     status: statusFilter.value || undefined
@@ -123,7 +123,7 @@ async function changePage(nextPage: number) {
 
 watch(() => route.query, () => {
   const nextStatus = queryStringValue(route.query, "status") as ContentStatus | "";
-  if (nextStatus !== routeStatus) select();
+  if (nextStatus !== routeStatus) selectDocumentForEditing();
   routeStatus = nextStatus;
   statusFilter.value = nextStatus;
   page.value = queryPage(route.query);
@@ -133,18 +133,20 @@ watch(() => route.query, () => {
 });
 
 const {
-  selected,
+  selectedDocument,
   feedback,
   chunks,
   chunkError,
   chunksLoading,
   form,
-  select,
+  selectDocumentForEditing,
   loadChunks,
-  chunkDocument,
-  submit,
+  generateDocumentChunks,
+  saveDocumentDraft,
   createVersion,
-  transition
+  reviewSelectedDocument,
+  publishSelectedDocument,
+  retireSelectedDocument,
 } = useKnowledgeDocumentEditor(load);
 
 onMounted(() => {
@@ -178,20 +180,20 @@ onBeforeUnmount(() => {
           <option>DRAFT</option>
           <option>PUBLISHED</option>
           <option>RETIRED</option>
-        </select></label><button @click="select()">새 문서</button></div>
+        </select></label><button @click="selectDocumentForEditing()">새 문서</button></div>
     <p v-if="loading" class="admin-loading">문서를 불러오는 중…</p>
     <div v-else class="admin-editor-layout">
       <ul class="admin-list selectable">
         <li v-for="document in documents" :key="document.id"
-          :class="{ selected: selected?.id === document.id }"><button type="button"
-            :data-document-id="document.id" :aria-pressed="selected?.id === document.id"
-            @click="select(document)"><strong>{{ document.title }}</strong><small>v{{ document.documentVersion }}
+          :class="{ selected: selectedDocument?.id === document.id }"><button type="button"
+            :data-document-id="document.id" :aria-pressed="selectedDocument?.id === document.id"
+            @click="selectDocumentForEditing(document)"><strong>{{ document.title }}</strong><small>v{{ document.documentVersion }}
               · {{ document.status }} ·
               {{ document.technologyVersion || "버전 미입력" }}</small></button></li>
       </ul>
       <section class="admin-panel">
-        <h2>{{ selected ? `${selected.title} · v${selected.documentVersion}` : "새 문서" }}</h2>
-        <form class="admin-form" @submit.prevent="submit">
+        <h2>{{ selectedDocument ? `${selectedDocument.title} · v${selectedDocument.documentVersion}` : "새 문서" }}</h2>
+        <form class="admin-form" @submit.prevent="saveDocumentDraft">
           <label>Topic<select v-model="form.topicId" required>
               <option value="" disabled>선택</option>
               <option v-for="topic in topics" :key="topic.id" :value="topic.id">{{ topic.name }}
@@ -211,27 +213,27 @@ onBeforeUnmount(() => {
           <label>원문<textarea v-model="form.content" rows="10"
               required /><small>{{ feedback.fieldErrors.value.content }}</small></label>
           <div class="admin-actions">
-            <button v-if="!selected || selected.status === 'DRAFT'" class="admin-primary"
-              :disabled="feedback.submitting.value">{{ selected ? "초안 수정" : "초안 등록" }}</button>
-            <button v-if="selected?.status === 'PUBLISHED'" type="button"
+            <button v-if="!selectedDocument || selectedDocument.status === 'DRAFT'" class="admin-primary"
+              :disabled="feedback.submitting.value">{{ selectedDocument ? "초안 수정" : "초안 등록" }}</button>
+            <button v-if="selectedDocument?.status === 'PUBLISHED'" type="button"
               :disabled="feedback.submitting.value" @click="createVersion">현재 입력으로 새 버전</button>
-            <button v-if="selected?.status === 'DRAFT'" type="button"
-              :disabled="feedback.submitting.value" @click="transition('review')">검수</button>
-            <button v-if="selected?.status === 'DRAFT'" type="button"
-              :disabled="feedback.submitting.value" @click="transition('publish')">공개</button>
-            <button v-if="selected?.status === 'PUBLISHED'" type="button"
-              :disabled="feedback.submitting.value" @click="transition('retire')">폐기</button>
-            <button v-if="selected?.status === 'PUBLISHED'" type="button"
-              :disabled="feedback.submitting.value" @click="chunkDocument">검색 문단 생성</button>
+            <button v-if="selectedDocument?.status === 'DRAFT'" type="button"
+              :disabled="feedback.submitting.value" @click="reviewSelectedDocument">검수</button>
+            <button v-if="selectedDocument?.status === 'DRAFT'" type="button"
+              :disabled="feedback.submitting.value" @click="publishSelectedDocument">공개</button>
+            <button v-if="selectedDocument?.status === 'PUBLISHED'" type="button"
+              :disabled="feedback.submitting.value" @click="retireSelectedDocument">폐기</button>
+            <button v-if="selectedDocument?.status === 'PUBLISHED'" type="button"
+              :disabled="feedback.submitting.value" @click="generateDocumentChunks">검색 문단 생성</button>
           </div>
         </form>
-        <p v-if="selected" class="admin-meta">checksum {{ selected.checksum }}<br />series
-          {{ selected.versionSeriesId }}</p>
-        <section v-if="selected?.status === 'PUBLISHED'" class="admin-chunks">
+        <p v-if="selectedDocument" class="admin-meta">checksum {{ selectedDocument.checksum }}<br />series
+          {{ selectedDocument.versionSeriesId }}</p>
+        <section v-if="selectedDocument?.status === 'PUBLISHED'" class="admin-chunks">
           <h3>검색 문단 · {{ chunks.length }}개</h3>
           <p v-if="chunksLoading" class="admin-loading">검색 문단을 불러오는 중…</p>
           <p v-if="chunkError" class="admin-error">검색 문단을 불러오지 못했습니다. <button type="button"
-              @click="loadChunks(selected.id)">다시 시도</button></p>
+              @click="loadChunks(selectedDocument.id)">다시 시도</button></p>
           <p v-if="!chunksLoading && !chunkError && !chunks.length">아직 생성된 검색 문단이 없습니다.</p>
           <article v-for="chunk in chunks" :key="chunk.id">
             <strong>#{{ chunk.sequenceNo }} · {{ chunk.searchStatus }} ·

@@ -742,15 +742,26 @@ DefaultFollowUpQuestionProcessor
 
 ## 작업 17. 관리자 KnowledgeDocument 편집 책임 분리
 
-- [ ] `useKnowledgeDocumentEditor`의 편집·버전·상태 전이·Chunk 책임 목록 확정
-- [ ] Chunk 조회·생성·stale response 제어를 `useKnowledgeDocumentChunks`로 추출
-- [ ] `selected` → `selectedDocument`
-- [ ] `select` → `selectDocumentForEditing`
-- [ ] `submit` → `saveDocumentDraft`
-- [ ] 문자열 `transition(action)` 대신 검수·공개·폐기 의도별 함수 제공
-- [ ] 문서 선택 변경 중 이전 Chunk 응답 무시 테스트
-- [ ] Chunk 생성과 목록 갱신 테스트
-- [ ] 편집 저장과 Chunk 상태가 불필요하게 결합되지 않았는지 확인
+- [x] `useKnowledgeDocumentEditor`의 편집·버전·상태 전이·Chunk 책임 목록 확정
+- [x] Chunk 조회·생성·stale response 제어를 `useKnowledgeDocumentChunks`로 추출
+- [x] `selected` → `selectedDocument`
+- [x] `select` → `selectDocumentForEditing`
+- [x] `submit` → `saveDocumentDraft`
+- [x] 문자열 `transition(action)` 대신 검수·공개·폐기 의도별 함수 제공
+- [x] 문서 선택 변경 중 이전 Chunk 응답 무시 테스트
+- [x] Chunk 생성과 목록 갱신 테스트
+- [x] 편집 저장과 Chunk 상태가 불필요하게 결합되지 않았는지 확인
+
+결정 결과(2026-09-26):
+
+- `useKnowledgeDocumentEditor`: 문서 선택·초안 폼·버전·상태 전이 소유
+- `useKnowledgeDocumentChunks`: Chunk 조회·생성·오류·로딩·요청 세대 소유
+- 편집 저장은 선택된 문서만 갱신. Chunk 상태 변경은 새 문서 선택 경계에서 별도 실행
+
+검증 결과(2026-09-26):
+
+- RED: 새 Chunk composable 누락 오류 확인
+- 관련 Vitest 32개 성공, 실패 0개; `npm run type-check` 성공
 
 ## 작업 18. Vue 이름과 메서드 책임 정리
 
