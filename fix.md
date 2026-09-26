@@ -789,13 +789,30 @@ DefaultFollowUpQuestionProcessor
 
 ## 작업 19. 유지 판정이 필요한 주요 클래스
 
-- [ ] `GlobalExceptionHandler`: 예외를 HTTP 오류 응답으로 변환하는 단일 책임인지 확인
-- [ ] `DefaultLearningProgressService.progress`: 하나의 학습 현황 read model 조립 책임인지 확인
-- [ ] `Evaluation.apply`: 완료 상태의 원자적 적용이므로 분리하지 않을 근거 확인
-- [ ] `Question.publish`: 공개 불변식 검사와 상태 변경이 하나의 도메인 전이인지 확인
-- [ ] `KnowledgeState.observe`: KnowledgeState가 계산 상태와 알고리즘을 소유하는 것이 맞는지 확인
-- [ ] `SecurityConfiguration`: 설정 조립 책임 범위 안인지 확인
-- [ ] 유지 판정도 감사 결과에 근거와 함께 기록
+- [x] `GlobalExceptionHandler`: 예외를 HTTP 오류 응답으로 변환하는 단일 책임인지 확인
+- [x] `DefaultLearningProgressService.progress`: 하나의 학습 현황 read model 조립 책임인지 확인
+- [x] `Evaluation.apply`: 완료 상태의 원자적 적용이므로 분리하지 않을 근거 확인
+- [x] `Question.publish`: 공개 불변식 검사와 상태 변경이 하나의 도메인 전이인지 확인
+- [x] `KnowledgeState.observe`: KnowledgeState가 계산 상태와 알고리즘을 소유하는 것이 맞는지 확인
+- [x] `SecurityConfiguration`: 설정 조립 책임 범위 안인지 확인
+- [x] 유지 판정도 감사 결과에 근거와 함께 기록
+
+유지 판정(2026-09-26):
+
+| 대상 | 읽는 정보 → 변경·출력 | 현재 배치와 유지 근거 |
+|---|---|---|
+| `GlobalExceptionHandler` | 예외·request ID → HTTP 상태·오류 DTO | HTTP 경계 변환만 수행. 예외별 메서드는 같은 계약의 매핑이며 도메인 상태 미변경 |
+| `DefaultLearningProgressService.progress` | 답변 통계·지식 상태·추천 → `LearningProgressResult` | 회원 학습 현황 read model 조립. 각 계산은 기존 Repository·Service에 남고 이 Service는 조회 조정만 수행 |
+| `Evaluation.apply` | 검증된 평가 결과·근거 → 평가 완료 필드·시각·lease | 검증 후 동일 aggregate의 완료 상태를 함께 적용하는 private 메서드. 분리하면 부분 완료 경로가 생김 |
+| `Question.publish` | DRAFT·작성자·검수·Concept 가중치 → PUBLISHED·시각 | 공개 가능 조건과 상태를 Question이 소유. 검증 후 변경하여 실패 시 부분 수정 방지 |
+| `KnowledgeState.observe` | 누적·최신 평가·시각 → 숙련도·신뢰도·상태·시각 | 계산에 필요한 과거 상태와 알고리즘 버전을 KnowledgeState가 소유. Service로 이동하면 상태를 외부에서 재구성해야 함 |
+| `SecurityConfiguration` | 보안 경로·세션·CSRF 설정 → Spring Security bean | 보안 설정 조립이 단일 변경 이유. 도메인 판정이나 요청별 상태 변경 없음 |
+
+검증 결과(2026-09-26):
+
+- 여섯 대상의 대응 테스트 클래스 73개 성공, 실패·오류·건너뜀 0개
+- `./gradlew test --console=plain`: 469개 성공, 실패·오류 0개
+- 코드 변경 없음. 새 분리 경계가 필요해지는 조건: 오류 계약·학습 현황 모델·평가 완료 정책·공개 정책·숙련도 알고리즘·보안 설정이 서로 독립적으로 변경될 때
 
 ## 작업 20. `AGENTS.md` 상시 규칙 반영
 
