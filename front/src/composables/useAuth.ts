@@ -7,8 +7,8 @@ import {
   type LoginInput,
   type Member,
 } from "@/api/auth";
-import { ApiClientError, clearCsrfToken } from "@/api/client";
-import { clearPendingAnswerSubmissions } from "@/composables/useAnswerSubmission";
+import { ApiClientError } from "@/api/client";
+import { clearSessionData } from "@/composables/sessionData";
 
 const currentMember = ref<Member | null>(null);
 const authenticationResolved = ref(false);
@@ -67,7 +67,7 @@ export function useAuth() {
         } catch (error) {
           if (!(error instanceof ApiClientError && error.status === 401)) throw error;
         }
-        if (revision === authenticationRevision) clearAuthenticationStateWithoutInvalidation();
+        if (revision === authenticationRevision) resetAuthenticationState();
       } finally {
         if (loggingOut?.id === id) loggingOut = undefined;
       }
@@ -78,14 +78,13 @@ export function useAuth() {
 
   function clearAuthenticationState(): void {
     authenticationRevision += 1;
-    clearAuthenticationStateWithoutInvalidation();
+    resetAuthenticationState();
   }
 
-  function clearAuthenticationStateWithoutInvalidation(): void {
-    clearPendingAnswerSubmissions();
+  function resetAuthenticationState(): void {
+    clearSessionData();
     currentMember.value = null;
     authenticationResolved.value = true;
-    clearCsrfToken();
   }
 
   function captureSessionExpiration(): () => boolean {

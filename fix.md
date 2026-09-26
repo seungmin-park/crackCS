@@ -699,12 +699,22 @@ DefaultFollowUpQuestionProcessor
 
 ## 작업 15. 인증 세션 데이터 정리 책임 분리
 
-- [ ] `useAuth`가 `clearPendingAnswerSubmissions`와 `clearCsrfToken` 구체 구현을 아는 문제 테스트로 고정
-- [ ] 작은 `clearSessionData()` 조정 모듈 또는 동등한 경계 설계
-- [ ] `useAuth`는 인증 상태와 인증 경쟁 제어에 집중
-- [ ] logout·401 만료·새 login 경쟁 테스트 유지
-- [ ] 불필요한 이벤트 버스나 확장 시스템 도입 금지
-- [ ] `clearAuthenticationStateWithoutInvalidation`을 의도 중심 이름으로 변경
+- [x] `useAuth`가 `clearPendingAnswerSubmissions`와 `clearCsrfToken` 구체 구현을 아는 문제 테스트로 고정
+- [x] 작은 `clearSessionData()` 조정 모듈 또는 동등한 경계 설계
+- [x] `useAuth`는 인증 상태와 인증 경쟁 제어에 집중
+- [x] logout·401 만료·새 login 경쟁 테스트 유지
+- [x] 불필요한 이벤트 버스나 확장 시스템 도입 금지
+- [x] `clearAuthenticationStateWithoutInvalidation`을 의도 중심 이름으로 변경
+
+결정 결과(2026-09-26):
+
+- `sessionData.clearSessionData()`가 임시 답변·CSRF 토큰 정리 순서 소유
+- `useAuth.resetAuthenticationState()`는 회원·인증 확정 상태를 변경. revision 증가는 호출 경계가 소유
+
+검증 결과(2026-09-26):
+
+- RED: 새 세션 데이터 모듈 누락 오류 확인
+- 관련 Vitest 17개 성공, 실패 0개; `npm run type-check` 성공
 
 ## 작업 16. 관리자 Question 편집 책임 분리
 
