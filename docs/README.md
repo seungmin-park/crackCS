@@ -65,6 +65,7 @@ docs/
 | UI·테마 구현 결과 | 완료 증거 | [UI 검증](changes/2026-09-06-ui/verification.md) | 같은 변경 범위 재검증 |
 | Phase 4 답변·평가 골격 | 완료 증거 | [Phase 4 검증](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 변경 |
 | Phase 5 평가 실행 기반 | 구현 증거, 실제 모델 품질 미완료 | [Phase 5 검증](changes/2026-09-08-phase-5/verification.md) | 평가·검색·품질 결과 변경 |
+| 로컬 `gpt-oss:20b` 평가 후보 | 연결 검증 완료, 출시 품질 미인증 | [Ollama 후보 검증](changes/2026-09-26-local-ollama/verification.md) | 모델·prompt·adapter·실측 결과 변경 |
 | Phase 6 개인화·구조 정리 | 완료 증거 | [Phase 6 검증](changes/2026-09-13-phase-6/verification.md) | 상태·추천·구조·검증 변경 |
 `changes/`의 과거 테스트 수는 당시 증거다. 현재 통과 여부는 새 실행 결과로 판단한다.
 

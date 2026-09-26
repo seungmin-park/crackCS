@@ -54,6 +54,7 @@
 - 현재 결정: [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md)
 - 기본 모델: GPT-5.6 Terra
 - 비교 후보: GPT-5.6 Luna
+- 로컬 비교 후보: Ollama `gpt-oss:20b`. [실행·검증 범위](../changes/2026-09-26-local-ollama/verification.md), 출시 품질 미인증
 - 자동 fallback: 사용하지 않음
 - 모델명: 설정으로 관리. 평가 시 모델·평가기 버전 저장
 
@@ -232,7 +233,7 @@ PUBLISHED → Retrieval 사용
 |---|---|---|
 | 문제 형식 | 관리자 검수 서술형 | 객관식, 코드 문제 |
 | 문제 공급 | 관리자 직접 등록 | AI 초안, 사용자 제출 |
-| 기본 평가 모델 | GPT-5.6 Terra | 골든 세트 통과 시 Luna 전환 검토 |
+| 기본 평가 모델 | GPT-5.6 Terra | 골든 세트 통과 시 Luna·gpt-oss:20b 전환 검토 |
 | Retrieval | 승인 문서 + 키워드 기준선 | 품질 기준 미달 시 pgvector 비교 |
 | 지식 보관 | 내부 표준 문서와 버전 기록 | 외부 동기화 자동화 |
 | 평가 | 정오 판정 우선 | 표현력, 면접 전달력 평가 |

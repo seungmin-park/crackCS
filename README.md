@@ -20,6 +20,34 @@ Gradle: Wrapper 사용. 별도 설치 불필요.
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
+로컬 `gpt-oss:20b` 평가 후보 실행(Mac의 Homebrew 예시):
+
+```bash
+brew install ollama
+brew services start ollama
+ollama pull gpt-oss:20b
+./gradlew bootRun --args='--spring.profiles.active=local,ollama'
+```
+
+- 평가: `ollama` profile에서만 로컬 모델 사용. 후속 질문 생성은 local stub 유지
+- 환경: 모델 가중치 약 13GB, 통합 메모리 16GB는 공식 권장 하한. 설치·서버 확인: `ollama list`, `ollama ps`
+- 추론: 기본 `medium`. `OLLAMA_REASONING_EFFORT`로 `low`·`medium`·`high` 선택. 결과의 평가기 버전에 선택값을 덧붙여 구분
+- 시간: `ollama` profile의 평가 lease 4분, 호출 제한 3분. 제한 시간 변경 시 lease가 더 길어야 함
+- 비용: USD 토큰 단가 0. 컴퓨터 사용 비용은 별도
+- 실패: 모델 미설치·서버 중단 시 Worker가 재시도하고 최대 시도 후 실패 처리. OpenAI 평가와 동시 활성화 금지
+- 출시: 실제 판정 품질과 20초 p95 목표는 [실측 Gate](docs/planning/tasks.md#phase-5-실제-모델-품질-gate)에서 확인 필요
+- 연결 근거: [Ollama 후보 검증](docs/changes/2026-09-26-local-ollama/verification.md)
+
+`ollama` profile 선택 환경 변수:
+
+| 이름 | 기본값 | 용도 |
+|---|---|---|
+| `OLLAMA_CHAT_ENDPOINT` | `http://127.0.0.1:11434/api/chat` | 로컬 채팅 API 주소 |
+| `OLLAMA_MODEL` | `gpt-oss:20b` | 평가 모델 태그 |
+| `OLLAMA_EVALUATOR_VERSION` | `os-evaluator-v1` | 평가 규칙 버전. 저장 시 추론 강도 접미사 추가 |
+| `OLLAMA_REASONING_EFFORT` | `medium` | 추론 강도: `low`, `medium`, `high` |
+| `OLLAMA_TIMEOUT` | `3m` | 로컬 모델 HTTP 제한 시간. 평가 lease 4분 이내 유지 |
+
 local seed: 화면 확인용 예시 문제·관리자 계정.
 
 - 관리자 이메일: `admin@crackcs.local`
@@ -75,13 +103,14 @@ profile별 schema 정책:
 
 버전 기반 DB migration 도구: 미사용. 운영에서 `update` 사용 금지. 운영 DB 도입 전 schema 변경·배포 절차 결정 필요.
 
-Phase 4 답변·평가: USER로 회원가입 후 문제 상세에서 제출. local/test에서만 모의 평가 실행.
+Phase 4 답변·평가: USER로 회원가입 후 문제 상세에서 제출. 기본 local/test는 모의 평가, `local,ollama`는 로컬 실제 모델 평가 후보.
 결과·실패 재현 설정과 검증 범위: [Phase 4 기록](docs/changes/2026-09-07-phase-4/verification.md).
 
 ## 검증
 
 ```bash
 ./gradlew test
+./gradlew ollamaLiveEvaluation # Ollama 서비스와 gpt-oss:20b 설치 후 4건 스모크 측정
 
 cd front
 npm run test

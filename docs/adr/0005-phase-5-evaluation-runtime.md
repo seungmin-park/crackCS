@@ -61,6 +61,7 @@ MySQL과의 트레이드오프:
 - 비교 후보: `gpt-5.6-luna`
 - 자동 fallback: 없음
 - 모델명과 평가기 버전: Evaluation에 저장
+- 2026-09-26 후속 실험: 로컬 `gpt-oss:20b`를 별도 `EvaluationPort` 구현으로 추가. OpenAI 기본 모델 결정과 출시 품질 Gate는 유지. 연결·실측 범위는 [Ollama 후보 검증](../changes/2026-09-26-local-ollama/verification.md) 참조
 
 Terra 선택 이유:
 

@@ -50,11 +50,28 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform {
-		excludeTags 'retrieval-benchmark', 'postgres', 'local-service-latency-benchmark'
+		excludeTags 'retrieval-benchmark', 'postgres', 'local-service-latency-benchmark', 'ollama-live'
 	}
 }
 
 def referenceDirectory = layout.projectDirectory.dir('docs/evaluation/reference-v1')
+
+tasks.register('ollamaLiveEvaluation', Test) {
+	group = 'verification'
+	description = 'Measure a small reference-v1 sample with the locally running Ollama model.'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	dependsOn 'verifyReferenceStandard'
+	useJUnitPlatform { includeTags 'ollama-live' }
+	systemProperty 'reference.directory', referenceDirectory.asFile.absolutePath
+	systemProperty 'ollama.split', providers.gradleProperty('ollamaSplit').orElse('development').get()
+	systemProperty 'ollama.case.limit', providers.gradleProperty('ollamaCaseLimit').orElse('4').get()
+	systemProperty 'ollama.reasoning.effort', providers.gradleProperty('ollamaReasoningEffort').orElse('medium').get()
+	systemProperty 'benchmark.output', providers.gradleProperty('ollamaReport')
+		.orElse(layout.buildDirectory.file('reports/evaluation/ollama-smoke.json').get().asFile.absolutePath).get()
+	maxParallelForks = 1
+	outputs.upToDateWhen { false }
+}
 
 tasks.register('verifyReferenceStandard', Exec) {
 	group = 'verification'

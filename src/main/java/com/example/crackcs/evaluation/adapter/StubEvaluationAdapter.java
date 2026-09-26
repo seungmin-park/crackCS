@@ -7,7 +7,7 @@ import com.example.crackcs.evaluation.port.EvaluationPort;
 import com.example.crackcs.evaluation.port.EvaluationRequest;
 import com.example.crackcs.exception.EvaluationTimeoutException;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -15,7 +15,7 @@ import java.util.List;
 
 @Component
 @Profile("(local | test) & !prod & !production")
-@ConditionalOnProperty(name = "crackcs.evaluation.openai.enabled", havingValue = "false", matchIfMissing = true)
+@ConditionalOnExpression("!${crackcs.evaluation.openai.enabled:false} and !${crackcs.evaluation.ollama.enabled:false}")
 public class StubEvaluationAdapter implements EvaluationPort {
     private final StubOutcome outcome;
 

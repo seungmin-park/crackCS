@@ -12,7 +12,7 @@
 | 5 Retrieval·평가 | 구현 기반 완료 | 실제 모델 비교와 출시 품질 실측 |
 | 6 개인화 | 완료 | 운영 PostgreSQL 동시성 검증 |
 | 7 후속 질문 | 완료 | 실제 provider·운영 흐름 검증 |
-| 8 운영 안정화 | 부분 완료 | 실제 OpenAI Gate, production backup·restore/p95, 실제 파일럿 |
+| 8 운영 안정화 | 부분 완료 | 실제 평가 provider Gate, production backup·restore/p95, 실제 파일럿 |
 
 현재 우선순위:
 
@@ -44,7 +44,7 @@ Phase 8 운영 검증과 제한 파일럿
 
 ### Phase 5 실제 모델 품질 Gate
 
-검수 완료 원본과 자동 지표 계산은 준비됨. 실제 provider 호출이 필요한 항목만 미완료.
+검수 완료 원본과 자동 지표 계산은 준비됨. 로컬 `gpt-oss:20b` 평가 adapter와 4건 실제 모델 스모크는 [후보 검증](../changes/2026-09-26-local-ollama/verification.md)에 기록. 현 장비에서 20초 p95 목표 미달. 전체 분할의 품질·지연 측정과 출시 판정은 미완료.
 
 - [ ] 평가 모델 후보를 같은 `reference-v1` 입력으로 비교
 - [ ] 모델·프롬프트·평가 규칙 버전 고정

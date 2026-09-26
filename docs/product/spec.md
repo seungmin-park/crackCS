@@ -548,6 +548,7 @@ KnowledgeState    = 여러 평가가 반영되며 변하는 현재 학습 상태
 - Local database: H2
 - Production database target: PostgreSQL 17. 격리 컨테이너 통합 검증과 운영 배포 검증 구분. Migration·배포 절차는 최초 persistent staging 전 결정 ([ADR-0004](../adr/0004-defer-versioned-database-migrations.md), [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md))
 - AI: OpenAI Responses API, 기본 GPT-5.6 Terra, 자동 fallback 없음
+- 로컬 평가 후보: `gpt-oss:20b` + Ollama. 출시 모델 변경은 동일 골든 세트의 품질·지연 Gate 통과 후 별도 결정 ([후보 검증](../changes/2026-09-26-local-ollama/verification.md))
 - Retrieval: Topic·공개 상태 필터 + 질문·모범 답안 키워드 점수·Concept 가산점 + 약한 후보 제외. 품질 미달 시 pgvector 비교
 
 ### 의존 방향
