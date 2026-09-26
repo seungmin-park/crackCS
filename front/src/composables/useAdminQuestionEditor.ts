@@ -1,5 +1,4 @@
 import {
-  computed,
   onBeforeUnmount,
   reactive,
   ref,
@@ -10,7 +9,6 @@ import {
   createQuestionVersion,
   fetchAdminQuestion,
   publishQuestion,
-  replaceQuestionConcepts,
   retireQuestion,
   reviewQuestion,
   updateAdminQuestion,
@@ -25,18 +23,13 @@ import type {
 import {
   useAdminFeedback
 } from "@/composables/useAdminFeedback";
+import { useQuestionCriteriaEditor } from "@/composables/useQuestionCriteriaEditor";
 
 type QuestionForm = {
   topicId: string;
   difficulty: QuestionDifficulty;
   content: string;
   referenceAnswer: string;
-};
-
-type QuestionCriterion = {
-  conceptId: number;
-  weight: number;
-  required: boolean;
 };
 
 function questionForm(question?: AdminQuestion): QuestionForm {
@@ -53,18 +46,6 @@ function questionForm(question?: AdminQuestion): QuestionForm {
   };
 }
 
-function questionCriteria(question: AdminQuestion): QuestionCriterion[] {
-  return question.concepts.map(({
-    conceptId,
-    weight,
-    required
-  }) => ({
-    conceptId,
-    weight,
-    required
-  }));
-}
-
 function questionInput(form: QuestionForm): AdminQuestionInput {
   return {
     topicId: Number(form.topicId),
@@ -79,48 +60,43 @@ export function useAdminQuestionEditor(
   concepts: Ref<Concept[]>,
   refreshList: () => Promise<void>,
 ) {
-  const selected = ref<AdminQuestion>();
+  const selectedQuestion = ref<AdminQuestion>();
   let selectionGeneration = 0;
   let disposed = false;
   const detailError = ref(false);
   const feedback = useAdminFeedback();
   const form = reactive(questionForm());
-  const criteria = ref<QuestionCriterion[]>([]);
-  const newCriterionConceptId = ref<number>();
-  const topicConcepts = computed(() => concepts.value.filter(
-    item => item.topicId === Number(form.topicId),
-  ));
-  const availableConcepts = computed(() => topicConcepts.value.filter(
-    item => !criteria.value.some(row => row.conceptId === item.id),
-  ));
+  const criteriaEditor = useQuestionCriteriaEditor(
+    concepts, () => form.topicId, selectedQuestion, () => selectionGeneration, feedback,
+  );
 
   function clearSelection() {
     selectionGeneration++;
-    selected.value = undefined;
+    selectedQuestion.value = undefined;
     Object.assign(form, questionForm());
-    criteria.value = [];
+    criteriaEditor.setCriteria();
     detailError.value = false;
   }
 
-  async function select(question: AdminQuestionSummary) {
+  async function selectQuestionForEditing(question: AdminQuestionSummary) {
     const activeGeneration = ++selectionGeneration;
     detailError.value = false;
     try {
       const detail = await fetchAdminQuestion(question.id);
       if (activeGeneration !== selectionGeneration) return;
-      selected.value = detail;
+      selectedQuestion.value = detail;
       Object.assign(form, questionForm(detail));
-      criteria.value = questionCriteria(detail);
+      criteriaEditor.setCriteria(detail);
     } catch {
       if (activeGeneration === selectionGeneration) detailError.value = true;
     }
   }
 
-  async function submit() {
+  async function saveQuestionDraft() {
     const activeGeneration = selectionGeneration;
-    const target = selected.value ? {
-      id: selected.value.id,
-      status: selected.value.status
+    const target = selectedQuestion.value ? {
+      id: selectedQuestion.value.id,
+      status: selectedQuestion.value.status
     } : undefined;
     const payload = questionInput(form);
     const result = await feedback.execute(
@@ -128,57 +104,37 @@ export function useAdminQuestionEditor(
         createAdminQuestion(payload),
       target?.status === "DRAFT" ? "문제 초안을 수정했습니다." : "문제 초안을 등록했습니다.",
     );
-    if (result && activeGeneration === selectionGeneration) selected.value = result;
+    if (result && activeGeneration === selectionGeneration) selectedQuestion.value = result;
     if (result && !disposed) await refreshList();
   }
 
-  function addCriterion() {
-    const candidate = availableConcepts.value.find(item => item.id === newCriterionConceptId.value);
-    if (candidate) {
-      criteria.value.push({
-        conceptId: candidate.id,
-        weight: 1,
-        required: true
-      });
-      newCriterionConceptId.value = undefined;
-    }
-  }
-
-  async function saveCriteria() {
-    if (!selected.value) return;
+  async function changeQuestionStatus(
+    action: (questionId: number) => Promise<AdminQuestion>, message: string,
+  ): Promise<void> {
+    if (!selectedQuestion.value) return;
     const activeGeneration = selectionGeneration;
-    const targetId = selected.value.id;
-    const payload = criteria.value.map(item => ({
-      ...item
-    }));
-    const result = await feedback.execute(() => replaceQuestionConcepts(targetId, payload),
-      "평가 Concept을 교체했습니다.");
-    if (result && activeGeneration === selectionGeneration) selected.value = result;
-  }
-
-  async function transition(action: "review" | "publish" | "retire") {
-    if (!selected.value) return;
-    const activeGeneration = selectionGeneration;
-    const targetId = selected.value.id;
-    const calls = {
-      review: reviewQuestion,
-      publish: publishQuestion,
-      retire: retireQuestion
-    };
-    const messages = {
-      review: "문제 검수를 기록했습니다.",
-      publish: "문제를 공개했습니다.",
-      retire: "문제를 폐기했습니다."
-    };
-    const result = await feedback.execute(() => calls[action](targetId), messages[action]);
-    if (result && activeGeneration === selectionGeneration) selected.value = result;
+    const questionId = selectedQuestion.value.id;
+    const result = await feedback.execute(() => action(questionId), message);
+    if (result && activeGeneration === selectionGeneration) selectedQuestion.value = result;
     if (result && !disposed) await refreshList();
+  }
+
+  function reviewSelectedQuestion(): Promise<void> {
+    return changeQuestionStatus(reviewQuestion, "문제 검수를 기록했습니다.");
+  }
+
+  function publishSelectedQuestion(): Promise<void> {
+    return changeQuestionStatus(publishQuestion, "문제를 공개했습니다.");
+  }
+
+  function retireSelectedQuestion(): Promise<void> {
+    return changeQuestionStatus(retireQuestion, "문제를 폐기했습니다.");
   }
 
   async function newVersion() {
-    if (!selected.value) return;
+    if (!selectedQuestion.value) return;
     const activeGeneration = selectionGeneration;
-    const targetId = selected.value.id;
+    const targetId = selectedQuestion.value.id;
     const payload = {
       difficulty: form.difficulty,
       content: form.content,
@@ -189,8 +145,8 @@ export function useAdminQuestionEditor(
       "문제의 새 DRAFT 버전을 만들고 평가 Concept을 복사했습니다.",
     );
     if (result && activeGeneration === selectionGeneration) {
-      selected.value = result;
-      criteria.value = questionCriteria(result);
+      selectedQuestion.value = result;
+      criteriaEditor.setCriteria(result);
     }
     if (result && !disposed) await refreshList();
   }
@@ -200,20 +156,17 @@ export function useAdminQuestionEditor(
     selectionGeneration++;
   });
   return {
-    selected,
+    selectedQuestion,
     detailError,
     feedback,
     form,
-    criteria,
-    newCriterionConceptId,
-    topicConcepts,
-    availableConcepts,
+    ...criteriaEditor,
     clearSelection,
-    select,
-    submit,
-    addCriterion,
-    saveCriteria,
-    transition,
+    selectQuestionForEditing,
+    saveQuestionDraft,
+    reviewSelectedQuestion,
+    publishSelectedQuestion,
+    retireSelectedQuestion,
     newVersion
   };
 }

@@ -718,16 +718,27 @@ DefaultFollowUpQuestionProcessor
 
 ## 작업 16. 관리자 Question 편집 책임 분리
 
-- [ ] `useAdminQuestionEditor`의 선택·폼·기준·상태 전이 책임 목록 확정
-- [ ] 질문 초안 편집과 Concept 평가 기준 편집의 변경 이유 비교
-- [ ] 별도 개념이면 `useQuestionCriteriaEditor` 추출
-- [ ] `selected` → `selectedQuestion`
-- [ ] `select` → `selectQuestionForEditing`
-- [ ] `submit` → `saveQuestionDraft`
-- [ ] 문자열 `transition(action)` 대신 검수·공개·폐기 의도별 함수 제공
-- [ ] stale detail response 차단 테스트
-- [ ] 선택 변경 중 저장 결과 처리 테스트
-- [ ] 기준 저장 실패·성공 테스트
+- [x] `useAdminQuestionEditor`의 선택·폼·기준·상태 전이 책임 목록 확정
+- [x] 질문 초안 편집과 Concept 평가 기준 편집의 변경 이유 비교
+- [x] 별도 개념이면 `useQuestionCriteriaEditor` 추출
+- [x] `selected` → `selectedQuestion`
+- [x] `select` → `selectQuestionForEditing`
+- [x] `submit` → `saveQuestionDraft`
+- [x] 문자열 `transition(action)` 대신 검수·공개·폐기 의도별 함수 제공
+- [x] stale detail response 차단 테스트
+- [x] 선택 변경 중 저장 결과 처리 테스트
+- [x] 기준 저장 실패·성공 테스트
+
+결정 결과(2026-09-26):
+
+- `useAdminQuestionEditor`: 선택 세대·초안 폼·문제 상태 전이 소유
+- `useQuestionCriteriaEditor`: 기준 입력·Topic 후보·기준 저장 소유. 같은 feedback과 선택 세대 확인을 공유
+- 검수·공개·폐기: 공개 함수는 의도별 이름, 내부 중복 실행 흐름만 공통 함수로 유지
+
+검증 결과(2026-09-26):
+
+- RED: 새 기준 편집 composable 누락 오류 확인
+- 관련 Vitest 35개 성공, 실패 0개; `npm run type-check` 성공
 
 ## 작업 17. 관리자 KnowledgeDocument 편집 책임 분리
 

@@ -148,7 +148,7 @@ watch(() => route.query, () => {
 });
 
 const {
-  selected,
+  selectedQuestion,
   detailError,
   feedback,
   form,
@@ -157,11 +157,13 @@ const {
   topicConcepts,
   availableConcepts,
   clearSelection,
-  select,
-  submit,
+  selectQuestionForEditing,
+  saveQuestionDraft,
   addCriterion,
   saveCriteria,
-  transition,
+  reviewSelectedQuestion,
+  publishSelectedQuestion,
+  retireSelectedQuestion,
   newVersion
 } = useAdminQuestionEditor(concepts, load);
 
@@ -202,14 +204,14 @@ onBeforeUnmount(() => {
     <div v-else class="admin-editor-layout">
       <ul class="admin-list selectable">
         <li v-for="question in questions" :key="question.id"
-          :class="{ selected: selected?.id === question.id }"><button type="button"
-            :data-question-id="question.id" :aria-pressed="selected?.id === question.id"
-            @click="select(question)"><strong>{{ question.content }}</strong><small>v{{ question.questionVersion }}
+          :class="{ selected: selectedQuestion?.id === question.id }"><button type="button"
+            :data-question-id="question.id" :aria-pressed="selectedQuestion?.id === question.id"
+            @click="selectQuestionForEditing(question)"><strong>{{ question.content }}</strong><small>v{{ question.questionVersion }}
               · {{ question.status }} · {{ question.difficulty }}</small></button></li>
       </ul>
       <section class="admin-panel">
-        <h2>{{ selected ? `Question #${selected.id} · v${selected.questionVersion}` : "새 문제" }}</h2>
-        <form class="admin-form" @submit.prevent="submit">
+        <h2>{{ selectedQuestion ? `Question #${selectedQuestion.id} · v${selectedQuestion.questionVersion}` : "새 문제" }}</h2>
+        <form class="admin-form" @submit.prevent="saveQuestionDraft">
           <label>Topic<select v-model="form.topicId" required>
               <option value="" disabled>선택</option>
               <option v-for="topic in topics" :key="topic.id" :value="topic.id">{{ topic.name }}
@@ -223,16 +225,16 @@ onBeforeUnmount(() => {
           <label>문제 본문<textarea v-model="form.content" rows="5" required /></label>
           <label>모범 답안<textarea v-model="form.referenceAnswer" rows="7" required /></label>
           <div class="admin-actions">
-            <button v-if="!selected || selected.status === 'DRAFT'" class="admin-primary"
-              :disabled="feedback.submitting.value">{{ selected ? "초안 수정" : "초안 등록" }}</button>
-            <button v-if="selected?.status === 'PUBLISHED'" type="button"
+            <button v-if="!selectedQuestion || selectedQuestion.status === 'DRAFT'" class="admin-primary"
+              :disabled="feedback.submitting.value">{{ selectedQuestion ? "초안 수정" : "초안 등록" }}</button>
+            <button v-if="selectedQuestion?.status === 'PUBLISHED'" type="button"
               :disabled="feedback.submitting.value" @click="newVersion">현재 입력으로 새 버전</button>
           </div>
         </form>
-        <section v-if="selected" class="criteria-panel">
+        <section v-if="selectedQuestion" class="criteria-panel">
           <div class="section-heading">
             <h3>평가 Concept</h3>
-            <div v-if="selected.status === 'DRAFT'" class="criteria-add"><select
+            <div v-if="selectedQuestion.status === 'DRAFT'" class="criteria-add"><select
                 v-model.number="newCriterionConceptId" aria-label="추가할 Concept">
                 <option :value="undefined">선택</option>
                 <option v-for="concept in availableConcepts" :key="concept.id" :value="concept.id">
@@ -242,25 +244,25 @@ onBeforeUnmount(() => {
           </div>
           <div v-for="(row, index) in criteria" :key="`${row.conceptId}-${index}`"
             class="criteria-row">
-            <select v-model.number="row.conceptId" :disabled="selected.status !== 'DRAFT'">
+            <select v-model.number="row.conceptId" :disabled="selectedQuestion.status !== 'DRAFT'">
               <option v-for="concept in topicConcepts" :key="concept.id" :value="concept.id">
                 {{ concept.name }}</option>
             </select>
-            <input v-model.number="row.weight" :disabled="selected.status !== 'DRAFT'" type="number"
+            <input v-model.number="row.weight" :disabled="selectedQuestion.status !== 'DRAFT'" type="number"
               min="0.01" max="1" step="0.01" aria-label="가중치" />
-            <label><input v-model="row.required" :disabled="selected.status !== 'DRAFT'"
+            <label><input v-model="row.required" :disabled="selectedQuestion.status !== 'DRAFT'"
                 type="checkbox" /> 필수</label>
-            <button v-if="selected.status === 'DRAFT'" :disabled="feedback.submitting.value"
+            <button v-if="selectedQuestion.status === 'DRAFT'" :disabled="feedback.submitting.value"
               @click="criteria.splice(index, 1)">삭제</button>
           </div>
-          <div class="admin-actions"><button v-if="selected.status === 'DRAFT'"
+          <div class="admin-actions"><button v-if="selectedQuestion.status === 'DRAFT'"
               :disabled="feedback.submitting.value" @click="saveCriteria">평가 기준 저장</button><button
-              v-if="selected.status === 'DRAFT'" :disabled="feedback.submitting.value"
-              @click="transition('review')">검수</button><button v-if="selected.status === 'DRAFT'"
+              v-if="selectedQuestion.status === 'DRAFT'" :disabled="feedback.submitting.value"
+              @click="reviewSelectedQuestion">검수</button><button v-if="selectedQuestion.status === 'DRAFT'"
               class="admin-primary" :disabled="feedback.submitting.value"
-              @click="transition('publish')">공개</button><button
-              v-if="selected.status === 'PUBLISHED'" :disabled="feedback.submitting.value"
-              @click="transition('retire')">폐기</button></div>
+              @click="publishSelectedQuestion">공개</button><button
+              v-if="selectedQuestion.status === 'PUBLISHED'" :disabled="feedback.submitting.value"
+              @click="retireSelectedQuestion">폐기</button></div>
         </section>
       </section>
     </div>

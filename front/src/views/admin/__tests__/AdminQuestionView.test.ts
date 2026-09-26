@@ -186,6 +186,25 @@ describe("관리자 Question 화면", () => {
     expect(wrapper.get("h2").text()).toContain("새 문제");
   });
 
+  it("평가 기준 저장 중 새 문제를 선택하면 늦은 응답이 새 편집 상태를 덮지 않는다", async () => {
+    let resolveCriteria!: (value: typeof networkQuestion) => void;
+    api.replaceQuestionConcepts.mockReturnValue(new Promise(resolve => { resolveCriteria = resolve; }));
+    const wrapper = mount(AdminQuestionView);
+    await flushPromises();
+    await wrapper.get("button[data-question-id='10']").trigger("click");
+    await flushPromises();
+    await wrapper.findAll("button").find(button => button.text() === "평가 기준 저장")!.trigger("click");
+    await wrapper.findAll("button").find(button => button.text() === "새 문제")!.trigger("click");
+    await wrapper.findAll("textarea")[0]!.setValue("새 문제 내용");
+
+    resolveCriteria(networkQuestion);
+    await flushPromises();
+
+    expect(wrapper.get("h2").text()).toContain("새 문제");
+    expect(wrapper.findAll("textarea")[0]!.element.value).toBe("새 문제 내용");
+    expect(wrapper.findAll(".criteria-row")).toHaveLength(0);
+  });
+
   it("진행 중 목록 응답은 화면 폐기 후 목적지 URL을 교정하지 않는다", async () => {
     let resolveList!: (value: object) => void;
     route.query = { page: "1", status: "DRAFT" };
