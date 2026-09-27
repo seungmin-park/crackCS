@@ -78,7 +78,7 @@ ADR 작성 기준: 독자가 판단할 결정 하나, 대안과 선택 이유, �
 | 답할 질문 | 상태 | 기준 문서 | 갱신 계기 |
 |---|---|---|---|
 | 빈 환경 PostgreSQL 실행·복구 | 로컬 실행 기준 | [로컬 실행·복구](changes/2026-09-27-release-readiness/local-runbook.md) | 실행 명령·schema·profile 변경 |
-| 실행·정합성 최신 검증 | 진행 중, 버전 동시성 검증 완료 | [실행 검증](changes/2026-09-27-release-readiness/verification.md) | 실행 환경·버전·회귀 범위 변경 |
+| 실행·정합성 최신 검증 | 코드 회귀 완료, 실제 모델 품질·지연 미달 | [실행 검증](changes/2026-09-27-release-readiness/verification.md) | 실행 환경·버전·회귀 범위 변경 |
 | UI 개편의 목표 | 당시 결정 | [UI 제안](changes/2026-09-06-ui/proposal.md) | 제안 해석 오류 정정 |
 | UI·테마 구현 결과 | 완료 증거 | [UI 검증](changes/2026-09-06-ui/verification.md) | 같은 변경 범위 재검증 |
 | Phase 4 답변·평가 골격 | 완료 증거 | [Phase 4 검증](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 변경 |

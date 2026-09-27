@@ -48,5 +48,5 @@ npm run test -- src/components/EvaluationPanel.test.ts
 
 - 실제 OpenAI 모델 판정 품질과 prompt injection 저항성
 - 실제 브라우저 CSP와 배포 reverse proxy header
-- 실제 모델 provider 장애를 포함하는 전체 browser E2E (정상 stub 학습·복구 조회는 cmux에서 확인)
+- 실제 모델 provider의 성공 복구 E2E — [503 재시도 뒤 INVALID_RESULT 안전 실패](../2026-09-27-release-readiness/verification.md) 관찰. 정상 평가 복구는 미완료
 - 운영 데이터·운영 PostgreSQL에서의 전체 인수 흐름

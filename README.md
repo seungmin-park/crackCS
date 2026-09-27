@@ -53,7 +53,7 @@ local seed: 화면 확인용 예시 문제·Concept·검색 가능한 근거 문
 - 관리자 이메일: `admin@crackcs.local`
 - 관리자 비밀번호: `local admin passphrase`
 
-계정 사용 범위: local H2 전용. 운영 사용 금지.
+계정 사용 범위: local H2·로컬 PostgreSQL의 화면 확인 전용. 운영 사용 금지.
 
 후속 질문 Worker 설정:
 
