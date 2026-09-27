@@ -1,23 +1,25 @@
 <script setup lang="ts">
+import RequestFailure from "@/components/RequestFailure.vue";
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+
 import { onBeforeUnmount, ref } from "vue";
 import { fetchKnowledgeStates, type TopicKnowledge } from "@/api/learning";
 import KnowledgeTopics from "@/components/KnowledgeTopics.vue";
-import QuestionState from "@/components/QuestionState.vue";
 
 const topics = ref<TopicKnowledge[]>([]);
 const loading = ref(true);
-const failed = ref(false);
+const failed = ref<RequestErrorPresentation>();
 let active = true;
 onBeforeUnmount(() => { active = false; });
 
 async function loadKnowledgeMap() {
   loading.value = true;
-  failed.value = false;
+  failed.value = undefined;
   try {
     const knowledgeMap = await fetchKnowledgeStates();
     if (active) topics.value = knowledgeMap.topics;
-  } catch {
-    if (active) failed.value = true;
+  } catch (caught) {
+    if (active) failed.value = presentRequestError(caught);
   } finally {
     if (active) loading.value = false;
   }
@@ -34,7 +36,7 @@ void loadKnowledgeMap();
       <p>숙련도 80 이상·신뢰도 75 이상이면 안정 상태예요. 두 점수의 범위는 0~100입니다.</p>
     </aside>
     <p v-if="loading" role="status" aria-busy="true">지식 지도를 불러오는 중…</p>
-    <QuestionState v-else-if="failed" kind="error" title="지식 지도를 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadKnowledgeMap" />
+    <RequestFailure v-else-if="failed" :failure="failed" title="지식 지도를 불러오지 못했어요" @retry="loadKnowledgeMap" />
     <KnowledgeTopics v-else :topics="topics" details />
   </main>
 </template>

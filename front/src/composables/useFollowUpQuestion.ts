@@ -4,7 +4,7 @@ import {
   fetchFollowUpQuestion,
   type FollowUpQuestionResponse,
 } from "@/api/answers";
-import { ApiClientError } from "@/api/client";
+import { presentRequestError } from "@/presentation/requestErrorPresentation";
 
 type FollowUpQuestionErrorKind = "forbidden" | "not-found" | "permanent" | "temporary" | "timeout";
 type FollowUpQuestionError = { kind: FollowUpQuestionErrorKind; retryable: boolean };
@@ -103,8 +103,10 @@ export function useFollowUpQuestion(
 }
 
 function terminalError(caught: unknown): FollowUpQuestionError | undefined {
-  if (!(caught instanceof ApiClientError) || caught.status === 408 || caught.status >= 500) return undefined;
-  if (caught.status === 404) return { kind: "not-found", retryable: false };
-  if (caught.status === 401 || caught.status === 403) return { kind: "forbidden", retryable: false };
+  const failure = presentRequestError(caught);
+  if (failure.kind === "rate-limited") return { kind: "temporary", retryable: true };
+  if (failure.retryable) return undefined;
+  if (failure.kind === "not-found") return { kind: "not-found", retryable: false };
+  if (failure.kind === "unauthenticated" || failure.kind === "forbidden") return { kind: "forbidden", retryable: false };
   return { kind: "permanent", retryable: false };
 }

@@ -28,9 +28,13 @@ API 오류 흐름:
 ApiErrorResponse(code, message, fieldErrors, requestId)
                        ↓
 ApiClientError(status, code, fieldErrors, requestId)
+                       ↓
+presentRequestError → kind, message, retryable, fieldErrors
+                       ↓
+RequestFailure / 입력 오류 / 유스케이스별 재조회 정책
 ```
 
-`requestId`는 사용자에게 오류를 설명하는 문구가 아니라 서버 로그와 같은 요청을 찾기 위한 진단 값이다. 화면은 `message`를 기본 안내로 사용하고, 운영 문의가 필요한 경우에만 `requestId`를 표시한다.
+`requestId`는 사용자에게 오류를 설명하는 문구가 아니라 서버 로그와 같은 요청을 찾기 위한 진단 값이다. 4xx의 공개 메시지와 입력별 오류는 보존하고, 5xx·네트워크 오류는 공통 복구 문구로 표시한다. 인증 복원 실패는 원래 경로를 보존한 연결 복구 화면으로 이동한다.
 
 관리자 편집 책임:
 
@@ -49,3 +53,15 @@ Phase 4 화면: 문제 상세의 답변 입력 → `/answers/:answerId` 평가 �
 
 Phase 7 화면: 일반 답변 평가 완료 → 같은 답변의 후속 질문 상태 조회 → READY 질문 인라인 제출 → 새 `/answers/:answerId` 평가 화면.
 후속 질문은 공개 문제 상세 API가 아닌 답변 상세에서 직접 표시. 생성 조회는 2초 간격·최대 15회, 일시 오류는 최대 3회이며 화면 이탈과 답변 변경 시 기존 요청 결과와 타이머를 폐기.
+
+
+오류 복구 규칙:
+
+- 401·403·404·409: 같은 조회의 반복 버튼 비표시. 권한이 거부된 이전 조회 내용 비표시
+- 네트워크·5xx·408: 수동 재조회 허용. 답변 원문·미확정 제출 payload 보존
+- 429: 자동 polling 중단, 잠시 기다린 뒤 수동 재조회. 제출 거절이 확정된 경우 pending payload 해제
+- loading: `role=status`, `aria-busy`; empty: 정상 응답의 빈 목록만 안내
+- 관리자 상세 조회: 선택 세대·로딩·오류를 함께 관리, 다른 항목의 이전 폼을 새 조회 결과처럼 표시하지 않음
+- 관리자 validation: 입력별 이유를 공통 alert에 빠짐없이 표시, 입력값 유지
+- 인증 경계의 401 판정은 `useAuth`의 세션 정책 책임. 일반 화면의 HTTP 분류 중복과 구분
+- 실제 검증: [화면·콘텐츠 검증](../docs/changes/2026-09-27-ui-content/verification.md)

@@ -1,7 +1,7 @@
 import { computed, ref } from "vue";
 
 import type { SubmitAnswerRequest } from "@/api/answers";
-import { ApiClientError } from "@/api/client";
+import { presentRequestError } from "@/presentation/requestErrorPresentation";
 
 type Sender<T> = (questionId: number, payload: SubmitAnswerRequest) => Promise<T>;
 
@@ -30,10 +30,12 @@ export function useAnswerSubmission<T>(
       if (storageKey) removePending(storageKey);
       return answer;
     } catch (caught) {
-      if (caught instanceof ApiClientError && caught.status >= 400 && caught.status < 500 && caught.status !== 408) {
+      const failure = presentRequestError(caught);
+      const outcomeUnknown = ["network", "temporary", "timeout"].includes(failure.kind);
+      if (!outcomeUnknown) {
         pendingPayload.value = null;
         if (storageKey) removePending(storageKey);
-        error.value = caught.message;
+        error.value = failure.message;
       } else {
         error.value = "제출 결과를 확인하지 못했어요. 같은 답변으로 다시 확인해 주세요.";
       }

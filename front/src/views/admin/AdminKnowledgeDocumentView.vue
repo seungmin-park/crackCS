@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import RequestFailure from "@/components/RequestFailure.vue";
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+
 import {
   onBeforeUnmount,
   onMounted,
@@ -41,7 +44,7 @@ const router = useRouter();
 const topics = ref<Topic[]>([]);
 const documents = ref<KnowledgeDocument[]>([]);
 const loading = ref(true);
-const loadError = ref(false);
+const loadError = ref<RequestErrorPresentation>();
 const statusFilter = ref<ContentStatus | "">(queryStringValue(route.query,
   "status") as ContentStatus | "");
 let routeStatus = statusFilter.value;
@@ -49,7 +52,7 @@ const page = ref(queryPage(route.query));
 const totalPages = ref(0);
 const totalElements = ref(0);
 const relationLoading = ref(true);
-const relationError = ref(false);
+const relationError = ref<RequestErrorPresentation>();
 let listGeneration = 0;
 let relationGeneration = 0;
 let disposed = false;
@@ -58,7 +61,7 @@ async function loadKnowledgeDocuments() {
   if (disposed) return;
   const generation = ++listGeneration;
   loading.value = true;
-  loadError.value = false;
+  loadError.value = undefined;
   try {
     const documentPage = await fetchKnowledgeDocuments({
       ...(statusFilter.value ? {
@@ -80,8 +83,8 @@ async function loadKnowledgeDocuments() {
     page.value = documentPage.page;
     totalPages.value = documentPage.totalPages;
     totalElements.value = documentPage.totalElements;
-  } catch {
-    if (generation === listGeneration) loadError.value = true;
+  } catch (caught) {
+    if (generation === listGeneration) loadError.value = presentRequestError(caught);
   } finally {
     if (generation === listGeneration) loading.value = false;
   }
@@ -91,7 +94,7 @@ async function loadRelations() {
   if (disposed) return;
   const generation = ++relationGeneration;
   relationLoading.value = true;
-  relationError.value = false;
+  relationError.value = undefined;
   try {
     const activeTopics = await fetchAllPages((candidatePage, size) => fetchTopics({
       active: true,
@@ -99,8 +102,8 @@ async function loadRelations() {
       size
     }));
     if (generation === relationGeneration) topics.value = activeTopics;
-  } catch {
-    if (generation === relationGeneration) relationError.value = true;
+  } catch (caught) {
+    if (generation === relationGeneration) relationError.value = presentRequestError(caught);
   } finally {
     if (generation === relationGeneration) relationLoading.value = false;
   }
@@ -169,21 +172,20 @@ onBeforeUnmount(() => {
       </div>
       <p>공개본은 수정하지 않고 같은 계열의 새 버전을 만듭니다.</p>
     </header>
-    <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
-    <p v-if="relationError" class="admin-error">관계 후보를 불러오지 못했습니다. <button type="button"
-        data-retry="relations" @click="loadRelations">다시 시도</button></p>
-    <p v-else-if="relationLoading" class="admin-loading">관계 후보를 불러오는 중…</p>
-    <p v-if="loadError" class="admin-error">문서 목록을 불러오지 못했습니다. <button type="button"
-        data-retry="list" @click="loadKnowledgeDocuments">다시 시도</button></p>
+    <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" :field-errors="feedback.fieldErrors.value" />
+    <RequestFailure v-if="relationError" :failure="relationError" title="관계 후보를 불러오지 못했습니다." retry-key="relations" @retry="loadRelations" />
+    <p v-else-if="relationLoading" role="status" aria-busy="true" class="admin-loading">관계 후보를 불러오는 중…</p>
+    <RequestFailure v-if="loadError" :failure="loadError" title="문서 목록을 불러오지 못했습니다." retry-key="list" @retry="loadKnowledgeDocuments" />
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter">
           <option value="">전체</option>
           <option>DRAFT</option>
           <option>PUBLISHED</option>
           <option>RETIRED</option>
         </select></label><button @click="selectDocumentForEditing()">새 문서</button></div>
-    <p v-if="loading" class="admin-loading">문서를 불러오는 중…</p>
-    <div v-else class="admin-editor-layout">
-      <ul class="admin-list selectable">
+    <p v-if="loading" role="status" aria-busy="true" class="admin-loading">문서를 불러오는 중…</p>
+    <div v-else-if="!loadError" class="admin-editor-layout">
+      <p v-if="!documents.length" role="status">조건에 맞는 문서가 없습니다.</p>
+      <ul v-else class="admin-list selectable">
         <li v-for="document in documents" :key="document.id"
           :class="{ selected: selectedDocument?.id === document.id }"><button type="button"
             :data-document-id="document.id" :aria-pressed="selectedDocument?.id === document.id"
@@ -231,11 +233,10 @@ onBeforeUnmount(() => {
           {{ selectedDocument.versionSeriesId }}</p>
         <section v-if="selectedDocument?.status === 'PUBLISHED'" class="admin-chunks">
           <h3>검색 문단 · {{ chunks.length }}개</h3>
-          <p v-if="chunksLoading" class="admin-loading">검색 문단을 불러오는 중…</p>
-          <p v-if="chunkError" class="admin-error">검색 문단을 불러오지 못했습니다. <button type="button"
-              @click="loadChunks(selectedDocument.id)">다시 시도</button></p>
+          <p v-if="chunksLoading" role="status" aria-busy="true" class="admin-loading">검색 문단을 불러오는 중…</p>
+          <RequestFailure v-if="chunkError" :failure="chunkError" title="검색 문단을 불러오지 못했습니다." @retry="loadChunks(selectedDocument.id)" />
           <p v-if="!chunksLoading && !chunkError && !chunks.length">아직 생성된 검색 문단이 없습니다.</p>
-          <article v-for="chunk in chunks" :key="chunk.id">
+          <article v-for="chunk in (!chunkError && !chunksLoading ? chunks : [])" :key="chunk.id">
             <strong>#{{ chunk.sequenceNo }} · {{ chunk.searchStatus }} ·
               {{ chunk.startOffset }}–{{ chunk.endOffset }}</strong>
             <p>{{ chunk.content }}</p>
@@ -243,7 +244,7 @@ onBeforeUnmount(() => {
         </section>
       </section>
     </div>
-    <AdminPagination :page="page" :total-pages="totalPages" :total-elements="totalElements"
+    <AdminPagination v-if="!loading && !loadError" :page="page" :total-pages="totalPages" :total-elements="totalElements"
       @change="changePage" />
   </section>
 </template>

@@ -29,6 +29,21 @@ describe("관리자 평가 검토 화면", () => {
       evaluatorVersion: "os-evaluator-v1", occurredAt: "2026-09-08T00:00:00", evidence: [] });
   });
 
+  it("상세 조회 실패 뒤 이전 원문을 숨기고 같은 항목을 재시도한다", async () => {
+    const wrapper = mount(AdminEvaluationView);
+    await flushPromises();
+    await wrapper.get('[data-evaluation-id="9"]').trigger("click");
+    await flushPromises();
+    fetchAdminEvaluation.mockRejectedValueOnce(new Error("offline"));
+    await wrapper.get('[data-evaluation-id="9"]').trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).not.toContain("프로그램 실행 인스턴스");
+    await wrapper.get('[data-retry="detail"]').trigger("click");
+    await flushPromises();
+    expect(fetchAdminEvaluation).toHaveBeenLastCalledWith(9);
+    expect(wrapper.text()).toContain("프로그램 실행 인스턴스");
+  });
+
   it("범위를 벗어난 평가 page를 마지막 유효 page로 replace한다", async () => {
     route.query = { page: "4", status: "FAILED" };
     fetchAdminEvaluations.mockResolvedValueOnce({ content: [], page: 4, size: 20, totalElements: 35, totalPages: 2 });

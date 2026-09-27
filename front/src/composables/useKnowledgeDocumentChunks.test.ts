@@ -11,7 +11,7 @@ describe("문서 검색 문단 편집", () => {
     chunks.selectDocument(undefined);
 
     expect(chunks.chunks.value).toEqual([]);
-    expect(chunks.chunkError.value).toBe(false);
+    expect(chunks.chunkError.value).toBeUndefined();
     expect(chunks.chunksLoading.value).toBe(false);
   });
 });

@@ -14,6 +14,20 @@ vi.mock("vue-router", () => ({
 }));
 
 describe("로그인 화면", () => {
+  it("로그인 입력 오류를 해당 필드에 연결하고 입력값을 유지한다", async () => {
+    login.mockRejectedValue(new ApiClientError(400, "입력값을 확인해 주세요.", [{ field: "email", reason: "이메일 형식이 올바르지 않습니다." }]));
+    const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } });
+    await wrapper.get('input[name="email"]').setValue("invalid");
+
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+
+    expect(wrapper.get('input[name="email"]').attributes("aria-invalid")).toBe("true");
+    expect(wrapper.get("#login-email-error").text()).toBe("이메일 형식이 올바르지 않습니다.");
+    expect((wrapper.get('input[name="email"]').element as HTMLInputElement).value).toBe("invalid");
+    wrapper.unmount();
+  });
+
   it("지정한 경로가 없으면 학습 홈으로 이동한다", async () => {
     login.mockResolvedValue({ id: 1, nickname: "학습자", role: "USER", status: "ACTIVE" });
     const wrapper = mount(LoginView, { global: { stubs: { RouterLink: true } } });

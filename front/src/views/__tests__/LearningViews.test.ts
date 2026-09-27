@@ -1,5 +1,6 @@
 import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiClientError } from "@/api/client";
 import LearningHomeView from "@/views/LearningHomeView.vue";
 import KnowledgeMapView from "@/views/KnowledgeMapView.vue";
 
@@ -29,6 +30,17 @@ function progress() {
 
 describe("개인 학습 화면", () => {
   beforeEach(() => { fetchProgress.mockReset(); fetchKnowledgeStates.mockReset(); });
+
+  it.each([
+    ["학습 홈", LearningHomeView, fetchProgress],
+    ["지식 지도", KnowledgeMapView, fetchKnowledgeStates],
+  ] as const)("%s의 권한 오류는 이유를 표시하고 재시도하지 않는다", async (_name, view, request) => {
+    request.mockRejectedValue(new ApiClientError(403, "접근 권한이 없습니다."));
+    const wrapper = mount(view, { global });
+    await flushPromises();
+    expect(wrapper.get('[role="alert"]').text()).toContain("접근 권한이 없습니다.");
+    expect(wrapper.find("button").exists()).toBe(false);
+  });
 
   it("신규 회원에게 첫 학습 안내와 추천 이유 및 문제 링크를 표시한다", async () => {
     fetchProgress.mockResolvedValue(progress());

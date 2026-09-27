@@ -90,8 +90,8 @@ Phase 8 운영 검증과 제한 파일럿
 #### 프런트 API 경계
 
 - [x] 공통 API client와 오류 타입 확정
-- [ ] loading, empty, validation, server error 처리 기준 통일
-- [ ] 화면별 HTTP 오류 변환 중복 제거
+- [x] loading, empty, validation, server error 처리 기준 통일 — [자동·cmux 검증](../changes/2026-09-27-ui-content/verification.md)
+- [x] 화면별 HTTP 오류 변환 중복 제거 — 공통 presentation, 인증·제출 정책 분리
 - [x] 인증·재시도 UI의 상태 전이와 실패 경계 테스트 보강 — 답변 로딩·연속 연결 실패 시 원문 보존 회귀 추가
 
 #### 자동화
@@ -168,12 +168,12 @@ Phase 8 운영 검증과 제한 파일럿
 
 ### P8-T07 초기 콘텐츠
 
-- [ ] 초기 Topic·Concept 체계 확정
+- [x] 초기 Topic·Concept 체계 구성 — [5개 Topic·50개 Concept 초안](../content/initial-v1/README.md), 사람 검수·공개는 별도
 - [x] Topic별 최소 문제·문서 수 `OQ-006` 확정
-- [ ] 출처와 라이선스 검수
-- [ ] Java 21, Spring Boot 4.1.x, Spring Framework 7.0.x, Jakarta Persistence 3.2 표시
-- [ ] 문제별 필수 Concept와 reference answer 검수
-- [ ] reference-v1과 실제 공개 문제의 편향·중복 점검
+- [ ] 출처와 라이선스 검수 — 20개 출처 본문·링크·이용 메모 준비, 사람 검수 대기
+- [x] Java 21, Spring Boot 4.1.x, Spring Framework 7.0.x, Jakarta Persistence 3.2 표시 — 등록 문서·번들 일치 검증
+- [ ] 문제별 필수 Concept와 reference answer 검수 — 25문항·각 필수 개념 2개와 답안 준비, 사람 검수 대기
+- [ ] reference-v1과 실제 공개 문제의 편향·중복 점검 — 초안의 완전 중복 0·공유 개념 7항목·분포 한계 기록, 공개본 승인 전 재확인
 
 ### P8-T08 제한 파일럿
 
@@ -206,8 +206,8 @@ Phase 8 운영 검증과 제한 파일럿
 ### API와 화면
 
 - [ ] 요청·응답·오류 계약 문서화
-- [ ] loading, empty, success, error 상태
-- [ ] 새로고침·네트워크 재시도 일관성
+- [x] loading, empty, success, error 상태 — 학습·관리자 화면 자동 회귀·실제 400/empty 확인
+- [x] 새로고침·네트워크 재시도 일관성 — 초기 인증 복구·입력 보존·자동/수동 재조회 분리
 - [ ] 접근 불가 데이터의 프런트 응답 비포함
 
 ### 운영 Gate
@@ -217,7 +217,7 @@ Phase 8 운영 검증과 제한 파일럿
 - [x] backup·restore 실제 검증 — 로컬 논리 복구 범위, 원격 재해 복구는 별도
 - [x] 성능 결과와 미달 대응 계획 — 로컬 HTTP·candidate 표본 범위, 실제 모델 목표 미달 유지
 - [x] 백엔드 자동 테스트 성공 — 최신 실행은 마무리 검증 기록 참조
-- [x] 프런트 테스트·type-check·production build 성공 — 298개 성공
+- [x] 프런트 테스트·type-check·production build 성공 — [326개 성공](../changes/2026-09-27-ui-content/verification.md)
 - [ ] 관련 제품 명세·ERD·ADR·문서 목록 최신 상태
 - [ ] 코드 작성 문제, 사용자 문제 게시, 결제 기능의 P0 제외 유지
 

@@ -22,6 +22,25 @@ vi.mock("@/api/answers", async (importOriginal) => ({
 import router, { authorizationGuard } from "@/router";
 
 describe("인증 라우트 가드", () => {
+  it("실제 router도 인증 장애 시 복구 화면을 열어 원래 경로를 유지한다", async () => {
+    restoreAuthentication.mockRejectedValue(new TypeError("network"));
+    await router.push("/questions/22");
+    expect(router.currentRoute.value.name).toBe("connection-error");
+    expect(router.currentRoute.value.query.redirect).toBe("/questions/22");
+  });
+
+  it("인증 복원이 연결 오류로 실패하면 빈 화면 대신 원래 주소를 보관한 복구 화면으로 이동한다", async () => {
+    restoreAuthentication.mockRejectedValueOnce(new TypeError("network"));
+    await expect(authorizationGuard({ meta: { requiresAuth: true }, fullPath: "/answers/31" } as never))
+      .resolves.toEqual({ name: "connection-error", query: { redirect: "/answers/31" } });
+  });
+
+  it("연결 오류 화면 자체는 인증 조회를 반복하지 않는다", async () => {
+    await expect(authorizationGuard({ name: "connection-error", meta: {}, fullPath: "/connection-error" } as never))
+      .resolves.toBe(true);
+    expect(restoreAuthentication).not.toHaveBeenCalled();
+  });
+
   it("학습 홈과 지식 지도는 로그인한 학습자 화면이다", () => {
     expect(router.resolve("/").name).toBe("learning-home");
     expect(router.resolve("/").meta).toMatchObject({ requiresAuth: true, requiresUser: true });

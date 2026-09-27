@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import RequestFailure from "@/components/RequestFailure.vue";
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+
 import {
   onBeforeUnmount,
   onMounted,
@@ -53,9 +56,9 @@ const page = ref(queryPage(route.query));
 const totalPages = ref(0);
 const totalElements = ref(0);
 const loading = ref(true);
-const loadError = ref(false);
+const loadError = ref<RequestErrorPresentation>();
 const relationLoading = ref(true);
-const relationError = ref(false);
+const relationError = ref<RequestErrorPresentation>();
 let loadGeneration = 0;
 let relationGeneration = 0;
 let disposed = false;
@@ -64,7 +67,7 @@ async function loadQuestions() {
   if (disposed) return;
   const generation = ++loadGeneration;
   loading.value = true;
-  loadError.value = false;
+  loadError.value = undefined;
   try {
     const questionPage = await fetchAdminQuestions({
       ...(statusFilter.value ? {
@@ -86,8 +89,8 @@ async function loadQuestions() {
     page.value = questionPage.page;
     totalPages.value = questionPage.totalPages;
     totalElements.value = questionPage.totalElements;
-  } catch {
-    if (generation === loadGeneration) loadError.value = true;
+  } catch (caught) {
+    if (generation === loadGeneration) loadError.value = presentRequestError(caught);
   } finally {
     if (generation === loadGeneration) loading.value = false;
   }
@@ -97,7 +100,7 @@ async function loadRelations() {
   if (disposed) return;
   const generation = ++relationGeneration;
   relationLoading.value = true;
-  relationError.value = false;
+  relationError.value = undefined;
   try {
     const [allTopics, allConcepts] = await Promise.all([
       fetchAllPages((candidatePage, size) => fetchTopics({
@@ -114,8 +117,8 @@ async function loadRelations() {
     if (generation !== relationGeneration) return;
     topics.value = allTopics;
     concepts.value = allConcepts;
-  } catch {
-    if (generation === relationGeneration) relationError.value = true;
+  } catch (caught) {
+    if (generation === relationGeneration) relationError.value = presentRequestError(caught);
   } finally {
     if (generation === relationGeneration) relationLoading.value = false;
   }
@@ -150,6 +153,8 @@ watch(() => route.query, () => {
 const {
   selectedQuestion,
   detailError,
+  detailLoading,
+  retryQuestionDetail,
   feedback,
   form,
   criteria,
@@ -187,29 +192,29 @@ onBeforeUnmount(() => {
       </div>
       <p>모범 답안과 Concept 가중치의 합이 1.00인지 검수한 뒤 공개합니다.</p>
     </header>
-    <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
-    <p v-if="loadError" class="admin-error">문제 목록을 불러오지 못했습니다. <button type="button"
-        data-retry="list" @click="loadQuestions">다시 시도</button></p>
-    <p v-if="detailError" class="admin-error">문제 상세를 불러오지 못했습니다.</p>
-    <p v-if="relationError" class="admin-error">관계 후보를 불러오지 못했습니다. <button type="button"
-        data-retry="relations" @click="loadRelations">다시 시도</button></p>
-    <p v-else-if="relationLoading" class="admin-loading">관계 후보를 불러오는 중…</p>
+    <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" :field-errors="feedback.fieldErrors.value" />
+    <RequestFailure v-if="loadError" :failure="loadError" title="문제 목록을 불러오지 못했습니다." retry-key="list" @retry="loadQuestions" />
+    <RequestFailure v-if="detailError" :failure="detailError" title="문제 상세를 불러오지 못했습니다." retry-key="detail" @retry="retryQuestionDetail" />
+    <p v-if="detailLoading" role="status" aria-busy="true">문제 상세를 불러오는 중…</p>
+    <RequestFailure v-if="relationError" :failure="relationError" title="관계 후보를 불러오지 못했습니다." retry-key="relations" @retry="loadRelations" />
+    <p v-else-if="relationLoading" role="status" aria-busy="true" class="admin-loading">관계 후보를 불러오는 중…</p>
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter">
           <option value="">전체</option>
           <option>DRAFT</option>
           <option>PUBLISHED</option>
           <option>RETIRED</option>
         </select></label><button @click="clearSelection">새 문제</button></div>
-    <p v-if="loading" class="admin-loading">문제를 불러오는 중…</p>
-    <div v-else class="admin-editor-layout">
-      <ul class="admin-list selectable">
+    <p v-if="loading" role="status" aria-busy="true" class="admin-loading">문제를 불러오는 중…</p>
+    <div v-else-if="!loadError" class="admin-editor-layout">
+      <p v-if="!questions.length" role="status">조건에 맞는 문제가 없습니다.</p>
+      <ul v-else class="admin-list selectable">
         <li v-for="question in questions" :key="question.id"
           :class="{ selected: selectedQuestion?.id === question.id }"><button type="button"
             :data-question-id="question.id" :aria-pressed="selectedQuestion?.id === question.id"
             @click="selectQuestionForEditing(question)"><strong>{{ question.content }}</strong><small>v{{ question.questionVersion }}
               · {{ question.status }} · {{ question.difficulty }}</small></button></li>
       </ul>
-      <section class="admin-panel">
+      <section v-if="!detailLoading && !detailError" class="admin-panel">
         <h2>{{ selectedQuestion ? `Question #${selectedQuestion.id} · v${selectedQuestion.questionVersion}` : "새 문제" }}</h2>
         <form class="admin-form" @submit.prevent="saveQuestionDraft">
           <label>Topic<select v-model="form.topicId" required>
@@ -266,7 +271,7 @@ onBeforeUnmount(() => {
         </section>
       </section>
     </div>
-    <AdminPagination :page="page" :total-pages="totalPages" :total-elements="totalElements"
+    <AdminPagination v-if="!loading && !loadError" :page="page" :total-pages="totalPages" :total-elements="totalElements"
       @change="changePage" />
   </section>
 </template>

@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import RequestFailure from "@/components/RequestFailure.vue";
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { difficultyLabel, fetchQuestions, type PublicQuestionPage, type QuestionDifficulty } from "@/api/questions";
@@ -16,7 +19,7 @@ const difficulty = computed<QuestionDifficulty | undefined>(() => {
   return value === "BASIC" || value === "INTERMEDIATE" || value === "ADVANCED" ? value : undefined;
 });
 const loading = ref(true);
-const failed = ref(false);
+const failed = ref<RequestErrorPresentation>();
 let requestId = 0;
 let disposed = false;
 const filters: { value: QuestionDifficulty | undefined; title: string; description: string }[] = [
@@ -31,7 +34,7 @@ async function loadQuestions() {
   const requestedPage = page.value;
   const requestedDifficulty = difficulty.value;
   loading.value = true;
-  failed.value = false;
+  failed.value = undefined;
   try {
     const response = await fetchQuestions({ page: requestedPage, difficulty: requestedDifficulty });
     if (disposed || currentRequest !== requestId) return;
@@ -41,8 +44,8 @@ async function loadQuestions() {
       return;
     }
     questionPage.value = response;
-  } catch {
-    if (!disposed && currentRequest === requestId) failed.value = true;
+  } catch (caught) {
+    if (!disposed && currentRequest === requestId) failed.value = presentRequestError(caught);
   } finally {
     if (!disposed && currentRequest === requestId) loading.value = false;
   }
@@ -84,11 +87,10 @@ onBeforeUnmount(() => {
         <h2>{{ difficulty ? difficultyLabel(difficulty) + ' 문제' : '전체 문제' }}</h2>
         <span v-if="!loading && !failed && questionPage" role="status">전체 {{ questionPage.totalElements }}문제</span>
       </div>
-      <section v-if="loading" class="question-skeletons" aria-label="문제 목록을 불러오는 중" aria-busy="true">
+      <section v-if="loading" role="status" class="question-skeletons" aria-label="문제 목록을 불러오는 중" aria-busy="true">
         <div v-for="index in 5" :key="index" class="skeleton-line" />
       </section>
-      <QuestionState v-else-if="failed" kind="error" title="문제를 불러오지 못했어요"
-        description="서버 연결을 확인한 뒤 다시 시도해 주세요." action-label="다시 불러오기" @action="loadQuestions" />
+      <RequestFailure v-else-if="failed" :failure="failed" title="문제를 불러오지 못했어요" @retry="loadQuestions" />
       <QuestionState v-else-if="!questionPage?.content.length" kind="empty"
         :title="difficulty ? '이 난이도에는 아직 문제가 없어요' : '아직 공개된 문제가 없어요'"
         :description="difficulty ? '다른 난이도를 선택해 문제를 둘러보세요.' : '새로운 문제가 준비되면 이곳에 표시됩니다.'" />

@@ -32,6 +32,18 @@ describe("답변 상세 화면", () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it("평가 조회 요청 제한은 원문을 보존하고 자동 호출을 중단한다", async () => {
+    fetchAnswer.mockResolvedValue({ answerId: 31, questionId: 7, questionContent: "질문", content: "제한 중 보존할 답변", submittedAt: "2026-09-07T10:00:00Z", evaluation: { ...evaluating } });
+    fetchAnswerEvaluation.mockRejectedValue(new ApiClientError(429, "limit"));
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: true } } });
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(fetchAnswerEvaluation).toHaveBeenCalledOnce();
+    expect(wrapper.text()).toContain("제한 중 보존할 답변");
+    expect(wrapper.get('[role="alert"]').text()).toContain("잠시 기다린 뒤");
+    expect(wrapper.get('[role="alert"] button').exists()).toBe(true);
+  });
+
   it("답변을 처음 불러오는 동안 로딩 상태를 알린다", async () => {
     fetchAnswer.mockReturnValue(new Promise(() => {}));
     const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });

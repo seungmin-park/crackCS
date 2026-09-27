@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 
-import { ApiClientError } from "@/api/client";
+import { presentRequestError } from "@/presentation/requestErrorPresentation";
 
 export function useAdminFeedback() {
   const successMessage = ref("");
@@ -21,12 +21,9 @@ export function useAdminFeedback() {
       successMessage.value = success;
       return result;
     } catch (error) {
-      if (error instanceof ApiClientError) {
-        formError.value = error.message;
-        fieldErrors.value = Object.fromEntries(error.fieldErrors.map((item) => [item.field, item.reason]));
-      } else {
-        formError.value = "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.";
-      }
+      const failure = presentRequestError(error);
+      formError.value = failure.message;
+      fieldErrors.value = failure.fieldErrors;
       return undefined;
     } finally {
       submitting.value = false;

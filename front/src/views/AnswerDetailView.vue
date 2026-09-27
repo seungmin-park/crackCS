@@ -2,14 +2,15 @@
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import { fetchAnswer, fetchAnswerEvaluation, type AnswerResponse } from "@/api/answers";
-import { ApiClientError } from "@/api/client";
+import RequestFailure from "@/components/RequestFailure.vue";
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+
 import EvaluationPanel from "@/components/EvaluationPanel.vue";
 import FollowUpQuestionPanel from "@/components/FollowUpQuestionPanel.vue";
-import QuestionState from "@/components/QuestionState.vue";
 
 const route = useRoute();
 const answer = ref<AnswerResponse>();
-const error = ref(false);
+const error = ref<RequestErrorPresentation>();
 const loading = ref(true);
 const evaluationComplete = computed(() => answer.value !== undefined
   && ["EVALUATED", "NEEDS_REVIEW", "FAILED"].includes(answer.value.evaluation.status));
@@ -37,12 +38,13 @@ function schedulePoll(answerId: string, activeGeneration: number) {
     } catch (failure) {
       if (disposed || activeGeneration !== generation) return;
       consecutivePollFailures++;
-      const retryable = !(failure instanceof ApiClientError) || failure.status >= 500;
+      const presentation = presentRequestError(failure);
+      const retryable = presentation.retryable && presentation.kind !== "rate-limited";
       if (retryable && consecutivePollFailures < MAX_POLL_FAILURES) {
         schedulePoll(answerId, activeGeneration);
       } else {
-        if (!retryable) answer.value = undefined;
-        error.value = true;
+        if (!presentation.retryable) answer.value = undefined;
+        error.value = presentation;
       }
     }
   }, 2000);
@@ -53,7 +55,7 @@ async function loadAnswer(answerId = String(route.params.answerId)) {
   const activeGeneration = ++generation;
   if (String(answer.value?.answerId) !== answerId) answer.value = undefined;
   loading.value = true;
-  error.value = false;
+  error.value = undefined;
   consecutivePollFailures = 0;
   try {
     const loaded = await fetchAnswer(answerId);
@@ -62,8 +64,9 @@ async function loadAnswer(answerId = String(route.params.answerId)) {
     if (loaded.evaluation.status === "EVALUATING" || loaded.evaluation.status === "PROCESSING") schedulePoll(answerId, activeGeneration);
   } catch (failure) {
     if (disposed || activeGeneration !== generation) return;
-    if (failure instanceof ApiClientError && failure.status < 500) answer.value = undefined;
-    error.value = true;
+    const presentation = presentRequestError(failure);
+    if (!presentation.retryable) answer.value = undefined;
+    error.value = presentation;
   } finally {
     if (!disposed && activeGeneration === generation) loading.value = false;
   }
@@ -76,7 +79,7 @@ onBeforeUnmount(() => { disposed = true; generation++; cancelTimer(); });
 <template>
   <main class="page-shell answer-detail-shell">
     <RouterLink class="back-link" to="/answers">← 답변 이력</RouterLink>
-    <QuestionState v-if="error" kind="error" title="답변을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswer()" />
+    <RequestFailure v-if="error" :failure="error" title="답변을 불러오지 못했어요" @retry="loadAnswer()" />
     <p v-if="loading" role="status" aria-busy="true">답변을 불러오는 중…</p>
     <template v-if="answer">
       <article class="answer-detail-grid">

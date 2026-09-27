@@ -2,7 +2,7 @@
 import { onUnmounted, reactive, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import { ApiClientError } from "@/api/client";
+import { presentRequestError } from "@/presentation/requestErrorPresentation";
 import { useAuth } from "@/composables/useAuth";
 
 const route = useRoute();
@@ -10,6 +10,7 @@ const router = useRouter();
 const { login } = useAuth();
 const form = reactive({ email: "", password: "" });
 const errorMessage = ref("");
+const fieldErrors = ref<Record<string, string>>({});
 const submitting = ref(false);
 const registered = route.query.registered === "true";
 let active = true;
@@ -18,6 +19,7 @@ onUnmounted(() => { active = false; });
 async function submitLogin() {
   if (submitting.value) return;
   errorMessage.value = "";
+  fieldErrors.value = {};
   submitting.value = true;
   const credentials = { ...form };
 
@@ -31,9 +33,9 @@ async function submitLogin() {
     await router.push(redirect);
   } catch (error) {
     if (!active) return;
-    errorMessage.value = error instanceof ApiClientError
-      ? error.message
-      : "로그인 요청을 처리하지 못했습니다.";
+    const failure = presentRequestError(error);
+    errorMessage.value = failure.message;
+    fieldErrors.value = failure.fieldErrors;
   } finally {
     if (active) submitting.value = false;
   }
@@ -73,7 +75,10 @@ async function submitLogin() {
             type="email"
             autocomplete="email"
             placeholder="you@example.com"
+            :aria-invalid="Boolean(fieldErrors.email)"
+            :aria-describedby="fieldErrors.email ? 'login-email-error' : undefined"
           />
+          <small v-if="fieldErrors.email" id="login-email-error" class="field-error">{{ fieldErrors.email }}</small>
         </label>
 
         <label class="form-field">
@@ -84,7 +89,10 @@ async function submitLogin() {
             type="password"
             autocomplete="current-password"
             placeholder="비밀번호를 입력하세요"
+            :aria-invalid="Boolean(fieldErrors.password)"
+            :aria-describedby="fieldErrors.password ? 'login-password-error' : undefined"
           />
+          <small v-if="fieldErrors.password" id="login-password-error" class="field-error">{{ fieldErrors.password }}</small>
         </label>
 
         <p v-if="errorMessage" class="form-alert" role="alert">{{ errorMessage }}</p>

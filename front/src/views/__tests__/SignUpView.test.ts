@@ -18,6 +18,17 @@ describe("회원가입 화면", () => {
     push.mockReset();
   });
 
+  it("서버 내부 오류 대신 복구 안내를 표시하고 입력을 보존한다", async () => {
+    signUp.mockRejectedValue(new ApiClientError(500, "internal database failure"));
+    const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
+    await wrapper.get("input[name='email']").setValue("user@example.com");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.get('[role="alert"]').text()).toBe("서버가 요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.");
+    expect(wrapper.get("input[name='email']").element.value).toBe("user@example.com");
+    wrapper.unmount();
+  });
+
   it("이메일과 비밀번호 및 닉네임으로 가입한 뒤 로그인 화면으로 이동한다", async () => {
     signUp.mockResolvedValue({ id: 1, nickname: "크랙러", role: "USER", status: "ACTIVE" });
     const wrapper = mount(SignUpView, {

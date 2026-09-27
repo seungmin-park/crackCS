@@ -5,6 +5,7 @@ import { useAuth } from "@/composables/useAuth";
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
+    { path: "/connection-error", name: "connection-error", component: () => import("@/views/ConnectionErrorView.vue") },
     { path: "/", name: "learning-home", component: () => import("@/views/LearningHomeView.vue"), meta: { requiresAuth: true, requiresUser: true } },
     { path: "/knowledge-map", name: "knowledge-map", component: () => import("@/views/KnowledgeMapView.vue"), meta: { requiresAuth: true, requiresUser: true } },
     {
@@ -56,8 +57,13 @@ const router = createRouter({
 });
 
 export async function authorizationGuard(to: RouteLocationNormalized) {
+  if (to.name === "connection-error") return true;
   const auth = useAuth();
-  await auth.restoreAuthentication();
+  try {
+    await auth.restoreAuthentication();
+  } catch {
+    return { name: "connection-error", query: { redirect: to.fullPath } };
+  }
 
   if (to.meta.guestOnly && auth.currentMember.value) {
     return { name: auth.currentMember.value.role === "ADMIN" ? "admin" : "learning-home" };

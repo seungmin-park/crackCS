@@ -3,7 +3,9 @@ import { computed, onBeforeUnmount, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { submitAnswer } from "@/api/answers";
-import { ApiClientError } from "@/api/client";
+import RequestFailure from "@/components/RequestFailure.vue";
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+
 import { difficultyLabel, fetchQuestion, type PublicQuestion } from "@/api/questions";
 import QuestionState from "@/components/QuestionState.vue";
 import { useAnswerSubmission } from "@/composables/useAnswerSubmission";
@@ -14,7 +16,7 @@ const router = useRouter();
 const { currentMember } = useAuth();
 const question = ref<PublicQuestion>();
 const loading = ref(true);
-const error = ref<"not-found" | "server">();
+const error = ref<RequestErrorPresentation>();
 const questionId = computed(() => String(route.params.questionId));
 const submission = shallowRef(useAnswerSubmission(currentMember.value?.id, Number(questionId.value), submitAnswer));
 let generation = 0;
@@ -35,7 +37,7 @@ async function loadQuestion() {
     const loaded = await fetchQuestion(questionId.value);
     if (!disposed && activeGeneration === generation) question.value = loaded;
   } catch (caught) {
-    if (!disposed && activeGeneration === generation) error.value = caught instanceof ApiClientError && caught.status === 404 ? "not-found" : "server";
+    if (!disposed && activeGeneration === generation) error.value = presentRequestError(caught);
   } finally {
     if (!disposed && activeGeneration === generation) loading.value = false;
   }
@@ -52,27 +54,20 @@ onBeforeUnmount(() => { disposed = true; generation++; });
   <main class="page-shell detail-shell">
     <RouterLink class="back-link" :to="{ path: '/questions', query: route.query }">← 문제 목록</RouterLink>
 
-    <section v-if="loading" class="detail-card" aria-label="문제를 불러오는 중">
+    <section v-if="loading" class="detail-card" role="status" aria-busy="true" aria-label="문제를 불러오는 중">
       <div class="skeleton-line short" />
       <div class="skeleton-line" />
       <div class="skeleton-line" />
     </section>
 
     <QuestionState
-      v-else-if="error === 'not-found'"
+      v-else-if="error?.kind === 'not-found'"
       kind="empty"
       title="문제를 찾을 수 없어요"
       description="존재하지 않거나 지금은 공개되지 않은 문제입니다."
     />
 
-    <QuestionState
-      v-else-if="error === 'server'"
-      kind="error"
-      title="문제를 불러오지 못했어요"
-      description="잠시 후 다시 시도해 주세요."
-      action-label="다시 불러오기"
-      @action="loadQuestion"
-    />
+    <RequestFailure v-else-if="error" :failure="error" title="문제를 불러오지 못했어요" @retry="loadQuestion" />
 
     <article v-else-if="question" class="detail-card">
       <div class="detail-workspace">

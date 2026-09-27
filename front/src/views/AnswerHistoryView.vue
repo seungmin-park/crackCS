@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import RequestFailure from "@/components/RequestFailure.vue";
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { fetchMyAnswers, type AnswerResponse } from "@/api/answers";
@@ -10,7 +13,7 @@ const router = useRouter();
 const answers = ref<AnswerResponse[]>([]);
 const totalPages = ref(0);
 const loading = ref(true);
-const error = ref(false);
+const error = ref<RequestErrorPresentation>();
 const page = computed(() => {
   const value = Number(route.query.page ?? 0);
   return Number.isSafeInteger(value) && value >= 0 ? value : 0;
@@ -24,7 +27,7 @@ async function loadAnswers() {
   const activeGeneration = ++generation;
   const requestedPage = page.value;
   loading.value = true;
-  error.value = false;
+  error.value = undefined;
   try {
     const answerPage = await fetchMyAnswers({ page: requestedPage, size: 20 });
     if (disposed || activeGeneration !== generation) return;
@@ -35,8 +38,8 @@ async function loadAnswers() {
     }
     answers.value = answerPage.content;
     totalPages.value = answerPage.totalPages;
-  } catch {
-    if (!disposed && activeGeneration === generation) error.value = true;
+  } catch (caught) {
+    if (!disposed && activeGeneration === generation) error.value = presentRequestError(caught);
   } finally {
     if (!disposed && activeGeneration === generation) loading.value = false;
   }
@@ -58,15 +61,8 @@ onBeforeUnmount(() => {
       <h1>내 답변 이력</h1>
       <p>제출한 설명과 평가 결과를 다시 확인하세요.</p>
     </header>
-    <p v-if="loading" class="admin-loading">답변 이력을 불러오는 중…</p>
-    <QuestionState
-      v-else-if="error"
-      kind="error"
-      title="답변 이력을 불러오지 못했어요"
-      description="잠시 후 다시 시도해 주세요."
-      action-label="다시 불러오기"
-      @action="loadAnswers"
-    />
+    <p v-if="loading" role="status" aria-busy="true" class="admin-loading">답변 이력을 불러오는 중…</p>
+    <RequestFailure v-else-if="error" :failure="error" title="답변 이력을 불러오지 못했어요" @retry="loadAnswers" />
     <QuestionState
       v-else-if="!answers.length"
       kind="empty"

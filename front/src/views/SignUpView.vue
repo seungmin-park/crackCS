@@ -3,7 +3,7 @@ import { onUnmounted, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { signUp } from "@/api/auth";
-import { ApiClientError } from "@/api/client";
+import { presentRequestError } from "@/presentation/requestErrorPresentation";
 
 const router = useRouter();
 const form = reactive({ email: "", password: "", nickname: "" });
@@ -26,16 +26,9 @@ async function submitSignUp() {
     await router.push({ name: "login", query: { registered: "true" } });
   } catch (error) {
     if (!active) return;
-    if (error instanceof ApiClientError) {
-      error.fieldErrors.forEach(({ field, reason }) => {
-        fieldErrors[field] = reason;
-      });
-      if (error.fieldErrors.length === 0) {
-        generalError.value = error.message;
-      }
-    } else {
-      generalError.value = "회원가입 요청을 처리하지 못했습니다.";
-    }
+    const failure = presentRequestError(error);
+    Object.assign(fieldErrors, failure.fieldErrors);
+    if (Object.keys(failure.fieldErrors).length === 0) generalError.value = failure.message;
   } finally {
     if (active) submitting.value = false;
   }

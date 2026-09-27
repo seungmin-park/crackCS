@@ -1,3 +1,4 @@
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
 import {
   onBeforeUnmount,
   reactive,
@@ -61,9 +62,11 @@ export function useAdminQuestionEditor(
   refreshList: () => Promise<void>,
 ) {
   const selectedQuestion = ref<AdminQuestion>();
+  const detailLoading = ref(false);
+  let requestedQuestion: AdminQuestionSummary | undefined;
   let selectionGeneration = 0;
   let disposed = false;
-  const detailError = ref(false);
+  const detailError = ref<RequestErrorPresentation>();
   const feedback = useAdminFeedback();
   const form = reactive(questionForm());
   const criteriaEditor = useQuestionCriteriaEditor(
@@ -72,24 +75,34 @@ export function useAdminQuestionEditor(
 
   function clearSelection() {
     selectionGeneration++;
+    detailLoading.value = false;
+    requestedQuestion = undefined;
     selectedQuestion.value = undefined;
     Object.assign(form, questionForm());
     criteriaEditor.setCriteria();
-    detailError.value = false;
+    detailError.value = undefined;
   }
 
   async function selectQuestionForEditing(question: AdminQuestionSummary) {
     const activeGeneration = ++selectionGeneration;
-    detailError.value = false;
+    requestedQuestion = question;
+    detailLoading.value = true;
+    detailError.value = undefined;
     try {
       const detail = await fetchAdminQuestion(question.id);
       if (activeGeneration !== selectionGeneration) return;
       selectedQuestion.value = detail;
       Object.assign(form, questionForm(detail));
       criteriaEditor.setCriteria(detail);
-    } catch {
-      if (activeGeneration === selectionGeneration) detailError.value = true;
+    } catch (caught) {
+      if (activeGeneration === selectionGeneration) detailError.value = presentRequestError(caught);
+    } finally {
+      if (activeGeneration === selectionGeneration) detailLoading.value = false;
     }
+  }
+
+  async function retryQuestionDetail() {
+    if (requestedQuestion) await selectQuestionForEditing(requestedQuestion);
   }
 
   async function saveQuestionDraft() {
@@ -158,6 +171,8 @@ export function useAdminQuestionEditor(
   return {
     selectedQuestion,
     detailError,
+    detailLoading,
+    retryQuestionDetail,
     feedback,
     form,
     ...criteriaEditor,

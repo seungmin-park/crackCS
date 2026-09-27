@@ -1,16 +1,14 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { RouterView, useRouter } from "vue-router";
 
 import { useAuth } from "@/composables/useAuth";
 import ThemeSwitch from "@/components/ThemeSwitch.vue";
 
 const router = useRouter();
-const { currentMember, restoreAuthentication, logout } = useAuth();
+const { currentMember, logout } = useAuth();
 const logoutError = ref("");
 const loggingOut = ref(false);
-
-onMounted(() => restoreAuthentication());
 
 async function handleLogout() {
   if (loggingOut.value) return;

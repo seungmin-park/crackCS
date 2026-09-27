@@ -9,6 +9,7 @@ vi.mock("vue-router", () => ({ useRoute: () => route, useRouter: () => ({ push, 
 
 const api = vi.hoisted(() => ({ fetchAdminMembers: vi.fn(), updateMemberStatus: vi.fn() }));
 vi.mock("@/api/admin/members", async importOriginal => ({ ...(await importOriginal<typeof import("@/api/admin/members")>()), ...api }));
+import { ApiClientError } from "@/api/client";
 import AdminMembersView from "@/views/admin/AdminMembersView.vue";
 
 describe("관리자 회원 화면", () => {
@@ -16,6 +17,25 @@ describe("관리자 회원 화면", () => {
     Object.values(api).forEach(mock => mock.mockReset());
     route.query = {}; push.mockClear(); replace.mockClear();
     api.fetchAdminMembers.mockResolvedValue({ content: [{ id: 1, nickname: "회원", role: "USER", status: "ACTIVE" }], page: 0, size: 100, totalElements: 1, totalPages: 1 });
+  });
+
+  it("다음 조회가 거부되면 이전 회원 정보와 재시도 버튼을 숨긴다", async () => {
+    const wrapper = mount(AdminMembersView);
+    await flushPromises();
+    expect(wrapper.find(".admin-list").exists()).toBe(true);
+    api.fetchAdminMembers.mockRejectedValue(new ApiClientError(403, "접근 권한이 없습니다."));
+    route.query = { status: "BLOCKED" };
+    await flushPromises();
+    expect(wrapper.get('[role="alert"]').text()).toContain("접근 권한이 없습니다.");
+    expect(wrapper.find(".admin-list").exists()).toBe(false);
+    expect(wrapper.find('[data-retry="list"]').exists()).toBe(false);
+  });
+
+  it("조회 결과가 없으면 빈 목록 안내를 표시한다", async () => {
+    api.fetchAdminMembers.mockResolvedValue({ content: [], page: 0, size: 20, totalElements: 0, totalPages: 0 });
+    const wrapper = mount(AdminMembersView);
+    await flushPromises();
+    expect(wrapper.get('[role="status"]').text()).toContain("조건에 맞는 회원이 없습니다.");
   });
 
   it("상태 변경 대기 중 화면을 떠나면 목록을 다시 조회하거나 목적지 URL을 바꾸지 않는다", async () => {

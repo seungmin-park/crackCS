@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import RequestFailure from "@/components/RequestFailure.vue";
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -17,7 +20,7 @@ const totalPages = ref(0);
 const totalElements = ref(0);
 const feedback = useAdminFeedback();
 const loading = ref(true);
-const loadError = ref(false);
+const loadError = ref<RequestErrorPresentation>();
 let loadGeneration = 0;
 let disposed = false;
 
@@ -25,7 +28,7 @@ async function loadMembers() {
   if (disposed) return;
   const generation = ++loadGeneration;
   loading.value = true;
-  loadError.value = false;
+  loadError.value = undefined;
   try {
     const memberPage = await fetchAdminMembers({ ...(statusFilter.value ? { status: statusFilter.value } : {}), page: page.value, size: ADMIN_PAGE_SIZE });
     if (generation === loadGeneration) {
@@ -37,8 +40,8 @@ async function loadMembers() {
       members.value = memberPage.content; page.value = memberPage.page;
       totalPages.value = memberPage.totalPages; totalElements.value = memberPage.totalElements;
     }
-  } catch {
-    if (generation === loadGeneration) loadError.value = true;
+  } catch (caught) {
+    if (generation === loadGeneration) loadError.value = presentRequestError(caught);
   } finally {
     if (generation === loadGeneration) loading.value = false;
   }
@@ -67,11 +70,12 @@ onBeforeUnmount(() => { disposed = true; loadGeneration++; });
 <template>
   <section>
     <header class="admin-page-heading"><div><p class="eyebrow">MEMBERS</p><h1>회원</h1></div><p>BLOCKED와 WITHDRAWN 회원은 다음 인증부터 로그인할 수 없습니다.</p></header>
-    <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
+    <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" :field-errors="feedback.fieldErrors.value" />
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter"><option value="">전체</option><option>ACTIVE</option><option>BLOCKED</option><option>WITHDRAWN</option></select></label></div>
-    <p v-if="loadError" class="admin-error">회원 목록을 불러오지 못했습니다. <button type="button" data-retry="list" @click="loadMembers">다시 시도</button></p>
-    <p v-if="loading" class="admin-loading">회원을 불러오는 중…</p>
-    <ul v-else class="admin-list"><li v-for="member in members" :key="member.id"><div><strong>{{ member.nickname }}</strong><small>#{{ member.id }} · {{ member.role }} · {{ member.status }}</small></div><select :value="member.status" :disabled="feedback.submitting.value" @change="changeMemberStatus(member, ($event.target as HTMLSelectElement).value as MemberStatus)"><option>ACTIVE</option><option>BLOCKED</option><option>WITHDRAWN</option></select></li></ul>
-    <AdminPagination :page="page" :total-pages="totalPages" :total-elements="totalElements" @change="changePage" />
+    <RequestFailure v-if="loadError" :failure="loadError" title="회원 목록을 불러오지 못했습니다." retry-key="list" @retry="loadMembers" />
+    <p v-if="loading" role="status" aria-busy="true" class="admin-loading">회원을 불러오는 중…</p>
+    <p v-else-if="!loadError && !members.length" role="status">조건에 맞는 회원이 없습니다.</p>
+    <ul v-else-if="!loadError" class="admin-list"><li v-for="member in members" :key="member.id"><div><strong>{{ member.nickname }}</strong><small>#{{ member.id }} · {{ member.role }} · {{ member.status }}</small></div><select :value="member.status" :disabled="feedback.submitting.value" @change="changeMemberStatus(member, ($event.target as HTMLSelectElement).value as MemberStatus)"><option>ACTIVE</option><option>BLOCKED</option><option>WITHDRAWN</option></select></li></ul>
+    <AdminPagination v-if="!loading && !loadError" :page="page" :total-pages="totalPages" :total-elements="totalElements" @change="changePage" />
   </section>
 </template>

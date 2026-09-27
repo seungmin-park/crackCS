@@ -5,7 +5,8 @@ const props = withDefaults(defineProps<{
   kind?: QuestionStateKind;
   title: string;
   description: string;
-  actionLabel?: string;
+  actionLabel?: string | undefined;
+  retryKey?: string | undefined;
 }>(), { kind: "empty" });
 
 defineEmits<{
@@ -23,7 +24,7 @@ defineEmits<{
     <span class="state-symbol" aria-hidden="true">?</span>
     <h2>{{ title }}</h2>
     <p>{{ description }}</p>
-    <button v-if="actionLabel" class="primary-button" type="button" @click="$emit('action')">
+    <button v-if="actionLabel" :data-retry="retryKey" class="primary-button" type="button" @click="$emit('action')">
       {{ actionLabel }}
     </button>
   </section>

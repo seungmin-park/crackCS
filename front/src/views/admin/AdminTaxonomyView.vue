@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import RequestFailure from "@/components/RequestFailure.vue";
+import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+
 import { onBeforeUnmount, onMounted, reactive, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
@@ -33,14 +36,14 @@ const topicTotalElements = ref(0);
 const conceptTotalPages = ref(0);
 const conceptTotalElements = ref(0);
 const relationLoading = ref(true);
-const relationError = ref(false);
+const relationError = ref<RequestErrorPresentation>();
 const loading = ref(true);
 const topicEditingId = ref<number>();
 const conceptEditingId = ref<number>();
 const topicForm = reactive({ parentId: "", code: "", name: "" });
 const conceptForm = reactive({ topicId: "", code: "", name: "", description: "" });
 const feedback = useAdminFeedback();
-const loadError = ref(false);
+const loadError = ref<RequestErrorPresentation>();
 let loadGeneration = 0;
 let relationGeneration = 0;
 let disposed = false;
@@ -49,7 +52,7 @@ async function loadTaxonomy() {
   if (disposed) return;
   const generation = ++loadGeneration;
   loading.value = true;
-  loadError.value = false;
+  loadError.value = undefined;
   try {
     const [topicResult, conceptResult] = await Promise.all([
       fetchTopics({ page: topicPage.value, size: ADMIN_PAGE_SIZE }),
@@ -66,8 +69,8 @@ async function loadTaxonomy() {
     concepts.value = conceptResult.content;
     topicPage.value = topicResult.page; topicTotalPages.value = topicResult.totalPages; topicTotalElements.value = topicResult.totalElements;
     conceptPage.value = conceptResult.page; conceptTotalPages.value = conceptResult.totalPages; conceptTotalElements.value = conceptResult.totalElements;
-  } catch {
-    if (generation === loadGeneration) loadError.value = true;
+  } catch (caught) {
+    if (generation === loadGeneration) loadError.value = presentRequestError(caught);
   } finally {
     if (generation === loadGeneration) loading.value = false;
   }
@@ -76,11 +79,11 @@ async function loadTaxonomy() {
 async function loadActiveTopics() {
   if (disposed) return;
   const generation = ++relationGeneration;
-  relationLoading.value = true; relationError.value = false;
+  relationLoading.value = true; relationError.value = undefined;
   try {
     const activeTopics = await fetchAllPages((candidatePage, size) => fetchTopics({ active: true, page: candidatePage, size }));
     if (generation === relationGeneration) topicOptions.value = activeTopics;
-  } catch { if (generation === relationGeneration) relationError.value = true; }
+  } catch (caught) { if (generation === relationGeneration) relationError.value = presentRequestError(caught); }
   finally { if (generation === relationGeneration) relationLoading.value = false; }
 }
 
@@ -149,12 +152,12 @@ onBeforeUnmount(() => { disposed = true; loadGeneration++; relationGeneration++;
 <template>
   <section>
     <header class="admin-page-heading"><div><p class="eyebrow">TAXONOMY</p><h1>분류와 개념</h1></div><p>비활성 분류는 기존 이력을 보존하지만 새 콘텐츠에는 연결할 수 없습니다.</p></header>
-    <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" />
-    <p v-if="relationError" class="admin-error">관계 후보를 불러오지 못했습니다. <button type="button" data-retry="relations" @click="loadActiveTopics">다시 시도</button></p>
-    <p v-else-if="relationLoading" class="admin-loading">관계 후보를 불러오는 중…</p>
-    <p v-if="loadError" class="admin-error">분류 체계를 불러오지 못했습니다. <button type="button" data-retry="list" @click="loadTaxonomy">다시 시도</button></p>
-    <p v-if="loading" class="admin-loading">분류 체계를 불러오는 중…</p>
-    <div v-else class="admin-two-column">
+    <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" :field-errors="feedback.fieldErrors.value" />
+    <RequestFailure v-if="relationError" :failure="relationError" title="관계 후보를 불러오지 못했습니다." retry-key="relations" @retry="loadActiveTopics" />
+    <p v-else-if="relationLoading" role="status" aria-busy="true" class="admin-loading">관계 후보를 불러오는 중…</p>
+    <RequestFailure v-if="loadError" :failure="loadError" title="분류 체계를 불러오지 못했습니다." retry-key="list" @retry="loadTaxonomy" />
+    <p v-if="loading" role="status" aria-busy="true" class="admin-loading">분류 체계를 불러오는 중…</p>
+    <div v-else-if="!loadError" class="admin-two-column">
       <section class="admin-panel">
         <h2>Topic</h2>
         <form class="admin-form" @submit.prevent="submitTopic">
@@ -163,8 +166,9 @@ onBeforeUnmount(() => { disposed = true; loadGeneration++; relationGeneration++;
           <label>이름<input v-model="topicForm.name" required /><small>{{ feedback.fieldErrors.value.name }}</small></label>
           <button class="admin-primary" :disabled="feedback.submitting.value">{{ topicEditingId ? "Topic 수정" : "Topic 등록" }}</button>
         </form>
-        <ul class="admin-list"><li v-for="topic in topics" :key="topic.id" :class="{ inactive: !topic.active }"><div><strong>{{ topic.name }}</strong><small>{{ topic.code }} · {{ topic.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editTopic(topic)">편집</button><button v-if="topic.active" :disabled="feedback.submitting.value" @click="deactivate('topic', topic.id)">비활성화</button></div></li></ul>
-        <AdminPagination :page="topicPage" :total-pages="topicTotalPages" :total-elements="topicTotalElements" data-page-key="topicPage" @change="changePage('topicPage', $event)" />
+        <p v-if="!topics.length" role="status">조건에 맞는 주제가 없습니다.</p>
+        <ul v-else class="admin-list"><li v-for="topic in topics" :key="topic.id" :class="{ inactive: !topic.active }"><div><strong>{{ topic.name }}</strong><small>{{ topic.code }} · {{ topic.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editTopic(topic)">편집</button><button v-if="topic.active" :disabled="feedback.submitting.value" @click="deactivate('topic', topic.id)">비활성화</button></div></li></ul>
+        <AdminPagination v-if="!loading && !loadError" :page="topicPage" :total-pages="topicTotalPages" :total-elements="topicTotalElements" data-page-key="topicPage" @change="changePage('topicPage', $event)" />
       </section>
       <section class="admin-panel">
         <h2>Concept</h2>
@@ -174,8 +178,9 @@ onBeforeUnmount(() => { disposed = true; loadGeneration++; relationGeneration++;
           <label>설명<textarea v-model="conceptForm.description" rows="3" /></label>
           <button class="admin-primary" :disabled="feedback.submitting.value">{{ conceptEditingId ? "Concept 수정" : "Concept 등록" }}</button>
         </form>
-        <ul class="admin-list"><li v-for="concept in concepts" :key="concept.id" :class="{ inactive: !concept.active }"><div><strong>{{ concept.name }}</strong><small>{{ concept.code }} · {{ concept.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editConcept(concept)">편집</button><button v-if="concept.active" :disabled="feedback.submitting.value" @click="deactivate('concept', concept.id)">비활성화</button></div></li></ul>
-        <AdminPagination :page="conceptPage" :total-pages="conceptTotalPages" :total-elements="conceptTotalElements" data-page-key="conceptPage" @change="changePage('conceptPage', $event)" />
+        <p v-if="!concepts.length" role="status">조건에 맞는 개념이 없습니다.</p>
+        <ul v-else class="admin-list"><li v-for="concept in concepts" :key="concept.id" :class="{ inactive: !concept.active }"><div><strong>{{ concept.name }}</strong><small>{{ concept.code }} · {{ concept.active ? "ACTIVE" : "INACTIVE" }}</small></div><div><button :disabled="feedback.submitting.value" @click="editConcept(concept)">편집</button><button v-if="concept.active" :disabled="feedback.submitting.value" @click="deactivate('concept', concept.id)">비활성화</button></div></li></ul>
+        <AdminPagination v-if="!loading && !loadError" :page="conceptPage" :total-pages="conceptTotalPages" :total-elements="conceptTotalElements" data-page-key="conceptPage" @change="changePage('conceptPage', $event)" />
       </section>
     </div>
   </section>

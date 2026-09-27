@@ -34,6 +34,18 @@ describe("후속 질문 조회", () => {
   beforeEach(() => vi.useFakeTimers());
   afterEach(() => vi.useRealTimers());
 
+  it("요청 제한은 자동 호출을 멈추고 수동 재조회로 복구한다", async () => {
+    const request = vi.fn().mockRejectedValueOnce(new ApiClientError(429, "limit")).mockResolvedValueOnce(ready);
+    const { followUp, wrapper } = mountHarness(request);
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(request).toHaveBeenCalledOnce();
+    expect(followUp.error.value?.retryable).toBe(true);
+    await followUp.retry();
+    expect(followUp.result.value).toEqual(ready);
+    wrapper.unmount();
+  });
+
   it("생성 중 상태를 polling하고 READY가 되면 멈춘다", async () => {
     const request = vi.fn()
       .mockResolvedValueOnce(pending)

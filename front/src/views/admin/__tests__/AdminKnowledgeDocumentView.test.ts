@@ -416,7 +416,7 @@ describe("관리자 근거 문서 화면", () => {
     await wrapper.get("button[data-document-id='1']").trigger("click");
     await flushPromises();
     expect(wrapper.text()).toContain("검색 문단을 불러오지 못했습니다.");
-    await wrapper.find(".admin-chunks .admin-error button").trigger("click");
+    await wrapper.find('.admin-chunks [role="alert"] button').trigger("click");
 
     expect(wrapper.text()).not.toContain("검색 문단을 불러오지 못했습니다.");
     expect(wrapper.text()).not.toContain("아직 생성된 검색 문단이 없습니다.");
