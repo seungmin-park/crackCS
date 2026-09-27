@@ -1,9 +1,18 @@
 package com.example.crackcs.auth.service;
 
 import com.example.crackcs.exception.TooManyLoginAttemptsException;
+import com.example.crackcs.auth.repository.LoginAttemptRepository;
+import com.example.crackcs.auth.domain.LoginAttempt;
+import com.example.crackcs.support.ConcurrentRequests;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -16,10 +25,9 @@ import java.time.*;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SpringBootTest(classes = DefaultLoginAttemptService.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest
 @Import(LoginAttemptServiceTest.MutableClockConfiguration.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class LoginAttemptServiceTest {
 
     private static final Instant INITIAL_TIME = Instant.parse("2026-08-31T00:00:00Z");
@@ -29,6 +37,93 @@ class LoginAttemptServiceTest {
 
     @Autowired
     private MutableClock clock;
+
+    @Autowired
+    private AutowireCapableBeanFactory beanFactory;
+
+    @Autowired
+    private LoginAttemptRepository loginAttemptRepository;
+
+    @AfterEach
+    void cleanUp() {
+        loginAttemptRepository.deleteAll();
+        clock.instant = INITIAL_TIME;
+    }
+
+    @Test
+    @DisplayName("동시 최초 실패 다섯 건은 하나의 공유 기록으로 누적되어 차단된다")
+    void serializesConcurrentFirstFailures() throws Exception {
+        LoginAttemptService otherInstance = beanFactory.createBean(DefaultLoginAttemptService.class);
+        List<Callable<Boolean>> failures = new ArrayList<>();
+        for (int requestIndex = 0; requestIndex < 5; requestIndex++) {
+            LoginAttemptService target = requestIndex % 2 == 0 ? loginAttemptService : otherInstance;
+            failures.add(() -> { target.recordFailure("race@example.com", "127.0.0.1"); return true; });
+        }
+
+        assertThat(ConcurrentRequests.run(failures)).hasSize(5).containsOnly(true);
+        assertThat(loginAttemptRepository.count()).isEqualTo(1);
+        assertThatThrownBy(() -> otherInstance.checkAllowed("race@example.com", "127.0.0.1"))
+                .isInstanceOf(TooManyLoginAttemptsException.class);
+    }
+
+    @Test
+    @DisplayName("로그인 ID의 대소문자와 주변 공백을 바꿔도 실패 제한을 우회하지 못한다")
+    void normalizesLoginKey() {
+        for (int failure = 0; failure < 5; failure++) loginAttemptService.recordFailure(" Case@Example.com ", "127.0.0.1");
+        assertThatThrownBy(() -> loginAttemptService.checkAllowed("case@example.com", "127.0.0.1"))
+                .isInstanceOf(TooManyLoginAttemptsException.class);
+        LoginAttempt persisted = loginAttemptRepository.findAll().getFirst();
+        assertThat(persisted.getAttemptKey()).matches("[0-9a-f]{64}");
+        assertThat(persisted.getAttemptKey()).doesNotContain("example", "127.0.0.1");
+    }
+
+    @Test
+    @DisplayName("한 주소의 실패 기록은 다른 주소의 동일 계정까지 차단하지 않는다")
+    void isolatesRemoteAddress() {
+        for (int failure = 0; failure < 5; failure++) loginAttemptService.recordFailure("source@example.com", "127.0.0.1");
+        assertThatCode(() -> loginAttemptService.checkAllowed("source@example.com", "127.0.0.2"))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("로그인 성공은 같은 키의 실패 기록을 DB에서 제거한다")
+    void clearsSuccessfulKey() {
+        loginAttemptService.recordFailure("success@example.com", "127.0.0.1");
+        loginAttemptService.recordSuccess("success@example.com", "127.0.0.1");
+        assertThat(loginAttemptRepository.count()).isZero();
+        LoginAttemptService otherInstance = beanFactory.createBean(DefaultLoginAttemptService.class);
+        assertThatCode(() -> otherInstance.checkAllowed("success@example.com", "127.0.0.1")).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("만료 기록 정리는 유효한 실패와 차단 기록을 유지한다")
+    void purgesOnlyExpiredRecords() {
+        loginAttemptService.recordFailure("expired@example.com", "127.0.0.1");
+        for (int failure = 0; failure < 5; failure++) loginAttemptService.recordFailure("blocked@example.com", "127.0.0.1");
+        clock.advance(Duration.ofMinutes(10).plusMillis(1));
+        loginAttemptService.recordFailure("active@example.com", "127.0.0.1");
+
+        loginAttemptService.purgeExpiredAttempts();
+
+        assertThat(loginAttemptRepository.count()).isEqualTo(2);
+        assertThatThrownBy(() -> loginAttemptService.checkAllowed("blocked@example.com", "127.0.0.1"))
+                .isInstanceOf(TooManyLoginAttemptsException.class);
+        clock.advance(Duration.ofMinutes(5));
+        loginAttemptService.purgeExpiredAttempts();
+        assertThat(loginAttemptRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("서로 다른 서비스 인스턴스에서도 같은 계정과 주소의 차단 기록을 공유한다")
+    void sharesBlockAcrossServiceInstances() {
+        for (int attempt = 0; attempt < 5; attempt++) {
+            loginAttemptService.recordFailure("shared@example.com", "127.0.0.1");
+        }
+        LoginAttemptService otherInstance = beanFactory.createBean(DefaultLoginAttemptService.class);
+
+        assertThatThrownBy(() -> otherInstance.checkAllowed("shared@example.com", "127.0.0.1"))
+                .isInstanceOf(TooManyLoginAttemptsException.class);
+    }
 
     @Test
     @DisplayName("10분 안에 로그인에 5회 실패하면 같은 계정과 주소를 15분간 차단한다")

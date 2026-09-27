@@ -4,10 +4,12 @@ import com.example.crackcs.auth.controller.request.LoginRequest;
 import com.example.crackcs.auth.domain.AuthAccount;
 import com.example.crackcs.auth.domain.AuthProvider;
 import com.example.crackcs.auth.repository.AuthAccountRepository;
+import com.example.crackcs.auth.repository.LoginAttemptRepository;
 import com.example.crackcs.auth.service.AuthService;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberStatus;
 import com.example.crackcs.member.repository.MemberRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +22,6 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import tools.jackson.databind.JsonNode;
@@ -34,7 +35,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @ExtendWith(OutputCaptureExtension.class)
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class AuthenticationFlowTest {
 
     private static final String PASSWORD = "correct horse battery staple";
@@ -53,6 +53,16 @@ class AuthenticationFlowTest {
 
     @Autowired
     private MemberRepository memberRepository;
+
+    @Autowired
+    private LoginAttemptRepository loginAttemptRepository;
+
+    @AfterEach
+    void cleanUp() {
+        loginAttemptRepository.deleteAll();
+        authAccountRepository.deleteAllInBatch();
+        memberRepository.deleteAllInBatch();
+    }
 
     @Test
     @DisplayName("로그인하면 세션에 인증 상태를 저장하고 현재 회원과 로그인 시각을 조회한다")

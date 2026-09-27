@@ -9,9 +9,15 @@
 - 같은 정규화 이메일과 원격 주소 조합에서 10분 안에 5회 실패하면 15분 동안 차단한다.
 - 차단 중 요청은 `429 Too Many Requests`와 `Retry-After`를 반환한다.
 - 성공하면 해당 조합의 실패 상태를 제거한다.
-- key는 이메일과 원격 주소 원문이 아니라 SHA-256 digest로 메모리에 보관한다.
-- 현재 구현은 단일 프로세스 메모리 방식이므로 재시작하면 초기화되고 여러 서버 사이에 공유되지 않는다.
-- 운영을 수평 확장할 때 Redis 같은 공용 저장소와 trusted proxy의 실제 client IP 해석을 도입한다.
+- key: 정규화 이메일+원격 주소의 SHA-256 digest. `login_attempt`에 보관, 원문 이메일·주소 컬럼 없음
+- 2026-09-27 변경: 프로세스 메모리 대신 PostgreSQL 공유 저장. `LoginAttempt`가 실패 창·차단 규칙 소유
+- 기존 행은 비관적 잠금, 최초 행은 UNIQUE 경쟁 시 독립 transaction 최대 3회 재시도
+- 만료 기록: 1분마다 최대 200개 재확인·삭제. 즉시 TTL 삭제나 익명화 보장 아님
+- digest는 추측 가능한 조합을 대조할 수 있는 가명 값. 접근 권한·백업 보호 필요
+- proxy header는 신뢰하지 않고 `getRemoteAddr()` 사용. trusted proxy 도입 시 주소 정책 재설계 필요
+- 제한 범위는 계정+주소 조합. 분산 주소·여러 계정의 전역 공격 제한은 미구현, loopback 데모 외 공개 운영 전 필요
+- 로그인 제한 상태와 인증 session은 별개. session은 여전히 서버 메모리, 재시작·다른 앱에서는 재로그인 필요
+- [변경 검증](../changes/2026-09-27-service-completion/verification.md), [schema 절차](0006-local-postgres-schema.md)
 
 ## 로그 정책
 

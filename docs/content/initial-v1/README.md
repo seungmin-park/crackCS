@@ -2,6 +2,7 @@
 
 ## 상태와 범위
 
+- 검수용 읽기 자료: [문항·답안·개념·근거를 모은 화면](review.md). 원본 변경 시 `python3 scripts/render_content_review.py`로 재생성
 - 기준 원본: [bundle.json](bundle.json)
 - 준비: 2026-09-27, AI 작성·출처 본문 대조·자동 구조 검사
 - **미검수 DRAFT**: 사람 검수자·검수 일시 없음, 자동 공개 없음

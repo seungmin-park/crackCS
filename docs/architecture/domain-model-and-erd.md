@@ -159,18 +159,19 @@ Learning use case
 
 ## 3. ERD
 
-![CrackCS ERD](images/crackcs-erd-illustrated.png)
-
-- 기준: 2026-09-13 현재 Java 엔티티의 FK·nullable·UNIQUE 매핑. 운영 DB introspection 결과 아님
-- 이미지: 14개 엔티티 테이블과 주요 관계선 18개. 각 끝의 숫자로 다중성 표시: 1 / 0..1 / 0..*. 교차점은 연결점이 아님
-- `KNOWLEDGE_APPLICATION`: AppliedEvaluationConcept의 실제 테이블 이름. 평가 개념 한 건당 적용 기록 최대 한 건
-- `KNOWLEDGE_STATE.latest_evaluation_concept_id`: 현재 scalar 컬럼으로 FK 매핑 없음. 직접 관계선 생략
-- 현재 미구현: `QUESTION.source_answer_id` 및 후속 답변 연결. 아래 후속 질문 관련 설계는 계획으로 구분
-- 이미지 생략: 문서·문제의 생성/검수 회원 FK 4개와 ElementCollection 테이블 3개. 아래 Mermaid 관계도에는 포함
+- 현재 관계 기준: 2026-09-27 Java 매핑과 명시적 PostgreSQL V001·V002
+- 아래 Mermaid가 현재 관계도. [2026-09-13 그림](images/crackcs-erd-illustrated.png)은 초기 구조 설명용 이력으로 보존; 후속 생성·로그인 제한 미포함
+- `KNOWLEDGE_APPLICATION`: 평가 개념 한 건당 적용 기록 최대 한 건
+- `KNOWLEDGE_STATE.latest_evaluation_concept_id`, 후속 생성의 근거 Chunk ID: scalar 참조, FK 관계선 생략
 
 ```mermaid
 erDiagram
     MEMBER ||--o{ AUTH_ACCOUNT : member_id
+    LOGIN_ATTEMPT ||--o{ LOGIN_ATTEMPT_FAILURE : login_attempt_id
+    ANSWER |o--o| QUESTION : source_answer_id_unique
+    ANSWER ||--o| FOLLOW_UP_GENERATION : answer_id_unique
+    QUESTION |o--o| FOLLOW_UP_GENERATION : question_id_unique
+    FOLLOW_UP_GENERATION ||--o{ FOLLOW_UP_GENERATION_EVIDENCE : generation_id
     TOPIC |o--o{ TOPIC : parent_id
     TOPIC ||--o{ CONCEPT : topic_id
     TOPIC ||--o{ KNOWLEDGE_DOCUMENT : topic_id
@@ -234,6 +235,25 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 | created_at | TIMESTAMP | NOT NULL | 계정 생성 일시 |
 
 `(provider, login_id)`는 유일해야 한다. 추후 소셜 인증을 도입하면 같은 Member에 다른 provider 계정을 연결하고, 소셜 계정의 `password_hash`는 nullable로 변경한다.
+
+### LOGIN_ATTEMPT / LOGIN_ATTEMPT_FAILURE
+
+- `login_attempt`: id, attempt_key(64자 SHA-256, UNIQUE), blocked_until, created_at, updated_at
+- 시각 타입: Instant → PostgreSQL `timestamp with time zone`
+- `login_attempt_failure`: login_attempt_id FK, sequence_no, failed_at. `(login_attempt_id, sequence_no)` PK
+- 실패 시각 최대 5개. 차단 중 추가 실패는 차단 종료 시각을 연장하지 않음
+- 상태·시간 경계는 LoginAttempt 소유, Service는 DB 잠금·최초 UNIQUE 충돌 재시도·정리 조정
+- Member FK 없음: 존재하지 않는 계정의 실패도 제한 필요
+- V002 만료 조회 인덱스: updated_at, blocked_until
+
+### FOLLOW_UP_GENERATION / FOLLOW_UP_GENERATION_EVIDENCE
+
+- `answer_id` UNIQUE FK: 답변당 생성 작업 한 건. `question_id` nullable UNIQUE FK: 완료 결과
+- 상태: PENDING → PROCESSING → READY / FAILED / UNAVAILABLE. 일시 실패는 PENDING 재예약
+- attempt_count, lease_token, lease_expires_at, next_attempt_at: 중복 Worker·프로세스 종료·최대 3회 제어
+- reason, model_name, generator_version, duration_millis, input_tokens, output_tokens: 원문 없는 관측 정보
+- created_at, updated_at: 도메인 상태 변경 시 갱신
+- 근거 목록: generation_id FK + chunk_id scalar 목록. 과거 생성 근거 ID 보존
 
 ### TOPIC
 
@@ -304,7 +324,7 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 |------------------|-------------|----------------------|-------------------------------|
 | id               | BIGINT      | PK                   | 문제 ID                         |
 | topic_id         | BIGINT      | FK → TOPIC, NOT NULL | 소속 주제                         |
-| source_answer_id | BIGINT      | 계획: UNIQUE, FK → ANSWER, NULL | 현재 엔티티에 없음. 후속 질문 구현 시 추가 검토 |
+| source_answer_id | BIGINT      | UNIQUE, FK → ANSWER, NULL | 일반 문제는 NULL, 후속 질문은 원본 답변 |
 | created_by_member_id | BIGINT | FK → MEMBER, NULL | 일반 문제 등록 관리자; 시스템 후속 질문은 NULL |
 | reviewed_by_member_id | BIGINT | FK → MEMBER, NULL | 문제 검수 관리자 |
 | origin | VARCHAR(30) | NOT NULL | ADMIN, SYSTEM_FOLLOW_UP |
@@ -321,14 +341,14 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 
 관리자가 등록한 일반 문제는 검수 후 PUBLISHED가 된다. `SYSTEM_FOLLOW_UP` 문제는 이미 검수된 원문 문제와 KnowledgeDocument를 바탕으로 특정 Answer에 대해서만 생성되므로 `created_by_member_id`와 `reviewed_by_member_id`가 NULL일 수 있다.
 
-다음 원본 Answer 연결 규칙은 후속 질문 구현 계획이며, 현재 schema·동작에 반영되지 않음.
+원본 Answer 연결 규칙:
 
 ```text
 NORMAL    → source_answer_id IS NULL
 FOLLOW_UP → source_answer_id IS NOT NULL
 ```
 
-- 계획: `source_answer_id` UNIQUE로 답변당 후속 Question 중복 방지. 현재 제약 아님
+- `source_answer_id` UNIQUE로 답변당 후속 Question 최대 한 개 보장
 
 ### QUESTION_CONCEPT
 
@@ -496,11 +516,11 @@ Phase 4 구현 기준.
 
 둘을 하나로 합치면 과거 평가 이력이 사라지거나, 현재 상태 조회 때 매번 전체 이력을 다시 계산해야 한다.
 
-### 후속 질문도 Question이다 — 구현 계획
+### 후속 질문도 Question이다
 
 일반 문제와 후속 질문은 답변을 받고 평가된다는 동작이 같다. 별도 테이블로 분리하지 않고 `QUESTION.type`으로 구분한다.
 
-- 계획: 후속 질문의 `source_answer_id`로 원본 답변 추적. 현재 Question에는 해당 컬럼 없음
+- 후속 질문의 `source_answer_id`로 원본 답변 추적. 본인 답변에서 생성된 질문만 접근 가능
 
 ## 6. 초기 인덱스 후보
 
@@ -509,7 +529,7 @@ Phase 4 구현 기준.
 | AUTH_ACCOUNT    | `UNIQUE(provider, login_id)`         | 로그인 계정 중복 방지와 인증 조회 |
 | ANSWER          | `(member_id, submitted_at DESC)`     | 회원별 최근 풀이 이력 |
 | ANSWER          | `(question_id)`                      | 문제별 답변 조회    |
-| QUESTION        | 계획: `UNIQUE(source_answer_id)`           | 후속 질문 구현 시 답변당 최대 한 개 보장 검토 |
+| QUESTION        | `UNIQUE(source_answer_id)`           | 답변당 최대 한 개 보장 |
 | QUESTION        | `(topic_id, status, difficulty)`     | 추천 문제 후보 조회  |
 | KNOWLEDGE_DOCUMENT | `(topic_id, status, technology_version)` | Topic별 공개 Retrieval 후보와 관리자 문서 필터 조회 |
 | KNOWLEDGE_STATE | `(member_id, status, mastery_score)` | 회원별 취약 개념 조회 |

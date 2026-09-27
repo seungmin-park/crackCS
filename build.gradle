@@ -139,6 +139,7 @@ tasks.register('postgresTest', Test) {
 		includeTestsMatching '*KnowledgeRetrievalServiceTest'
 		includeTestsMatching '*RetrievalBenchmarkTest'
 		includeTestsMatching '*AnswerServiceTest'
+		includeTestsMatching '*LoginAttemptServiceTest'
 	}
 	systemProperty 'spring.datasource.url', 'jdbc:tc:postgresql:17-alpine:///crackcs_test'
 	systemProperty 'spring.profiles.active', 'postgres-test'

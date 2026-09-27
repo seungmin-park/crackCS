@@ -12,6 +12,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./src/main/resources/db/postgres/V001__baseline.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
       - ./src/main/resources/db/local/data-local.sql:/docker-entrypoint-initdb.d/002-local-sample.sql:ro
+      - ./src/main/resources/db/postgres/V002__shared_login_attempt.sql:/docker-entrypoint-initdb.d/003-shared-login.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U crackcs_local -d crackcs_local"]
       interval: 2s

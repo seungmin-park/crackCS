@@ -35,7 +35,7 @@ npm run dev -- --host 127.0.0.1 --strictPort
 Browser :5173 → Vite /api proxy → Spring :8080
                                     ↓ validate
                           PostgreSQL :55432
-                          명시적 V001 schema
+                          명시적 V001 + V002 schema
 ```
 
 ## 실제 로컬 평가
@@ -68,10 +68,30 @@ LOCAL_DATABASE_NAME=crackcs_restore_001 ./gradlew bootRun --args='--spring.profi
 ## schema 변경
 
 - 기준: [ADR-0006](../../adr/0006-local-postgres-schema.md)
-- V001 수정 재적용 금지. 다음 변경은 V002 이상의 새 SQL
+- V001·V002 수정 재적용 금지. 다음 변경은 V003 이상의 새 SQL
 - 배포 순서: backup → 새 DB restore 리허설 → 새 SQL을 transaction으로 적용 → 앱 validate·회귀 확인 → 원본에 동일 적용
 - 실패 시 앱 배포 중지. 파괴적 역방향 DDL 대신 이전 앱과 검증된 복구 DB로 전환
 - 운영 배포 자동화·migration 도구는 미도입
+
+### 기존 V001 DB에 V002 적용
+
+새 volume은 Compose가 V001→local sample→V002 순서로 자동 초기화. 기존 volume은 자동 변경 없음.
+
+1. 앱 종료 후 위 backup·새 DB restore 수행
+2. 복구 DB 이름으로 아래 명령의 `-d crackcs_local`을 바꿔 먼저 리허설
+3. 복구 앱 `ddl-auto=validate`·health·회귀 확인 후 원본에 같은 SQL 적용
+
+```bash
+docker compose -p crackcs-local -f compose.local.yaml exec -T postgres \
+  psql -v ON_ERROR_STOP=1 -U crackcs_local -d crackcs_local \
+  < src/main/resources/db/postgres/V002__shared_login_attempt.sql
+```
+
+- 적용 확인: `schema_version`에 `001`, `002` 각 한 행
+- 재적용 시 테이블 중복 오류로 transaction 중단. 임의 `IF NOT EXISTS`·버전 행 수정 금지
+- V002 이전 백업을 새 앱에 연결하려면 복구 DB에도 V002 적용 필요
+- schema drift는 앱 시작 검증에서 중단. 이전 앱은 추가 테이블을 사용하지 않아 호환
+- 적용·보존 근거: [V002 검증](../2026-09-27-service-completion/verification.md)
 
 ## 종료
 

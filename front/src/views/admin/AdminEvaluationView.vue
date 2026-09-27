@@ -99,7 +99,7 @@ onBeforeUnmount(() => { listGeneration++; detailGeneration++; });
       <section v-if="selectedEvaluation" class="admin-panel">
         <p class="eyebrow">{{ selectedEvaluation.status }}</p><h2>{{ selectedEvaluation.failureCode || "판정 검토" }}</h2>
         <h3>질문</h3><p>{{ selectedEvaluation.questionContent }}</p><h3>답변 원문</h3><p>{{ selectedEvaluation.answerContent }}</p>
-        <p class="admin-meta">{{ selectedEvaluation.modelName || "모델 호출 전" }} · {{ selectedEvaluation.evaluatorVersion || "버전 없음" }}</p>
+        <p class="admin-meta">{{ selectedEvaluation.modelName || "모델 정보 없음" }} · {{ selectedEvaluation.evaluatorVersion || "버전 없음" }}</p>
         <section v-if="selectedEvaluation.evidence.length"><h3>검색 근거</h3><article v-for="evidence in selectedEvaluation.evidence" :key="evidence.chunkId"><strong>{{ evidence.documentTitle }} · v{{ evidence.documentVersion }} · {{ evidence.startOffset }}–{{ evidence.endOffset }}</strong><p>{{ evidence.content }}</p></article></section>
       </section>
       <p v-else-if="!detailLoading && !detailError && evaluations.length">목록에서 검토할 평가를 선택하세요.</p>

@@ -36,14 +36,15 @@ docs/
 | 제품 범위·기능·인수 조건 | 현재 기준 | [제품 명세](product/spec.md) | 요구사항·출시 범위 변경 |
 | 콘텐츠 검수·평가 정책 | 현재 기준 | [콘텐츠 정책](product/content-and-ai-policy.md) | 검수·평가·공개 정책 변경 |
 | 도메인 관계·불변식·테이블 | 현재 기준 | [도메인·ERD](architecture/domain-model-and-erd.md) | 엔티티·관계·schema 변경 |
-| 초기 학습 콘텐츠·출처·등록 | 미검수 초안 | [initial-v1](content/initial-v1/README.md), [원본](content/initial-v1/bundle.json) | 콘텐츠·출처·검수 상태 변경 |
+| 초기 학습 콘텐츠·출처·등록 | 미검수 초안 | [initial-v1](content/initial-v1/README.md), [원본](content/initial-v1/bundle.json), [검수용 읽기 사본](content/initial-v1/review.md) | 콘텐츠·출처·검수 상태 변경 |
 | 평가 정답의 구성·실행법 | v1 확정 | [평가 정답 기준](evaluation/reference-v1/README.md) | 원본·manifest·도구 계약 변경 |
 | 평가 기준 버전·사람 검수·해시 | v1.0.0 확정 | [manifest](evaluation/reference-v1/manifest.json) | 원본 재검수 또는 새 버전 확정 |
 | retrieval 기준과 현재 결과 | 측정 완료, 출시 성능 인증 아님 | [개선 전](evaluation/reference-v1/benchmarks/retrieval-baseline.json), [현재](evaluation/reference-v1/benchmarks/retrieval-improved.json) | 검색 정책·자료·DB 환경 변경 |
 | 구현 순서와 의존성 | 계획 | [개발 계획](planning/plan.md) | 순서·의존성 변경 |
 | 현재 남은 작업 | 진행 기준 | [작업 목록](planning/tasks.md) | 작업 시작·완료·검증 결과 변경 |
+| AI 연결을 제외한 서버·제출 마무리 | 구현·로컬 검증 완료, 최종 검토 중 | [계획](changes/2026-09-27-service-completion/plan.md), [검증](changes/2026-09-27-service-completion/verification.md) | 보안·다중 앱·제출 근거 변경 |
 | 화면 오류 복구·초기 콘텐츠 준비 | 구현·초안 등록 완료, 사람 검수 대기 | [계획](changes/2026-09-27-ui-content/plan.md), [검증](changes/2026-09-27-ui-content/verification.md) | 화면 상태·콘텐츠 준비 범위 변경 |
-| 추가 비용 없는 실행·검증 마무리 | 진행 중 | [마무리 계획](changes/2026-09-27-release-readiness/plan.md) | 미완료 항목의 구현·검증·외부 조건 변경 |
+| 추가 비용 없는 실행·검증 마무리 | 이전 실행 이력, 후속 계획으로 이관 | [마무리 계획](changes/2026-09-27-release-readiness/plan.md) | 미완료 항목의 구현·검증·외부 조건 변경 |
 | 도메인 네이밍·메서드 책임 개선 | 변경 범위 검증 완료 | [fix.md](../fix.md) | 관련 코드·상시 점검 기준 변경 |
 | Phase 8 운영 안정화 범위·실행 순서 | 부분 완료 | [설계](changes/2026-09-21-phase-8/design.md), [구현 계획](changes/2026-09-21-phase-8/implementation-plan.md), [검증](changes/2026-09-21-phase-8/verification.md) | Phase 8 범위·Gate·책임·순서·증거 변경 |
 | 운영 경계·평가 처리 책임 개선 | 구현 완료 | [설계](changes/2026-09-22-operability/design.md), [구현 계획](changes/2026-09-22-operability/implementation-plan.md), [검증](changes/2026-09-22-operability/verification.md) | Actuator·상관 ID·평가 관측·처리 책임 변경 |

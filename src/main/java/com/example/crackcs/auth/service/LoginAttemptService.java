@@ -7,4 +7,6 @@ public interface LoginAttemptService {
     void recordFailure(String loginId, String remoteAddress);
 
     void recordSuccess(String loginId, String remoteAddress);
+
+    void purgeExpiredAttempts();
 }

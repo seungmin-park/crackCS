@@ -1,6 +1,6 @@
 # Phase 8 인수 조건 자동 증거
 
-상태: 로컬 자동 회귀 연결. AC-007 교체·과거 근거 단일 회귀 추가, [최신 실행](../2026-09-27-release-readiness/verification.md) 참조
+상태: 로컬 자동 회귀 연결. AC-007 교체·과거 근거 단일 회귀 추가, [최신 실행](../2026-09-27-service-completion/verification.md) 참조
 
 ## 연결 원칙
 
@@ -20,6 +20,24 @@
 | AC-005 후속 질문 | `FollowUpQuestionServiceTest.completesLearningLoopOnce` | Service 통합 | 일반 평가, 후속 질문 최대 1개, 후속 평가, 다음 기본 문제 |
 | AC-006 관리자 권한 | `AuthenticationFlowTest.rejectsUserSessionFromAdminApi` | 인증 통합 | USER session의 관리자 API 거부와 관리자 데이터 비노출 |
 | AC-007 콘텐츠 버전 | `KnowledgeAnswerSerializationTest.preservesHistoricalEvidenceAfterDocumentReplacement`, `AdminContentFlowTest.preservesDocumentVersionThroughApi` | API·Service 통합 | v2 공개 → v1 폐기 → 새 검색은 v2만 반환 → 과거 평가의 v1 Chunk·내용·버전·직렬화 유지. H2·PostgreSQL 검증 |
+
+## P0 요구사항 연결
+
+| 요구사항 | 대표 실행 증거 | 경계 |
+|---|---|---|
+| FR-AUTH-001~003 | AuthServiceTest, AuthenticationFlowTest, SecurityConfigurationTest | 가입·세션·권한, 로그인 DB 제한 |
+| FR-ADMIN-001~004 | AdminTaxonomyServiceTest, AdminContentFlowTest, KnowledgeChunkServiceTest, VersionConcurrencyTest | 분류·문서·문제·검수·공개·Chunk·동시 버전 |
+| FR-ADMIN-005 | AdminEvaluationControllerTest, 실제 cmux 평가 검토 | 원문 조회는 관리자 권한에 한정 |
+| FR-QUESTION-001~002 | RecommendationServiceTest, PublicQuestionServiceTest, PublicQuestionControllerTest | 추천·공개 필터·내부 답안 비노출 |
+| FR-ANSWER-001~003 | AnswerFlowTest, AnswerServiceTest, 실제 두 JVM HTTP | 접수·멱등 키·이력·회원 소유권 |
+| FR-EVAL-001~005 | AnswerServiceTest, KnowledgeRetrievalServiceTest, EvaluationTest, KnowledgeCompletionFailureTest | 모의 Port·HTTP adapter 계약까지. 실제 AI 판정 품질 제외 |
+| FR-KNOWLEDGE-001~003 | KnowledgeCompletionTest, KnowledgeFlowTest, KnowledgeQueryServiceTest | DB 원자적 반영·UNKNOWN 구분·지도 |
+| FR-FOLLOWUP-001~002 | FollowUpQuestionServiceTest, FollowUpQuestionControllerTest | 모의 생성·본인 소유·최대 1개·후속 답변 |
+| FR-PROGRESS-001 | LearningProgressServiceTest, KnowledgeFlowTest | 현재 학습·빈 상태·다음 학습 |
+
+- HTTP 경계: Controller 테스트의 null·빈 문자열·길이·enum·존재하지 않는 ID·400/401/403/404/409/429/500
+- 상태·DB 경계: 도메인 불변식 + Repository UNIQUE + H2/PostgreSQL 동시 생성·완료·rollback
+- 범위: [최신 전체 회귀 및 한계](../2026-09-27-service-completion/verification.md). AI를 뺀 동작 검증과 출시 품질 Gate 구분
 
 ## 보안 보완 증거
 
@@ -48,5 +66,5 @@ npm run test -- src/components/EvaluationPanel.test.ts
 
 - 실제 OpenAI 모델 판정 품질과 prompt injection 저항성
 - 실제 브라우저 CSP와 배포 reverse proxy header
-- 실제 모델 provider의 성공 복구 E2E — [503 재시도 뒤 INVALID_RESULT 안전 실패](../2026-09-27-release-readiness/verification.md) 관찰. 정상 평가 복구는 미완료
+- 모의 provider 실패→재시도→성공 화면은 최신 검증 완료. 실제 모델 provider의 성공 복구 E2E는 제외 — [503 재시도 뒤 INVALID_RESULT 안전 실패](../2026-09-27-release-readiness/verification.md) 관찰. 정상 평가 복구는 미완료
 - 운영 데이터·운영 PostgreSQL에서의 전체 인수 흐름

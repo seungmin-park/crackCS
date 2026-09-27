@@ -1,59 +1,95 @@
 package com.example.crackcs.auth.service;
 
 import com.example.crackcs.auth.domain.AuthAccount;
-import com.example.crackcs.exception.TooManyLoginAttemptsException;
-import lombok.RequiredArgsConstructor;
+import com.example.crackcs.auth.domain.LoginAttempt;
+import com.example.crackcs.auth.repository.LoginAttemptRepository;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Locale;
+import java.util.Optional;
 
 @Service
-@RequiredArgsConstructor
+@Transactional(propagation = Propagation.NOT_SUPPORTED)
 public class DefaultLoginAttemptService implements LoginAttemptService {
-
-    private static final int MAX_FAILURES = 5;
-    private static final Duration FAILURE_WINDOW = Duration.ofMinutes(10);
-    private static final Duration BLOCK_DURATION = Duration.ofMinutes(15);
-
+    private static final int MAX_CREATE_ATTEMPTS = 3;
     private final Clock clock;
-    private final ConcurrentHashMap<String, AttemptState> attempts = new ConcurrentHashMap<>();
+    private final LoginAttemptRepository loginAttemptRepository;
+    private final TransactionTemplate attemptTransaction;
+
+    public DefaultLoginAttemptService(Clock clock, LoginAttemptRepository loginAttemptRepository,
+                                      PlatformTransactionManager transactionManager) {
+        this.clock = clock;
+        this.loginAttemptRepository = loginAttemptRepository;
+        this.attemptTransaction = new TransactionTemplate(transactionManager);
+        this.attemptTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    }
 
     @Override
     public void checkAllowed(String loginId, String remoteAddress) {
-        String key = key(loginId, remoteAddress);
-        Instant now = clock.instant();
-        AttemptState state = attempts.computeIfPresent(key, (ignored, current) -> current.activeAt(now));
-        if (isLoginBlocked(state, now)) {
-            throw new TooManyLoginAttemptsException(Duration.between(now, state.blockedUntil()).toSeconds());
-        }
+        String attemptKey = key(loginId, remoteAddress);
+        attemptTransaction.executeWithoutResult(status -> loginAttemptRepository.findByAttemptKey(attemptKey)
+                .ifPresent(attempt -> attempt.ensureAllowed(clock.instant())));
     }
 
     @Override
     public void recordFailure(String loginId, String remoteAddress) {
-        String key = key(loginId, remoteAddress);
-        Instant now = clock.instant();
-        attempts.compute(key, (ignored, current) -> {
-            AttemptState state = current == null ? AttemptState.empty() : current.activeAt(now);
-            return (state == null ? AttemptState.empty() : state).addFailure(now);
-        });
+        String attemptKey = key(loginId, remoteAddress);
+        for (int attemptNumber = 1; ; attemptNumber++) {
+            try {
+                attemptTransaction.executeWithoutResult(status -> {
+                    LoginAttempt attempt = loginAttemptRepository.findByAttemptKeyForUpdate(attemptKey)
+                            .orElseGet(() -> createAttempt(attemptKey, clock.instant()));
+                    attempt.recordFailure(clock.instant());
+                });
+                return;
+            } catch (DataIntegrityViolationException conflict) {
+                if (attemptNumber == MAX_CREATE_ATTEMPTS || !isAttemptKeyConflict(conflict)) throw conflict;
+                // A concurrent first failure inserted the same key. Retry after this transaction rolled back.
+            }
+        }
+    }
+
+    private LoginAttempt createAttempt(String attemptKey, Instant now) {
+        // Flush detects the unique-key race inside this independent transaction, before recording a failure.
+        return loginAttemptRepository.saveAndFlush(LoginAttempt.builder().attemptKey(attemptKey).now(now).build());
     }
 
     @Override
     public void recordSuccess(String loginId, String remoteAddress) {
-        attempts.remove(key(loginId, remoteAddress));
+        String attemptKey = key(loginId, remoteAddress);
+        attemptTransaction.executeWithoutResult(status -> loginAttemptRepository.findByAttemptKeyForUpdate(attemptKey)
+                .ifPresent(loginAttemptRepository::delete));
     }
 
-    private boolean isLoginBlocked(AttemptState state, Instant now) {
-        return state != null && state.isBlockedAt(now);
+    @Override
+    @Scheduled(fixedDelayString = "${crackcs.auth.login-attempt-cleanup-interval:1m}")
+    public void purgeExpiredAttempts() {
+        Instant now = clock.instant();
+        List<String> expiredKeys = loginAttemptRepository.findExpiredKeys(now.minus(LoginAttempt.FAILURE_WINDOW), now, PageRequest.of(0, 200));
+        for (String attemptKey : expiredKeys) {
+            attemptTransaction.executeWithoutResult(status -> {
+                Optional<LoginAttempt> attempt = loginAttemptRepository.findByAttemptKeyForUpdate(attemptKey);
+                if (attempt.isPresent() && attempt.get().isExpiredAt(clock.instant())) {
+                    loginAttemptRepository.delete(attempt.get());
+                }
+            });
+        }
     }
 
     private String key(String loginId, String remoteAddress) {
@@ -67,38 +103,14 @@ public class DefaultLoginAttemptService implements LoginAttemptService {
         }
     }
 
-    private record AttemptState(List<Instant> failures, Instant blockedUntil) {
-
-        private static AttemptState empty() {
-            return new AttemptState(List.of(), null);
-        }
-
-        private AttemptState activeAt(Instant now) {
-            if (hasBlockExpiredAt(now)) {
-                return null;
+    private boolean isAttemptKeyConflict(DataIntegrityViolationException exception) {
+        for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+            if (cause instanceof ConstraintViolationException constraint) {
+                String name = constraint.getConstraintName();
+                return "23505".equals(constraint.getSQLException().getSQLState()) && name != null
+                        && name.toLowerCase(Locale.ROOT).contains("uk_login_attempt_key");
             }
-            Instant threshold = now.minus(FAILURE_WINDOW);
-            List<Instant> activeFailures = failures.stream()
-                    .filter(failure -> !failure.isBefore(threshold))
-                    .toList();
-            return new AttemptState(activeFailures, blockedUntil);
         }
-
-        private AttemptState addFailure(Instant now) {
-            List<Instant> nextFailures = new ArrayList<>(failures);
-            nextFailures.add(now);
-            Instant nextBlockedUntil = nextFailures.size() >= MAX_FAILURES
-                    ? now.plus(BLOCK_DURATION)
-                    : blockedUntil;
-            return new AttemptState(List.copyOf(nextFailures), nextBlockedUntil);
-        }
-
-        private boolean hasBlockExpiredAt(Instant now) {
-            return blockedUntil != null && !now.isBefore(blockedUntil);
-        }
-
-        private boolean isBlockedAt(Instant now) {
-            return blockedUntil != null && now.isBefore(blockedUntil);
-        }
+        return false;
     }
 }

@@ -9,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +18,6 @@ import java.util.Objects;
 @Component
 @Profile("!test")
 @ConditionalOnProperty(name = "crackcs.followup.worker-enabled", havingValue = "true", matchIfMissing = true)
-@EnableScheduling
 @Slf4j
 public class FollowUpWorker {
     private final FollowUpGenerationRepository followUpGenerationRepository;

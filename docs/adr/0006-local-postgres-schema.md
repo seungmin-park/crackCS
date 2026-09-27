@@ -15,6 +15,7 @@
 - `db/postgres/V001__baseline.sql`: PostgreSQL 17에서 추출·검증한 최초 schema
 - Docker 새 volume에 한 번 적용. `schema_version`으로 적용 버전 기록
 - `local,local-postgres`: 앱 시작 시 `ddl-auto=validate`, seed 자동 재실행 금지
+- V002: 로그인 실패 aggregate·순서가 있는 실패 시각 목록·만료 조회 인덱스 추가. 기존 테이블 변경 없음
 - 변경: 기존 baseline 수정 대신 새 버전 SQL + 적용 transaction + 버전 기록
 - 적용 전 backup·새 DB restore·회귀 리허설
 - rollback: 이전 앱 + 검증한 복구 DB. 데이터를 잃는 역방향 DDL 자동 실행 금지
@@ -22,7 +23,7 @@
 
 ## 범위와 한계
 
-- 개인 PC 단일 앱·단일 PostgreSQL. 운영 배포·다중 인스턴스 검증 아님
+- 개인 PC PostgreSQL에 두 JVM을 연결한 제한 공유·학습 상태 동시 갱신 검증. 운영 규모·공유 session 검증 아님
 - 데모 비밀번호는 공개 값. 외부 접근 용도 사용 금지
 - local H2의 `update`와 테스트 DB의 `create-drop` 정책 유지
 - 운영 도입 전: migration runner, 권한 분리, 외부 backup, RPO/RTO 재결정
