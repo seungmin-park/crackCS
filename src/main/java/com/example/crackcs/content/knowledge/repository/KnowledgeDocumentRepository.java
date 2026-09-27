@@ -4,13 +4,22 @@ import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocumentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface KnowledgeDocumentRepository extends JpaRepository<KnowledgeDocument, Long> {
+    @Query("SELECT document.versionSeriesId FROM KnowledgeDocument document WHERE document.id = :id")
+    Optional<String> findVersionSeriesIdById(@Param("id") Long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<KnowledgeDocument> findFirstByVersionSeriesIdOrderByDocumentVersionAsc(String versionSeriesId);
+
 
     boolean existsByChecksum(String checksum);
 

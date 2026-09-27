@@ -87,7 +87,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
             Long creatorMemberId,
             KnowledgeDocumentDraft draft
     ) {
-        KnowledgeDocument source = findDocument(documentId);
+        KnowledgeDocument source = findDocumentWithVersionSeriesLock(documentId);
         Topic topic = findActiveTopic(draft.topicId());
         Member creator = findAdmin(creatorMemberId);
         KnowledgeDocumentContent documentContent = KnowledgeDocumentContent.from(draft.content());
@@ -117,7 +117,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
     @Override
     @Transactional
     public KnowledgeDocument publishAsCurrentVersion(Long documentId) {
-        KnowledgeDocument document = findDocument(documentId);
+        KnowledgeDocument document = findDocumentWithVersionSeriesLock(documentId);
         document.publish();
         knowledgeDocumentRepository.findAllByVersionSeriesIdAndStatus(
                         document.getVersionSeriesId(), KnowledgeDocumentStatus.PUBLISHED
@@ -130,7 +130,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
     @Override
     @Transactional
     public KnowledgeDocument retire(Long documentId) {
-        KnowledgeDocument document = findDocument(documentId);
+        KnowledgeDocument document = findDocumentWithVersionSeriesLock(documentId);
         document.retire();
         return document;
     }
@@ -160,6 +160,15 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
             throw new InvalidContentStateException("활성 ADMIN 회원만 콘텐츠를 등록하거나 검수할 수 있습니다.");
         }
         return member;
+    }
+
+    private KnowledgeDocument findDocumentWithVersionSeriesLock(Long documentId) {
+        String versionSeriesId = knowledgeDocumentRepository.findVersionSeriesIdById(documentId)
+                .orElseThrow(() -> new KnowledgeDocumentNotFoundException(documentId));
+        // Retired first versions remain the shared lock target for every version in this series.
+        knowledgeDocumentRepository.findFirstByVersionSeriesIdOrderByDocumentVersionAsc(versionSeriesId)
+                .orElseThrow(() -> new KnowledgeDocumentNotFoundException(documentId));
+        return findDocument(documentId);
     }
 
     private KnowledgeDocument findDocument(Long documentId) {

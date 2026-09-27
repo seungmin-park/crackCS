@@ -2,6 +2,8 @@
 
 ## 현재 상태
 
+현재 실행: [추가 비용 없는 마무리 계획](../changes/2026-09-27-release-readiness/plan.md). 기존 Docker·Ollama·로컬 환경 사용. 아래 미체크 항목은 완료 증거 확인 후에만 갱신. 실제 사용자 파일럿·사람 검수와 자동 검증 구분.
+
 | Phase | 상태 | 남은 핵심 |
 |---|---|---|
 | 0 개발 기반 | 부분 완료 | 공통 오류 계약, 실행 환경 문서, CI, health |
@@ -101,7 +103,7 @@ Phase 8 운영 검증과 제한 파일럿
 
 ### 구현 품질 보강
 
-- [ ] Question·KnowledgeDocument 버전 생성과 공개 전환의 동시 요청 원자성
+- [x] Question·KnowledgeDocument 버전 생성과 공개 전환의 동시 요청 원자성 — [H2·PostgreSQL 검증](../changes/2026-09-27-release-readiness/verification.md)
 - [ ] 로그인 시도 제한의 다중 인스턴스 저장소와 시간 경계
 - [ ] 운영 PostgreSQL에서 Knowledge State UNIQUE·낙관적 잠금 경쟁 검증
 

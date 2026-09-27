@@ -40,6 +40,7 @@ docs/
 | retrieval 기준과 현재 결과 | 측정 완료, 출시 성능 인증 아님 | [개선 전](evaluation/reference-v1/benchmarks/retrieval-baseline.json), [현재](evaluation/reference-v1/benchmarks/retrieval-improved.json) | 검색 정책·자료·DB 환경 변경 |
 | 구현 순서와 의존성 | 계획 | [개발 계획](planning/plan.md) | 순서·의존성 변경 |
 | 현재 남은 작업 | 진행 기준 | [작업 목록](planning/tasks.md) | 작업 시작·완료·검증 결과 변경 |
+| 추가 비용 없는 실행·검증 마무리 | 진행 중 | [마무리 계획](changes/2026-09-27-release-readiness/plan.md) | 미완료 항목의 구현·검증·외부 조건 변경 |
 | 도메인 네이밍·메서드 책임 개선 | 변경 범위 검증 완료 | [fix.md](../fix.md) | 관련 코드·상시 점검 기준 변경 |
 | Phase 8 운영 안정화 범위·실행 순서 | 부분 완료 | [설계](changes/2026-09-21-phase-8/design.md), [구현 계획](changes/2026-09-21-phase-8/implementation-plan.md), [검증](changes/2026-09-21-phase-8/verification.md) | Phase 8 범위·Gate·책임·순서·증거 변경 |
 | 운영 경계·평가 처리 책임 개선 | 구현 완료 | [설계](changes/2026-09-22-operability/design.md), [구현 계획](changes/2026-09-22-operability/implementation-plan.md), [검증](changes/2026-09-22-operability/verification.md) | Actuator·상관 ID·평가 관측·처리 책임 변경 |
@@ -61,6 +62,7 @@ docs/
 
 | 답할 질문 | 상태 | 기준 문서 | 갱신 계기 |
 |---|---|---|---|
+| 실행·정합성 최신 검증 | 진행 중, 버전 동시성 검증 완료 | [실행 검증](changes/2026-09-27-release-readiness/verification.md) | 실행 환경·버전·회귀 범위 변경 |
 | UI 개편의 목표 | 당시 결정 | [UI 제안](changes/2026-09-06-ui/proposal.md) | 제안 해석 오류 정정 |
 | UI·테마 구현 결과 | 완료 증거 | [UI 검증](changes/2026-09-06-ui/verification.md) | 같은 변경 범위 재검증 |
 | Phase 4 답변·평가 골격 | 완료 증거 | [Phase 4 검증](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 변경 |

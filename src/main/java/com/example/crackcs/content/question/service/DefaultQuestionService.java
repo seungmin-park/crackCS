@@ -99,7 +99,7 @@ public class DefaultQuestionService implements QuestionService {
     @Override
     @Transactional
     public Question publishAsCurrentVersion(Long questionId) {
-        Question question = findQuestion(questionId);
+        Question question = findQuestionWithVersionSeriesLock(questionId);
         question.publish();
         questionRepository.findAllByVersionSeriesIdAndStatus(
                         question.getVersionSeriesId(), QuestionStatus.PUBLISHED
@@ -112,7 +112,7 @@ public class DefaultQuestionService implements QuestionService {
     @Override
     @Transactional
     public Question retire(Long questionId) {
-        Question question = findQuestion(questionId);
+        Question question = findQuestionWithVersionSeriesLock(questionId);
         question.retire();
         return question;
     }
@@ -126,7 +126,7 @@ public class DefaultQuestionService implements QuestionService {
             String content,
             String referenceAnswer
     ) {
-        Question source = findQuestion(questionId);
+        Question source = findQuestionWithVersionSeriesLock(questionId);
         int nextVersion = questionRepository.findMaxVersion(source.getVersionSeriesId()) + 1;
         return questionRepository.save(source.createNextVersion(
                 nextVersion,
@@ -141,6 +141,15 @@ public class DefaultQuestionService implements QuestionService {
         Concept concept = conceptRepository.findById(criterion.conceptId())
                 .orElseThrow(() -> new ConceptNotFoundException(criterion.conceptId()));
         return new QuestionConceptAssignment(concept, criterion.weight(), criterion.required());
+    }
+
+    private Question findQuestionWithVersionSeriesLock(Long questionId) {
+        String versionSeriesId = questionRepository.findVersionSeriesIdById(questionId)
+                .orElseThrow(() -> new QuestionNotFoundException(questionId));
+        // Retired first versions remain the shared lock target for every version in this series.
+        questionRepository.findFirstByVersionSeriesIdOrderByQuestionVersionAsc(versionSeriesId)
+                .orElseThrow(() -> new QuestionNotFoundException(questionId));
+        return findQuestion(questionId);
     }
 
     private Question findQuestion(Long questionId) {

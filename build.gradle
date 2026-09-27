@@ -130,6 +130,7 @@ tasks.register('postgresTest', Test) {
 	useJUnitPlatform()
 	filter {
 		includeTestsMatching '*PostgresPersistenceTest'
+		includeTestsMatching '*VersionConcurrencyTest'
 		includeTestsMatching '*KnowledgeChunkServiceTest'
 		includeTestsMatching '*KnowledgeRetrievalServiceTest'
 		includeTestsMatching '*RetrievalBenchmarkTest'

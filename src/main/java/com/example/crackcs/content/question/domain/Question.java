@@ -21,7 +21,10 @@ import java.util.*;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(
         name = "question",
-        uniqueConstraints = @UniqueConstraint(name = "uk_question_source_answer", columnNames = "source_answer_id"),
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_question_source_answer", columnNames = "source_answer_id"),
+                @UniqueConstraint(name = "uk_question_series_version", columnNames = {"version_series_id", "question_version"})
+        },
         indexes = @Index(
                 name = "idx_question_topic_status_difficulty",
                 columnList = "topic_id, status, difficulty"
