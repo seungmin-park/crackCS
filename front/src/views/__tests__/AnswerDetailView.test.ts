@@ -1,4 +1,4 @@
-import { flushPromises, mount } from "@vue/test-utils";
+import { enableAutoUnmount, flushPromises, mount } from "@vue/test-utils";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import AnswerDetailView from "@/views/AnswerDetailView.vue";
@@ -18,6 +18,8 @@ vi.mock("vue-router", async () => {
 });
 
 const evaluating = { status: "EVALUATING", verdict: null, score: null, feedback: null, failureReason: null, concepts: [] };
+
+enableAutoUnmount(afterEach);
 
 describe("답변 상세 화면", () => {
   beforeEach(() => {
@@ -48,6 +50,59 @@ describe("답변 상세 화면", () => {
 
     expect(wrapper.text()).toContain("내 답변");
     expect(wrapper.text()).toContain("다시 불러오기");
+    wrapper.unmount();
+  });
+
+  it("연결 오류 뒤 다시 불러오기도 실패해도 같은 답변의 원문을 보존한다", async () => {
+    fetchAnswer.mockResolvedValueOnce({ answerId: 31, questionId: 7, questionContent: "질문", content: "보존할 원문", submittedAt: "2026-09-07T10:00:00Z", evaluation: { ...evaluating } });
+    fetchAnswerEvaluation.mockRejectedValue(new TypeError("network"));
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(8000);
+    await flushPromises();
+    fetchAnswer.mockRejectedValueOnce(new TypeError("network still unavailable"));
+
+    await wrapper.findAll("button").find(button => button.text() === "다시 불러오기")!.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("보존할 원문");
+    expect(fetchAnswer).toHaveBeenLastCalledWith("31");
+    fetchAnswer.mockResolvedValueOnce({ answerId: 31, questionId: 7, questionContent: "질문", content: "보존할 원문", submittedAt: "2026-09-07T10:00:00Z", evaluation: { ...evaluating, status: "EVALUATED", verdict: "CORRECT", score: 100 } });
+    await wrapper.findAll("button").find(button => button.text() === "다시 불러오기")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("정답");
+    expect(wrapper.text()).not.toContain("답변을 불러오지 못했어요");
+    wrapper.unmount();
+  });
+
+  it.each([401, 403, 404])("다시 불러오기가 %i이면 보관하던 답변도 숨긴다", async (status) => {
+    fetchAnswer.mockResolvedValueOnce({ answerId: 31, questionId: 7, questionContent: "질문", content: "보호할 원문", submittedAt: "2026-09-07T10:00:00Z", evaluation: { ...evaluating } });
+    fetchAnswerEvaluation.mockRejectedValue(new TypeError("network"));
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(8000);
+    await flushPromises();
+    fetchAnswer.mockRejectedValueOnce(new ApiClientError(status, "접근할 수 없습니다."));
+
+    await wrapper.findAll("button").find(button => button.text() === "다시 불러오기")!.trigger("click");
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("보호할 원문");
+    expect(wrapper.text()).toContain("답변을 불러오지 못했어요");
+    wrapper.unmount();
+  });
+
+  it("다른 답변으로 이동하면 이전 답변을 숨기고 새 답변 로딩을 표시한다", async () => {
+    fetchAnswer.mockResolvedValueOnce({ answerId: 31, questionId: 7, questionContent: "질문", content: "이전 원문", submittedAt: "2026-09-07T10:00:00Z", evaluation: { ...evaluating } });
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });
+    await flushPromises();
+    fetchAnswer.mockReturnValueOnce(new Promise(() => {}));
+
+    routeState.route.params.answerId = "32";
+    await flushPromises();
+
+    expect(wrapper.text()).not.toContain("이전 원문");
+    expect(wrapper.get('[role="status"]').text()).toContain("답변을 불러오는 중");
     wrapper.unmount();
   });
 

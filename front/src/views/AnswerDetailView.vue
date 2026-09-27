@@ -10,6 +10,7 @@ import QuestionState from "@/components/QuestionState.vue";
 const route = useRoute();
 const answer = ref<AnswerResponse>();
 const error = ref(false);
+const loading = ref(true);
 const evaluationComplete = computed(() => answer.value !== undefined
   && ["EVALUATED", "NEEDS_REVIEW", "FAILED"].includes(answer.value.evaluation.status));
 let timer: ReturnType<typeof setTimeout> | undefined;
@@ -50,7 +51,8 @@ function schedulePoll(answerId: string, activeGeneration: number) {
 async function loadAnswer(answerId = String(route.params.answerId)) {
   cancelTimer();
   const activeGeneration = ++generation;
-  answer.value = undefined;
+  if (String(answer.value?.answerId) !== answerId) answer.value = undefined;
+  loading.value = true;
   error.value = false;
   consecutivePollFailures = 0;
   try {
@@ -58,8 +60,12 @@ async function loadAnswer(answerId = String(route.params.answerId)) {
     if (disposed || activeGeneration !== generation) return;
     answer.value = loaded;
     if (loaded.evaluation.status === "EVALUATING" || loaded.evaluation.status === "PROCESSING") schedulePoll(answerId, activeGeneration);
-  } catch {
-    if (!disposed && activeGeneration === generation) error.value = true;
+  } catch (failure) {
+    if (disposed || activeGeneration !== generation) return;
+    if (failure instanceof ApiClientError && failure.status < 500) answer.value = undefined;
+    error.value = true;
+  } finally {
+    if (!disposed && activeGeneration === generation) loading.value = false;
   }
 }
 
@@ -71,7 +77,7 @@ onBeforeUnmount(() => { disposed = true; generation++; cancelTimer(); });
   <main class="page-shell answer-detail-shell">
     <RouterLink class="back-link" to="/answers">← 답변 이력</RouterLink>
     <QuestionState v-if="error" kind="error" title="답변을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswer()" />
-    <p v-if="!answer && !error" role="status" aria-busy="true">답변을 불러오는 중…</p>
+    <p v-if="loading" role="status" aria-busy="true">답변을 불러오는 중…</p>
     <template v-if="answer">
       <article class="answer-detail-grid">
         <section class="answer-copy"><p class="eyebrow">질문</p><h1>{{ answer.questionContent }}</h1><p class="submitted-at">{{ new Date(answer.submittedAt).toLocaleString('ko-KR') }}</p><h2>내 답변</h2><p class="answer-content">{{ answer.content }}</p></section>

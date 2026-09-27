@@ -70,7 +70,7 @@ public class DefaultQuestionService implements QuestionService {
             String content,
             String referenceAnswer
     ) {
-        Question question = findQuestion(questionId);
+        Question question = findQuestionWithVersionSeriesLock(questionId);
         Topic topic = findActiveTopic(topicId);
         question.update(topic, difficulty, content, referenceAnswer);
 
@@ -80,7 +80,7 @@ public class DefaultQuestionService implements QuestionService {
     @Override
     @Transactional
     public Question replaceConcepts(Long questionId, List<QuestionConceptCriterion> criteria) {
-        Question question = findQuestion(questionId);
+        Question question = findQuestionWithVersionSeriesLock(questionId);
         List<QuestionConceptAssignment> assignments = criteria.stream()
                 .map(this::resolveConceptAssignment)
                 .toList();
@@ -91,7 +91,7 @@ public class DefaultQuestionService implements QuestionService {
     @Override
     @Transactional
     public Question review(Long questionId, Long reviewerMemberId) {
-        Question question = findQuestion(questionId);
+        Question question = findQuestionWithVersionSeriesLock(questionId);
         question.review(findAdmin(reviewerMemberId));
         return question;
     }

@@ -64,7 +64,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
     @Override
     @Transactional
     public KnowledgeDocument update(Long documentId, KnowledgeDocumentDraft draft) {
-        KnowledgeDocument document = findDocument(documentId);
+        KnowledgeDocument document = findDocumentWithVersionSeriesLock(documentId);
         Topic topic = findActiveTopic(draft.topicId());
         KnowledgeDocumentContent documentContent = KnowledgeDocumentContent.from(draft.content());
         ensureUniqueChecksum(documentContent.checksum(), documentId);
@@ -109,7 +109,7 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
     @Override
     @Transactional
     public KnowledgeDocument review(Long documentId, Long reviewerMemberId) {
-        KnowledgeDocument document = findDocument(documentId);
+        KnowledgeDocument document = findDocumentWithVersionSeriesLock(documentId);
         document.review(findAdmin(reviewerMemberId));
         return document;
     }

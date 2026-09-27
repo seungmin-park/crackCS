@@ -15,12 +15,20 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SpringBootTest
 class KnowledgeDocumentVersionConcurrencyTest {
@@ -29,11 +37,60 @@ class KnowledgeDocumentVersionConcurrencyTest {
     @Autowired private TopicRepository topicRepository;
     @Autowired private MemberRepository memberRepository;
 
+    @Autowired private TransactionTemplate transactionTemplate;
+
     @AfterEach
     void tearDown() {
         knowledgeDocumentRepository.deleteAllInBatch();
         topicRepository.deleteAllInBatch();
         memberRepository.deleteAllInBatch();
+    }
+
+    @Test
+    @DisplayName("검수 트랜잭션이 끝나기 전에 공개가 앞질러 커밋되지 않아 오래된 초안이 공개 상태를 덮어쓰지 않는다")
+    void publicationWaitsForInFlightReview() throws Exception {
+        Member admin = memberRepository.save(Member.builder().nickname("문서 관리자").role(MemberRole.ADMIN).build());
+        Topic topic = topicRepository.save(Topic.builder().code("VERSION_TEST").name("운영체제").build());
+        KnowledgeDocument draft = knowledgeDocumentService.create(admin.getId(), new KnowledgeDocumentDraft(
+                topic.getId(), "원본 문서", KnowledgeSourceType.INTERNAL_SUMMARY, null, "Java 21", "직접 작성", "원본 근거"));
+        knowledgeDocumentService.review(draft.getId(), admin.getId());
+
+        CountDownLatch reviewed = new CountDownLatch(1);
+        CountDownLatch releaseReview = new CountDownLatch(1);
+        CountDownLatch publishing = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            Future<?> review = executor.submit(() -> transactionTemplate.executeWithoutResult(status -> {
+                knowledgeDocumentService.review(draft.getId(), admin.getId());
+                reviewed.countDown();
+                try {
+                    if (!releaseReview.await(10, TimeUnit.SECONDS)) {
+                        throw new IllegalStateException("Review release timed out");
+                    }
+                } catch (InterruptedException failure) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(failure);
+                }
+            }));
+            assertThat(reviewed.await(10, TimeUnit.SECONDS)).isTrue();
+            Future<KnowledgeDocument> publication = executor.submit(() -> {
+                publishing.countDown();
+                return knowledgeDocumentService.publishAsCurrentVersion(draft.getId());
+            });
+            assertThat(publishing.await(10, TimeUnit.SECONDS)).isTrue();
+
+            assertThatThrownBy(() -> publication.get(500, TimeUnit.MILLISECONDS))
+                    .isInstanceOf(TimeoutException.class);
+            releaseReview.countDown();
+            review.get(10, TimeUnit.SECONDS);
+            publication.get(10, TimeUnit.SECONDS);
+
+            assertThat(knowledgeDocumentService.findById(draft.getId()).getStatus()).isEqualTo(KnowledgeDocumentStatus.PUBLISHED);
+        } finally {
+            releaseReview.countDown();
+            executor.shutdownNow();
+            assertThat(executor.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+        }
     }
 
     @Test
