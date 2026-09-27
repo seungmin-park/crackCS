@@ -50,7 +50,7 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform {
-		excludeTags 'retrieval-benchmark', 'postgres', 'local-service-latency-benchmark', 'ollama-live'
+		excludeTags 'retrieval-benchmark', 'postgres', 'local-service-latency-benchmark', 'http-latency-benchmark', 'ollama-live'
 	}
 }
 
@@ -63,6 +63,7 @@ tasks.register('ollamaLiveEvaluation', Test) {
 	classpath = sourceSets.test.runtimeClasspath
 	dependsOn 'verifyReferenceStandard'
 	useJUnitPlatform { includeTags 'ollama-live' }
+	testLogging.showStandardStreams = true
 	systemProperty 'reference.directory', referenceDirectory.asFile.absolutePath
 	systemProperty 'ollama.split', providers.gradleProperty('ollamaSplit').orElse('development').get()
 	systemProperty 'ollama.case.limit', providers.gradleProperty('ollamaCaseLimit').orElse('4').get()
@@ -131,6 +132,9 @@ tasks.register('postgresTest', Test) {
 	filter {
 		includeTestsMatching '*PostgresPersistenceTest'
 		includeTestsMatching '*VersionConcurrencyTest'
+		includeTestsMatching '*LearningProgressServiceTest'
+		includeTestsMatching '*KnowledgeCompletionTest'
+		includeTestsMatching '*KnowledgeAnswerSerializationTest'
 		includeTestsMatching '*KnowledgeChunkServiceTest'
 		includeTestsMatching '*KnowledgeRetrievalServiceTest'
 		includeTestsMatching '*RetrievalBenchmarkTest'
@@ -149,4 +153,22 @@ tasks.register('postgresTest', Test) {
 	systemProperty 'benchmark.output', layout.buildDirectory.dir('reports/retrieval/postgres').get().asFile.absolutePath
 	maxParallelForks = 1
 	outputs.upToDateWhen { false }
+}
+
+
+tasks.register('httpLatencyBenchmark', Test) {
+    group = 'verification'
+    description = 'Measure authenticated loopback HTTP latency on isolated PostgreSQL 17.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'http-latency-benchmark' }
+    systemProperty 'spring.datasource.url', 'jdbc:tc:postgresql:17-alpine:///crackcs_http_test'
+    systemProperty 'spring.datasource.driver-class-name', 'org.testcontainers.jdbc.ContainerDatabaseDriver'
+    systemProperty 'spring.datasource.username', 'test'
+    systemProperty 'spring.datasource.password', 'test'
+    systemProperty 'spring.jpa.hibernate.ddl-auto', 'create-drop'
+    systemProperty 'spring.sql.init.mode', 'never'
+    systemProperty 'benchmark.output', layout.buildDirectory.file('reports/http-latency/result.json').get().asFile.absolutePath
+    maxParallelForks = 1
+    outputs.upToDateWhen { false }
 }

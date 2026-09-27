@@ -20,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,6 +35,7 @@ public class DefaultAnswerService implements AnswerService {
     private final EvaluationRepository evaluationRepository;
     private final MemberRepository memberRepository;
     private final QuestionRepository questionRepository;
+    private final AnswerSubmissionPolicy answerSubmissionPolicy;
 
     @Override
     @Transactional
@@ -51,6 +53,8 @@ public class DefaultAnswerService implements AnswerService {
             }
             return toAnswerResult(answer);
         }
+        answerSubmissionPolicy.verifyAllowed(answerRepository.countSubmittedSince(
+                memberId, answerSubmissionPolicy.windowStart(LocalDateTime.now())));
         Question question = questionRepository.findById(questionId)
                 .filter(candidate -> candidate.getStatus() == QuestionStatus.PUBLISHED)
                 .filter(candidate -> candidate.isUnrestrictedOrOwnedBy(member))

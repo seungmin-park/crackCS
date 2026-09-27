@@ -2,13 +2,13 @@
 
 ## 상태와 책임
 
-- 상태: 절차 확정, 로컬 `pg_dump`/`pg_restore` 실행 파일 미설치 확인
-- 미실행: production-equivalent backup·빈 환경 restore·복구 판정
+- 상태: 로컬 Docker PostgreSQL의 backup·빈 DB restore·복구 앱 조회 검증 완료 — [2026-09-27 근거](../2026-09-27-release-readiness/verification.md)
+- 미실행: 외부 장애 영역·실제 운영 규모의 복구 판정
 - 실행 책임: DB 운영 담당자
 - 판정 책임: 애플리케이션 운영 담당자
 - 증거 위치: 실행 일시별 `backup-manifest.txt`, restore 로그, 검증 query 결과
 
-2026-09-21 로컬 사전 확인에서 `pg_dump --version`은 `command not found`로 종료됐다. Docker 기반 PostgreSQL 통합 테스트 성공과 별개로, backup·restore 작업은 PostgreSQL client 설치 후 production-equivalent 격리 환경에서 실행해야 한다.
+2026-09-21 호스트 PostgreSQL client 미설치 제약은 Docker 컨테이너의 `pg_dump`·`pg_restore` 사용으로 해소. 반복 실행 명령은 [로컬 실행·복구](../2026-09-27-release-readiness/local-runbook.md) 참조. 아래 절차는 운영 환경으로 확대할 때의 기준.
 
 ## 보존 결정
 

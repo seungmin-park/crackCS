@@ -1,0 +1,25 @@
+# Combine with local (and optionally ollama); order: local,local-postgres,ollama.
+spring:
+  datasource:
+    url: jdbc:postgresql://127.0.0.1:55432/${LOCAL_DATABASE_NAME:crackcs_local}
+    username: crackcs_local
+    password: crackcs-local-only
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  sql:
+    init:
+      mode: never
+  h2:
+    console:
+      enabled: false
+server:
+  address: 127.0.0.1
+crackcs:
+  evaluation:
+    openai:
+      enabled: false
+  followup:
+    openai:
+      enabled: false

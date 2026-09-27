@@ -34,6 +34,14 @@ public class GlobalExceptionHandler {
     }
 
 
+    @ExceptionHandler(TooManyAnswerRequestsException.class)
+    public ResponseEntity<ApiErrorResponse> handleTooManyAnswerRequests(TooManyAnswerRequestsException exception) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", "60")
+                .body(new ApiErrorResponse("TOO_MANY_ANSWER_REQUESTS", exception.getMessage(), List.of(),
+                        RequestIds.current(request)));
+    }
+
     @ExceptionHandler(TooManyLoginAttemptsException.class)
     public ResponseEntity<ApiErrorResponse> handleTooManyLoginAttempts(TooManyLoginAttemptsException exception) {
         ApiErrorResponse response = new ApiErrorResponse(

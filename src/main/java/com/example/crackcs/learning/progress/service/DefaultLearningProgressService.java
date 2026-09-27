@@ -26,7 +26,7 @@ public class DefaultLearningProgressService implements LearningProgressService {
         List<RecentEvaluation> recent = answerRepository.findRecentEvaluations(memberId, PageRequest.of(0, 5)).stream()
                 .map(row -> new RecentEvaluation(row.getAnswerId(), row.getQuestionTitle(), row.getStatus(),
                         row.getVerdict(), row.getScore(), row.getSubmittedAt())).toList();
-        return new LearningProgressResult(answerRepository.countSubmittedSince(memberId, null),
+        return new LearningProgressResult(answerRepository.countByMemberId(memberId),
                 answerRepository.countSubmittedSince(memberId, LocalDateTime.now().minusDays(7)), recent,
                 knowledgeQueryService.knowledgeStates(memberId).topics(), recommendationService.recommendation(memberId));
     }

@@ -1,6 +1,6 @@
 # Phase 8 인수 조건 자동 증거
 
-상태: 로컬 자동 회귀 연결, AC-007 전체 증거 보강 필요
+상태: 로컬 자동 회귀 연결. AC-007 교체·과거 근거 단일 회귀 추가, [최신 실행](../2026-09-27-release-readiness/verification.md) 참조
 
 ## 연결 원칙
 
@@ -19,7 +19,7 @@
 | AC-004 미평가와 취약 구분 | `KnowledgeFlowTest.progressesFromRecommendationThroughCommittedEvaluation` | API 통합 | UNKNOWN/NULL에서 평가 후 LEARNING으로 구분 |
 | AC-005 후속 질문 | `FollowUpQuestionServiceTest.completesLearningLoopOnce` | Service 통합 | 일반 평가, 후속 질문 최대 1개, 후속 평가, 다음 기본 문제 |
 | AC-006 관리자 권한 | `AuthenticationFlowTest.rejectsUserSessionFromAdminApi` | 인증 통합 | USER session의 관리자 API 거부와 관리자 데이터 비노출 |
-| AC-007 콘텐츠 버전 | `AdminContentFlowTest.preservesDocumentVersionThroughApi`, `KnowledgeDocumentServiceTest.preservesPublishedVersionWhenCreatingNextVersion`, `KnowledgeRetrievalServiceTest.excludesRetiredAndIrrelevantChunks`, `KnowledgeAnswerSerializationTest.serializesFeedbackOutsideTransaction` | API·Service 통합 | 공개본 보존과 RETIRED Chunk의 신규 검색 제외는 검증. 폐기 뒤에도 과거 EvaluationEvidence가 같은 Chunk를 반환하는 단일 통합 시나리오는 미검증 |
+| AC-007 콘텐츠 버전 | `KnowledgeAnswerSerializationTest.preservesHistoricalEvidenceAfterDocumentReplacement`, `AdminContentFlowTest.preservesDocumentVersionThroughApi` | API·Service 통합 | v2 공개 → v1 폐기 → 새 검색은 v2만 반환 → 과거 평가의 v1 Chunk·내용·버전·직렬화 유지. H2·PostgreSQL 검증 |
 
 ## 보안 보완 증거
 
@@ -48,6 +48,5 @@ npm run test -- src/components/EvaluationPanel.test.ts
 
 - 실제 OpenAI 모델 판정 품질과 prompt injection 저항성
 - 실제 브라우저 CSP와 배포 reverse proxy header
-- 프런트와 서버를 함께 실행하는 browser E2E
-- AC-007의 콘텐츠 교체 전후를 한 흐름으로 잇는 과거 Evidence 회귀
+- 실제 모델 provider 장애를 포함하는 전체 browser E2E (정상 stub 학습·복구 조회는 cmux에서 확인)
 - 운영 데이터·운영 PostgreSQL에서의 전체 인수 흐름

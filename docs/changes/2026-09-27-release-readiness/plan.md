@@ -48,11 +48,11 @@
 
 **계약:** 기존 로컬 DB 파괴 없이 별도 검증 DB 사용. 공개 문제·필수 Concept·검색 가능한 근거가 연결된 학습 흐름.
 
-- [ ] 기존 콘텐츠·Chunk 공개 조건 확인 후 최소 콘텐츠 구성
-- [ ] 새 환경에서 backend/frontend 실행과 `/api` 연결 확인
-- [ ] 로컬 PostgreSQL의 명시적 schema 생성·변경·backup/restore 경로 구성 및 실제 검증
-- [ ] 유료 API 비활성, Ollama 연결·후속 질문 생성 범위 명시
-- [ ] 실행 명령·미검증 경계 반영 후 커밋
+- [x] 기존 콘텐츠·Chunk 공개 조건 확인 후 최소 콘텐츠 구성
+- [x] 새 환경에서 backend/frontend 실행과 `/api` 연결 확인
+- [x] 로컬 PostgreSQL의 명시적 schema 생성·변경·backup/restore 경로 구성 및 실제 검증
+- [x] 유료 API 비활성, Ollama 연결·후속 질문 생성 범위 명시
+- [x] 실행 명령·미검증 경계 반영 후 커밋
 
 ## Task 3: 전체 흐름·실패·성능 회귀
 
@@ -60,12 +60,12 @@
 
 **계약:** AC-001~007의 자동 증거와 cmux 실제 브라우저 증거 분리.
 
-- [ ] 기존 API·Service 증거와 미체크 항목 대조
-- [ ] AC-007 콘텐츠 교체·폐기 이후 과거 Evidence 조회 단일 통합 테스트
-- [ ] PostgreSQL Knowledge State 충돌·중복 반영 검증
+- [x] 기존 API·Service 증거와 미체크 항목 대조
+- [x] AC-007 콘텐츠 교체·폐기 이후 과거 Evidence 조회 단일 통합 테스트
+- [x] PostgreSQL Knowledge State 충돌·중복 반영 검증
 - [ ] 인증·관리자·소유권·긴 대기·실패 복구 E2E, 실패 발견 시 RED부터 수정
-- [ ] HTTP 처리 시간과 데이터 규모·동시성 조건 기록. 실제 AI 지연과 통제 provider 부하 분리
-- [ ] 전체 backend/frontend 테스트·type-check·build 후 근거 기록 및 커밋
+- [x] HTTP 처리 시간과 데이터 규모·동시성 조건 기록. 실제 AI 지연과 통제 provider 부하 분리
+- [x] 전체 backend/frontend 테스트·type-check·build 후 근거 기록 및 커밋
 
 ## Task 4: 실제 모델 평가와 최종 문서 정합성
 

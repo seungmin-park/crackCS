@@ -40,6 +40,7 @@ function schedulePoll(answerId: string, activeGeneration: number) {
       if (retryable && consecutivePollFailures < MAX_POLL_FAILURES) {
         schedulePoll(answerId, activeGeneration);
       } else {
+        if (!retryable) answer.value = undefined;
         error.value = true;
       }
     }
@@ -69,8 +70,9 @@ onBeforeUnmount(() => { disposed = true; generation++; cancelTimer(); });
 <template>
   <main class="page-shell answer-detail-shell">
     <RouterLink class="back-link" to="/answers">← 답변 이력</RouterLink>
-    <QuestionState v-if="error" kind="error" title="답변을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswer" />
-    <template v-else-if="answer">
+    <QuestionState v-if="error" kind="error" title="답변을 불러오지 못했어요" description="잠시 후 다시 시도해 주세요." action-label="다시 불러오기" @action="loadAnswer()" />
+    <p v-if="!answer && !error" role="status" aria-busy="true">답변을 불러오는 중…</p>
+    <template v-if="answer">
       <article class="answer-detail-grid">
         <section class="answer-copy"><p class="eyebrow">질문</p><h1>{{ answer.questionContent }}</h1><p class="submitted-at">{{ new Date(answer.submittedAt).toLocaleString('ko-KR') }}</p><h2>내 답변</h2><p class="answer-content">{{ answer.content }}</p></section>
         <EvaluationPanel :evaluation="answer.evaluation" />

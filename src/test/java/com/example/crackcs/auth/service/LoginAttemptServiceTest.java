@@ -54,6 +54,20 @@ class LoginAttemptServiceTest {
                 .doesNotThrowAnyException();
     }
 
+    @Test
+    @DisplayName("사전 확인 뒤 차단 기간이 만료되어도 실패 기록은 새 창에서 시작한다")
+    void recordsFailureAfterBlockExpiresWithoutPrecheck() {
+        for (int attempt = 0; attempt < 5; attempt++) {
+            loginAttemptService.recordFailure("expiry@example.com", "127.0.0.1");
+        }
+        clock.advance(Duration.ofMinutes(15));
+
+        assertThatCode(() -> loginAttemptService.recordFailure("expiry@example.com", "127.0.0.1"))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> loginAttemptService.checkAllowed("expiry@example.com", "127.0.0.1"))
+                .doesNotThrowAnyException();
+    }
+
     @TestConfiguration
     static class MutableClockConfiguration {
 

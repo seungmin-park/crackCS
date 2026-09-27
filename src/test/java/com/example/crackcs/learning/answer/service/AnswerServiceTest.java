@@ -23,6 +23,9 @@ import com.example.crackcs.evaluation.port.EvaluationPort;
 import com.example.crackcs.evaluation.port.EvaluationRequest;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
 import com.example.crackcs.evaluation.service.EvaluationProcessor;
+import com.example.crackcs.exception.TooManyAnswerRequestsException;
+import com.example.crackcs.support.ConcurrentRequests;
+import com.example.crackcs.learning.answer.domain.Answer;
 import com.example.crackcs.exception.AnswerConflictException;
 import com.example.crackcs.exception.QuestionNotFoundException;
 import com.example.crackcs.learning.answer.repository.AnswerRepository;
@@ -52,6 +55,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.*;
@@ -129,6 +133,69 @@ class AnswerServiceTest {
         } finally {
             port.reset();
         }
+    }
+
+    @Test
+    @DisplayName("분당 신규 답변 한도를 넘으면 새 평가를 만들지 않고 같은 요청의 재전송은 허용한다")
+    void limitsNewSubmissionsButPreservesIdempotentRetries() {
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
+        Question question = publishedQuestion();
+        String originalKey = UUID.randomUUID().toString();
+        AnswerResult original = answerService.submit(learner.getId(), question.getId(), originalKey, "원문");
+        for (int count = 1; count < 10; count++) {
+            answerService.submit(learner.getId(), question.getId(), UUID.randomUUID().toString(), "답변 " + count);
+        }
+
+        assertThatThrownBy(() -> answerService.submit(learner.getId(), question.getId(), UUID.randomUUID().toString(), "초과 요청"))
+                .isInstanceOf(TooManyAnswerRequestsException.class).hasMessageContaining("답변 요청");
+        assertThat(answerService.submit(learner.getId(), question.getId(), originalKey, "원문").answerId())
+                .isEqualTo(original.answerId());
+        assertThat(answerRepository.count()).isEqualTo(10);
+        assertThat(evaluationRepository.count()).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("여러 요청 키로 동시에 접수해도 회원별 분당 한도를 초과하지 않는다")
+    void serializesConcurrentSubmissionLimit() throws Exception {
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
+        Question question = publishedQuestion();
+        List<Callable<String>> requests = new ArrayList<>();
+        for (int count = 0; count < 12; count++) {
+            requests.add(() -> {
+                try {
+                    answerService.submit(learner.getId(), question.getId(), UUID.randomUUID().toString(), "동시 답변");
+                    return "accepted";
+                } catch (TooManyAnswerRequestsException exception) {
+                    return "limited";
+                }
+            });
+        }
+
+        List<String> outcomes = ConcurrentRequests.run(requests);
+
+        assertThat(outcomes).filteredOn("accepted"::equals).hasSize(10);
+        assertThat(outcomes).filteredOn("limited"::equals).hasSize(2);
+        assertThat(answerRepository.count()).isEqualTo(10);
+        assertThat(evaluationRepository.count()).isEqualTo(10);
+    }
+
+    @Test
+    @DisplayName("지난 시간창의 답변은 신규 접수 한도를 차지하지 않는다")
+    void excludesOldSubmissionsFromLimit() {
+        Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
+        Question question = publishedQuestion();
+        for (int count = 0; count < 10; count++) {
+            Answer historicalAnswer = Answer.builder().member(learner).question(question)
+                    .idempotencyKey(UUID.randomUUID().toString()).content("과거 답변").build();
+            ReflectionTestUtils.setField(historicalAnswer, "submittedAt", LocalDateTime.now().minusMinutes(2));
+            answerRepository.save(historicalAnswer);
+        }
+
+        AnswerResult accepted = answerService.submit(learner.getId(), question.getId(), UUID.randomUUID().toString(), "새 답변");
+
+        assertThat(answerRepository.findById(accepted.answerId())).isPresent();
+        assertThat(answerRepository.count()).isEqualTo(11);
+        assertThat(evaluationRepository.count()).isEqualTo(1);
     }
 
     @Test

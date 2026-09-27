@@ -72,6 +72,10 @@ class OllamaLiveEvaluationTest {
         int completed = 0;
         int invalidEvidence = 0;
 
+        Path reportPath = Path.of(System.getProperty("benchmark.output"));
+        Files.createDirectories(reportPath.getParent());
+        Path progressPath = reportPath.resolveSibling(reportPath.getFileName() + ".partial.json");
+
         for (JsonNode input : sample) {
             String caseId = input.path("caseId").stringValue();
             EvaluationRequest request = objectMapper.treeToValue(input.path("request"), EvaluationRequest.class);
@@ -104,6 +108,13 @@ class OllamaLiveEvaluationTest {
             long durationMillis = Duration.ofNanos(System.nanoTime() - started).toMillis();
             durations.add(durationMillis);
             measuredCase.put("durationMillis", durationMillis);
+            report.put("measurementComplete", false);
+            report.put("attempted", cases.size());
+            report.put("completed", completed);
+            Files.writeString(progressPath, objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(report),
+                    StandardCharsets.UTF_8);
+            System.out.printf("Ollama case=%s durationMillis=%d completed=%d attempted=%d%n",
+                    caseId, durationMillis, completed, cases.size());
         }
 
         Collections.sort(durations);
@@ -120,8 +131,7 @@ class OllamaLiveEvaluationTest {
             putRatio(report, "falseCorrectRate", metrics.falseCorrectRate());
         }
 
-        Path reportPath = Path.of(System.getProperty("benchmark.output"));
-        Files.createDirectories(reportPath.getParent());
+        report.put("measurementComplete", true);
         Files.writeString(reportPath, objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(report),
                 StandardCharsets.UTF_8);
         assertThat(completed).as("local model calls completed; see " + reportPath).isEqualTo(sample.size());

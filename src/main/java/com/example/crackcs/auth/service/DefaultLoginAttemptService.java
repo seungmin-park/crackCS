@@ -43,7 +43,7 @@ public class DefaultLoginAttemptService implements LoginAttemptService {
         Instant now = clock.instant();
         attempts.compute(key, (ignored, current) -> {
             AttemptState state = current == null ? AttemptState.empty() : current.activeAt(now);
-            return state.addFailure(now);
+            return (state == null ? AttemptState.empty() : state).addFailure(now);
         });
     }
 

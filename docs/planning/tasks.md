@@ -72,7 +72,7 @@ Phase 8 운영 검증과 제한 파일럿
 - [x] Actuator health·Prometheus 관리 포트와 공개 범위 결정
 - [x] Java·Node·npm 최소 버전과 로컬 실행 명령을 루트 README에 기록
 - [ ] 깨끗한 checkout에서 문서만으로 백엔드·프런트 실행 확인
-- [ ] 프런트에서 백엔드 연결 방식 확정
+- [x] 프런트에서 백엔드 연결 방식 확정 — Vite `/api` proxy, 실제 PostgreSQL 앱 연결 검증
 - [x] `local`, `test`, 운영 profile 책임 확인
 - [x] H2 개발 DB와 테스트 DB 격리 확인
 - [x] 운영 비밀정보 환경 변수 이름과 예시 제공
@@ -92,31 +92,33 @@ Phase 8 운영 검증과 제한 파일럿
 - [x] 공통 API client와 오류 타입 확정
 - [ ] loading, empty, validation, server error 처리 기준 통일
 - [ ] 화면별 HTTP 오류 변환 중복 제거
-- [ ] 인증·재시도 UI의 상태 전이와 실패 경계 테스트 보강
+- [x] 인증·재시도 UI의 상태 전이와 실패 경계 테스트 보강 — 답변 로딩·연속 연결 실패 시 원문 보존 회귀 추가
 
 #### 자동화
 
 - [x] 백엔드 테스트 CI
 - [x] 프런트 type-check·production build CI
 - [x] 실패 로그와 dependency cache 정책 확인
-- [ ] ADR 템플릿과 작성 기준 정리
+- [x] ADR 템플릿과 작성 기준 정리 — 문서 지도의 결정 기록 섹션
 
 ### 구현 품질 보강
 
 - [x] Question·KnowledgeDocument 버전 생성과 공개 전환의 동시 요청 원자성 — [H2·PostgreSQL 검증](../changes/2026-09-27-release-readiness/verification.md)
-- [ ] 로그인 시도 제한의 다중 인스턴스 저장소와 시간 경계
-- [ ] 운영 PostgreSQL에서 Knowledge State UNIQUE·낙관적 잠금 경쟁 검증
+- [ ] 로그인 시도 제한의 다중 인스턴스 저장소 — 단일 인스턴스 0원 실행 범위에서는 보류
+- [x] 로그인 시도 제한의 차단 만료 경계 — 만료 뒤 실패 기록 NPE 재현·수정
+- [x] 격리 PostgreSQL 17에서 Knowledge State UNIQUE·낙관적 잠금 경쟁 검증 — `KnowledgeCompletionTest`
+- [ ] 운영 규모·다중 앱에서 Knowledge State 경쟁 재검증 — 실제 배포 환경 필요
 
 ## Phase 8
 
 ### P8-T01 전체 E2E 회귀
 
 - [ ] 관리자 Topic·Concept·문서·문제 공개 흐름
-- [ ] 회원가입·로그인·문제 풀이·평가 결과 흐름
-- [ ] Knowledge State·추천·후속 질문 흐름
+- [x] 회원가입·로그인·문제 풀이·평가 결과 흐름 — cmux 브라우저, PostgreSQL·stub 평가
+- [x] Knowledge State·추천·후속 질문 흐름 — cmux 브라우저, 미평가→학습 중·후속 답변 확인
 - [ ] 다른 회원 데이터와 관리자 기능 접근 차단
 - [ ] provider 실패·재시도 이후 화면 복구
-- [ ] `AC-001`~`AC-007`과 자동 테스트 1:1 연결
+- [x] `AC-001`~`AC-007`과 자동 테스트 1:1 연결 — AC-007 문서 교체 뒤 과거 Evidence 단일 회귀 포함
 
 ### P8-T02 보안 점검
 
@@ -148,8 +150,8 @@ Phase 8 운영 검증과 제한 파일럿
 
 ### P8-T05 성능
 
-- [ ] 일반 API p95 시나리오와 데이터 크기
-- [ ] 평가 접수 응답 p95
+- [x] 일반 API p95 시나리오와 데이터 크기 — PostgreSQL·HTTP, 문제 100·답변 500, 동시 조회 4
+- [x] 평가 접수 응답 p95 — 로컬 HTTP 8.6ms, 동시 접수 5, 실제 AI 완료 지연 제외
 - [x] 평가 완료 p95
 - [x] 지식 지도·추천 query 수와 실행 시간
 - [x] N+1과 전체 이력 조회 점검
@@ -158,8 +160,8 @@ Phase 8 운영 검증과 제한 파일럿
 ### P8-T06 백업·복구와 콘텐츠 rollback
 
 - [x] 운영 DB backup 주기와 보존 기간
-- [ ] 빈 환경 restore
-- [ ] 복구 데이터의 회원·문제·답변·평가 조회
+- [x] 빈 환경 restore — Docker PostgreSQL의 새 DB로 복구
+- [x] 복구 데이터의 회원·문제·답변·평가 조회 — 복구 앱 로그인·기존 답변/근거 확인
 - [x] 잘못 공개한 문서 폐기와 이전 버전 복구
 - [x] 과거 EvaluationEvidence 조회 유지
 - [x] 절차와 담당 책임 기록
@@ -191,7 +193,7 @@ Phase 8 운영 검증과 제한 파일럿
 - [ ] 정상·빈 값·경계값·없는 ID 처리
 - [ ] 상태 전이와 DB constraint 일치
 - [ ] rollback, 중복 요청, 동시 요청 검증
-- [ ] 과거 평가와 콘텐츠 버전 보존
+- [x] 과거 평가와 콘텐츠 버전 보존 — H2·PostgreSQL 단일 통합 회귀
 
 ### 보안과 소유권
 
@@ -212,10 +214,10 @@ Phase 8 운영 검증과 제한 파일럿
 
 - [ ] 실제 모델 평가 품질 기준 충족
 - [ ] 관리자의 실패 추적 가능
-- [ ] backup·restore 실제 검증
+- [x] backup·restore 실제 검증 — 로컬 논리 복구 범위, 원격 재해 복구는 별도
 - [ ] 성능 결과와 미달 대응 계획
-- [ ] 백엔드 자동 테스트 성공
-- [ ] 프런트 테스트·type-check·production build 성공
+- [x] 백엔드 자동 테스트 성공 — 최신 실행은 마무리 검증 기록 참조
+- [x] 프런트 테스트·type-check·production build 성공 — 293개 성공
 - [ ] 관련 제품 명세·ERD·ADR·문서 목록 최신 상태
 - [ ] 코드 작성 문제, 사용자 문제 게시, 결제 기능의 P0 제외 유지
 

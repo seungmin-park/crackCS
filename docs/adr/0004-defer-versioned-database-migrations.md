@@ -1,6 +1,6 @@
 # ADR-0004: 버전 기반 DB migration 도구 도입 보류
 
-- 상태: 승인
+- 상태: 부분 대체. persistent 로컬 PostgreSQL 절차는 [ADR-0006](0006-local-postgres-schema.md) 참조. 이 문서는 도구 도입 보류의 당시 이유 보존
 - 결정일: 2026-08-31
 - 관련 항목: DB schema 관리
 

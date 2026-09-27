@@ -25,9 +25,11 @@ public interface AnswerRepository extends JpaRepository<Answer, Long> {
             """)
     List<LastAnsweredQuestion> findLastAnsweredByQuestion(@Param("memberId") Long memberId);
 
+    long countByMemberId(Long memberId);
+
     @Query("""
             select count(a) from Answer a where a.member.id = :memberId
-            and (:since is null or a.submittedAt >= :since)
+            and a.submittedAt >= :since
             """)
     long countSubmittedSince(@Param("memberId") Long memberId, @Param("since") LocalDateTime since);
 

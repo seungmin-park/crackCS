@@ -13,6 +13,8 @@ import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.repository.QuestionRepository;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.content.topic.repository.TopicRepository;
+import com.example.crackcs.evaluation.domain.Evaluation;
+import com.example.crackcs.learning.answer.domain.Answer;
 import com.example.crackcs.evaluation.repository.EvaluationRepository;
 import com.example.crackcs.evaluation.service.EvaluationProcessor;
 import com.example.crackcs.learning.answer.repository.AnswerRepository;
@@ -110,13 +112,11 @@ class AnswerQueryCostTest {
         Member learner = memberRepository.save(Member.builder().nickname("학습자").build());
         Question question = publishedQuestion();
         for (int index = 0; index < answerCount; index++) {
-            AnswerResult answer = answerService.submit(
-                    learner.getId(),
-                    question.getId(),
-                    UUID.randomUUID().toString(),
-                    "답변 " + index
-            );
-            evaluationProcessor.process(answer.evaluationId());
+            // Prepare historical volume directly: this test measures reads, not submission admission.
+            Answer answer = answerRepository.save(Answer.builder().member(learner).question(question)
+                    .idempotencyKey(UUID.randomUUID().toString()).content("답변 " + index).build());
+            Evaluation evaluation = evaluationRepository.save(Evaluation.builder().answer(answer).build());
+            evaluationProcessor.process(evaluation.getId());
         }
         Statistics hibernateStatistics = entityManagerFactory.unwrap(SessionFactory.class).getStatistics();
         hibernateStatistics.clear();

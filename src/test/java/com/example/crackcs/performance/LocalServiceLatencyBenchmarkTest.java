@@ -51,7 +51,10 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("local-service-latency-benchmark")
-@SpringBootTest(properties = "crackcs.evaluation.worker-enabled=false")
+@SpringBootTest(properties = {
+        "crackcs.evaluation.worker-enabled=false",
+        "crackcs.answer.max-submissions-per-minute=1000"
+})
 @ActiveProfiles("test")
 class LocalServiceLatencyBenchmarkTest {
 

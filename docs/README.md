@@ -53,15 +53,31 @@ docs/
 | 인증 상태 유지 방식 | 승인 | [ADR-0001](adr/0001-session-based-authentication.md) | 인증 방식 변경 |
 | LOCAL 비밀번호 정책 | 승인 | [ADR-0002](adr/0002-password-policy.md) | 비밀번호 정책 변경 |
 | 인증 보안 최소 기준 | 승인 | [ADR-0003](adr/0003-authentication-security-baseline.md) | 보안 기준 변경 |
-| DB migration 도구 도입 시점 | 현재 보류 | [ADR-0004](adr/0004-defer-versioned-database-migrations.md) | persistent DB·배포 절차 확정 |
+| DB migration 도구 도입 시점 | 도구 보류 유지, 로컬 절차 ADR-0006으로 대체 | [ADR-0004](adr/0004-defer-versioned-database-migrations.md) | persistent DB·배포 절차 확정 |
+| 로컬 PostgreSQL schema·변경·복구 | 승인, 로컬 범위 | [ADR-0006](adr/0006-local-postgres-schema.md) | schema·복구 정책 변경 |
 | 평가 실행·검색·worker 선택 | 현재 결정 | [ADR-0005](adr/0005-phase-5-evaluation-runtime.md) | DB·검색·provider·worker 기준 변경 |
 
-결정이 바뀌면 기존 ADR을 조용히 덮어쓰지 않는다. 후속 ADR을 추가하고 대체 관계를 기록한다.
+결정 변경 시 후속 ADR과 대체 관계 기록. 기존 결정 이력 보존.
+
+ADR 작성 기준: 독자가 판단할 결정 하나, 대안과 선택 이유, 비용·한계, 검증·재검토 조건 포함.
+
+```text
+# ADR-NNNN: 결정 제목
+- 상태: 제안 / 승인 / 대체
+- 결정일:
+- 관련·대체 문서:
+## 문제와 제약
+## 검토한 대안과 선택 이유
+## 결정
+## 결과·한계·재검토 조건
+## 검증 근거
+```
 
 ## 완료 증거
 
 | 답할 질문 | 상태 | 기준 문서 | 갱신 계기 |
 |---|---|---|---|
+| 빈 환경 PostgreSQL 실행·복구 | 로컬 실행 기준 | [로컬 실행·복구](changes/2026-09-27-release-readiness/local-runbook.md) | 실행 명령·schema·profile 변경 |
 | 실행·정합성 최신 검증 | 진행 중, 버전 동시성 검증 완료 | [실행 검증](changes/2026-09-27-release-readiness/verification.md) | 실행 환경·버전·회귀 범위 변경 |
 | UI 개편의 목표 | 당시 결정 | [UI 제안](changes/2026-09-06-ui/proposal.md) | 제안 해석 오류 정정 |
 | UI·테마 구현 결과 | 완료 증거 | [UI 검증](changes/2026-09-06-ui/verification.md) | 같은 변경 범위 재검증 |

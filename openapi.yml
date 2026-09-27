@@ -767,7 +767,7 @@ paths:
       tags: [Answers]
       operationId: submitAnswer
       summary: USER 답변 저장과 평가 접수
-      description: 같은 회원의 동일 키·동일 문제·동일 원문은 기존 결과 반환. 다른 payload는 409. 재답변은 새 키 사용.
+      description: 같은 회원의 동일 키·동일 문제·동일 원문은 기존 결과 반환. 다른 payload는 409. 재답변은 새 키 사용. 신규 접수는 회원별 최근 1분 10개까지 허용하며 동일 요청 재전송은 한도에서 제외.
       parameters:
         - name: Idempotency-Key
           in: header
@@ -815,6 +815,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ApiErrorResponse'
+        '429':
+          description: 회원별 신규 답변 접수 한도 초과
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                enum: [60]
+              description: 재시도 전 대기 시간(초)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiErrorResponse'
+
   /api/members/me/answers:
     get:
       tags: [Answers]

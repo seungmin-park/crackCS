@@ -30,6 +30,27 @@ describe("답변 상세 화면", () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  it("답변을 처음 불러오는 동안 로딩 상태를 알린다", async () => {
+    fetchAnswer.mockReturnValue(new Promise(() => {}));
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });
+
+    expect(wrapper.get('[role="status"]').text()).toContain("답변을 불러오는 중");
+    wrapper.unmount();
+  });
+
+  it("평가 조회 연결이 끊겨도 이미 저장한 답변 원문은 화면에 남는다", async () => {
+    fetchAnswer.mockResolvedValue({ answerId: 31, questionId: 7, questionContent: "질문", content: "내 답변", submittedAt: "2026-09-07T10:00:00Z", evaluation: { ...evaluating } });
+    fetchAnswerEvaluation.mockRejectedValue(new TypeError("network"));
+    const wrapper = mount(AnswerDetailView, { global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } } });
+    await flushPromises();
+    await vi.advanceTimersByTimeAsync(8000);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("내 답변");
+    expect(wrapper.text()).toContain("다시 불러오기");
+    wrapper.unmount();
+  });
+
   it("평가 중이면 다시 조회하고 완료되면 polling을 멈춘다", async () => {
     fetchAnswer.mockResolvedValue({ answerId: 31, questionId: 7, questionContent: "질문", content: "내 답변", submittedAt: "2026-09-07T10:00:00Z", evaluation: evaluating });
     fetchAnswerEvaluation.mockResolvedValue({ ...evaluating, status: "EVALUATED", verdict: "CORRECT", score: 100, feedback: "핵심을 설명했습니다." });

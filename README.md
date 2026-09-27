@@ -48,7 +48,7 @@ ollama pull gpt-oss:20b
 | `OLLAMA_REASONING_EFFORT` | `medium` | 추론 강도: `low`, `medium`, `high` |
 | `OLLAMA_TIMEOUT` | `3m` | 로컬 모델 HTTP 제한 시간. 평가 lease 4분 이내 유지 |
 
-local seed: 화면 확인용 예시 문제·관리자 계정.
+local seed: 화면 확인용 예시 문제·Concept·검색 가능한 근거 문서·관리자 계정.
 
 - 관리자 이메일: `admin@crackcs.local`
 - 관리자 비밀번호: `local admin passphrase`
@@ -101,7 +101,7 @@ profile별 schema 정책:
 
 비밀 값은 설정 파일, 실행 명령 인자, 로그에 기록하지 않는다. 실제 OpenAI를 사용하지 않는 실행은 `OPENAI_ENABLED=false`를 유지한다.
 
-버전 기반 DB migration 도구: 미사용. 운영에서 `update` 사용 금지. 운영 DB 도입 전 schema 변경·배포 절차 결정 필요.
+버전 기반 DB migration 도구: 미사용. 로컬 PostgreSQL은 명시적 V001 SQL + `validate` 사용. [0원 로컬 실행·복구](docs/changes/2026-09-27-release-readiness/local-runbook.md) 참조. 운영에서 `update` 사용 금지.
 
 Phase 4 답변·평가: USER로 회원가입 후 문제 상세에서 제출. 기본 local/test는 모의 평가, `local,ollama`는 로컬 실제 모델 평가 후보.
 결과·실패 재현 설정과 검증 범위: [Phase 4 기록](docs/changes/2026-09-07-phase-4/verification.md).

@@ -7,6 +7,7 @@ import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.auth.security.SecurityErrorResponseWriter;
 import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.evaluation.domain.Verdict;
+import com.example.crackcs.exception.TooManyAnswerRequestsException;
 import com.example.crackcs.exception.AnswerConflictException;
 import com.example.crackcs.exception.AnswerNotFoundException;
 import com.example.crackcs.learning.answer.service.AnswerService;
@@ -41,6 +42,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -67,6 +69,20 @@ class AnswerControllerTest {
 
     @MockitoBean
     private PasswordEncoder passwordEncoder;
+
+    @Test
+    @DisplayName("신규 답변 요청이 한도를 넘으면 429와 재시도 시간을 반환한다")
+    void returnsRetryAfterForSubmissionLimit() throws Exception {
+        given(answerService.submit(MEMBER_ID, 7L, IDEMPOTENCY_KEY, "답변"))
+                .willThrow(new TooManyAnswerRequestsException());
+
+        mockMvc.perform(post("/api/questions/7/answers").with(user(userPrincipal())).with(csrf())
+                        .header("Idempotency-Key", IDEMPOTENCY_KEY).contentType("application/json")
+                        .content(objectMapper.writeValueAsString(Map.of("content", "답변"))))
+                .andExpect(status().isTooManyRequests())
+                .andExpect(header().string("Retry-After", "60"))
+                .andExpect(jsonPath("$.code").value("TOO_MANY_ANSWER_REQUESTS"));
+    }
 
     @Test
     @DisplayName("USER가 답변 원문을 제출하면 회원과 문제 정보를 전달하고 202를 반환한다")

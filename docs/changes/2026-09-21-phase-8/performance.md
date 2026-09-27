@@ -5,7 +5,8 @@
 - 구현 완료: 반복 가능한 로컬 H2 Service 측정 작업
 - 구현 완료: 답변 목록·지식 지도·추천 query 수 회귀 테스트
 - 검증 완료: PostgreSQL 17 Testcontainers 통합 테스트
-- 미검증: 운영 환경 부하, 동시 사용자, 실제 OpenAI 지연, 운영 p95
+- 추가 검증: 로컬 PostgreSQL 실제 HTTP, 동시 조회 4·접수 5 — [최신 측정](../2026-09-27-release-readiness/verification.md)
+- 미검증: 운영 환경 부하·규모, 실제 OpenAI 지연, 운영 p95
 
 ## 목적
 
@@ -19,6 +20,7 @@
 ./gradlew test --tests '*AnswerQueryCostTest' --tests '*KnowledgeQueryCostTest' --console=plain
 ./gradlew localServiceLatencyBenchmark --console=plain
 ./gradlew postgresTest --console=plain
+./gradlew httpLatencyBenchmark --console=plain
 ```
 
 - 보고서: `build/reports/local-service-latency/baseline.json`
