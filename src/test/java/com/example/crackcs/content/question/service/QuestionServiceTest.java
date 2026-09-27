@@ -129,8 +129,10 @@ class QuestionServiceTest {
         Topic secondTopic = saveTopic("NETWORK", "네트워크");
         Question savedQuestion = saveQuestion(firstTopic, "기존 질문");
         Long questionId = savedQuestion.getId();
-        LocalDateTime createdAt = savedQuestion.getCreatedAt();
-        LocalDateTime firstUpdatedAt = savedQuestion.getUpdatedAt();
+        Question persistedQuestion = questionRepository.findById(questionId).orElseThrow();
+        // Compare committed DB values: timestamp(6) cannot preserve an OS clock's nanoseconds.
+        LocalDateTime createdAt = persistedQuestion.getCreatedAt();
+        LocalDateTime firstUpdatedAt = persistedQuestion.getUpdatedAt();
 
         questionService.update(
                 questionId,
@@ -140,7 +142,7 @@ class QuestionServiceTest {
                 "변경된 모범 답안"
         );
 
-        Question updatedQuestion = questionService.findById(questionId);
+        Question updatedQuestion = questionRepository.findById(questionId).orElseThrow();
 
         assertThat(updatedQuestion.getTopicId()).isEqualTo(secondTopic.getId());
         assertThat(updatedQuestion.getDifficulty()).isEqualTo(QuestionDifficulty.ADVANCED);

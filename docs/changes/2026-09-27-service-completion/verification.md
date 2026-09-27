@@ -151,3 +151,12 @@
 - AI Gate와 콘텐츠 승인 이후 실제 참가자 파일럿
 - 공개 운영 인프라·trusted proxy·공유 session·전역 남용 제한·외부 재해 복구·운영 규모 성능
 - 위 항목을 완료로 체크하거나 취업 합격을 보장하지 않음
+
+## CI 후속 정정
+
+- 첫 main 실행: GitHub Actions `36317273071`, frontend 통과·backend 508개 중 1개 실패
+- 실패: `QuestionServiceTest.updatesAndSavesQuestion`의 생성 시각 정확 일치 비교
+- 원인 재현: 메모리 `11:56:39.123456789` → H2 timestamp(6) `11:56:39.123457`. 저장 전 객체와 DB 재조회 값을 비교한 테스트의 정밀도 가정
+- 수정: 수정 전·후 모두 Repository 재조회 값 비교. 생성 시각 보존의 정확 일치 검증 유지, 허용 오차 확대·생산 시각 변경 없음
+- CI 실패 진단 보강: Gradle Test의 전체 예외 메시지 출력
+- 수정 후 로컬 전체 회귀: 508개 통과, 실패·오류·skip 0. 수정 후 CI 결과는 해당 커밋의 Actions 기록 참조

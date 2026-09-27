@@ -48,6 +48,10 @@ dependencies {
 	testRuntimeOnly 'org.testcontainers:testcontainers-postgresql'
 }
 
+tasks.withType(Test).configureEach {
+	testLogging.exceptionFormat = 'full'
+}
+
 tasks.named('test') {
 	useJUnitPlatform {
 		excludeTags 'retrieval-benchmark', 'postgres', 'local-service-latency-benchmark', 'http-latency-benchmark', 'ollama-live'
