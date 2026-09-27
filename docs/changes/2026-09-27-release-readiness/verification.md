@@ -172,9 +172,14 @@
 - 진단 실행 증거: `build/reports/readiness/provider-{proxy,backend}.log`, `provider-timeout-browser.txt`
 - 판정: 장애·재시도·안전한 최종 실패는 관찰. 실제 모델 결과까지 성공한 복구 E2E로 체크하지 않음
 
-## 남은 조건
+## 당시 남은 조건 — 이전 검증 시점의 이력
 
-| 항목 | 현재 경계·다음 행동 |
+아래 표는 `97b8b0e`까지의 상태 보존. 현재 완료·후속 범위는 [서버·제출 마무리](../2026-09-27-service-completion/verification.md), [화면·콘텐츠 검증](../2026-09-27-ui-content/verification.md), [작업 목록](../../planning/tasks.md) 참조.
+
+- 후속 완료: 로그인 DB 공유·두 JVM 검증, 초기 25문항·5문서 DRAFT, 화면 공통 오류 표현
+- 실제 AI Gate는 이후 사용자 지시로 제출 범위 제외. 사람 콘텐츠 승인·실제 파일럿은 미실행 유지
+
+| 항목 | 당시 경계·다음 행동 |
 |---|---|
 | 전체 관리자 E2E | Topic·Concept·문제·문서 공개 브라우저 흐름 완료. 운영 콘텐츠 사람 검수와 구분 |
 | provider 실패·긴 대기 E2E | 503 두 번 뒤 실제 응답이 INVALID_RESULT로 거절, 원문·실패 상태 보존. 결과 거절 원인 진단 및 성공 복구 확인 필요 |

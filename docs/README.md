@@ -42,7 +42,7 @@ docs/
 | retrieval 기준과 현재 결과 | 측정 완료, 출시 성능 인증 아님 | [개선 전](evaluation/reference-v1/benchmarks/retrieval-baseline.json), [현재](evaluation/reference-v1/benchmarks/retrieval-improved.json) | 검색 정책·자료·DB 환경 변경 |
 | 구현 순서와 의존성 | 계획 | [개발 계획](planning/plan.md) | 순서·의존성 변경 |
 | 현재 남은 작업 | 진행 기준 | [작업 목록](planning/tasks.md) | 작업 시작·완료·검증 결과 변경 |
-| AI 연결을 제외한 서버·제출 마무리 | 구현·로컬 검증 완료, 최종 검토 중 | [계획](changes/2026-09-27-service-completion/plan.md), [검증](changes/2026-09-27-service-completion/verification.md) | 보안·다중 앱·제출 근거 변경 |
+| AI 연결을 제외한 서버·제출 마무리 | 구현·로컬 검증·독립 검토 완료 | [계획](changes/2026-09-27-service-completion/plan.md), [검증](changes/2026-09-27-service-completion/verification.md) | 보안·다중 앱·제출 근거 변경 |
 | 화면 오류 복구·초기 콘텐츠 준비 | 구현·초안 등록 완료, 사람 검수 대기 | [계획](changes/2026-09-27-ui-content/plan.md), [검증](changes/2026-09-27-ui-content/verification.md) | 화면 상태·콘텐츠 준비 범위 변경 |
 | 추가 비용 없는 실행·검증 마무리 | 이전 실행 이력, 후속 계획으로 이관 | [마무리 계획](changes/2026-09-27-release-readiness/plan.md) | 미완료 항목의 구현·검증·외부 조건 변경 |
 | 도메인 네이밍·메서드 책임 개선 | 변경 범위 검증 완료 | [fix.md](../fix.md) | 관련 코드·상시 점검 기준 변경 |
