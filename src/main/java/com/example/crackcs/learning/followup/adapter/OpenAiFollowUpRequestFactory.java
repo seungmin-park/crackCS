@@ -21,18 +21,29 @@ public class OpenAiFollowUpRequestFactory {
 
     private final ObjectMapper objectMapper;
     private final String modelName;
+    private final String reasoningEffort;
+    private final int maxOutputTokens;
 
     public OpenAiFollowUpRequestFactory(
             ObjectMapper objectMapper,
             @Value("${crackcs.followup.openai.model:${crackcs.evaluation.openai.model:gpt-5.6-terra}}")
-            String modelName
+            String modelName,
+            @Value("${crackcs.followup.openai.reasoning-effort:low}") String reasoningEffort,
+            @Value("${crackcs.followup.openai.max-output-tokens:2048}") int maxOutputTokens
     ) {
+        if (maxOutputTokens <= 0) {
+            throw new IllegalArgumentException("maxOutputTokens must be positive");
+        }
         this.objectMapper = objectMapper;
         this.modelName = modelName;
+        this.reasoningEffort = reasoningEffort;
+        this.maxOutputTokens = maxOutputTokens;
     }
 
     public String create(FollowUpRequest followUpRequest) {
         ObjectNode root = objectMapper.createObjectNode().put("model", modelName).put("store", false);
+        root.put("max_output_tokens", maxOutputTokens);
+        root.putObject("reasoning").put("effort", reasoningEffort);
         root.putArray("input")
                 .add(message("developer", SYSTEM_INSTRUCTION))
                 .add(message("user", "<DATA>" + objectMapper.writeValueAsString(followUpRequest) + "</DATA>"));

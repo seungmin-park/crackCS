@@ -21,7 +21,7 @@ class OpenAiFollowUpQuestionAdapterTest {
         ObjectMapper objectMapper = new ObjectMapper();
         RecordingClient openAiResponsesClient = new RecordingClient(successResponse());
         OpenAiFollowUpRequestFactory openAiFollowUpRequestFactory =
-                new OpenAiFollowUpRequestFactory(objectMapper, "test-model");
+                new OpenAiFollowUpRequestFactory(objectMapper, "test-model", "low", 2048);
         OpenAiFollowUpResponseParser openAiFollowUpResponseParser =
                 new OpenAiFollowUpResponseParser(objectMapper, "test-model");
         OpenAiFollowUpQuestionAdapter adapter = new OpenAiFollowUpQuestionAdapter(

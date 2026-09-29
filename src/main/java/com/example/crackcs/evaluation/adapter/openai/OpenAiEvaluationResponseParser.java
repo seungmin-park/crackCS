@@ -18,7 +18,7 @@ public class OpenAiEvaluationResponseParser {
     public OpenAiEvaluationResponseParser(
             ObjectMapper objectMapper,
             @Value("${crackcs.evaluation.openai.model:gpt-5.6-terra}") String modelName,
-            @Value("${crackcs.evaluation.openai.evaluator-version:os-evaluator-v1}") String evaluatorVersion
+            @Value("${crackcs.evaluation.openai.evaluator-version:os-evaluator-v3}") String evaluatorVersion
     ) {
         this.objectMapper = objectMapper;
         this.resultParser = new EvaluationResultParser(objectMapper, modelName, evaluatorVersion);

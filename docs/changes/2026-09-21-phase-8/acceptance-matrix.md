@@ -1,6 +1,6 @@
 # Phase 8 인수 조건 자동 증거
 
-상태: 로컬 자동 회귀 연결. AC-007 교체·과거 근거 단일 회귀 추가, [최신 실행](../2026-09-27-service-completion/verification.md) 참조
+상태: 로컬 자동 회귀 연결. AC-007 교체·과거 근거 단일 회귀 추가. [기존 소프트웨어 회귀](../2026-09-27-service-completion/verification.md), [실제 GPT 정상 사용자 흐름](../2026-09-29-openai-completion/verification.md) 구분
 
 ## 연결 원칙
 
@@ -37,7 +37,7 @@
 
 - HTTP 경계: Controller 테스트의 null·빈 문자열·길이·enum·존재하지 않는 ID·400/401/403/404/409/429/500
 - 상태·DB 경계: 도메인 불변식 + Repository UNIQUE + H2/PostgreSQL 동시 생성·완료·rollback
-- 범위: [최신 전체 회귀 및 한계](../2026-09-27-service-completion/verification.md). AI를 뺀 동작 검증과 출시 품질 Gate 구분
+- 범위: [최신 전체 회귀 및 한계](../2026-09-29-openai-completion/verification.md). GPT 정상 경로는 실제 브라우저로 확인, 실제 provider 장애·콘텐츠 교체는 계약·통합 테스트에 한정
 
 ## 보안 보완 증거
 

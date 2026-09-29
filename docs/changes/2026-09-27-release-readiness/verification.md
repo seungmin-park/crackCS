@@ -174,10 +174,10 @@
 
 ## 당시 남은 조건 — 이전 검증 시점의 이력
 
-아래 표는 `97b8b0e`까지의 상태 보존. 현재 완료·후속 범위는 [서버·제출 마무리](../2026-09-27-service-completion/verification.md), [화면·콘텐츠 검증](../2026-09-27-ui-content/verification.md), [작업 목록](../../planning/tasks.md) 참조.
+아래 표는 `97b8b0e`까지의 상태 보존. 현재 완료·후속 범위는 [서버 실행 검증](../2026-09-27-service-completion/verification.md), [화면·콘텐츠 검증](../2026-09-27-ui-content/verification.md), [GPT 후보 검증](../2026-09-29-openai-completion/verification.md), [작업 목록](../../planning/tasks.md) 참조.
 
 - 후속 완료: 로그인 DB 공유·두 JVM 검증, 초기 25문항·5문서 DRAFT, 화면 공통 오류 표현
-- 실제 AI Gate는 이후 사용자 지시로 제출 범위 제외. 사람 콘텐츠 승인·실제 파일럿은 미실행 유지
+- 당시 실제 AI Gate는 로컬 실행 범위에서 제외. 이후 GPT 후보 지표 측정 완료. 사람 콘텐츠 승인·실제 파일럿은 미실행 유지
 
 | 항목 | 당시 경계·다음 행동 |
 |---|---|

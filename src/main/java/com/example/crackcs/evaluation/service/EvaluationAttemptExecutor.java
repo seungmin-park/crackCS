@@ -6,6 +6,7 @@ import com.example.crackcs.evaluation.port.EvaluationRequest;
 import com.example.crackcs.evaluation.retrieval.KnowledgeRetrievalService;
 import com.example.crackcs.evaluation.retrieval.RetrievalResult;
 import com.example.crackcs.exception.EvaluationTimeoutException;
+import com.example.crackcs.exception.ProviderRequestRejectedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
@@ -48,6 +49,8 @@ class EvaluationAttemptExecutor {
                     .map(retrieved -> retrieved.chunk().getId())
                     .toList();
             return new EvaluationAttemptOutcome.Completed(result, evidenceChunkIds);
+        } catch (ProviderRequestRejectedException rejected) {
+            return new EvaluationAttemptOutcome.ReviewRequired(rejected.reason());
         } catch (EvaluationTimeoutException timeout) {
             return new EvaluationAttemptOutcome.RetryRequired("PROVIDER_TIMEOUT");
         } catch (IllegalArgumentException invalidResult) {

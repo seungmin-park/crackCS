@@ -54,26 +54,31 @@ tasks.withType(Test).configureEach {
 
 tasks.named('test') {
 	useJUnitPlatform {
-		excludeTags 'retrieval-benchmark', 'postgres', 'local-service-latency-benchmark', 'http-latency-benchmark', 'ollama-live'
+		excludeTags 'retrieval-benchmark', 'postgres', 'local-service-latency-benchmark', 'http-latency-benchmark', 'openai-live'
 	}
 }
 
 def referenceDirectory = layout.projectDirectory.dir('docs/evaluation/reference-v1')
 
-tasks.register('ollamaLiveEvaluation', Test) {
+tasks.register('openAiLiveEvaluation', Test) {
 	group = 'verification'
-	description = 'Measure a small reference-v1 sample with the locally running Ollama model.'
+	description = 'Measure an explicitly bounded reference-v1 sample with the paid OpenAI API.'
 	testClassesDirs = sourceSets.test.output.classesDirs
 	classpath = sourceSets.test.runtimeClasspath
 	dependsOn 'verifyReferenceStandard'
-	useJUnitPlatform { includeTags 'ollama-live' }
+	useJUnitPlatform { includeTags 'openai-live' }
 	testLogging.showStandardStreams = true
 	systemProperty 'reference.directory', referenceDirectory.asFile.absolutePath
-	systemProperty 'ollama.split', providers.gradleProperty('ollamaSplit').orElse('development').get()
-	systemProperty 'ollama.case.limit', providers.gradleProperty('ollamaCaseLimit').orElse('4').get()
-	systemProperty 'ollama.reasoning.effort', providers.gradleProperty('ollamaReasoningEffort').orElse('medium').get()
-	systemProperty 'benchmark.output', providers.gradleProperty('ollamaReport')
-		.orElse(layout.buildDirectory.file('reports/evaluation/ollama-smoke.json').get().asFile.absolutePath).get()
+	systemProperty 'openai.split', providers.gradleProperty('openaiSplit').orElse('development').get()
+	systemProperty 'openai.case.limit', providers.gradleProperty('openaiCaseLimit').orElse('1').get()
+	systemProperty 'openai.case.ids', providers.gradleProperty('openaiCaseIds').orElse('').get()
+	systemProperty 'openai.include.feedback', providers.gradleProperty('openaiIncludeFeedback').orElse('false').get()
+	systemProperty 'openai.model', providers.gradleProperty('openaiModel').orElse('gpt-5.6-terra').get()
+	systemProperty 'openai.reasoning.effort', providers.gradleProperty('openaiReasoningEffort').orElse('low').get()
+	systemProperty 'openai.max.output.tokens', providers.gradleProperty('openaiMaxOutputTokens').orElse('4096').get()
+	systemProperty 'openai.max.spend.usd', providers.gradleProperty('openaiMaxSpendUsd').orElse('0.25').get()
+	systemProperty 'benchmark.output', providers.gradleProperty('openaiReport')
+		.orElse(layout.buildDirectory.file('reports/evaluation/openai-smoke.json').get().asFile.absolutePath).get()
 	maxParallelForks = 1
 	outputs.upToDateWhen { false }
 }

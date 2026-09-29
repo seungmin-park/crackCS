@@ -1,0 +1,1266 @@
+{
+  "model" : "gpt-5.6-terra",
+  "reasoningEffort" : "low",
+  "maxOutputTokens" : 4096,
+  "evaluatorVersion" : "os-evaluator-v1",
+  "referenceVersion" : "1.0.0",
+  "split" : "development",
+  "scope" : "provider cases only; insufficient-evidence cases stop before model invocation",
+  "spendEstimate" : "standard gpt-5.6-terra text rates; verify billed cost in Platform",
+  "maxSpendUsd" : 1.0,
+  "cases" : [ {
+    "caseId" : "CS-01-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 697,
+    "outputTokens" : 336,
+    "estimatedUsd" : 0.005426,
+    "durationMillis" : 6096
+  }, {
+    "caseId" : "CS-01-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 659,
+    "outputTokens" : 344,
+    "estimatedUsd" : 0.0054459999999999995,
+    "durationMillis" : 5248
+  }, {
+    "caseId" : "CS-01-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 669,
+    "outputTokens" : 389,
+    "estimatedUsd" : 0.006006,
+    "durationMillis" : 6268
+  }, {
+    "caseId" : "CS-02-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 689,
+    "outputTokens" : 271,
+    "estimatedUsd" : 0.0046300000000000004,
+    "durationMillis" : 4607
+  }, {
+    "caseId" : "CS-02-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 656,
+    "outputTokens" : 344,
+    "estimatedUsd" : 0.0054399999999999995,
+    "durationMillis" : 6757
+  }, {
+    "caseId" : "CS-02-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 674,
+    "outputTokens" : 433,
+    "estimatedUsd" : 0.006544,
+    "durationMillis" : 7506
+  }, {
+    "caseId" : "CS-03-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 687,
+    "outputTokens" : 331,
+    "estimatedUsd" : 0.005346,
+    "durationMillis" : 6785
+  }, {
+    "caseId" : "CS-03-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 653,
+    "outputTokens" : 414,
+    "estimatedUsd" : 0.006274,
+    "durationMillis" : 7216
+  }, {
+    "caseId" : "CS-03-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 665,
+    "outputTokens" : 403,
+    "estimatedUsd" : 0.006166,
+    "durationMillis" : 6836
+  }, {
+    "caseId" : "CS-04-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 686,
+    "outputTokens" : 359,
+    "estimatedUsd" : 0.00568,
+    "durationMillis" : 6385
+  }, {
+    "caseId" : "CS-04-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 653,
+    "outputTokens" : 410,
+    "estimatedUsd" : 0.006226,
+    "durationMillis" : 7447
+  }, {
+    "caseId" : "CS-04-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 667,
+    "outputTokens" : 405,
+    "estimatedUsd" : 0.006194,
+    "durationMillis" : 6448
+  }, {
+    "caseId" : "CS-05-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 682,
+    "outputTokens" : 301,
+    "estimatedUsd" : 0.004976,
+    "durationMillis" : 5242
+  }, {
+    "caseId" : "CS-05-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 657,
+    "outputTokens" : 322,
+    "estimatedUsd" : 0.005178,
+    "durationMillis" : 4945
+  }, {
+    "caseId" : "CS-05-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 658,
+    "outputTokens" : 394,
+    "estimatedUsd" : 0.006044000000000001,
+    "durationMillis" : 6318
+  }, {
+    "caseId" : "CS-06-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 816,
+    "outputTokens" : 337,
+    "estimatedUsd" : 0.005676,
+    "durationMillis" : 5194
+  }, {
+    "caseId" : "CS-06-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 776,
+    "outputTokens" : 444,
+    "estimatedUsd" : 0.006880000000000001,
+    "durationMillis" : 6528
+  }, {
+    "caseId" : "CS-06-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 775,
+    "outputTokens" : 405,
+    "estimatedUsd" : 0.00641,
+    "durationMillis" : 5282
+  }, {
+    "caseId" : "CS-08-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 736,
+    "outputTokens" : 420,
+    "estimatedUsd" : 0.006512,
+    "durationMillis" : 6672
+  }, {
+    "caseId" : "CS-08-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 703,
+    "outputTokens" : 375,
+    "estimatedUsd" : 0.005906,
+    "durationMillis" : 6955
+  }, {
+    "caseId" : "CS-08-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 714,
+    "outputTokens" : 489,
+    "estimatedUsd" : 0.007296,
+    "durationMillis" : 7611
+  }, {
+    "caseId" : "CS-09-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 726,
+    "outputTokens" : 353,
+    "estimatedUsd" : 0.005688,
+    "durationMillis" : 5941
+  }, {
+    "caseId" : "CS-09-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 699,
+    "outputTokens" : 381,
+    "estimatedUsd" : 0.00597,
+    "durationMillis" : 6064
+  }, {
+    "caseId" : "CS-09-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 697,
+    "outputTokens" : 573,
+    "estimatedUsd" : 0.00827,
+    "durationMillis" : 8356
+  }, {
+    "caseId" : "CS-10-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 726,
+    "outputTokens" : 275,
+    "estimatedUsd" : 0.004752,
+    "durationMillis" : 4193
+  }, {
+    "caseId" : "CS-10-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 685,
+    "outputTokens" : 345,
+    "estimatedUsd" : 0.005509999999999999,
+    "durationMillis" : 4653
+  }, {
+    "caseId" : "CS-10-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 690,
+    "outputTokens" : 390,
+    "estimatedUsd" : 0.00606,
+    "durationMillis" : 5633
+  }, {
+    "caseId" : "JAVA-01-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 732,
+    "outputTokens" : 335,
+    "estimatedUsd" : 0.005484,
+    "durationMillis" : 5786
+  }, {
+    "caseId" : "JAVA-01-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 701,
+    "outputTokens" : 308,
+    "estimatedUsd" : 0.005098,
+    "durationMillis" : 4919
+  }, {
+    "caseId" : "JAVA-01-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 709,
+    "outputTokens" : 336,
+    "estimatedUsd" : 0.00545,
+    "durationMillis" : 5682
+  }, {
+    "caseId" : "JAVA-02-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 689,
+    "outputTokens" : 339,
+    "estimatedUsd" : 0.0054459999999999995,
+    "durationMillis" : 5001
+  }, {
+    "caseId" : "JAVA-02-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 655,
+    "outputTokens" : 320,
+    "estimatedUsd" : 0.00515,
+    "durationMillis" : 5334
+  }, {
+    "caseId" : "JAVA-02-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 672,
+    "outputTokens" : 419,
+    "estimatedUsd" : 0.006372,
+    "durationMillis" : 6787
+  }, {
+    "caseId" : "JAVA-03-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 728,
+    "outputTokens" : 303,
+    "estimatedUsd" : 0.005092,
+    "durationMillis" : 5109
+  }, {
+    "caseId" : "JAVA-03-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 699,
+    "outputTokens" : 401,
+    "estimatedUsd" : 0.00621,
+    "durationMillis" : 6581
+  }, {
+    "caseId" : "JAVA-03-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 702,
+    "outputTokens" : 420,
+    "estimatedUsd" : 0.006444,
+    "durationMillis" : 6874
+  }, {
+    "caseId" : "JAVA-04-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 704,
+    "outputTokens" : 440,
+    "estimatedUsd" : 0.0066879999999999995,
+    "durationMillis" : 6867
+  }, {
+    "caseId" : "JAVA-04-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 675,
+    "outputTokens" : 302,
+    "estimatedUsd" : 0.004974,
+    "durationMillis" : 5372
+  }, {
+    "caseId" : "JAVA-04-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 685,
+    "outputTokens" : 392,
+    "estimatedUsd" : 0.0060739999999999995,
+    "durationMillis" : 5787
+  }, {
+    "caseId" : "JAVA-05-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 685,
+    "outputTokens" : 318,
+    "estimatedUsd" : 0.005186,
+    "durationMillis" : 5001
+  }, {
+    "caseId" : "JAVA-05-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 648,
+    "outputTokens" : 384,
+    "estimatedUsd" : 0.005904,
+    "durationMillis" : 6188
+  }, {
+    "caseId" : "JAVA-05-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 663,
+    "outputTokens" : 382,
+    "estimatedUsd" : 0.00591,
+    "durationMillis" : 5687
+  }, {
+    "caseId" : "JAVA-06-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 732,
+    "outputTokens" : 301,
+    "estimatedUsd" : 0.005076000000000001,
+    "durationMillis" : 4856
+  }, {
+    "caseId" : "JAVA-06-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 712,
+    "outputTokens" : 382,
+    "estimatedUsd" : 0.006008,
+    "durationMillis" : 6584
+  }, {
+    "caseId" : "JAVA-06-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 714,
+    "outputTokens" : 383,
+    "estimatedUsd" : 0.006024,
+    "durationMillis" : 6310
+  }, {
+    "caseId" : "JAVA-07-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 777,
+    "outputTokens" : 325,
+    "estimatedUsd" : 0.005454,
+    "durationMillis" : 5404
+  }, {
+    "caseId" : "JAVA-07-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 737,
+    "outputTokens" : 380,
+    "estimatedUsd" : 0.006033999999999999,
+    "durationMillis" : 6157
+  }, {
+    "caseId" : "JAVA-07-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 741,
+    "outputTokens" : 385,
+    "estimatedUsd" : 0.006102,
+    "durationMillis" : 7609
+  }, {
+    "caseId" : "JAVA-08-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 681,
+    "outputTokens" : 333,
+    "estimatedUsd" : 0.005358,
+    "durationMillis" : 5386
+  }, {
+    "caseId" : "JAVA-08-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 652,
+    "outputTokens" : 315,
+    "estimatedUsd" : 0.005084,
+    "durationMillis" : 4761
+  }, {
+    "caseId" : "JAVA-08-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 664,
+    "outputTokens" : 347,
+    "estimatedUsd" : 0.005492,
+    "durationMillis" : 5814
+  }, {
+    "caseId" : "JAVA-10-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 690,
+    "outputTokens" : 403,
+    "estimatedUsd" : 0.006216,
+    "durationMillis" : 7108
+  }, {
+    "caseId" : "JAVA-10-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 666,
+    "outputTokens" : 352,
+    "estimatedUsd" : 0.005556,
+    "durationMillis" : 5971
+  }, {
+    "caseId" : "JAVA-10-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 678,
+    "outputTokens" : 391,
+    "estimatedUsd" : 0.0060479999999999996,
+    "durationMillis" : 6270
+  }, {
+    "caseId" : "SPRING-01-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 682,
+    "outputTokens" : 269,
+    "estimatedUsd" : 0.004592,
+    "durationMillis" : 5270
+  }, {
+    "caseId" : "SPRING-01-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 657,
+    "outputTokens" : 430,
+    "estimatedUsd" : 0.006474,
+    "durationMillis" : 6697
+  }, {
+    "caseId" : "SPRING-01-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 661,
+    "outputTokens" : 453,
+    "estimatedUsd" : 0.006758,
+    "durationMillis" : 6861
+  }, {
+    "caseId" : "SPRING-02-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 735,
+    "outputTokens" : 360,
+    "estimatedUsd" : 0.00579,
+    "durationMillis" : 6290
+  }, {
+    "caseId" : "SPRING-02-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 704,
+    "outputTokens" : 343,
+    "estimatedUsd" : 0.005523999999999999,
+    "durationMillis" : 5706
+  }, {
+    "caseId" : "SPRING-02-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 710,
+    "outputTokens" : 414,
+    "estimatedUsd" : 0.0063880000000000004,
+    "durationMillis" : 5912
+  }, {
+    "caseId" : "SPRING-03-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 747,
+    "outputTokens" : 428,
+    "estimatedUsd" : 0.0066300000000000005,
+    "durationMillis" : 6880
+  }, {
+    "caseId" : "SPRING-03-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 705,
+    "outputTokens" : 404,
+    "estimatedUsd" : 0.006258,
+    "durationMillis" : 5980
+  }, {
+    "caseId" : "SPRING-03-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 721,
+    "outputTokens" : 487,
+    "estimatedUsd" : 0.007286,
+    "durationMillis" : 13841
+  }, {
+    "caseId" : "SPRING-04-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 728,
+    "outputTokens" : 240,
+    "estimatedUsd" : 0.0043360000000000004,
+    "durationMillis" : 3937
+  }, {
+    "caseId" : "SPRING-04-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 694,
+    "outputTokens" : 295,
+    "estimatedUsd" : 0.004928,
+    "durationMillis" : 4608
+  }, {
+    "caseId" : "SPRING-04-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 701,
+    "outputTokens" : 457,
+    "estimatedUsd" : 0.006886,
+    "durationMillis" : 6348
+  }, {
+    "caseId" : "SPRING-05-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 720,
+    "outputTokens" : 272,
+    "estimatedUsd" : 0.004704,
+    "durationMillis" : 4966
+  }, {
+    "caseId" : "SPRING-05-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 687,
+    "outputTokens" : 292,
+    "estimatedUsd" : 0.004878,
+    "durationMillis" : 4748
+  }, {
+    "caseId" : "SPRING-05-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 696,
+    "outputTokens" : 367,
+    "estimatedUsd" : 0.005796,
+    "durationMillis" : 5762
+  }, {
+    "caseId" : "SPRING-06-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 724,
+    "outputTokens" : 475,
+    "estimatedUsd" : 0.007148,
+    "durationMillis" : 7764
+  }, {
+    "caseId" : "SPRING-06-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 703,
+    "outputTokens" : 401,
+    "estimatedUsd" : 0.0062180000000000004,
+    "durationMillis" : 5916
+  }, {
+    "caseId" : "SPRING-06-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 714,
+    "outputTokens" : 527,
+    "estimatedUsd" : 0.007752,
+    "durationMillis" : 7197
+  }, {
+    "caseId" : "SPRING-08-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 723,
+    "outputTokens" : 292,
+    "estimatedUsd" : 0.00495,
+    "durationMillis" : 4793
+  }, {
+    "caseId" : "SPRING-08-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 694,
+    "outputTokens" : 352,
+    "estimatedUsd" : 0.005612000000000001,
+    "durationMillis" : 6324
+  }, {
+    "caseId" : "SPRING-08-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 706,
+    "outputTokens" : 480,
+    "estimatedUsd" : 0.007172,
+    "durationMillis" : 7363
+  }, {
+    "caseId" : "SPRING-09-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 818,
+    "outputTokens" : 319,
+    "estimatedUsd" : 0.005464,
+    "durationMillis" : 5872
+  }, {
+    "caseId" : "SPRING-09-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 777,
+    "outputTokens" : 455,
+    "estimatedUsd" : 0.007013999999999999,
+    "durationMillis" : 6910
+  }, {
+    "caseId" : "SPRING-09-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 786,
+    "outputTokens" : 517,
+    "estimatedUsd" : 0.007776,
+    "durationMillis" : 7326
+  }, {
+    "caseId" : "SPRING-10-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 806,
+    "outputTokens" : 371,
+    "estimatedUsd" : 0.006064,
+    "durationMillis" : 6470
+  }, {
+    "caseId" : "SPRING-10-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 770,
+    "outputTokens" : 462,
+    "estimatedUsd" : 0.007084,
+    "durationMillis" : 6831
+  }, {
+    "caseId" : "SPRING-10-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 784,
+    "outputTokens" : 441,
+    "estimatedUsd" : 0.00686,
+    "durationMillis" : 6777
+  }, {
+    "caseId" : "JPA-01-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 741,
+    "outputTokens" : 264,
+    "estimatedUsd" : 0.00465,
+    "durationMillis" : 4483
+  }, {
+    "caseId" : "JPA-01-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 705,
+    "outputTokens" : 343,
+    "estimatedUsd" : 0.005526,
+    "durationMillis" : 5514
+  }, {
+    "caseId" : "JPA-01-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 718,
+    "outputTokens" : 370,
+    "estimatedUsd" : 0.005876,
+    "durationMillis" : 5812
+  }, {
+    "caseId" : "JPA-02-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 723,
+    "outputTokens" : 279,
+    "estimatedUsd" : 0.004794,
+    "durationMillis" : 5435
+  }, {
+    "caseId" : "JPA-02-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 682,
+    "outputTokens" : 335,
+    "estimatedUsd" : 0.005384,
+    "durationMillis" : 5565
+  }, {
+    "caseId" : "JPA-02-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 691,
+    "outputTokens" : 341,
+    "estimatedUsd" : 0.005474,
+    "durationMillis" : 5312
+  }, {
+    "caseId" : "JPA-03-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 700,
+    "outputTokens" : 259,
+    "estimatedUsd" : 0.004508,
+    "durationMillis" : 4595
+  }, {
+    "caseId" : "JPA-03-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 680,
+    "outputTokens" : 317,
+    "estimatedUsd" : 0.005164,
+    "durationMillis" : 5336
+  }, {
+    "caseId" : "JPA-03-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 682,
+    "outputTokens" : 344,
+    "estimatedUsd" : 0.0054919999999999995,
+    "durationMillis" : 5672
+  }, {
+    "caseId" : "JPA-04-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 707,
+    "outputTokens" : 275,
+    "estimatedUsd" : 0.0047139999999999994,
+    "durationMillis" : 5479
+  }, {
+    "caseId" : "JPA-04-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 686,
+    "outputTokens" : 377,
+    "estimatedUsd" : 0.005896,
+    "durationMillis" : 6048
+  }, {
+    "caseId" : "JPA-04-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 682,
+    "outputTokens" : 390,
+    "estimatedUsd" : 0.006044,
+    "durationMillis" : 6328
+  }, {
+    "caseId" : "JPA-05-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 684,
+    "outputTokens" : 276,
+    "estimatedUsd" : 0.00468,
+    "durationMillis" : 4651
+  }, {
+    "caseId" : "JPA-05-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 658,
+    "outputTokens" : 334,
+    "estimatedUsd" : 0.005324000000000001,
+    "durationMillis" : 5493
+  }, {
+    "caseId" : "JPA-05-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 667,
+    "outputTokens" : 339,
+    "estimatedUsd" : 0.005402,
+    "durationMillis" : 5744
+  }, {
+    "caseId" : "JPA-09-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 777,
+    "outputTokens" : 407,
+    "estimatedUsd" : 0.006438,
+    "durationMillis" : 5834
+  }, {
+    "caseId" : "JPA-09-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 751,
+    "outputTokens" : 472,
+    "estimatedUsd" : 0.007166,
+    "durationMillis" : 7430
+  }, {
+    "caseId" : "JPA-09-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 754,
+    "outputTokens" : 493,
+    "estimatedUsd" : 0.007424,
+    "durationMillis" : 7707
+  }, {
+    "caseId" : "JPA-10-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 770,
+    "outputTokens" : 343,
+    "estimatedUsd" : 0.005656,
+    "durationMillis" : 5632
+  }, {
+    "caseId" : "JPA-10-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 738,
+    "outputTokens" : 386,
+    "estimatedUsd" : 0.006108,
+    "durationMillis" : 6049
+  }, {
+    "caseId" : "JPA-10-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 750,
+    "outputTokens" : 480,
+    "estimatedUsd" : 0.007260000000000001,
+    "durationMillis" : 6753
+  }, {
+    "caseId" : "AX-01-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 694,
+    "outputTokens" : 391,
+    "estimatedUsd" : 0.00608,
+    "durationMillis" : 6008
+  }, {
+    "caseId" : "AX-01-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 665,
+    "outputTokens" : 397,
+    "estimatedUsd" : 0.0060940000000000005,
+    "durationMillis" : 6795
+  }, {
+    "caseId" : "AX-01-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 670,
+    "outputTokens" : 410,
+    "estimatedUsd" : 0.00626,
+    "durationMillis" : 6621
+  }, {
+    "caseId" : "AX-02-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 764,
+    "outputTokens" : 404,
+    "estimatedUsd" : 0.006376,
+    "durationMillis" : 6245
+  }, {
+    "caseId" : "AX-02-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 740,
+    "outputTokens" : 405,
+    "estimatedUsd" : 0.00634,
+    "durationMillis" : 7064
+  }, {
+    "caseId" : "AX-02-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 753,
+    "outputTokens" : 497,
+    "estimatedUsd" : 0.007469999999999999,
+    "durationMillis" : 7007
+  }, {
+    "caseId" : "AX-07-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 730,
+    "outputTokens" : 348,
+    "estimatedUsd" : 0.005636,
+    "durationMillis" : 5496
+  }, {
+    "caseId" : "AX-07-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 703,
+    "outputTokens" : 357,
+    "estimatedUsd" : 0.00569,
+    "durationMillis" : 5253
+  }, {
+    "caseId" : "AX-07-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 712,
+    "outputTokens" : 413,
+    "estimatedUsd" : 0.00638,
+    "durationMillis" : 5868
+  }, {
+    "caseId" : "AX-08-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 749,
+    "outputTokens" : 397,
+    "estimatedUsd" : 0.006262,
+    "durationMillis" : 6235
+  }, {
+    "caseId" : "AX-08-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 725,
+    "outputTokens" : 362,
+    "estimatedUsd" : 0.005794,
+    "durationMillis" : 5687
+  }, {
+    "caseId" : "AX-08-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 734,
+    "outputTokens" : 496,
+    "estimatedUsd" : 0.0074199999999999995,
+    "durationMillis" : 7209
+  }, {
+    "caseId" : "AX-09-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 724,
+    "outputTokens" : 306,
+    "estimatedUsd" : 0.0051199999999999996,
+    "durationMillis" : 5203
+  }, {
+    "caseId" : "AX-09-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 700,
+    "outputTokens" : 365,
+    "estimatedUsd" : 0.00578,
+    "durationMillis" : 6011
+  }, {
+    "caseId" : "AX-09-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 714,
+    "outputTokens" : 455,
+    "estimatedUsd" : 0.006888,
+    "durationMillis" : 7442
+  }, {
+    "caseId" : "AX-10-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 748,
+    "outputTokens" : 527,
+    "estimatedUsd" : 0.00782,
+    "durationMillis" : 9777
+  }, {
+    "caseId" : "AX-10-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 716,
+    "outputTokens" : 350,
+    "estimatedUsd" : 0.005632,
+    "durationMillis" : 4792
+  }, {
+    "caseId" : "AX-10-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 721,
+    "outputTokens" : 473,
+    "estimatedUsd" : 0.007117999999999999,
+    "durationMillis" : 6860
+  }, {
+    "caseId" : "JAVA-13-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 728,
+    "outputTokens" : 263,
+    "estimatedUsd" : 0.004612,
+    "durationMillis" : 4850
+  }, {
+    "caseId" : "JAVA-13-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 721,
+    "outputTokens" : 376,
+    "estimatedUsd" : 0.005954,
+    "durationMillis" : 6658
+  }, {
+    "caseId" : "JAVA-13-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 714,
+    "outputTokens" : 269,
+    "estimatedUsd" : 0.004656,
+    "durationMillis" : 4299
+  }, {
+    "caseId" : "JAVA-14-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 698,
+    "outputTokens" : 272,
+    "estimatedUsd" : 0.00466,
+    "durationMillis" : 5622
+  }, {
+    "caseId" : "JAVA-14-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 696,
+    "outputTokens" : 292,
+    "estimatedUsd" : 0.004896,
+    "durationMillis" : 5221
+  }, {
+    "caseId" : "JAVA-14-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 696,
+    "outputTokens" : 331,
+    "estimatedUsd" : 0.005364,
+    "durationMillis" : 5181
+  }, {
+    "caseId" : "CS-12-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 765,
+    "outputTokens" : 325,
+    "estimatedUsd" : 0.00543,
+    "durationMillis" : 6643
+  }, {
+    "caseId" : "CS-12-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 748,
+    "outputTokens" : 377,
+    "estimatedUsd" : 0.00602,
+    "durationMillis" : 5391
+  }, {
+    "caseId" : "CS-12-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 747,
+    "outputTokens" : 457,
+    "estimatedUsd" : 0.006978,
+    "durationMillis" : 7231
+  }, {
+    "caseId" : "JPA-11-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 850,
+    "outputTokens" : 320,
+    "estimatedUsd" : 0.00554,
+    "durationMillis" : 4690
+  }, {
+    "caseId" : "JPA-11-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 843,
+    "outputTokens" : 358,
+    "estimatedUsd" : 0.005982,
+    "durationMillis" : 5445
+  }, {
+    "caseId" : "JPA-11-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 825,
+    "outputTokens" : 462,
+    "estimatedUsd" : 0.007194000000000001,
+    "durationMillis" : 6405
+  }, {
+    "caseId" : "SPRING-12-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 790,
+    "outputTokens" : 359,
+    "estimatedUsd" : 0.005888,
+    "durationMillis" : 6095
+  }, {
+    "caseId" : "SPRING-12-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 776,
+    "outputTokens" : 417,
+    "estimatedUsd" : 0.006555999999999999,
+    "durationMillis" : 6702
+  }, {
+    "caseId" : "SPRING-12-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 764,
+    "outputTokens" : 441,
+    "estimatedUsd" : 0.00682,
+    "durationMillis" : 6948
+  }, {
+    "caseId" : "SPRING-13-G01",
+    "expectedVerdict" : "CORRECT",
+    "actualVerdict" : "CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 758,
+    "outputTokens" : 268,
+    "estimatedUsd" : 0.004732,
+    "durationMillis" : 4693
+  }, {
+    "caseId" : "SPRING-13-G02",
+    "expectedVerdict" : "PARTIALLY_CORRECT",
+    "actualVerdict" : "PARTIALLY_CORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 745,
+    "outputTokens" : 311,
+    "estimatedUsd" : 0.005222,
+    "durationMillis" : 5482
+  }, {
+    "caseId" : "SPRING-13-G03",
+    "expectedVerdict" : "INCORRECT",
+    "actualVerdict" : "INCORRECT",
+    "evidenceValid" : true,
+    "inputTokens" : 748,
+    "outputTokens" : 480,
+    "estimatedUsd" : 0.007256,
+    "durationMillis" : 7912
+  } ],
+  "measurementComplete" : true,
+  "attempted" : 138,
+  "completed" : 138,
+  "estimatedUsd" : 0.8176820000000001,
+  "caseCount" : 138,
+  "failed" : 0,
+  "invalidEvidence" : 0,
+  "schemaSuccessRate" : 1.0,
+  "p95Millis" : 7611,
+  "detailedAgreement" : 0.927536231884058,
+  "binaryAgreement" : 0.8913043478260869,
+  "falseCorrectRate" : 0.0
+}

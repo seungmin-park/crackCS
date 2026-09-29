@@ -1,6 +1,7 @@
 package com.example.crackcs.learning.followup.service;
 
 import com.example.crackcs.exception.EvaluationTimeoutException;
+import com.example.crackcs.exception.ProviderRequestRejectedException;
 import com.example.crackcs.learning.followup.domain.FollowUpGenerationResult;
 import com.example.crackcs.learning.followup.domain.FollowUpReason;
 import com.example.crackcs.learning.followup.port.FollowUpQuestionGenerator;
@@ -30,6 +31,8 @@ class FollowUpGenerationAttemptExecutor {
                     request.evidence().stream().map(FollowUpRequest.Evidence::chunkId).toList()
             );
             return new FollowUpGenerationAttemptOutcome.Completed(generationResult);
+        } catch (ProviderRequestRejectedException rejected) {
+            return new FollowUpGenerationAttemptOutcome.FailureRequired(FollowUpReason.PROVIDER_ERROR);
         } catch (EvaluationTimeoutException timeout) {
             return retry(FollowUpReason.PROVIDER_TIMEOUT);
         } catch (IllegalArgumentException invalidResult) {

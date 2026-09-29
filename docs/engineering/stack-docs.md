@@ -35,7 +35,7 @@ stack-docs.json (확인한 공식 문서의 범위·URL)
 - Gradle 문서는 wrapper의 9.7.1 링크로 고정. Wrapper가 오르면 문서 링크도 함께 변경
 - `front/.nvmrc`의 24.20.0은 요구 버전. 실행 중인 `node --version`은 별도로 확인. CI는 `.nvmrc`로 Node 설치
 
-선택적 평가 연결: 기본 실행은 모의 평가. `ollama` profile의 [Ollama Chat API](https://docs.ollama.com/api/chat)와 활성화 조건이 있는 [OpenAI 구조화 출력](https://developers.openai.com/api/docs/guides/structured-outputs)은 실제 모델 작업에서만 해당 provider 설정·계약과 함께 확인. 이 목록의 기본 실행 버전 검사에는 포함하지 않음.
+선택적 평가 연결: 기본 실행은 모의 평가. 실제 모델을 켤 때는 [OpenAI 구조화 출력](https://developers.openai.com/api/docs/guides/structured-outputs)의 계약과 모델 설정을 함께 확인. 이 목록의 기본 실행 버전 검사에는 포함하지 않음.
 
 ## 동기화 절차
 

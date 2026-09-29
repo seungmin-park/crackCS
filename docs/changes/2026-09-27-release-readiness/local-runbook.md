@@ -2,9 +2,9 @@
 
 ## 실행 환경
 
-- 추가 서비스 요금 0원. 기존 PC·Docker 사용
+- 기본 실행 추가 서비스 요금 0원. 실제 GPT 시연을 켜면 사용량 과금
 - Java 21, Node.js 24, npm 11 이상, Docker Compose
-- 기본 평가·후속 질문은 모의 응답. 실제 평가만 필요하면 `ollama` profile 추가
+- 기본 평가·후속 질문은 모의 응답. 실제 GPT 시연은 아래 환경 변수로 선택
 - 공개 데모 계정·비밀번호: 인터넷 노출 금지
 - PostgreSQL과 앱 모두 loopback 바인딩. 기존 `data/crackcs-local` H2 파일 미사용
 
@@ -31,21 +31,31 @@ npm run dev -- --host 127.0.0.1 --strictPort
 - 최초 volume 초기화에서만 SQL 실행. 재시작 시 기존 데이터 유지
 - 포트 충돌 시 기존 프로세스 임의 종료 금지. 원인 확인 후 포트·Vite proxy 함께 변경
 
+## 실제 GPT 시연
+
+- OpenAI Platform 프로젝트의 월 강제 지출 한도와 잔액을 먼저 확인. 내부 예산은 추정치이며 외부 강제 한도를 대체하지 않음
+- 키는 1Password에서 복사해 백엔드 터미널의 숨김 입력에 붙여넣기. 채팅·명령 인자·파일·Git에 값 기록 금지
+- 새 백엔드 터미널에서 아래 명령 사용. 첫 `read`는 화면에 입력을 표시하지 않음. 평가와 후속 질문을 별도로 끌 수 있음
+
+```bash
+read -r -s OPENAI_API_KEY
+export OPENAI_API_KEY
+export OPENAI_EVALUATION_ENABLED=true
+export OPENAI_FOLLOWUP_ENABLED=true
+export OPENAI_MONTHLY_BUDGET_USD=2
+./gradlew bootRun --args='--spring.profiles.active=local,local-postgres'
+```
+
+- 평가 전용: `OPENAI_FOLLOWUP_ENABLED=false`. 무료 기본 흐름: 두 스위치 모두 미설정
+- 한정된 실제 API 평가 재측정: [검증 기록](../2026-09-29-openai-completion/verification.md). 기본 라이브 러너는 1건·추정 $0.25 중단 한도
+- 실행 터미널 종료 시 셸에 남은 키도 사라짐. 시연 후 로컬 앱·DB는 아래 종료 절차 사용
+
 ```text
 Browser :5173 → Vite /api proxy → Spring :8080
                                     ↓ validate
                           PostgreSQL :55432
                           명시적 V001 + V002 schema
 ```
-
-## 실제 로컬 평가
-
-기존 Ollama 서버·`gpt-oss:20b` 설치 확인 후 backend profile을 `local,local-postgres,ollama`로 변경.
-
-- OpenAI 호출 비활성 유지
-- 평가 모델 호출 3분 제한, lease 4분
-- 후속 질문은 모의 생성 유지
-- 느린 응답·품질 미달 상태 포함: [최신 검증](verification.md)
 
 ## backup·새 DB restore
 

@@ -22,7 +22,7 @@ class OpenAiEvaluationAdapterTest {
         ObjectMapper objectMapper = new ObjectMapper();
         RecordingClient openAiResponsesClient = new RecordingClient(successResponse());
         OpenAiEvaluationRequestFactory openAiEvaluationRequestFactory =
-                new OpenAiEvaluationRequestFactory(objectMapper, "gpt-5.6-terra");
+                new OpenAiEvaluationRequestFactory(objectMapper, "gpt-5.6-terra", "low", 2048);
         OpenAiEvaluationResponseParser openAiEvaluationResponseParser =
                 new OpenAiEvaluationResponseParser(objectMapper, "gpt-5.6-terra", "os-evaluator-v1");
         OpenAiEvaluationAdapter adapter = new OpenAiEvaluationAdapter(

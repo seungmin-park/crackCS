@@ -548,7 +548,7 @@ KnowledgeState    = 여러 평가가 반영되며 변하는 현재 학습 상태
 - Local database: H2
 - Production database target: PostgreSQL 17. 격리 컨테이너 통합 검증과 운영 배포 검증 구분. Migration·배포 절차는 최초 persistent staging 전 결정 ([ADR-0004](../adr/0004-defer-versioned-database-migrations.md), [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md))
 - AI: OpenAI Responses API, 기본 GPT-5.6 Terra, 자동 fallback 없음
-- 로컬 평가 후보: `gpt-oss:20b` + Ollama. 출시 모델 변경은 동일 골든 세트의 품질·지연 Gate 통과 후 별도 결정 ([후보 검증](../changes/2026-09-26-local-ollama/verification.md))
+- 이전 로컬 모델과의 실측 비교는 [보존된 검증 기록](../changes/2026-09-27-release-readiness/verification.md) 참조. 현재 실행 경로는 제거
 - Retrieval: Topic·공개 상태 필터 + 질문·모범 답안 키워드 점수·Concept 가산점 + 약한 후보 제외. 품질 미달 시 pgvector 비교
 
 ### 의존 방향
@@ -616,9 +616,9 @@ Persistence / AI / Embedding adapter
 
 ### 출시 품질 목표
 
-현재 자료의 정답 기준: [출시 회귀 정답 기준 v1.0.0](../evaluation/reference-v1/manifest.json). 60문제·240사례의 출처 대조·판정 정책·원본 버전 고정과 프로젝트 소유자 독립 검수 완료. 대표 사용자 표본의 성능 인증과 구분하며, 아래 품질 목표의 달성 판정은 실측 필요.
+현재 자료의 정답 기준: [출시 회귀 정답 기준 v1.0.0](../evaluation/reference-v1/manifest.json). 60문제·240사례의 출처 대조·판정 정책·원본 버전 고정과 프로젝트 소유자 독립 검수 완료. GPT 후보 provider 42건은 [오프라인 목표 통과](../changes/2026-09-29-openai-completion/verification.md). 대표 사용자 표본의 성능 인증·공개 출시는 별도.
 
-아래 수치는 초기 제안이며 대표 답안 세트가 준비되면 확정한다.
+아래 수치는 현행 오프라인 평가 목표. 실제 참가자 데이터와 공개 운영 기준은 파일럿에서 다시 판단.
 
 - CORRECT / PARTIALLY_CORRECT / INCORRECT 판정 일치율 85% 이상
 - CORRECT와 INCORRECT의 이진 구분 정확도 90% 이상

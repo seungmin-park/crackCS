@@ -11,17 +11,19 @@ crackcs:
   evaluation:
     lease-duration: 1m
     openai:
-      enabled: ${OPENAI_ENABLED:false}
+      enabled: ${OPENAI_EVALUATION_ENABLED:false}
       api-key: ${OPENAI_API_KEY:}
       model: ${OPENAI_MODEL:gpt-5.6-terra}
-      evaluator-version: ${EVALUATOR_VERSION:os-evaluator-v1}
+      reasoning-effort: ${OPENAI_REASONING_EFFORT:low}
+      max-output-tokens: ${OPENAI_MAX_OUTPUT_TOKENS:4096}
+      evaluator-version: ${EVALUATOR_VERSION:os-evaluator-v3}
       timeout: 30s
-    monthly-budget-usd: ${OPENAI_MONTHLY_BUDGET_USD:50}
+    monthly-budget-usd: ${OPENAI_MONTHLY_BUDGET_USD:2}
     input-usd-per-million-tokens: ${OPENAI_INPUT_USD_PER_MILLION_TOKENS:2}
     output-usd-per-million-tokens: ${OPENAI_OUTPUT_USD_PER_MILLION_TOKENS:12}
   followup:
     openai:
-      enabled: ${OPENAI_ENABLED:false}
+      enabled: ${OPENAI_FOLLOWUP_ENABLED:false}
 server:
   servlet:
     session:

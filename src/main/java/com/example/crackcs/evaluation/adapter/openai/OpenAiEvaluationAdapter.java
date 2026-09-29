@@ -11,7 +11,6 @@ import java.time.Duration;
 
 @Component
 @ConditionalOnProperty(name = "crackcs.evaluation.openai.enabled", havingValue = "true")
-@ConditionalOnProperty(name = "crackcs.evaluation.ollama.enabled", havingValue = "false", matchIfMissing = true)
 public class OpenAiEvaluationAdapter implements EvaluationPort {
 
     private final OpenAiResponsesClient openAiResponsesClient;

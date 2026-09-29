@@ -85,7 +85,6 @@
 | PostgreSQL + 키워드 검색 | 운영 DB 목표 | 품질 기준 미달 시 pgvector 비교 |
 | DB lease 작업 | Phase 5 도입 | 한 서버에서 재시작·중복 실행 복구, 확장 시 queue 검토 |
 | OpenAI Responses API | Phase 5 도입 | strict schema와 Evidence 검증 뒤 저장 |
-| Ollama + `gpt-oss:20b` | Phase 5 품질 후보 | 로컬 평가 연결 후 같은 정답 세트로 OpenAI 후보와 비교. 출시 모델 결정 전 품질 Gate 필요 |
 | 전역 상태 관리 라이브러리 | 필요 시 | 초기 Vue composable로 충분하면 추가하지 않음 |
 
 ## 4. 목표 아키텍처와 책임

@@ -7,7 +7,7 @@
 - 검수: 프로젝트 소유자 독립 사람 검수 완료
 - 범위: 질문 60개, 판정 사례 240개, 지식 문서 60개, 근거 청크 120개
 - 용도: 오프라인 품질 회귀와 retrieval 비교
-- 제외: 운영 공개 승인, 실제 모델 품질 인증, 운영 부하 검증
+- 제외: 운영 공개 승인, 대표 사용자 표본의 실제 모델 품질 인증, 운영 부하 검증. 현재 GPT의 오프라인 후보 실측은 [별도 검증](../../changes/2026-09-29-openai-completion/verification.md)
 
 `manifest.json`이 이 버전의 파일 해시와 문항별 검토 결과를 고정한다. 원본을 수정하면 기존 버전의 확정 상태가 자동으로 유지되지 않는다.
 
@@ -33,7 +33,10 @@ reference-v1/
 │   └── experiment-splits.json
 ├── benchmarks/
 │   ├── retrieval-baseline.json
-│   └── retrieval-improved.json
+│   ├── retrieval-improved.json
+│   ├── gpt-5.6-terra-development-baseline.json
+│   ├── gpt-5.6-terra-development-v3-paired.json
+│   └── gpt-5.6-terra-candidate-v3.json
 └── tools/
     ├── bundle.py
     └── test_bundle.py
@@ -49,6 +52,9 @@ reference-v1/
 | [data/experiment-splits.json](data/experiment-splits.json) | development와 evaluation-candidate 분할 |
 | [benchmarks/retrieval-baseline.json](benchmarks/retrieval-baseline.json) | 개선 전 역사적 측정값 |
 | [benchmarks/retrieval-improved.json](benchmarks/retrieval-improved.json) | 현재 구현의 H2·PostgreSQL 측정값과 한계 |
+| [benchmarks/gpt-5.6-terra-development-baseline.json](benchmarks/gpt-5.6-terra-development-baseline.json) | 실제 GPT `v1` 개발 138건 기준선 |
+| [benchmarks/gpt-5.6-terra-development-v3-paired.json](benchmarks/gpt-5.6-terra-development-v3-paired.json) | `v3` 개발 불일치·짝 오답 20건 진단 |
+| [benchmarks/gpt-5.6-terra-candidate-v3.json](benchmarks/gpt-5.6-terra-candidate-v3.json) | `v3` 후보 provider 42건 최종 실측. 근거·비용·해석은 [검증 기록](../../changes/2026-09-29-openai-completion/verification.md) |
 | [tools/bundle.py](tools/bundle.py) | 무결성 검사, 파생본 생성, 오프라인 export |
 | [tools/test_bundle.py](tools/test_bundle.py) | 데이터와 도구 계약 회귀 테스트 |
 

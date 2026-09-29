@@ -1,6 +1,6 @@
 # 실행·검증 마무리 계획
 
-> 후속 결정: 사용자 지시에 따라 실제 AI 연결·품질 Gate를 이번 제출 범위에서 제외. AI 외 남은 작업은 [서버·제출 마무리](../2026-09-27-service-completion/plan.md)로 이관. 이 문서는 이전 실행 범위의 이력으로 보존.
+> 당시 결정: 실제 AI 연결·품질 Gate를 로컬 실행 범위에서 제외. AI 외 남은 작업은 [서버 실행 검증](../2026-09-27-service-completion/plan.md)으로 이관. 이후 [GPT 후보 검증](../2026-09-29-openai-completion/verification.md) 수행. 이 문서는 이전 실행 범위의 이력으로 보존.
 
 > 실행: `superpowers:executing-plans` 순차 진행. 동작 변경은 실패 테스트 → 최소 구현 → 회귀 검증.
 

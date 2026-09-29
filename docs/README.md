@@ -1,6 +1,6 @@
 # 문서 지도
 
-확인일: 2026-09-27
+확인일: 2026-09-29
 
 이 파일은 문서 내용을 반복하지 않는다. 독자가 가진 질문과 그 답을 소유한 기준 문서를 연결한다.
 
@@ -46,9 +46,10 @@ docs/
 | 에이전트 작업·검증 경로 | 현재 기준 | [기능 지도·검증 경계](engineering/agent-workflow.md), [verify-crackcs](../.agents/skills/verify-crackcs/SKILL.md) | 사용자 경로·검증 명령·CI 변경 |
 | 사용 중인 기술 스택의 공식 문서 | 2026-09-29 확인 | [문서 안내](engineering/stack-docs.md), [버전 목록](engineering/stack-docs.json) | build/lockfile·BOM·공식 문서 버전 변경 |
 | 기술 스택 문서 동기화 검증 | 2026-09-29 실행 | [검증 기록](changes/2026-09-29-agent-engineering/verification.md) | 검사 경로·테스트·CI 변경 |
-| AI 연결을 제외한 서버·제출 마무리 | 구현·로컬 검증·독립 검토 완료 | [계획](changes/2026-09-27-service-completion/plan.md), [검증](changes/2026-09-27-service-completion/verification.md) | 보안·다중 앱·제출 근거 변경 |
+| AI 연결 전 서버·로컬 실행 검증 | 당시 구현·로컬 검증·독립 검토 완료 | [계획](changes/2026-09-27-service-completion/plan.md), [검증](changes/2026-09-27-service-completion/verification.md) | 보안·다중 앱·실행 근거 변경 |
 | 화면 오류 복구·초기 콘텐츠 준비 | 구현·초안 등록 완료, 사람 검수 대기 | [계획](changes/2026-09-27-ui-content/plan.md), [검증](changes/2026-09-27-ui-content/verification.md) | 화면 상태·콘텐츠 준비 범위 변경 |
-| 추가 비용 없는 실행·검증 마무리 | 이전 실행 이력, 후속 계획으로 이관 | [마무리 계획](changes/2026-09-27-release-readiness/plan.md) | 미완료 항목의 구현·검증·외부 조건 변경 |
+| 로컬 PostgreSQL 실행·복구 | 기존 검증 이력 | [실행 안내](changes/2026-09-27-release-readiness/local-runbook.md), [당시 검증](changes/2026-09-27-release-readiness/verification.md) | DB·복구·기동 경로 변경 |
+| 실제 GPT 연결·로컬 시연 | 로컬 시연 범위 완료, 공개 운영 별도 | [계획](changes/2026-09-29-openai-completion/plan.md), [검증](changes/2026-09-29-openai-completion/verification.md), [영상](changes/2026-09-29-openai-completion/demo.mp4) | 모델·비용 한도·품질 지표·시연 경로 변경 |
 | 도메인 네이밍·메서드 책임 개선 | 변경 범위 검증 완료 | [fix.md](../fix.md) | 관련 코드·상시 점검 기준 변경 |
 | Phase 8 운영 안정화 범위·실행 순서 | 부분 완료 | [설계](changes/2026-09-21-phase-8/design.md), [구현 계획](changes/2026-09-21-phase-8/implementation-plan.md), [검증](changes/2026-09-21-phase-8/verification.md) | Phase 8 범위·Gate·책임·순서·증거 변경 |
 | 운영 경계·평가 처리 책임 개선 | 구현 완료 | [설계](changes/2026-09-22-operability/design.md), [구현 계획](changes/2026-09-22-operability/implementation-plan.md), [검증](changes/2026-09-22-operability/verification.md) | Actuator·상관 ID·평가 관측·처리 책임 변경 |
@@ -86,12 +87,12 @@ ADR 작성 기준: 독자가 판단할 결정 하나, 대안과 선택 이유, �
 | 답할 질문 | 상태 | 기준 문서 | 갱신 계기 |
 |---|---|---|---|
 | 빈 환경 PostgreSQL 실행·복구 | 로컬 실행 기준 | [로컬 실행·복구](changes/2026-09-27-release-readiness/local-runbook.md) | 실행 명령·schema·profile 변경 |
-| 실행·정합성 최신 검증 | 코드 회귀 완료, 실제 모델 품질·지연 미달 | [실행 검증](changes/2026-09-27-release-readiness/verification.md) | 실행 환경·버전·회귀 범위 변경 |
+| 이전 실행·정합성 검증 | 당시 로컬 모델 품질·지연 미달, 현행 GPT 결과는 별도 | [당시 실행 검증](changes/2026-09-27-release-readiness/verification.md), [현행 GPT 검증](changes/2026-09-29-openai-completion/verification.md) | 실행 환경·버전·회귀 범위 변경 |
 | UI 개편의 목표 | 당시 결정 | [UI 제안](changes/2026-09-06-ui/proposal.md) | 제안 해석 오류 정정 |
 | UI·테마 구현 결과 | 완료 증거 | [UI 검증](changes/2026-09-06-ui/verification.md) | 같은 변경 범위 재검증 |
 | Phase 4 답변·평가 골격 | 완료 증거 | [Phase 4 검증](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 변경 |
-| Phase 5 평가 실행 기반 | 구현 증거, 실제 모델 품질 미완료 | [Phase 5 검증](changes/2026-09-08-phase-5/verification.md) | 평가·검색·품질 결과 변경 |
-| 로컬 `gpt-oss:20b` 평가 후보 | 연결 검증 완료, 출시 품질 미인증 | [Ollama 후보 검증](changes/2026-09-26-local-ollama/verification.md) | 모델·prompt·adapter·실측 결과 변경 |
+| Phase 5 평가 실행 기반 | 당시 구현 증거, 현행 GPT 품질은 별도 측정 | [Phase 5 검증](changes/2026-09-08-phase-5/verification.md), [현행 GPT 검증](changes/2026-09-29-openai-completion/verification.md) | 평가·검색·품질 결과 변경 |
+| 이전 로컬 모델 실측 | 보존된 비교 자료, 현재 실행 경로 아님 | [Ollama 후보 검증](changes/2026-09-26-local-ollama/verification.md), [당시 후보 표본](changes/2026-09-27-release-readiness/verification.md) | 모델 대안 검토·동일 사례 비교 |
 | Phase 6 개인화·구조 정리 | 완료 증거 | [Phase 6 검증](changes/2026-09-13-phase-6/verification.md) | 상태·추천·구조·검증 변경 |
 `changes/`의 과거 테스트 수는 당시 증거다. 현재 통과 여부는 새 실행 결과로 판단한다.
 

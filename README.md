@@ -2,7 +2,7 @@
 
 서술형 CS 답변을 저장하고, 근거를 붙여 평가한 결과를 개념별 학습 상태와 다음 문제로 연결하는 Java/Spring 백엔드 프로젝트.
 
-현재 제출 범위: **외부 AI 연결 없이 실행 가능한 로컬 데모**. 기본 평가는 모의 응답이며 실제 정답 판정 품질을 의미하지 않음. 실제 모델 비교·출시 Gate는 별도 보류. [현재 작업 상태](docs/planning/tasks.md).
+현재 로컬 시연 범위: **무료 기본 실행과 실제 GPT 평가 흐름 검증**. 기본 평가는 모의 응답. GPT는 별도 키·지출 한도·환경 변수로 선택. 고정 평가 후보의 품질 목표는 통과했으나 실제 참가자 파일럿과 공개 출시는 미실행. [현재 작업 상태](docs/planning/tasks.md).
 
 ## 직접 실행
 
@@ -28,6 +28,7 @@ npm run dev -- --host 127.0.0.1 --strictPort
 - 처음 실행 시 예시 데이터 생성, 이후 재시작은 데이터 보존
 - 기존 V001 DB: [V002 적용 절차](docs/changes/2026-09-27-release-readiness/local-runbook.md#기존-v001-db에-v002-적용) 먼저 확인
 - 종료·백업·복구·포트 충돌: [실행 안내](docs/changes/2026-09-27-release-readiness/local-runbook.md)
+- 실제 GPT 시연 켜기와 키의 안전한 주입: [로컬 실행 안내](docs/changes/2026-09-27-release-readiness/local-runbook.md#실제-gpt-시연)
 - Docker 없는 개발 대안: `./gradlew bootRun --args='--spring.profiles.active=local'` — 별도 파일 H2, 개발용 `ddl-auto=update`
 
 ## 주요 설계
@@ -63,7 +64,7 @@ npm test
 npm run build
 ```
 
-- H2 전체 회귀·PostgreSQL 17 Testcontainers·프런트·콘텐츠 구조 검사. 실행 수와 결과: [최신 검증](docs/changes/2026-09-27-service-completion/verification.md)
+- H2 전체 회귀·PostgreSQL 17 Testcontainers·프런트·콘텐츠 구조 검사. 최신 실행 수와 결과: [GPT 연결 검증](docs/changes/2026-09-29-openai-completion/verification.md)
 - 같은 PostgreSQL에 두 JVM: 동시 답변 10건, 10회 누적, 다른 앱의 중복 요청 재사용·로그인 차단 공유 확인
 - cmux 실제 클릭: 답변 보존 → 모의 오류 → 재시도 완료·재로그인 뒤 원래 답변 복귀
 - PostgreSQL HTTP 표본: 접수 p95 8.6ms, 주요 조회 p95 10~21ms. 데이터 크기·동시성·환경: [측정 근거](docs/changes/2026-09-27-release-readiness/verification.md). 운영 부하나 실제 AI 완료 지연의 보장 아님
@@ -76,7 +77,8 @@ npm run build
 - 인증 session은 서버 메모리. 두 앱 검증은 앱별 로그인 사용; 무중단 인증·로드밸런서·공유 session 검증 아님
 - 로그인 제한은 계정+주소 조합, 답변 접수는 회원별 1분 10건. 분산 계정·주소의 전역 남용 방어는 공개 운영 전 과제
 - 후속 Worker 비활성: `--crackcs.followup.worker-enabled=false`. 평가 비활성: `--crackcs.evaluation.worker-enabled=false`. 로그인 기록 정리는 독립 동작
-- 실제 AI는 기본 비활성. 기존 실험·모델 설정: [로컬 모델 기록](docs/changes/2026-09-26-local-ollama/verification.md), [실행 안내](docs/changes/2026-09-27-release-readiness/local-runbook.md). 이번 마무리의 평가 품질 근거로 사용하지 않음
+- 실제 AI는 기본 비활성. 유료 평가의 비용·품질 근거와 [32초 화면 캡처 기반 시연 영상](docs/changes/2026-09-29-openai-completion/demo.mp4)은 [실제 GPT 연결 검증](docs/changes/2026-09-29-openai-completion/verification.md) 참조
+- 이전 로컬 모델 실측은 [비교 기록](docs/changes/2026-09-26-local-ollama/verification.md)에 보존. 현재 실행 경로에서는 사용하지 않음
 - 운영 profile의 DB·키 환경 변수는 `application-postgres.yaml` 참조. 실제 비밀 값은 파일·명령 인자·로그·Git에 기록 금지
 - 사람 콘텐츠 승인·실제 참가자 파일럿·인터넷 배포는 미실행. [파일럿 실행안](docs/changes/2026-09-21-phase-8/pilot-runbook.md)
 

@@ -2,6 +2,7 @@ package com.example.crackcs.learning.followup.service;
 
 import com.example.crackcs.evaluation.domain.Verdict;
 import com.example.crackcs.exception.EvaluationTimeoutException;
+import com.example.crackcs.exception.ProviderRequestRejectedException;
 import com.example.crackcs.learning.followup.domain.FollowUpGenerationResult;
 import com.example.crackcs.learning.followup.domain.FollowUpReason;
 import com.example.crackcs.learning.followup.port.FollowUpQuestionGenerator;
@@ -84,6 +85,20 @@ class FollowUpGenerationAttemptExecutorTest {
 
         assertThat(outcome).isEqualTo(
                 new FollowUpGenerationAttemptOutcome.RetryRequired(FollowUpReason.PROVIDER_ERROR));
+    }
+
+    @Test
+    @DisplayName("인증 또는 결제 거절은 다시 호출하지 않고 영구 실패로 종료한다")
+    void stopsAfterPermanentProviderRejection() {
+        ObjectProvider<FollowUpQuestionGenerator> provider = provider(request -> {
+            throw new ProviderRequestRejectedException("PROVIDER_BUDGET_EXCEEDED");
+        });
+        FollowUpGenerationAttemptExecutor executor = new FollowUpGenerationAttemptExecutor(provider);
+
+        FollowUpGenerationAttemptOutcome outcome = executor.execute(request());
+
+        assertThat(outcome).isEqualTo(
+                new FollowUpGenerationAttemptOutcome.FailureRequired(FollowUpReason.PROVIDER_ERROR));
     }
 
     @SuppressWarnings("unchecked")

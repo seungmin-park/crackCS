@@ -15,7 +15,7 @@ import java.util.List;
 
 @Component
 @Profile("(local | test) & !prod & !production")
-@ConditionalOnExpression("!${crackcs.evaluation.openai.enabled:false} and !${crackcs.evaluation.ollama.enabled:false}")
+@ConditionalOnExpression("!${crackcs.evaluation.openai.enabled:false}")
 public class StubEvaluationAdapter implements EvaluationPort {
     private final StubOutcome outcome;
 

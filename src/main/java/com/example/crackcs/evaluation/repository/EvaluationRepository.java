@@ -45,11 +45,13 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long>, E
     @Query("select e from Evaluation e where e.id = :id")
     Optional<Evaluation> findAdminDetailById(@Param("id") Long id);
 
-    @Query("select coalesce(sum(e.inputTokens), 0) from Evaluation e where e.evaluatedAt >= :from and e.evaluatedAt < :until")
-    long sumInputTokensBetween(@Param("from") LocalDateTime from,
-                               @Param("until") LocalDateTime until);
+    @Query("select coalesce(sum(e.inputTokens), 0) from Evaluation e where e.evaluatedAt >= :from and e.evaluatedAt < :until and e.modelName = :modelName")
+    long sumInputTokensBetweenForModel(@Param("from") LocalDateTime from,
+                                       @Param("until") LocalDateTime until,
+                                       @Param("modelName") String modelName);
 
-    @Query("select coalesce(sum(e.outputTokens), 0) from Evaluation e where e.evaluatedAt >= :from and e.evaluatedAt < :until")
-    long sumOutputTokensBetween(@Param("from") LocalDateTime from,
-                                @Param("until") LocalDateTime until);
+    @Query("select coalesce(sum(e.outputTokens), 0) from Evaluation e where e.evaluatedAt >= :from and e.evaluatedAt < :until and e.modelName = :modelName")
+    long sumOutputTokensBetweenForModel(@Param("from") LocalDateTime from,
+                                        @Param("until") LocalDateTime until,
+                                        @Param("modelName") String modelName);
 }

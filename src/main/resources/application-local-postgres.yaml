@@ -1,4 +1,4 @@
-# Combine with local (and optionally ollama); order: local,local-postgres,ollama.
+# Combine with local; order: local,local-postgres.
 spring:
   datasource:
     url: jdbc:postgresql://127.0.0.1:55432/${LOCAL_DATABASE_NAME:crackcs_local}
@@ -19,7 +19,9 @@ server:
 crackcs:
   evaluation:
     openai:
-      enabled: false
+      enabled: ${OPENAI_EVALUATION_ENABLED:false}
+      api-key: ${OPENAI_API_KEY:}
+    monthly-budget-usd: ${OPENAI_MONTHLY_BUDGET_USD:2}
   followup:
     openai:
-      enabled: false
+      enabled: ${OPENAI_FOLLOWUP_ENABLED:false}
