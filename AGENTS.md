@@ -12,6 +12,7 @@
 - 설명 순서: 현상 → 필요한 이유 → 동작 원리 → 검증 결과
 - 공개할 과정: 관찰, 가정, 설계 선택, 실행 명령, 테스트 증거
 - 제외할 내용: private 내부 추론의 원문
+- 기술 스택 변경: [현재 버전·공식 문서](docs/engineering/stack-docs.md) 확인 후 `python3 scripts/check_stack_docs.py` 실행. [프로젝트 검증 스킬](.agents/skills/verify-crackcs/SKILL.md) 참조
 - 설계 판단 질문:
   - 누가 상태를 소유하는가?
   - 결정에 필요한 정보를 누가 아는가?

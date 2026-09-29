@@ -1,0 +1,23 @@
+{
+  "checkedOn": "2026-09-29",
+  "components": [
+    {"id": "java", "version": "21", "source": "java-toolchain", "officialUrl": "https://docs.oracle.com/en/java/javase/21/docs/api/", "docScope": "exact major"},
+    {"id": "spring-boot", "version": "4.1.1", "source": "spring-boot-plugin", "officialUrl": "https://docs.spring.io/spring-boot/reference/", "docScope": "current page displayed 4.1.1 on checkedOn"},
+    {"id": "spring-framework", "version": "7.0.9", "source": "boot-managed", "managedByBoot": "4.1.1", "officialUrl": "https://docs.spring.io/spring-framework/reference/", "docScope": "current page displayed 7.0.9 on checkedOn"},
+    {"id": "spring-security", "version": "7.1.1", "source": "boot-managed", "managedByBoot": "4.1.1", "officialUrl": "https://docs.spring.io/spring-security/reference/", "docScope": "current page displayed 7.1.1 on checkedOn"},
+    {"id": "spring-data-jpa", "version": "4.1.1", "source": "boot-managed", "managedByBoot": "4.1.1", "officialUrl": "https://docs.spring.io/spring-data/jpa/reference/", "docScope": "current page displayed 4.1.1 on checkedOn"},
+    {"id": "jakarta-persistence", "version": "3.2.0", "source": "boot-managed", "managedByBoot": "4.1.1", "officialUrl": "https://jakarta.ee/specifications/persistence/3.2/", "docScope": "versioned 3.2 specification"},
+    {"id": "hibernate", "version": "7.4.5.Final", "source": "boot-managed", "managedByBoot": "4.1.1", "officialUrl": "https://docs.hibernate.org/orm/7.4/userguide/html_single/", "docScope": "7.4 family guide"},
+    {"id": "testcontainers", "version": "2.0.5", "source": "boot-managed", "managedByBoot": "4.1.1", "officialUrl": "https://java.testcontainers.org/", "docScope": "current Java guide; patch from Boot BOM"},
+    {"id": "gradle", "version": "9.7.1", "source": "gradle-wrapper", "officialUrl": "https://docs.gradle.org/9.7.1/userguide/", "docScope": "versioned 9.7.1 manual"},
+    {"id": "node", "version": "24.20.0", "source": "node-version-file", "officialUrl": "https://nodejs.org/docs/latest-v24.x/api/", "docScope": "24.x API guide; local .nvmrc patch is the project pin"},
+    {"id": "postgresql", "version": "17", "source": "postgres-test-image", "officialUrl": "https://www.postgresql.org/docs/17/", "docScope": "exact major"},
+    {"id": "vue", "version": "3.5.42", "source": "npm-lock", "officialUrl": "https://vuejs.org/guide/introduction.html", "docScope": "Vue 3 guide; patch from lockfile"},
+    {"id": "vue-router", "version": "5.3.0", "source": "npm-lock", "officialUrl": "https://router.vuejs.org/guide/migration/v4-to-v5.html", "docScope": "5.x migration guide; patch from lockfile"},
+    {"id": "typescript", "version": "6.0.3", "source": "npm-lock", "officialUrl": "https://www.typescriptlang.org/docs/handbook/release-notes/typescript-6-0.html", "docScope": "6.0 release notes; patch from lockfile"},
+    {"id": "vite", "version": "8.2.2", "source": "npm-lock", "officialUrl": "https://vite.dev/guide/", "docScope": "current Vite 8 guide on checkedOn; patch from lockfile"},
+    {"id": "vitest", "version": "4.1.11", "source": "npm-lock", "officialUrl": "https://v4.vitest.dev/guide/", "docScope": "versioned 4.x guide; patch from lockfile"},
+    {"id": "element-plus", "version": "2.14.5", "source": "npm-lock", "officialUrl": "https://element-plus.org/en-US/guide/design.html", "docScope": "component guide; patch from lockfile"},
+    {"id": "bootstrap", "version": "5.3.8", "source": "npm-lock", "officialUrl": "https://getbootstrap.com/docs/5.3/getting-started/introduction/", "docScope": "versioned 5.3 guide; patch from lockfile"}
+  ]
+}

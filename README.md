@@ -86,3 +86,4 @@ npm run build
 - [제품 명세](docs/product/spec.md) · [인수 조건·P0 증거](docs/changes/2026-09-21-phase-8/acceptance-matrix.md)
 - [OpenAPI](openapi.yml): 요청·응답·오류 계약
 - [작업 목록](docs/planning/tasks.md) · [협업 규칙](AGENTS.md)
+- [현재 스택 공식 문서](docs/engineering/stack-docs.md) · [프로젝트 검증 경로](docs/engineering/agent-workflow.md)
