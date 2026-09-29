@@ -1,59 +1,93 @@
-# crackCS
+# CrackCS
 
-서술형 CS 답변을 저장하고, 근거를 붙여 평가한 결과를 개념별 학습 상태와 다음 문제로 연결하는 Java/Spring 백엔드 프로젝트.
+**CS 개념을 읽는 데서 그치지 않고, 내 말로 설명하고 이해도를 확인하는 서술형 학습 서비스**
 
-현재 로컬 시연 범위: **무료 기본 실행과 실제 GPT 평가 흐름 검증**. 기본 평가는 모의 응답. GPT는 별도 키·지출 한도·환경 변수로 선택. 고정 평가 후보의 품질 목표는 통과했으나 실제 참가자 파일럿과 공개 출시는 미실행. [현재 작업 상태](docs/planning/tasks.md).
+문제에 답하면 평가 결과와 참고 문서의 근거를 확인하고, 부족한 개념을 지식 지도와 후속 질문으로 이어서 학습할 수 있습니다.
 
-## 직접 실행
+> 현재 상태: 로컬 시연 가능. 기본 실행은 비용이 들지 않는 모의 평가를 사용하며, 실제 GPT 평가는 별도로 활성화해야 합니다. 콘텐츠의 사람 검수, 참가자 파일럿, 공개 배포는 아직 진행하지 않았습니다.
 
-필수: Java 21, Node.js 24, npm 11 이상, Docker Compose. Gradle은 Wrapper 사용.
+![CrackCS 문제집 화면](docs/changes/2026-09-06-ui/assets/implemented/library-light.jpg)
 
-```bash
-bash scripts/local-postgres.sh start
-./gradlew bootRun --args='--spring.profiles.active=local,local-postgres'
-```
+## 왜 만들었나요?
 
-다른 터미널:
+CS 개념을 읽고 이해했다고 느껴도, 면접 질문 앞에서 원리를 자기 언어로 설명하기는 어렵습니다. 답변을 마친 뒤에도 어느 개념이 약한지, 무엇을 다시 공부해야 하는지 알기 쉽지 않습니다.
 
-```bash
-cd front
-npm ci
-npm run dev -- --host 127.0.0.1 --strictPort
-```
-
-- 접속: `http://127.0.0.1:5173`
-- 일반 회원: 화면에서 회원가입 → 문제집 → 답변 제출 → 평가·근거 → 지식 지도·후속 질문
-- 관리자: `admin@crackcs.local` / `local admin passphrase` → 분류·문서·문제·평가 검토
-- 공개 데모 자격증명, PC 내부 loopback 전용. 추가 서비스 요금 0원
-- 처음 실행 시 예시 데이터 생성, 이후 재시작은 데이터 보존
-- 기존 V001 DB: [V002 적용 절차](docs/changes/2026-09-27-release-readiness/local-runbook.md#기존-v001-db에-v002-적용) 먼저 확인
-- 종료·백업·복구·포트 충돌: [실행 안내](docs/changes/2026-09-27-release-readiness/local-runbook.md)
-- 실제 GPT 시연 켜기와 키의 안전한 주입: [로컬 실행 안내](docs/changes/2026-09-27-release-readiness/local-runbook.md#실제-gpt-시연)
-- Docker 없는 개발 대안: `./gradlew bootRun --args='--spring.profiles.active=local'` — 별도 파일 H2, 개발용 `ddl-auto=update`
-
-## 주요 설계
+CrackCS는 **서술형 답변 → 근거가 있는 평가 → 개념별 학습 상태 → 다음 질문**을 하나의 흐름으로 연결합니다.
 
 ```text
-Vue 화면 → HTTP·세션·검증 경계 → Service 유스케이스 → 도메인 규칙 → PostgreSQL
-                                  │
-답변 접수 transaction ─────────────┘
-       ↓ 저장 후 202
-평가 Worker의 DB lease → transaction 밖 평가 Port → 결과·근거·학습 상태 원자적 반영
-                               모의 구현 / 외부 adapter
+문제 선택 → 내 말로 답변 → 평가 결과와 근거 확인
+                               ↓
+                    지식 지도 확인 → 후속 질문 또는 다음 문제
 ```
 
-| 해결한 문제 | 구현과 확인 근거 |
+## 무엇을 할 수 있나요?
+
+| 사용자 | 기능 |
 |---|---|
-| 재전송으로 답변·평가가 중복 생성 | 회원+요청 ID UNIQUE, 같은 요청은 기존 결과 반환. [멱등 접수](docs/changes/2026-09-07-phase-4/verification.md) |
-| 느린 평가 중 transaction·연결 점유 | 접수·lease·외부 호출·완료 분리. [처리 책임](docs/changes/2026-09-22-operability/verification.md) |
-| 여러 Worker의 중복 반영·학습 누적 손실 | DB lease, 적용 이력 UNIQUE, 잠금·충돌 재시도. [두 JVM 검증](docs/changes/2026-09-27-service-completion/verification.md) |
-| 콘텐츠 교체 뒤 과거 평가 근거 소실 | 버전 생성·공개 직렬화, 폐기본과 Evidence 보존. [버전 검증](docs/changes/2026-09-27-release-readiness/verification.md) |
-| 재시작·다른 서버에서 로그인 제한 초기화 | DB 공유 실패 창, 최초 생성 UNIQUE 경쟁 재시도, 독립 만료 정리. [인증 결정](docs/adr/0003-authentication-security-baseline.md) |
-| 통신 실패 후 입력·이동 경로 유실 | 오류 표현 통일, 원문·멱등 키 보존, 안전한 수동 재시도. [화면 검증](docs/changes/2026-09-27-ui-content/verification.md) |
+| 학습자 | 난이도별 문제 탐색, 서술형 답변 제출, 답변·평가 이력 조회 |
+| 학습자 | 개념별 판정과 참고 근거 확인, 지식 지도 조회, 후속 질문 풀이 |
+| 관리자 | 주제·개념·지식 문서·문제 관리, 공개 상태 관리, 평가 실패 검토 |
 
-상태 규칙은 해당 객체가 소유. Service는 transaction·Repository·Port 호출 순서 조정. [도메인과 현재 ERD](docs/architecture/domain-model-and-erd.md).
+답변을 제출하면 먼저 저장하고 평가를 비동기로 처리합니다. 평가가 끝나면 판정과 근거가 답변 상세에 표시됩니다. [실제 GPT를 연결한 로컬 사용자 흐름과 시연 영상](docs/changes/2026-09-29-openai-completion/verification.md#실제-사용자-흐름과-시연)을 볼 수 있습니다.
 
-## 검증과 확인 범위
+## 어떻게 동작하나요?
+
+```text
+Vue 화면 ──HTTP──> Spring Boot API ──> 답변 저장 ──> PostgreSQL
+                       │                    │
+                       │                평가 작업 등록
+                       │                    ↓
+                       └<── 결과 조회 ── 평가 Worker
+                                          │
+                              문서 검색 → 평가 Port
+                                          │
+                         판정·근거·개념별 학습 상태 저장
+```
+
+- **답변 접수:** 같은 요청 ID로 재전송하면 기존 답변을 돌려줘 중복 저장을 막습니다.
+- **평가 처리:** DB lease로 작업을 선점하고, 외부 평가 호출은 트랜잭션 밖에서 실행합니다. 결과와 학습 상태는 함께 반영합니다.
+- **평가 근거:** 공개된 지식 문서를 검색해 평가에 사용하고, 문서가 교체되어도 과거 평가의 근거 버전을 보존합니다.
+- **역할 분리:** 도메인 객체가 상태 규칙을 지키고, Service는 저장·트랜잭션·외부 Port 호출 순서를 조정합니다.
+
+자세한 관계와 결정 이유는 [도메인 모델·ERD](docs/architecture/domain-model-and-erd.md), [평가 실행 결정](docs/adr/0005-phase-5-evaluation-runtime.md)에 정리했습니다.
+
+## 기술 스택
+
+| 영역 | 기술 |
+|---|---|
+| 프런트엔드 | Vue 3, TypeScript, Vite, Vitest |
+| 백엔드 | Java 21, Spring Boot 4.1, Spring Security, Spring Data JPA |
+| 데이터·검증 | PostgreSQL 17, H2, Testcontainers, JUnit |
+| 선택적 AI 평가 | OpenAI Responses API |
+
+실제 의존성 버전은 [Gradle 설정](build.gradle), [프런트 패키지](front/package.json), [스택 문서](docs/engineering/stack-docs.md)를 기준으로 합니다.
+
+## 로컬에서 실행하기
+
+**필요한 도구:** Java 21, Node.js 24, npm 11 이상, Docker Compose. Gradle은 저장소의 Wrapper를 사용합니다.
+
+1. PostgreSQL과 백엔드를 실행합니다.
+
+   ```bash
+   bash scripts/local-postgres.sh start
+   ./gradlew bootRun --args='--spring.profiles.active=local,local-postgres'
+   ```
+
+2. 다른 터미널에서 프런트엔드를 실행합니다.
+
+   ```bash
+   cd front
+   npm ci
+   npm run dev -- --host 127.0.0.1 --strictPort
+   ```
+
+3. `http://127.0.0.1:5173`에 접속해 회원가입한 뒤 **문제집 → 답변 제출 → 평가·근거 → 지식 지도** 순서로 살펴봅니다. 관리자 화면은 로컬 전용 계정 `admin@crackcs.local` / `local admin passphrase`로 확인할 수 있습니다.
+
+첫 실행에는 예시 데이터가 생성되고, 재시작해도 PostgreSQL 데이터는 유지됩니다. 이 계정과 설정은 로컬 시연용입니다. 기존 V001 데이터베이스를 사용한다면 [V002 적용 절차](docs/changes/2026-09-27-release-readiness/local-runbook.md#기존-v001-db에-v002-적용)를 먼저 확인하세요. 종료·백업·복구와 실제 GPT 활성화 방법도 [로컬 실행 안내](docs/changes/2026-09-27-release-readiness/local-runbook.md)에 있습니다.
+
+Docker 없이 화면을 개발할 때는 별도 파일 H2를 사용하는 `./gradlew bootRun --args='--spring.profiles.active=local'`을 실행할 수 있습니다.
+
+## 검증하기
 
 ```bash
 ./gradlew test postgresTest --console=plain
@@ -64,28 +98,12 @@ npm test
 npm run build
 ```
 
-- H2 전체 회귀·PostgreSQL 17 Testcontainers·프런트·콘텐츠 구조 검사. 최신 실행 수와 결과: [GPT 연결 검증](docs/changes/2026-09-29-openai-completion/verification.md)
-- 같은 PostgreSQL에 두 JVM: 동시 답변 10건, 10회 누적, 다른 앱의 중복 요청 재사용·로그인 차단 공유 확인
-- cmux 실제 클릭: 답변 보존 → 모의 오류 → 재시도 완료·재로그인 뒤 원래 답변 복귀
-- PostgreSQL HTTP 표본: 접수 p95 8.6ms, 주요 조회 p95 10~21ms. 데이터 크기·동시성·환경: [측정 근거](docs/changes/2026-09-27-release-readiness/verification.md). 운영 부하나 실제 AI 완료 지연의 보장 아님
-- GitHub Actions: backend test, frontend test/type-check/build. PostgreSQL 검증은 Docker가 필요한 별도 명령
-- [초기 콘텐츠](docs/content/initial-v1/README.md): 25문항·50개 Concept·5문서·20개 출처. 사람 검수 전 DRAFT, 자동 공개 없음
+`postgresTest`는 Docker가 필요합니다. 마지막 기록에는 백엔드 508개, PostgreSQL 통합 65개, 프런트 326개 테스트가 통과했습니다. 이는 [실제 GPT 연결 당시의 검증 결과](docs/changes/2026-09-29-openai-completion/verification.md)이며, 현재 체크아웃에서 다시 실행한 결과를 뜻하지 않습니다.
 
-## 설정과 한계
+## 현재 범위와 문서
 
-- 기본 `ddl-auto=validate`; local H2 `update`; local-postgres `validate` + 명시적 V001/V002; test `create-drop`
-- 인증 session은 서버 메모리. 두 앱 검증은 앱별 로그인 사용; 무중단 인증·로드밸런서·공유 session 검증 아님
-- 로그인 제한은 계정+주소 조합, 답변 접수는 회원별 1분 10건. 분산 계정·주소의 전역 남용 방어는 공개 운영 전 과제
-- 후속 Worker 비활성: `--crackcs.followup.worker-enabled=false`. 평가 비활성: `--crackcs.evaluation.worker-enabled=false`. 로그인 기록 정리는 독립 동작
-- 실제 AI는 기본 비활성. 유료 평가의 비용·품질 근거와 [32초 화면 캡처 기반 시연 영상](docs/changes/2026-09-29-openai-completion/demo.mp4)은 [실제 GPT 연결 검증](docs/changes/2026-09-29-openai-completion/verification.md) 참조
-- 이전 로컬 모델 실측은 [비교 기록](docs/changes/2026-09-26-local-ollama/verification.md)에 보존. 현재 실행 경로에서는 사용하지 않음
-- 운영 profile의 DB·키 환경 변수는 `application-postgres.yaml` 참조. 실제 비밀 값은 파일·명령 인자·로그·Git에 기록 금지
-- 사람 콘텐츠 승인·실제 참가자 파일럿·인터넷 배포는 미실행. [파일럿 실행안](docs/changes/2026-09-21-phase-8/pilot-runbook.md)
-
-## 문서
-
-- [문서 지도](docs/README.md): 문서별 책임과 현재 기준
-- [제품 명세](docs/product/spec.md) · [인수 조건·P0 증거](docs/changes/2026-09-21-phase-8/acceptance-matrix.md)
-- [OpenAPI](openapi.yml): 요청·응답·오류 계약
-- [작업 목록](docs/planning/tasks.md) · [협업 규칙](AGENTS.md)
-- [현재 스택 공식 문서](docs/engineering/stack-docs.md) · [프로젝트 검증 경로](docs/engineering/agent-workflow.md)
+- 기본 평가는 모의 응답입니다. 실제 GPT는 별도 API 키와 지출 한도를 설정한 로컬 시연에서 확인했습니다.
+- 초기 콘텐츠는 25문항·50개 개념·5개 문서의 **사람 검수 전 초안**입니다. 자동으로 공개하지 않습니다. [콘텐츠 안내](docs/content/initial-v1/README.md)
+- 공개 서비스 운영, 실제 참가자 파일럿, 운영 부하와 공유 세션은 검증 범위 밖입니다. [현재 작업 상태](docs/planning/tasks.md)
+- 기능과 HTTP 계약: [제품 명세](docs/product/spec.md) · [OpenAPI](openapi.yml)
+- 개발·검증 문서: [문서 지도](docs/README.md) · [협업 규칙](AGENTS.md)
