@@ -2,7 +2,7 @@
 
 ## 현재 상태
 
-현재 제출: 무료 기본 실행과 실제 GPT 선택 실행. [최신 검증](../changes/2026-09-29-openai-completion/verification.md)에서 품질 후보·PostgreSQL 브라우저 흐름 확인. 유료 시연은 OpenAI 프로젝트의 월 $2 강제 한도 아래 수행.
+현재 로컬 시연: 무료 기본 실행과 실제 GPT 선택 실행. [최신 검증](../changes/2026-09-29-openai-completion/verification.md)에서 품질 후보·PostgreSQL 브라우저 흐름 확인. 유료 시연은 OpenAI 프로젝트의 월 $2 강제 한도 아래 수행.
 
 | 범위 | 상태 | 남은 경계 |
 |---|---|---|
