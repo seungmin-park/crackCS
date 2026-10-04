@@ -43,3 +43,6 @@ out/
 ### Python content tooling ###
 __pycache__/
 *.pyc
+
+### Verification evidence ###
+front/test-results/

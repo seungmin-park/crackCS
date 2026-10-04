@@ -3,7 +3,7 @@
 - 독자·질문: CrackCS 작업자·에이전트 / 지금 선택된 버전에서 어느 공식 문서를 참고할 것인가?
 - 기준: [버전·공식 URL 목록](stack-docs.json), 확인일 2026-09-29
 - 버전의 소유자: Java·Spring Boot·PostgreSQL은 `build.gradle`, Gradle은 wrapper, Node는 `front/.nvmrc`, 프런트 실제 설치 버전은 `front/package-lock.json`
-- 범위: 주요 직접 사용 스택과 Spring Boot BOM이 관리하는 핵심 라이브러리 18개. 모든 전이 의존성의 문서 목록 아님
+- 범위: 주요 직접 사용 스택과 Spring Boot BOM이 관리하는 핵심 라이브러리 19개. 모든 전이 의존성의 문서 목록 아님
 
 ```text
 빌드 설정·lockfile (실제 선택)
@@ -17,6 +17,7 @@ stack-docs.json (확인한 공식 문서의 범위·URL)
 
 | 작업 | 현재 선택 버전 | 공식 문서 |
 |---|---|---|
+| Java 구조 검사 | ArchUnit 1.5.1 | [ArchUnit User Guide](https://www.archunit.org/userguide/html/000_Index.html) |
 | Java API·언어 | 21 | [Java SE 21 API](https://docs.oracle.com/en/java/javase/21/docs/api/) |
 | Spring Boot 설정·웹·테스트 | 4.1.1 | [Spring Boot Reference](https://docs.spring.io/spring-boot/reference/) |
 | Spring MVC·transaction | Framework 7.0.9 | [Spring Framework Reference](https://docs.spring.io/spring-framework/reference/) |

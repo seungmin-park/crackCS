@@ -1,0 +1,51 @@
+{
+  "backend": [
+    "com.example.crackcs.architecture.ArchitectureTest",
+    "com.example.crackcs.auth.controller.AuthenticationFlowTest",
+    "com.example.crackcs.auth.service.AuthServiceTest",
+    "com.example.crackcs.auth.service.LoginAttemptServiceTest",
+    "com.example.crackcs.common.web.ActuatorEndpointTest",
+    "com.example.crackcs.content.AdminContentFlowTest",
+    "com.example.crackcs.content.question.domain.QuestionTest",
+    "com.example.crackcs.content.question.service.QuestionVersionConcurrencyTest",
+    "com.example.crackcs.content.knowledge.domain.KnowledgeDocumentTest",
+    "com.example.crackcs.content.knowledge.service.KnowledgeDocumentVersionConcurrencyTest",
+    "com.example.crackcs.content.knowledge.chunk.service.KnowledgeChunkServiceTest",
+    "com.example.crackcs.evaluation.domain.EvaluationTest",
+    "com.example.crackcs.evaluation.adapter.openai.JdkOpenAiResponsesClientTest",
+    "com.example.crackcs.evaluation.adapter.openai.OpenAiEvaluationAdapterTest",
+    "com.example.crackcs.evaluation.service.EvaluationCompletionTransactionTest",
+    "com.example.crackcs.learning.answer.controller.AnswerFlowTest",
+    "com.example.crackcs.learning.answer.service.AnswerServiceTest",
+    "com.example.crackcs.learning.answer.service.KnowledgeAnswerSerializationTest",
+    "com.example.crackcs.learning.followup.service.FollowUpQuestionServiceTest",
+    "com.example.crackcs.learning.mastery.controller.KnowledgeFlowTest",
+    "com.example.crackcs.learning.mastery.service.KnowledgeCompletionTest",
+    "com.example.crackcs.learning.progress.service.LearningProgressServiceTest",
+    "com.example.crackcs.learning.recommendation.service.RecommendationServiceTest"
+  ],
+  "postgres": [
+    "com.example.crackcs.integration.postgres.PostgresPersistenceTest",
+    "com.example.crackcs.learning.answer.service.AnswerServiceTest",
+    "com.example.crackcs.learning.answer.service.KnowledgeAnswerSerializationTest",
+    "com.example.crackcs.learning.progress.service.LearningProgressServiceTest",
+    "com.example.crackcs.content.question.service.QuestionVersionConcurrencyTest",
+    "com.example.crackcs.content.knowledge.service.KnowledgeDocumentVersionConcurrencyTest"
+  ],
+  "frontend": [
+    "src/api/client.test.ts",
+    "src/api/answers.test.ts",
+    "src/api/learning.test.ts",
+    "src/authLifecycle.test.ts",
+    "src/router/index.test.ts",
+    "src/composables/useAnswerSubmission.test.ts",
+    "src/composables/useFollowUpQuestion.test.ts",
+    "src/composables/useAuth.test.ts",
+    "src/views/__tests__/LoginView.test.ts",
+    "src/views/__tests__/SignUpView.test.ts",
+    "src/views/__tests__/QuestionDetailView.test.ts",
+    "src/views/__tests__/AnswerDetailView.test.ts",
+    "src/views/__tests__/LearningViews.test.ts",
+    "src/views/admin/__tests__/AdminEvaluationView.test.ts"
+  ]
+}

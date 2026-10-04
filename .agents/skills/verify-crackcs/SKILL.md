@@ -44,6 +44,16 @@ PostgreSQL contract changes additionally need `./gradlew postgresTest --console=
 
 Local E2E must use the current caller's cmux workspace. Before starting, check `CMUX_WORKSPACE_ID`, `CMUX_SURFACE_ID`, and `cmux identify --json`. Reuse that workspace's E2E pane or create one to the caller's right with `--focus false`; include explicit workspace/surface in commands. Run servers and test logs there, use the workspace browser for actual clicks and inputs, inspect assertions and exit codes, and leave the result pane visible. Do not treat a preview or mock as a real model flow.
 
+## CI and delivery checks
+
+Java 21, Node 24 (front/.nvmrc), Python 3, and Docker are required for the full gate.
+
+```bash
+bash scripts/verify.sh all
+```
+
+For focused iteration use `docs`, `backend`, `frontend`, or `postgres`. The shared commands own clean backend build, frontend JSON reporting, required suite checks and PostgreSQL contract checks. The CI aggregate `CrackCS verify` rejects any failed, skipped or cancelled job. Follow the PR/auto-merge sequence in [agent-workflow](../../../docs/engineering/agent-workflow.md); check current main protection before requesting auto-merge. Do not infer MERGED from an enabled auto-merge request.
+
 ## Evidence and cleanup
 
-Record revision/worktree, exact command, exit status, test count, and remaining unverified behavior in the relevant `docs/changes/` verification file. For stack-docs checks, [current evidence](../../../docs/changes/2026-09-29-agent-engineering/verification.md). The checker and tests create no persistent application state; temporary test directories self-clean. Stop only processes started for the current verification; keep the cmux result pane.
+Record revision/worktree, exact command, exit status, test count, and remaining unverified behavior in the relevant `docs/changes/` verification file. For stack-docs checks, [stack-docs evidence](../../../docs/changes/2026-09-29-agent-engineering/verification.md); for CI delivery, [current evidence](../../../docs/changes/2026-10-05-ci-delivery/verification.md). The checker and tests create no persistent application state; temporary test directories self-clean. Stop only processes started for the current verification; keep the cmux result pane.

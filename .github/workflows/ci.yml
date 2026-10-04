@@ -2,21 +2,36 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   stack-docs:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - run: python3 -m unittest discover -s scripts -p 'test_check_stack_docs.py' -v
-      - run: python3 scripts/check_stack_docs.py
+      - run: mkdir -p build/verification
+      - run: bash scripts/verify.sh docs 2>&1 | tee build/verification/docs.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: docs-evidence
+          path: build/verification/
+          retention-days: 7
 
   backend:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -24,10 +39,20 @@ jobs:
           distribution: temurin
           java-version: "21"
           cache: gradle
-      - run: ./gradlew test --console=plain
+      - run: bash scripts/verify.sh backend
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-evidence
+          path: |
+            build/test-results/test/
+            build/reports/tests/test/
+            build/reports/problems/
+          retention-days: 7
 
   frontend:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,11 +60,52 @@ jobs:
           node-version-file: front/.nvmrc
           cache: npm
           cache-dependency-path: front/package-lock.json
-      - run: npm ci
-        working-directory: front
-      - run: npm run test
-        working-directory: front
-      - run: npm run type-check
-        working-directory: front
-      - run: npm run build-only
-        working-directory: front
+      - run: bash scripts/verify.sh frontend
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: frontend-evidence
+          path: front/test-results/
+          retention-days: 7
+
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+      - run: bash scripts/verify.sh postgres
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgres-evidence
+          path: |
+            build/test-results/postgresTest/
+            build/reports/tests/postgresTest/
+            build/reports/retrieval/postgres/
+          retention-days: 7
+
+  verify:
+    name: CrackCS verify
+    if: always()
+    needs: [stack-docs, backend, frontend, postgres]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Require every verification job to succeed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          results = json.loads(os.environ['RESULTS'])
+          for name, job in results.items():
+              print(f"{name}: {job['result']}")
+          if len(results) != 4 or any(job['result'] != 'success' for job in results.values()):
+              raise SystemExit('All four verification jobs must succeed; skipped and cancelled jobs fail the gate.')
+          PY

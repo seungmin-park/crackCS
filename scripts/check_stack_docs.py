@@ -8,6 +8,7 @@ from urllib.parse import urlparse
 
 
 COMPONENTS = {
+    "archunit": ("gradle-test-dependency", "www.archunit.org"),
     "java": ("java-toolchain", "docs.oracle.com"),
     "spring-boot": ("spring-boot-plugin", "docs.spring.io"),
     "spring-framework": ("boot-managed", "docs.spring.io"),
@@ -49,6 +50,7 @@ def selected_versions(root):
     manifest = json.loads((root / "front/package.json").read_text())
     lockfile = json.loads((root / "front/package-lock.json").read_text())
     versions = {
+        "archunit": required_match(build, r"com\.tngtech\.archunit:archunit:([0-9.]+)", "archunit"),
         "java": required_match(build, r"languageVersion\s*=\s*JavaLanguageVersion\.of\((\d+)\)", "java"),
         "spring-boot": required_match(build, r"id\s+['\"]org\.springframework\.boot['\"]\s+version\s+['\"]([^'\"]+)['\"]", "spring-boot"),
         "gradle": required_match(wrapper, r"gradle-([0-9.]+)-bin\.zip", "gradle"),
