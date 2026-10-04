@@ -2,7 +2,7 @@
 
 > 자동 생성 읽기 사본. 수정 기준은 [bundle.json](bundle.json). 사람 검수·공개 승인 대기.
 
-- 원본 SHA-256: `8c55832babf61699449aad3394dc2911add22a97812cee1fb4d8303bb0d22c09`
+- 원본 SHA-256: `cba7aae00b69c39fd4a4b6a0659acd50f121e5d889e5ae14cadc0b41c6295333`
 - 재생성: 저장소 루트에서 `python3 scripts/render_content_review.py`
 - 검수 절차·승인 기록: [콘텐츠 안내](README.md#사람-검수공개-순서)
 - 이 자료를 읽었다는 사실만으로 앱의 검수·공개 상태가 바뀌지 않음
@@ -11,7 +11,7 @@
 
 ### OS-101 · BASIC
 
-Unix 계열에서 자식 프로세스가 fork() 뒤 exec()를 호출합니다. 두 호출이 프로세스와 실행 중인 프로그램을 각각 어떻게 바꾸는지 설명하세요.
+Unix 계열에서 fork()로 만든 자식 프로세스가 exec()를 호출합니다. 두 호출이 모두 성공한 경우, 프로세스와 실행 중인 프로그램이 각각 어떻게 바뀌는지 설명하세요.
 
 **모범 답안**
 
@@ -33,18 +33,18 @@ fork는 부모를 바탕으로 새 자식 프로세스를 만들며, 성공하�
 
 ### OS-102 · BASIC
 
-자식이 출력한 뒤 종료하고 부모도 결과를 출력합니다. 부모의 sleep(1) 대신 자식 종료를 기다리는 wait 계열 호출을 쓰는 이유를 설명하세요. 정상적으로 자식 종료를 회수하는 경우를 기준으로 답하세요.
+부모가 만든 자식 프로세스 하나가 출력 후 종료하고, 부모는 그 자식의 종료를 확인한 뒤 결과를 출력하려고 합니다. sleep(1) 대신 wait 계열 호출을 쓰는 이유를 설명하세요. 대상 자식의 종료 상태를 정상적으로 회수한 경우를 기준으로 답하세요.
 
 **모범 답안**
 
-sleep은 일정 시간의 경과를 기다릴 뿐 자식이 끝났다는 조건을 보장하지 않는다. 실행 시간은 부하와 스케줄링에 따라 달라질 수 있다. wait 계열은 자식 종료를 관찰하고 종료 상태를 회수하므로 자식 완료와 부모의 후속 작업을 연결할 수 있다. 실제 구현에서는 반환값과 오류·중단도 확인해야 한다.
+sleep은 시간의 경과만 기다리므로 대상 자식의 완료를 보장하지 않는다. 실행 시간은 부하와 스케줄링에 따라 달라진다. wait 계열로 대상 자식의 종료를 확인하고 종료 상태를 회수한 뒤 부모의 후속 작업을 진행할 수 있다. 오류·중단 반환을 종료 완료로 취급하면 안 된다.
 
 **필수 개념**
 
 - 자식 종료 대기와 회수 · 가중치 0.50: wait 계열로 자식의 종료를 관찰하고 상태를 회수하는 동기화.
 - 조건 기반 실행 순서 · 가중치 0.50: 고정 시간 지연 대신 필요한 사건의 완료로 후속 작업의 시작을 결정하는 방식.
 
-**혼동 주의:** sleep 시간이 길면 완료가 보장된다는 주장 제외.
+**혼동 주의:** sleep 시간이 길면 완료가 보장된다는 주장 제외. 대상 자식의 종료 확인과 단순 wait 반환을 구분.
 
 **출처 대조 위치**
 
@@ -55,7 +55,7 @@ sleep은 일정 시간의 경과를 기다릴 뿐 자식이 끝났다는 조건�
 
 ### OS-103 · INTERMEDIATE
 
-Unix 계열 프로세스가 파일을 연 뒤 fork()했습니다. 부모와 자식이 물려받은 파일 디스크립터로 읽을 때 파일 위치는 각각 독립적인가요? 자식의 close와 부모의 디스크립터 사용도 구분해 설명하세요.
+Unix 계열 프로세스가 일반 파일을 한 번 연 뒤 fork()했습니다. 부모와 자식이 상속한 파일 디스크립터로 읽을 때 파일 오프셋은 독립적인가요? 자식의 close가 부모의 디스크립터 사용에 미치는 영향도 설명하세요. 호출은 성공하고 파일을 다시 열지 않은 경우를 기준으로 답하세요.
 
 **모범 답안**
 
@@ -77,7 +77,7 @@ Unix 계열 프로세스가 파일을 연 뒤 fork()했습니다. 부모와 자�
 
 ### OS-104 · INTERMEDIATE
 
-소비자가 큐가 비었는지 if로 검사한 뒤 조건 변수에서 기다립니다. 깨어나면 바로 꺼내도 될까요? while 재검사와 mutex가 각각 필요한 이유를 설명하세요.
+POSIX 조건 변수를 쓰는 소비자가 큐가 비었는지 if로 검사한 뒤 기다립니다. 깨어나면 바로 항목을 꺼내도 될까요? while 재검사, 같은 mutex를 이용한 상태 보호, wait의 잠금 해제·대기 전환이 각각 필요한 이유를 설명하세요.
 
 **모범 답안**
 
@@ -92,14 +92,14 @@ Unix 계열 프로세스가 파일을 연 뒤 fork()했습니다. 부모와 자�
 
 **출처 대조 위치**
 
-- [OSTEP 30: Condition Variables](https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf) — 30.1 Definition and Routines; producer/consumer while solution
-- [MIT xv6 book, RISC-V revision 5](https://pdos.csail.mit.edu/6.1810/2025/xv6/book-riscv-rev5.pdf) — Chapter 9 Sleep and Wakeup; 9.1 Overview; sleep/wakeup implementation
+- [OSTEP 30: Condition Variables](https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf) — 30.1 Definition and Routines, pp. 2–3; 30.2 Producer/Consumer, pp. 9–14 (Mesa semantics, while, spurious wakeups)
+- [MIT xv6 book, RISC-V revision 5](https://pdos.csail.mit.edu/6.1810/2025/xv6/book-riscv-rev5.pdf) — 9.1 Overview, pp. 81–83; 9.2 Code: Sleep and wakeup, pp. 83–84 (condition lock, lost wakeup, predicate recheck)
 
 근거 문서: `operating_system-v1`. 검수 상태: **PENDING**
 
 ### OS-105 · INTERMEDIATE
 
-라운드 로빈 스케줄러의 타임 슬라이스를 매우 작게 줄이면 모든 성능 지표가 좋아질까요? 첫 응답 시간과 문맥 교환 비용을 중심으로 설명하세요.
+라운드 로빈 스케줄러의 타임 슬라이스를 매우 작게 줄이면 모든 성능 지표가 좋아질까요? 첫 CPU 실행까지의 응답 시간과 문맥 교환 비용을 중심으로 설명하세요.
 
 **모범 답안**
 
@@ -114,8 +114,8 @@ Unix 계열 프로세스가 파일을 연 뒤 fork()했습니다. 부모와 자�
 
 **출처 대조 위치**
 
-- [OSTEP 7: Scheduling](https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched.pdf) — 7.7 Round Robin
-- [MIT xv6 book, RISC-V revision 5](https://pdos.csail.mit.edu/6.1810/2025/xv6/book-riscv-rev5.pdf) — Chapter 8 Scheduling; 8.4 Code: Scheduling
+- [OSTEP 7: Scheduling](https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched.pdf) — 7.6 Response Time, pp. 6–7; 7.7 Round Robin, pp. 7–9 (time-slice/context-switch trade-off)
+- [MIT xv6 book, RISC-V revision 5](https://pdos.csail.mit.edu/6.1810/2025/xv6/book-riscv-rev5.pdf) — 8.2 Context switch overview, p. 75; 8.3 Code: Context switching, p. 76; 8.6 Real world, p. 79 (round robin policy)
 
 근거 문서: `operating_system-v1`. 검수 상태: **PENDING**
 
@@ -550,24 +550,24 @@ ORDINAL은 선언 순서의 번호를 저장하므로 앞에 상수를 넣어 �
 직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
 
 [OS-101]
-프로세스 생성과 프로그램 교체는 별개의 동작이다. fork 이후에는 부모와 자식이 각각 실행을 이어간다. 자식이 exec에 성공하면 그 자식의 주소 공간에 새 프로그램이 놓이고 이전 코드의 실행은 끝난다. 셸은 이 분리를 이용해 자식의 실행 환경을 준비한 다음 명령 프로그램으로 교체할 수 있다.
+fork의 프로세스 생성과 exec의 프로그램 교체는 별개의 동작이다. fork가 성공하면 부모와 새 자식이 각각 실행을 이어간다. exec가 성공하면 호출한 자식 프로세스의 프로그램 이미지가 교체되고 이전 코드로 돌아오지 않는다. exec 자체가 새 프로세스를 하나 더 만드는 것은 아니다.
 근거: OS-API — 5.1 fork, 5.3 exec; OS-XV6 — 1.1 Processes and memory
 
 [OS-102]
-시간을 충분히 기다렸다는 추측과 완료를 확인했다는 사실은 다르다. 부모가 자식의 완료를 전제로 다음 작업을 해야 한다면 종료 상태를 관찰하는 동기화가 필요하다. 정상적인 wait 완료 후 진행하면 스케줄러가 누구를 먼저 실행했는지에 기대지 않아도 된다. 오류 반환은 완료 성공과 구분한다.
+자식 종료 대기와 회수는 시간 지연과 다르다. sleep은 시간의 경과만 기다리므로 대상 자식의 완료를 보장하지 않는다. wait 계열로 대상 자식의 종료를 확인하고 상태를 회수한 뒤 부모의 후속 작업을 진행하는 것이 조건 기반 실행 순서다. 오류·중단 반환을 종료 완료로 취급하면 안 된다.
 근거: OS-API — 5.2 The wait() System Call; OS-XV6 — 1.1 exit and wait; 9.4 Code: Wait, exit, and kill
 
 [OS-103]
-디스크립터 번호는 프로세스가 소유하지만 그 번호가 가리키는 커널의 열린 파일 상태는 공유될 수 있다. fork로 상속한 경우 오프셋 공유와 프로세스별 close를 함께 이해해야 한다. 번호를 닫는 것과 모든 참조가 사라져 열린 파일 자원이 해제되는 시점은 같은 개념이 아니다.
-근거: OS-API — 5.4 redirection and file descriptors; homework 2; OS-XV6 — 1.2 I/O and File descriptors
+프로세스별 파일 디스크립터 테이블은 별개다. 일반 파일을 연 뒤 fork로 상속한 디스크립터는 같은 열린 파일 상태를 참조하므로 파일 오프셋을 공유한다. 한쪽의 읽기는 다른 쪽이 다음에 읽을 위치에도 영향을 준다. 자식이 자신의 디스크립터를 close해도 부모의 참조는 유지된다. 부모와 자식이 파일을 각각 다시 연 경우는 이 상속 사례와 구분한다.
+근거: OS-XV6 — 1.2 I/O and File descriptors, pp. 13–15; OS-API — 5.4 file descriptors; homework 2 (상속한 디스크립터의 입출력 사례)
 
 [OS-104]
-조건 변수는 조건 그 자체를 저장하는 큐 상태가 아니다. 실제 공유 상태가 판단의 기준이다. 대기자는 mutex 안에서 조건을 확인하고 wait 후 잠금을 다시 얻어 조건을 확인한다. 생산자도 같은 규칙으로 상태를 바꾸고 알린다. 이 구조는 경쟁하는 소비자와 검사 직후 도착하는 알림 모두를 고려한다.
-근거: OS-CV — 30.1 Definition and Routines; producer/consumer while solution; OS-XV6 — Chapter 9 Sleep and Wakeup; 9.1 Overview; sleep/wakeup implementation
+POSIX 조건 변수의 알림은 큐의 항목을 예약하지 않는다. 깨어난 뒤 다른 소비자가 항목을 가져갔거나 불필요한 깨움이 생길 수 있으므로, mutex를 다시 얻은 상태에서 while로 조건을 재검사한다. 잠금과 대기 전환의 원자성도 필요하다. 같은 mutex로 상태 검사·변경을 보호하고, wait는 mutex 해제와 대기 등록을 원자적으로 연결하며 반환 전에 mutex를 다시 얻는다. 검사와 대기 사이의 알림 유실을 막는 원리는 xv6의 condition lock과 sleep/wakeup에서도 확인할 수 있다. POSIX mutex와 xv6 커널 잠금의 구현은 서로 구분한다.
+근거: OS-CV — 30.1, pp. 2–3; 30.2, pp. 9–14; OS-XV6 — 9.1–9.2, pp. 81–84
 
 [OS-105]
-라운드 로빈은 실행 가능한 작업에 순서대로 시간 조각을 배분한다. 짧은 조각은 오래 기다리는 작업을 줄이는 대신 교환 비용을 자주 지불한다. 문맥 교환 비용을 0으로 가정한 계산과 실제 기계에서의 성능은 다르다. 첫 실행까지의 응답 시간과 모든 작업을 끝내는 완료 시간도 구분해야 한다.
-근거: OS-SCHED — 7.7 Round Robin; OS-XV6 — Chapter 8 Scheduling; 8.4 Code: Scheduling
+라운드 로빈의 응답성은 첫 CPU 실행 기회를 얼마나 빨리 얻는가와 연결된다. 여기서 응답 시간은 작업 도착부터 첫 CPU 실행까지다. 짧은 타임 슬라이스는 순환 대기를 줄일 수 있지만 문맥 교환의 부가 비용을 더 자주 지불한다. 레지스터 전환과 캐시 효과 등으로 실제 작업에 쓰는 시간이 줄어, 처리량이나 완료 시간이 나빠질 수 있다. 모든 지표가 함께 개선되는 것은 아니다.
+근거: OS-SCHED — 7.6–7.7, pp. 6–9; OS-XV6 — 8.2–8.3, pp. 75–76; 8.6, p. 79
 
 출처
 OS-API: https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-api.pdf

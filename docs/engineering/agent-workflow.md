@@ -35,7 +35,7 @@ build.gradle / package-lock.json → 문서 목록 → 검사 → CI
 | 항목 | 현재 경로 |
 |---|---|
 | 목적 | 테스트 누락·구조 위반·DB 계약 실패가 있는 변경의 main 진입 차단 |
-| 사용자 시작점 | 구현 요청 → 목적 하나의 `codex/` 브랜치 |
+| 사용자 시작점 | 구현 요청 → 변경 종류·목적을 드러내는 `<type>/<topic>` 브랜치 |
 | 로컬·CI 시작점 | `bash scripts/verify.sh [all 또는 job 이름]` |
 | 성공 관찰 | 네 job 모두 성공 → `CrackCS verify` 성공 → 보호 조건 충족 시 squash 자동 머지 |
 | 실패 관찰 | 필수 테스트 없음·0건·실패·오류·skip·타입·빌드·문서·DB 검사 실패 또는 job 취소·생략 → gate 실패 |
@@ -81,7 +81,7 @@ build.gradle / package-lock.json → 문서 목록 → 검사 → CI
 
 ### 에이전트의 자동 PR·머지 순서
 
-1. 최신 main에서 목적 하나의 `codex/` 브랜치 또는 기존 해당 브랜치 재사용
+1. 최신 main에서 목적 하나의 `<type>/<topic>` 브랜치 또는 기존 해당 브랜치 재사용. `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `ci` 중 실제 변경 종류 선택. 작업자·도구 이름 접두어 제외
 2. 동작·실패 조건을 설명하고 TDD 적용. 이름→수행 내용→소유 클래스·추출 필요성 순서로 diff 리뷰
 3. Java 21·Node 24·Docker 환경에서 `bash scripts/verify.sh all` 실행. cmux 필요 경로는 사용자 표시 정책 적용
 4. 관련 변경만 서명 커밋하고 해당 브랜치 push. 인증·서명 실패는 설정을 끄지 않고 원인 확인

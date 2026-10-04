@@ -37,7 +37,7 @@ docs/
 | 제품 범위·기능·인수 조건 | 현재 기준 | [제품 명세](product/spec.md) | 요구사항·출시 범위 변경 |
 | 콘텐츠 검수·평가 정책 | 현재 기준 | [콘텐츠 정책](product/content-and-ai-policy.md) | 검수·평가·공개 정책 변경 |
 | 도메인 관계·불변식·테이블 | 현재 기준 | [도메인·ERD](architecture/domain-model-and-erd.md) | 엔티티·관계·schema 변경 |
-| 초기 학습 콘텐츠·출처·등록 | 미검수 초안 | [initial-v1](content/initial-v1/README.md), [원본](content/initial-v1/bundle.json), [검수용 읽기 사본](content/initial-v1/review.md) | 콘텐츠·출처·검수 상태 변경 |
+| 초기 학습 콘텐츠·출처·등록 | DRAFT 등록 템플릿, OS 로컬 승인·나머지 검수 대기 | [initial-v1](content/initial-v1/README.md), [원본](content/initial-v1/bundle.json), [검수용 읽기 사본](content/initial-v1/review.md) | 콘텐츠·출처·검수 상태 변경 |
 | 평가 정답의 구성·실행법 | v1 확정 | [평가 정답 기준](evaluation/reference-v1/README.md) | 원본·manifest·도구 계약 변경 |
 | 평가 기준 버전·사람 검수·해시 | v1.0.0 확정 | [manifest](evaluation/reference-v1/manifest.json) | 원본 재검수 또는 새 버전 확정 |
 | retrieval 측정 이력과 현재 재측정 | 기존 측정·충돌 수정 후 재측정, 출시 성능 인증 아님 | [개선 전](evaluation/reference-v1/benchmarks/retrieval-baseline.json), [현재](evaluation/reference-v1/benchmarks/retrieval-improved.json), [현재 재측정](changes/2026-10-05-evidence-conflict/verification.md) | 검색 정책·자료·DB 환경 변경 |
@@ -50,6 +50,7 @@ docs/
 | AI 연결 전 서버·로컬 실행 검증 | 당시 구현·로컬 검증·독립 검토 완료 | [계획](changes/2026-09-27-service-completion/plan.md), [검증](changes/2026-09-27-service-completion/verification.md) | 보안·다중 앱·실행 근거 변경 |
 | 화면 오류 복구·초기 콘텐츠 준비 | 구현·초안 등록 완료, 사람 검수 대기 | [계획](changes/2026-09-27-ui-content/plan.md), [검증](changes/2026-09-27-ui-content/verification.md) | 화면 상태·콘텐츠 준비 범위 변경 |
 | 로컬 PostgreSQL 실행·복구 | 기존 검증 이력 | [실행 안내](changes/2026-09-27-release-readiness/local-runbook.md), [당시 검증](changes/2026-09-27-release-readiness/verification.md) | DB·복구·기동 경로 변경 |
+| 운영체제 콘텐츠 검수·공개·버전 보존 | OS 수정·사람 승인·로컬 공개·실제 GPT·AC-007 완료 | [검증·승인 기록](changes/2026-10-05-os-content/verification.md) | OS 콘텐츠·승인·실행 결과 변경 |
 | 실제 GPT 연결·로컬 시연 | 로컬 시연 범위 완료, 공개 운영 별도 | [계획](changes/2026-09-29-openai-completion/plan.md), [검증](changes/2026-09-29-openai-completion/verification.md), [영상](changes/2026-09-29-openai-completion/demo.mp4) | 모델·비용 한도·품질 지표·시연 경로 변경 |
 | 도메인 네이밍·메서드 책임 개선 | 변경 범위 검증 완료 | [fix.md](../fix.md) | 관련 코드·상시 점검 기준 변경 |
 | Phase 8 운영 안정화 범위·실행 순서 | 부분 완료 | [설계](changes/2026-09-21-phase-8/design.md), [구현 계획](changes/2026-09-21-phase-8/implementation-plan.md), [검증](changes/2026-09-21-phase-8/verification.md) | Phase 8 범위·Gate·책임·순서·증거 변경 |
