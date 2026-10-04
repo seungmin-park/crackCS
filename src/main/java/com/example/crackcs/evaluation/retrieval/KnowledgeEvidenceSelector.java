@@ -17,6 +17,8 @@ public class KnowledgeEvidenceSelector {
     private static final int MAX_EVIDENCE_LIMIT = 20;
     private static final double MINIMUM_RELATIVE_SCORE = 0.5;
     private static final double MINIMUM_CONFLICT_QUERY_COVERAGE = 0.5;
+    private static final double MINIMUM_CONFLICT_STATEMENT_COVERAGE = 0.8;
+    private static final Set<String> NEGATION_MARKERS = Set.of("아니다", "않는다", "없다");
 
     public RetrievalResult selectEvidence(List<KnowledgeChunk> candidates, RetrievalQuery query, int limit) {
         validateEvidenceLimit(limit);
@@ -164,11 +166,32 @@ public class KnowledgeEvidenceSelector {
         return false;
     }
 
-    private boolean conflicts(KnowledgeChunk left, KnowledgeChunk right) {
-        Set<String> leftTokens = tokens(left.getContent());
-        Set<String> rightTokens = tokens(right.getContent());
+    private boolean conflicts(KnowledgeChunk leftChunk, KnowledgeChunk rightChunk) {
+        return statements(leftChunk.getContent()).stream().anyMatch(leftStatement ->
+                statements(rightChunk.getContent()).stream().anyMatch(rightStatement ->
+                        statementsConflict(leftStatement, rightStatement)));
+    }
+
+    private List<String> statements(String content) {
+        return Arrays.stream(content.split("[.!?。\\r\\n]+"))
+                .map(String::trim)
+                .filter(statement -> !statement.isEmpty())
+                .toList();
+    }
+
+    private boolean statementsConflict(String leftStatement, String rightStatement) {
+        if (isNegated(leftStatement) == isNegated(rightStatement)) {
+            return false;
+        }
+        Set<String> leftTokens = tokens(leftStatement);
+        Set<String> rightTokens = tokens(rightStatement);
+        leftTokens.removeAll(NEGATION_MARKERS);
+        rightTokens.removeAll(NEGATION_MARKERS);
         long overlap = leftTokens.stream().filter(rightTokens::contains).count();
-        return overlap >= 2 && isNegated(left.getContent()) != isNegated(right.getContent());
+        // Shared topic words are not an opposing claim: most of the shorter statement must agree.
+        int shorterStatementSize = Math.min(leftTokens.size(), rightTokens.size());
+        return overlap >= 2
+                && overlap >= shorterStatementSize * MINIMUM_CONFLICT_STATEMENT_COVERAGE;
     }
 
     private boolean isNegated(String content) {
