@@ -91,6 +91,7 @@ ADR 작성 기준: 독자가 판단할 결정 하나, 대안과 선택 이유, �
 | 이전 실행·정합성 검증 | 당시 로컬 모델 품질·지연 미달, 현행 GPT 결과는 별도 | [당시 실행 검증](changes/2026-09-27-release-readiness/verification.md), [현행 GPT 검증](changes/2026-09-29-openai-completion/verification.md) | 실행 환경·버전·회귀 범위 변경 |
 | UI 개편의 목표 | 당시 결정 | [UI 제안](changes/2026-09-06-ui/proposal.md) | 제안 해석 오류 정정 |
 | UI·테마 구현 결과 | 완료 증거 | [UI 검증](changes/2026-09-06-ui/verification.md) | 같은 변경 범위 재검증 |
+| 테마 메뉴·포커스 표시 | 구현·로컬 검증 완료 | [검증·화면](changes/2026-10-05-theme-menu/verification.md) | 테마 컨트롤·키보드·배치 변경 |
 | Phase 4 답변·평가 골격 | 완료 증거 | [Phase 4 검증](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 변경 |
 | Phase 5 평가 실행 기반 | 당시 구현 증거, 현행 GPT 품질은 별도 측정 | [Phase 5 검증](changes/2026-09-08-phase-5/verification.md), [현행 GPT 검증](changes/2026-09-29-openai-completion/verification.md) | 평가·검색·품질 결과 변경 |
 | 이전 로컬 모델 실측 | 보존된 비교 자료, 현재 실행 경로 아님 | [Ollama 후보 검증](changes/2026-09-26-local-ollama/verification.md), [당시 후보 표본](changes/2026-09-27-release-readiness/verification.md) | 모델 대안 검토·동일 사례 비교 |
