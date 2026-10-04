@@ -40,7 +40,7 @@ docs/
 | 초기 학습 콘텐츠·출처·등록 | 미검수 초안 | [initial-v1](content/initial-v1/README.md), [원본](content/initial-v1/bundle.json), [검수용 읽기 사본](content/initial-v1/review.md) | 콘텐츠·출처·검수 상태 변경 |
 | 평가 정답의 구성·실행법 | v1 확정 | [평가 정답 기준](evaluation/reference-v1/README.md) | 원본·manifest·도구 계약 변경 |
 | 평가 기준 버전·사람 검수·해시 | v1.0.0 확정 | [manifest](evaluation/reference-v1/manifest.json) | 원본 재검수 또는 새 버전 확정 |
-| retrieval 기준과 현재 결과 | 측정 완료, 출시 성능 인증 아님 | [개선 전](evaluation/reference-v1/benchmarks/retrieval-baseline.json), [현재](evaluation/reference-v1/benchmarks/retrieval-improved.json) | 검색 정책·자료·DB 환경 변경 |
+| retrieval 측정 이력과 현재 재측정 | 기존 측정·충돌 수정 후 재측정, 출시 성능 인증 아님 | [개선 전](evaluation/reference-v1/benchmarks/retrieval-baseline.json), [현재](evaluation/reference-v1/benchmarks/retrieval-improved.json), [현재 재측정](changes/2026-10-05-evidence-conflict/verification.md) | 검색 정책·자료·DB 환경 변경 |
 | 구현 순서와 의존성 | 계획 | [개발 계획](planning/plan.md) | 순서·의존성 변경 |
 | 현재 남은 작업 | 진행 기준 | [작업 목록](planning/tasks.md) | 작업 시작·완료·검증 결과 변경 |
 | 에이전트 작업·검증 경로 | 현재 기준 | [기능 지도·검증 경계](engineering/agent-workflow.md), [verify-crackcs](../.agents/skills/verify-crackcs/SKILL.md) | 사용자 경로·검증 명령·CI 변경 |
@@ -91,6 +91,7 @@ ADR 작성 기준: 독자가 판단할 결정 하나, 대안과 선택 이유, �
 | 이전 실행·정합성 검증 | 당시 로컬 모델 품질·지연 미달, 현행 GPT 결과는 별도 | [당시 실행 검증](changes/2026-09-27-release-readiness/verification.md), [현행 GPT 검증](changes/2026-09-29-openai-completion/verification.md) | 실행 환경·버전·회귀 범위 변경 |
 | UI 개편의 목표 | 당시 결정 | [UI 제안](changes/2026-09-06-ui/proposal.md) | 제안 해석 오류 정정 |
 | UI·테마 구현 결과 | 완료 증거 | [UI 검증](changes/2026-09-06-ui/verification.md) | 같은 변경 범위 재검증 |
+| 근거 충돌 오탐·문장 단위 검사 | 구현·전체 검증·실제 GPT 후속 답변 완료 | [검증 기록](changes/2026-10-05-evidence-conflict/verification.md) | 충돌 정책·검색 회귀·실제 학습 흐름 변경 |
 | 테마 메뉴·포커스 표시 | 구현·로컬 검증 완료 | [검증·화면](changes/2026-10-05-theme-menu/verification.md) | 테마 컨트롤·키보드·배치 변경 |
 | Phase 4 답변·평가 골격 | 완료 증거 | [Phase 4 검증](changes/2026-09-07-phase-4/verification.md) | 답변·평가 계약 변경 |
 | Phase 5 평가 실행 기반 | 당시 구현 증거, 현행 GPT 품질은 별도 측정 | [Phase 5 검증](changes/2026-09-08-phase-5/verification.md), [현행 GPT 검증](changes/2026-09-29-openai-completion/verification.md) | 평가·검색·품질 결과 변경 |

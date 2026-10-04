@@ -1,0 +1,338 @@
+{
+  "measuredAt": "2026-10-04T19:36:35.883423Z",
+  "referenceVersion": "1.0.0",
+  "referenceArtifacts": {
+    "questions.jsonl": "b8d559a635f8fb25e3c1024150605734e90b71c1f2886e8926df011bd783beb9",
+    "golden-set.jsonl": "e3a508a061756f30606686854e0db64af102a1474b70cf9f974977d41f2b1af2",
+    "knowledge-documents.jsonl": "a8a286301f0cf86503dd88bf4f7fbd7b7130a93390276c62aa3c9eeee83f4f3b",
+    "sources.json": "9aa935a6e40b29b3fc12f3721ac0713bda1753baf5755bc5ea767dff9b9e5f86",
+    "experiment-splits.json": "6fc02a99de739af6ba391b6bf82cb2f79694b023159540d3ae0f698eb8fd707c"
+  },
+  "database": "PostgreSQL",
+  "documents": 60,
+  "referenceEvidenceSpans": 120,
+  "persistedChunks": 60,
+  "chunkPolicies": [
+    "paragraph-1000-overlap-150-v1"
+  ],
+  "conceptInput": "questions.jsonl concepts.name (same field as production)",
+  "aiCalls": 0,
+  "independentBenchmark": false,
+  "irrelevancePolicy": "not in mapped reference IDs; cross-question relevance not independently annotated",
+  "summaries": [
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 180,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "all",
+      "k": 1
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 138,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "development",
+      "k": 1
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "evaluation-candidate",
+      "k": 1
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 36,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "CS",
+      "k": 1
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "JAVA",
+      "k": 1
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 39,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "SPRING",
+      "k": 1
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 33,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "JPA",
+      "k": 1
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 30,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "AX",
+      "k": 1
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 180,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "all",
+      "k": 3
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 138,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "development",
+      "k": 3
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "evaluation-candidate",
+      "k": 3
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 36,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "CS",
+      "k": 3
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "JAVA",
+      "k": 3
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 39,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "SPRING",
+      "k": 3
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 33,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "JPA",
+      "k": 3
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 30,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "AX",
+      "k": 3
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 180,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "all",
+      "k": 5
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 138,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "development",
+      "k": 5
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "evaluation-candidate",
+      "k": 5
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 36,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "CS",
+      "k": 5
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 42,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "JAVA",
+      "k": 5
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 39,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "SPRING",
+      "k": 5
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 33,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "JPA",
+      "k": 5
+    },
+    {
+      "conflictingEvidenceQueries": 0,
+      "statistics": {
+        "queries": 30,
+        "macroRecallAtK": 1.0,
+        "macroIrrelevantChunkRate": 0.0,
+        "microIrrelevantChunkRate": 0.0,
+        "emptyResults": 0,
+        "requiresEmbeddingExperiment": false
+      },
+      "scope": "AX",
+      "k": 5
+    }
+  ],
+  "rawReportSha256": "f8f3b9b68bb0580d5bf3bbd431c4f0c4acc314536703819bc773d5495108941d",
+  "implementationSha256": "fd0a56e40ac51d3243b7eb31fc4aac86d488d6c4afffdb495703230afa99e5f6"
+}

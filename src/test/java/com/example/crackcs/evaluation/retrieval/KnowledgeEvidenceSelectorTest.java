@@ -128,6 +128,68 @@ class KnowledgeEvidenceSelectorTest {
                 .containsExactly(firstChunk, secondChunk);
     }
 
+    @Test
+    @DisplayName("fork와 exec 설명의 부정문을 파일 디스크립터 설명과 충돌로 오인하지 않는다")
+    void doesNotTreatComplementaryProcessEvidenceAsConflict() {
+        Topic topic = Topic.builder().code("PROCESS").name("운영체제").build();
+        Member admin = Member.builder().nickname("관리자").role(MemberRole.ADMIN).build();
+        String processContent = "[OS-101] fork의 프로세스 생성과 exec의 프로그램 교체는 별개의 동작이다. "
+                + "fork가 성공하면 부모와 새 자식이 각각 실행을 이어간다. "
+                + "exec가 성공하면 호출한 자식 프로세스의 프로그램 이미지가 교체되고 이전 코드로 돌아오지 않는다. "
+                + "exec 자체가 새 프로세스를 하나 더 만드는 것은 아니다. "
+                + "근거: OS-API — 5.1 fork, 5.3 exec; OS-XV6 — 1.1 Processes and memory";
+        String descriptorContent = "[OS-103] 프로세스별 파일 디스크립터 테이블은 별개다. "
+                + "일반 파일을 연 뒤 fork로 상속한 디스크립터는 같은 열린 파일 상태를 참조하므로 파일 오프셋을 공유한다. "
+                + "한쪽의 읽기는 다른 쪽이 다음에 읽을 위치에도 영향을 준다. "
+                + "자식이 자신의 디스크립터를 close해도 부모의 참조는 유지된다. "
+                + "부모와 자식이 파일을 각각 다시 연 경우는 이 상속 사례와 구분한다. "
+                + "근거: OS-XV6 — 1.2 I/O and File descriptors, pp. 13–15; "
+                + "OS-API — 5.4 file descriptors; homework 2 (상속한 디스크립터의 입출력 사례)";
+        KnowledgeDocument processDocument = createPublishedDocument(topic, admin, "프로세스", processContent);
+        KnowledgeDocument descriptorDocument = createPublishedDocument(topic, admin, "파일", descriptorContent);
+        KnowledgeChunk processChunk = KnowledgeChunk.create(processDocument, 0, 0,
+                processContent.length(), processContent, "policy-v1");
+        KnowledgeChunk descriptorChunk = KnowledgeChunk.create(descriptorDocument, 0, 0,
+                descriptorContent.length(), descriptorContent, "policy-v1");
+        RetrievalQuery query = new RetrievalQuery(1L,
+                List.of("fork의 프로세스 생성"),
+                "그렇다면 셸이 외부 명령을 실행할 때, 부모 셸은 계속 살아서 다음 명령을 받을 수 있으면서 "
+                        + "자식만 새 프로그램을 실행하게 하려면 fork()와 exec()를 각각 어느 프로세스가 호출해야 하나요?",
+                "셸(부모 프로세스)이 fork()를 호출해 자식을 만든다. "
+                        + "তারপর 자식 프로세스가 exec()를 호출해 자신의 프로그램 이미지를 외부 명령 프로그램으로 교체한다. "
+                        + "부모 셸은 exec()하지 않고 계속 실행되므로 다음 명령을 받을 수 있다.",
+                "");
+
+        RetrievalResult retrievalResult = knowledgeEvidenceSelector.selectEvidence(
+                List.of(processChunk, descriptorChunk), query, 5);
+
+        assertThat(retrievalResult.chunks()).extracting(RetrievedChunk::chunk)
+                .containsExactlyInAnyOrder(processChunk, descriptorChunk);
+        assertThat(retrievalResult.conflictingEvidence()).isFalse();
+    }
+
+    @Test
+    @DisplayName("문단에 다른 부정문이 있어도 같은 주장의 긍정과 부정은 충돌로 표시한다")
+    void detectsOpposingStatementsInsideMixedPolarityParagraphs() {
+        Topic topic = Topic.builder().code("CACHE_STATEMENT").name("캐시").build();
+        Member admin = Member.builder().nickname("관리자").role(MemberRole.ADMIN).build();
+        String positiveContent = "캐시 재검증은 서버 확인이 필요하다. 로컬 만료는 네트워크 요청이 필요 없다.";
+        String negativeContent = "캐시 재검증은 서버 확인이 필요 없다.";
+        KnowledgeDocument positiveDocument = createPublishedDocument(topic, admin, "긍정", positiveContent);
+        KnowledgeDocument negativeDocument = createPublishedDocument(topic, admin, "부정", negativeContent);
+        KnowledgeChunk positiveChunk = KnowledgeChunk.create(positiveDocument, 0, 0,
+                positiveContent.length(), positiveContent, "policy-v1");
+        KnowledgeChunk negativeChunk = KnowledgeChunk.create(negativeDocument, 0, 0,
+                negativeContent.length(), negativeContent, "policy-v1");
+        RetrievalQuery query = new RetrievalQuery(1L, List.of("캐시"),
+                "캐시 재검증은 서버 확인이 필요한가?", positiveContent, "");
+
+        RetrievalResult retrievalResult = knowledgeEvidenceSelector.selectEvidence(
+                List.of(positiveChunk, negativeChunk), query, 5);
+
+        assertThat(retrievalResult.conflictingEvidence()).isTrue();
+    }
+
     private KnowledgeDocument createPublishedDocument(Topic topic, Member admin, String title, String content) {
         KnowledgeDocument document = KnowledgeDocument.builder()
                 .topic(topic)
