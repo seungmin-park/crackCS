@@ -1,6 +1,7 @@
 # CI·자동 PR·머지 도입 검증
 
 - 독자·질문: 작업자·리뷰어 / 검사기가 실제 위반을 막으며 보호 규칙 아래 PR이 머지되는가?
+- 원격 증거: [PR #1](https://github.com/seungmin-park/crackCS/pull/1). checks·최종 머지 SHA·main CI는 PR 본문과 GitHub Actions에서 확인
 - 현재 기준: [작업자 검증·전달 경로](../../engineering/agent-workflow.md)
 - 상태: 구현·로컬 검증 완료, main 보호 적용. 원격 결과는 PR·GitHub Actions에서 확인
 - 범위: CI·구조/필수 테스트 검사·PR 전달. 운영 기능 변경 없음
@@ -46,6 +47,7 @@
 - 관리자에도 적용, 강제 push·main 삭제 금지, 미해결 리뷰 대화 해결 필요
 - 필수 승인 인원 0. 단독 개발에서 본인 승인 불가 때문에 대기하지 않으며 필수 CI·PR 조건 유지
 - 검증 workflow는 read-only token. PR·auto-merge는 별도 인증한 에이전트에서 실행
+- HTTPS OAuth에는 workflow scope가 없어 첫 push 거부. 기존 SSH 인증의 정확한 `ssh://` 주소를 해당 push에만 사용해 성공. 영구 remote·인증·서명 설정 변경 없음
 - 개별 PR auto-merge 요청과 실제 MERGED·main CI 결과는 원격 PR 기록에서 확인. 보호 설정만으로 PR 머지 완료 판정 불가
 
 ## 미검증 경계와 환경
