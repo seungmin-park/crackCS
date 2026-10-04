@@ -230,7 +230,7 @@ HTTP 계약         → MVC/API 테스트 + Service mock
 
 - 사용자 요청에 따른 구현·수정은 목적 하나, 독립 검증·되돌리기가 가능한 PR 단위로 전달
 - 구현·테스트·관련 문서는 함께 포함. 줄 수·테스트 수·coverage 비율 할당 없음
-- 최신 main에서 `codex/` 브랜치 사용. 관련 없는 사용자 변경·로컬 회고 제외
+- 최신 main에서 `<type>/<topic>` 브랜치 사용. 변경 목적에 따라 `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `ci` 선택. 주제는 짧은 영문 kebab-case. 작업자·도구 이름을 접두어로 사용하지 않음. 관련 없는 사용자 변경·로컬 회고 제외
 - [검증·전달 기준](docs/engineering/agent-workflow.md)의 공용 검증과 실제 diff 리뷰 후 기존 Git 서명 설정을 유지해 커밋·push
 - 같은 head의 열린 PR은 재사용. 없으면 에이전트가 PR 생성하고 이 Codex 작업에 첨부
 - 현재 main 보호 규칙·필수 check·Actions 출처·최신 main 조건 확인 후 해당 PR에 native auto-merge 신청

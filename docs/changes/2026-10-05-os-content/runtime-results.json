@@ -1,0 +1,456 @@
+{
+  "documents": [
+    {
+      "status": "RETIRED",
+      "version": 1,
+      "checksum": "484b2562829ab937a86ddfd0a15d5c18e6e587bde27e2abf9d4df964cdf99720",
+      "chunkIds": [
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "seriesId": "de07dc0e-d69d-47d3-ac6c-6a326601f684",
+      "documentId": 2
+    },
+    {
+      "status": "PUBLISHED",
+      "version": 2,
+      "checksum": "fc6bbc2e26e2cd5c0a38a4f1d2f9060b8d77504b15ce862e3223cfceb1983ad8",
+      "chunkIds": [
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "seriesId": "de07dc0e-d69d-47d3-ac6c-6a326601f684",
+      "documentId": 3
+    }
+  ],
+  "evaluations": [
+    {
+      "model": "gpt-5.6-terra",
+      "score": 100,
+      "status": "EVALUATED",
+      "answerId": 1,
+      "evidence": [
+        {
+          "chunkId": 3,
+          "documentId": 2,
+          "documentVersion": 1
+        }
+      ],
+      "questionId": 2,
+      "inputTokens": 889,
+      "attemptCount": 1,
+      "evaluationId": 1,
+      "outputTokens": 278,
+      "failureReason": null,
+      "evaluatorVersion": "os-evaluator-v3"
+    },
+    {
+      "model": null,
+      "score": null,
+      "status": "NEEDS_REVIEW",
+      "answerId": 2,
+      "evidence": null,
+      "questionId": 7,
+      "inputTokens": null,
+      "attemptCount": 1,
+      "evaluationId": 2,
+      "outputTokens": null,
+      "failureReason": "EVIDENCE_CONFLICT",
+      "evaluatorVersion": null
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "score": 100,
+      "status": "EVALUATED",
+      "answerId": 3,
+      "evidence": [
+        {
+          "chunkId": 3,
+          "documentId": 2,
+          "documentVersion": 1
+        }
+      ],
+      "questionId": 7,
+      "inputTokens": 1096,
+      "attemptCount": 1,
+      "evaluationId": 3,
+      "outputTokens": 222,
+      "failureReason": null,
+      "evaluatorVersion": "os-evaluator-v3"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "score": 100,
+      "status": "EVALUATED",
+      "answerId": 4,
+      "evidence": [
+        {
+          "chunkId": 4,
+          "documentId": 2,
+          "documentVersion": 1
+        }
+      ],
+      "questionId": 3,
+      "inputTokens": 963,
+      "attemptCount": 1,
+      "evaluationId": 4,
+      "outputTokens": 285,
+      "failureReason": null,
+      "evaluatorVersion": "os-evaluator-v3"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "score": 100,
+      "status": "EVALUATED",
+      "answerId": 5,
+      "evidence": [
+        {
+          "chunkId": 5,
+          "documentId": 2,
+          "documentVersion": 1
+        }
+      ],
+      "questionId": 4,
+      "inputTokens": 1061,
+      "attemptCount": 1,
+      "evaluationId": 5,
+      "outputTokens": 343,
+      "failureReason": null,
+      "evaluatorVersion": "os-evaluator-v3"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "score": 100,
+      "status": "EVALUATED",
+      "answerId": 6,
+      "evidence": [
+        {
+          "chunkId": 6,
+          "documentId": 2,
+          "documentVersion": 1
+        }
+      ],
+      "questionId": 5,
+      "inputTokens": 1092,
+      "attemptCount": 1,
+      "evaluationId": 6,
+      "outputTokens": 345,
+      "failureReason": null,
+      "evaluatorVersion": "os-evaluator-v3"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "score": 100,
+      "status": "EVALUATED",
+      "answerId": 7,
+      "evidence": [
+        {
+          "chunkId": 7,
+          "documentId": 2,
+          "documentVersion": 1
+        }
+      ],
+      "questionId": 6,
+      "inputTokens": 1033,
+      "attemptCount": 1,
+      "evaluationId": 7,
+      "outputTokens": 307,
+      "failureReason": null,
+      "evaluatorVersion": "os-evaluator-v3"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "score": 100,
+      "status": "EVALUATED",
+      "answerId": 8,
+      "evidence": [
+        {
+          "chunkId": 10,
+          "documentId": 3,
+          "documentVersion": 2
+        }
+      ],
+      "questionId": 2,
+      "inputTokens": 885,
+      "attemptCount": 1,
+      "evaluationId": 8,
+      "outputTokens": 273,
+      "failureReason": null,
+      "evaluatorVersion": "os-evaluator-v3"
+    }
+  ],
+  "knowledgeStates": [
+    {
+      "status": "STABLE",
+      "conceptId": 2,
+      "attemptCount": 3,
+      "masteryScore": 100,
+      "confidenceScore": 75
+    },
+    {
+      "status": "LEARNING",
+      "conceptId": 3,
+      "attemptCount": 2,
+      "masteryScore": 100,
+      "confidenceScore": 50
+    },
+    {
+      "status": "LEARNING",
+      "conceptId": 4,
+      "attemptCount": 1,
+      "masteryScore": 100,
+      "confidenceScore": 25
+    },
+    {
+      "status": "LEARNING",
+      "conceptId": 5,
+      "attemptCount": 1,
+      "masteryScore": 100,
+      "confidenceScore": 25
+    },
+    {
+      "status": "LEARNING",
+      "conceptId": 6,
+      "attemptCount": 1,
+      "masteryScore": 100,
+      "confidenceScore": 25
+    },
+    {
+      "status": "LEARNING",
+      "conceptId": 7,
+      "attemptCount": 1,
+      "masteryScore": 100,
+      "confidenceScore": 25
+    },
+    {
+      "status": "LEARNING",
+      "conceptId": 8,
+      "attemptCount": 1,
+      "masteryScore": 100,
+      "confidenceScore": 25
+    },
+    {
+      "status": "LEARNING",
+      "conceptId": 9,
+      "attemptCount": 1,
+      "masteryScore": 100,
+      "confidenceScore": 25
+    },
+    {
+      "status": "LEARNING",
+      "conceptId": 10,
+      "attemptCount": 1,
+      "masteryScore": 100,
+      "confidenceScore": 25
+    },
+    {
+      "status": "LEARNING",
+      "conceptId": 11,
+      "attemptCount": 1,
+      "masteryScore": 100,
+      "confidenceScore": 25
+    }
+  ],
+  "followUpGenerations": [
+    {
+      "model": "gpt-5.6-terra",
+      "reason": null,
+      "status": "READY",
+      "answerId": 1,
+      "questionId": 7,
+      "inputTokens": 426,
+      "attemptCount": 1,
+      "outputTokens": 151,
+      "generatorVersion": "follow-up-v1"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "reason": null,
+      "status": "READY",
+      "answerId": 4,
+      "questionId": 8,
+      "inputTokens": 487,
+      "attemptCount": 1,
+      "outputTokens": 195,
+      "generatorVersion": "follow-up-v1"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "reason": null,
+      "status": "READY",
+      "answerId": 5,
+      "questionId": 9,
+      "inputTokens": 555,
+      "attemptCount": 1,
+      "outputTokens": 260,
+      "generatorVersion": "follow-up-v1"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "reason": null,
+      "status": "READY",
+      "answerId": 6,
+      "questionId": 10,
+      "inputTokens": 576,
+      "attemptCount": 1,
+      "outputTokens": 427,
+      "generatorVersion": "follow-up-v1"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "reason": null,
+      "status": "READY",
+      "answerId": 7,
+      "questionId": 11,
+      "inputTokens": 514,
+      "attemptCount": 1,
+      "outputTokens": 309,
+      "generatorVersion": "follow-up-v1"
+    },
+    {
+      "model": "gpt-5.6-terra",
+      "reason": null,
+      "status": "READY",
+      "answerId": 8,
+      "questionId": 12,
+      "inputTokens": 437,
+      "attemptCount": 1,
+      "outputTokens": 167,
+      "generatorVersion": "follow-up-v1"
+    }
+  ],
+  "evaluationConceptCount": 13,
+  "knowledgeApplicationCount": 13,
+  "failedEvaluationApplicationCount": 0,
+  "currentFollowUpAvailability": [
+    {
+      "answerId": 1,
+      "status": "UNAVAILABLE",
+      "reason": "CONTENT_UNAVAILABLE",
+      "question": null
+    },
+    {
+      "answerId": 3,
+      "status": "UNAVAILABLE",
+      "reason": "FOLLOW_UP_LIMIT",
+      "question": null
+    },
+    {
+      "answerId": 4,
+      "status": "UNAVAILABLE",
+      "reason": "CONTENT_UNAVAILABLE",
+      "question": null
+    },
+    {
+      "answerId": 5,
+      "status": "UNAVAILABLE",
+      "reason": "CONTENT_UNAVAILABLE",
+      "question": null
+    },
+    {
+      "answerId": 6,
+      "status": "UNAVAILABLE",
+      "reason": "CONTENT_UNAVAILABLE",
+      "question": null
+    },
+    {
+      "answerId": 7,
+      "status": "UNAVAILABLE",
+      "reason": "CONTENT_UNAVAILABLE",
+      "question": null
+    },
+    {
+      "answerId": 8,
+      "status": "READY",
+      "reason": null,
+      "question": {
+        "id": 12,
+        "topic": {
+          "id": 1,
+          "code": "OPERATING_SYSTEM",
+          "name": "운영체제"
+        },
+        "difficulty": "BASIC",
+        "content": "그렇다면 셸이 외부 명령을 실행할 때 `fork()` 뒤 자식에서 `exec()`를 호출하는 이유를, 부모 셸이 계속 동작해야 한다는 관점에서 설명해 보세요."
+      }
+    }
+  ],
+  "usage": {
+    "evaluationResponses": 7,
+    "followUpResponses": 6,
+    "inputTokens": 10014,
+    "outputTokens": 3562
+  },
+  "versionPreservationAssertions": {
+    "historicalV1AnswersUnchanged": [
+      1,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "oldChunkIds": [
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "newAnswerId": 8,
+    "newChunkIds": [
+      10
+    ],
+    "newDocumentVersion": 2,
+    "originalReviewFailurePreserved": 2,
+    "historicalAnswerResponseChecksums": [
+      {
+        "answerId": 1,
+        "beforeSha256": "94b29704f306eb2d0f15c4ccbd0588d808eebf9543f9523ab6a2d73b51654d75",
+        "afterSha256": "94b29704f306eb2d0f15c4ccbd0588d808eebf9543f9523ab6a2d73b51654d75",
+        "equal": true
+      },
+      {
+        "answerId": 3,
+        "beforeSha256": "f8ab99bb0cdce2d4c75c4817ad9220d5b0660cdddd54e7fbec977b37bc1928b9",
+        "afterSha256": "f8ab99bb0cdce2d4c75c4817ad9220d5b0660cdddd54e7fbec977b37bc1928b9",
+        "equal": true
+      },
+      {
+        "answerId": 4,
+        "beforeSha256": "f70ca7dcb3e98e902d63d60c1470567a3da8e97186a9bdf1c5dabcca91412f2b",
+        "afterSha256": "f70ca7dcb3e98e902d63d60c1470567a3da8e97186a9bdf1c5dabcca91412f2b",
+        "equal": true
+      },
+      {
+        "answerId": 5,
+        "beforeSha256": "9dc23bfa7692eaa0c11d1bf0dc8c54c6d0018f9969037abc917da9c6c6c09bd4",
+        "afterSha256": "9dc23bfa7692eaa0c11d1bf0dc8c54c6d0018f9969037abc917da9c6c6c09bd4",
+        "equal": true
+      },
+      {
+        "answerId": 6,
+        "beforeSha256": "62624880cd7fbb56f22161e09bb685eb467d29972f5069c20e0ff562c47420cd",
+        "afterSha256": "62624880cd7fbb56f22161e09bb685eb467d29972f5069c20e0ff562c47420cd",
+        "equal": true
+      },
+      {
+        "answerId": 7,
+        "beforeSha256": "b7b8123db8ddcc0375780a8fbaaecb54dc414d01766038c8311787e188a9c206",
+        "afterSha256": "b7b8123db8ddcc0375780a8fbaaecb54dc414d01766038c8311787e188a9c206",
+        "equal": true
+      }
+    ]
+  },
+  "scope": "Dedicated local OS validation learner only; API/DB snapshots, not provider billing proof"
+}
