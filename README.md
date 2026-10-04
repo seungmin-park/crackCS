@@ -89,6 +89,8 @@ Docker 없이 화면을 개발할 때는 별도 파일 H2를 사용하는 `./gra
 
 ## 검증하기
 
+전체 CI와 동일한 검증·자동 PR 전달: [작업자 검증 경로](docs/engineering/agent-workflow.md).
+
 ```bash
 ./gradlew test postgresTest --console=plain
 python3 -m unittest discover -s scripts -p 'test_content_bundle.py'

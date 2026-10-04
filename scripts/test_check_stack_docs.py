@@ -74,6 +74,15 @@ class StackDocsCheckTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("spring-boot", result.stdout + result.stderr)
 
+    def test_architecture_library_upgrade_requires_document_review(self):
+        path = self.root / "build.gradle"
+        path.write_text(path.read_text().replace("archunit:1.5.1", "archunit:1.5.2"))
+
+        result = self.check()
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("archunit", result.stdout + result.stderr)
+
     def test_human_index_must_follow_catalog(self):
         path = self.root / "docs/engineering/stack-docs.md"
         path.write_text(path.read_text().replace("Vue 3.5.42", "Vue 3.5.41"))

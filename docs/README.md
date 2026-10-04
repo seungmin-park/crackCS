@@ -1,6 +1,6 @@
 # 문서 지도
 
-확인일: 2026-09-29
+확인일: 2026-10-05
 
 이 파일은 문서 내용을 반복하지 않는다. 독자가 가진 질문과 그 답을 소유한 기준 문서를 연결한다.
 
@@ -45,6 +45,7 @@ docs/
 | 현재 남은 작업 | 진행 기준 | [작업 목록](planning/tasks.md) | 작업 시작·완료·검증 결과 변경 |
 | 에이전트 작업·검증 경로 | 현재 기준 | [기능 지도·검증 경계](engineering/agent-workflow.md), [verify-crackcs](../.agents/skills/verify-crackcs/SKILL.md) | 사용자 경로·검증 명령·CI 변경 |
 | 사용 중인 기술 스택의 공식 문서 | 2026-09-29 확인 | [문서 안내](engineering/stack-docs.md), [버전 목록](engineering/stack-docs.json) | build/lockfile·BOM·공식 문서 버전 변경 |
+| CI·자동 PR·머지 검증 | 구현·로컬 검증 완료, 원격 결과는 연결 PR | [검증 기록](changes/2026-10-05-ci-delivery/verification.md) | 검증 job·필수 테스트·main 보호·전달 절차 변경 |
 | 기술 스택 문서 동기화 검증 | 2026-09-29 실행 | [검증 기록](changes/2026-09-29-agent-engineering/verification.md) | 검사 경로·테스트·CI 변경 |
 | AI 연결 전 서버·로컬 실행 검증 | 당시 구현·로컬 검증·독립 검토 완료 | [계획](changes/2026-09-27-service-completion/plan.md), [검증](changes/2026-09-27-service-completion/verification.md) | 보안·다중 앱·실행 근거 변경 |
 | 화면 오류 복구·초기 콘텐츠 준비 | 구현·초안 등록 완료, 사람 검수 대기 | [계획](changes/2026-09-27-ui-content/plan.md), [검증](changes/2026-09-27-ui-content/verification.md) | 화면 상태·콘텐츠 준비 범위 변경 |
