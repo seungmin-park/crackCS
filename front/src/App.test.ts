@@ -48,13 +48,14 @@ describe("화면 테마", () => {
   it("처음에는 시스템의 다크 설정을 따른다", () => {
     media.matches = true;
     const wrapper = mountApp();
-    expect(wrapper.find('select[aria-label="화면 테마"]').exists()).toBe(true);
+    expect(wrapper.find('button[aria-haspopup="menu"]').exists()).toBe(true);
     expect(document.documentElement.dataset.theme).toBe("dark");
   });
 
   it("선택한 다크 모드를 적용하고 다음 방문을 위해 저장한다", async () => {
     const wrapper = mountApp();
-    await wrapper.get('select[aria-label="화면 테마"]').setValue("dark");
+    await wrapper.get('button[aria-haspopup="menu"]').trigger("click");
+    await wrapper.get('[data-theme-choice="dark"]').trigger("click");
     expect(document.documentElement.dataset.theme).toBe("dark");
     expect(localStorage.getItem("crackcs-theme")).toBe("dark");
   });
@@ -63,17 +64,18 @@ describe("화면 테마", () => {
     localStorage.setItem("crackcs-theme", "light");
     media.matches = true;
     const wrapper = mountApp();
-    expect(wrapper.find('select[aria-label="화면 테마"]').exists()).toBe(true);
+    expect(wrapper.find('button[aria-haspopup="menu"]').exists()).toBe(true);
     expect(document.documentElement.dataset.theme).toBe("light");
   });
 
   it("시스템 설정을 선택한 동안 운영체제 변경을 반영한다", async () => {
     const wrapper = mountApp();
-    expect(wrapper.find('select[aria-label="화면 테마"]').exists()).toBe(true);
+    expect(wrapper.find('button[aria-haspopup="menu"]').exists()).toBe(true);
     media.matches = true;
     media.dispatchEvent(new Event("change"));
     expect(document.documentElement.dataset.theme).toBe("dark");
-    await wrapper.get('select[aria-label="화면 테마"]').setValue("light");
+    await wrapper.get('button[aria-haspopup="menu"]').trigger("click");
+    await wrapper.get('[data-theme-choice="light"]').trigger("click");
     media.dispatchEvent(new Event("change"));
     expect(document.documentElement.dataset.theme).toBe("light");
   });
@@ -82,7 +84,8 @@ describe("화면 테마", () => {
     vi.spyOn(localStorage, "getItem").mockImplementation(() => { throw new Error("blocked"); });
     vi.spyOn(localStorage, "setItem").mockImplementation(() => { throw new Error("blocked"); });
     const wrapper = mountApp();
-    await wrapper.get('select[aria-label="화면 테마"]').setValue("dark");
+    await wrapper.get('button[aria-haspopup="menu"]').trigger("click");
+    await wrapper.get('[data-theme-choice="dark"]').trigger("click");
     expect(document.documentElement.dataset.theme).toBe("dark");
   });
 });
@@ -148,7 +151,7 @@ describe("애플리케이션 헤더", () => {
       RouterLink: { template: "<a><slot /></a>" }, RouterView: true,
     } } });
 
-    await wrapper.get("button").trigger("click");
+    await wrapper.get("nav button").trigger("click");
     await vi.waitFor(() => expect(wrapper.get("[role='alert']").text()).toContain("로그아웃"));
 
     expect(routerPush).not.toHaveBeenCalled();
@@ -162,9 +165,9 @@ describe("애플리케이션 헤더", () => {
       RouterLink: { template: "<a><slot /></a>" }, RouterView: true,
     } } });
 
-    await wrapper.get("button").trigger("click");
+    await wrapper.get("nav button").trigger("click");
 
-    expect(wrapper.get("button").attributes("disabled")).toBeDefined();
+    expect(wrapper.get("nav button").attributes("disabled")).toBeDefined();
     resolveLogout();
     await vi.waitFor(() => expect(routerPush).toHaveBeenCalledWith("/login"));
   });
