@@ -5,6 +5,9 @@ import com.example.crackcs.auth.security.ApiAccessDeniedHandler;
 import com.example.crackcs.auth.security.ApiAuthenticationEntryPoint;
 import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.auth.security.SecurityErrorResponseWriter;
+import com.example.crackcs.member.service.MemberService;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.evaluation.domain.Verdict;
 import com.example.crackcs.exception.TooManyAnswerRequestsException;
@@ -69,6 +72,9 @@ class AnswerControllerTest {
 
     @MockitoBean
     private PasswordEncoder passwordEncoder;
+
+    @MockitoBean
+    private MemberService memberService;
 
     @Test
     @DisplayName("신규 답변 요청이 한도를 넘으면 429와 재시도 시간을 반환한다")
@@ -474,7 +480,11 @@ class AnswerControllerTest {
     }
 
     private AuthenticatedMember principal(String username, String authority) {
+        MemberRole role = MemberRole.valueOf(authority.substring("ROLE_".length()));
+        Member member = Member.builder().nickname("회원").role(role).build();
+        given(memberService.findById(MEMBER_ID)).willReturn(member);
         AuthenticatedMember principal = mock(AuthenticatedMember.class);
+        given(principal.role()).willReturn(role);
         given(principal.memberId()).willReturn(MEMBER_ID);
         given(principal.getUsername()).willReturn(username);
         given(principal.getPassword()).willReturn("encoded");

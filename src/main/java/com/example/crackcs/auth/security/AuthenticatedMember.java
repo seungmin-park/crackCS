@@ -21,14 +21,16 @@ public class AuthenticatedMember implements UserDetails {
     private final String passwordHash;
     private final MemberRole role;
     private final MemberStatus status;
+    private final long authenticationVersion;
 
     private AuthenticatedMember(Long memberId, String loginId, String passwordHash, MemberRole role,
-                                MemberStatus status) {
+                                MemberStatus status, long authenticationVersion) {
         this.memberId = memberId;
         this.loginId = loginId;
         this.passwordHash = passwordHash;
         this.role = role;
         this.status = status;
+        this.authenticationVersion = authenticationVersion;
     }
 
     public static AuthenticatedMember from(AuthAccount account) {
@@ -37,7 +39,8 @@ public class AuthenticatedMember implements UserDetails {
                 account.getLoginId(),
                 account.getPasswordHash(),
                 account.getMember().getRole(),
-                account.getMember().getStatus());
+                account.getMember().getStatus(),
+                account.getMember().getAuthenticationVersion());
     }
 
     public Long memberId() {
@@ -46,6 +49,10 @@ public class AuthenticatedMember implements UserDetails {
 
     public MemberRole role() {
         return role;
+    }
+
+    public long authenticationVersion() {
+        return authenticationVersion;
     }
 
     @Override

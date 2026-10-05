@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -28,6 +29,10 @@ public class Member {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MemberStatus status;
+
+    @Column(nullable = false)
+    @ColumnDefault("0")
+    private long authenticationVersion;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -70,7 +75,11 @@ public class Member {
     }
 
     public void changeStatus(MemberStatus status) {
-        this.status = requireNonNull(status, "status");
+        MemberStatus validatedStatus = requireNonNull(status, "status");
+        long nextAuthenticationVersion = this.status == validatedStatus
+                ? authenticationVersion : Math.incrementExact(authenticationVersion);
+        this.status = validatedStatus;
+        this.authenticationVersion = nextAuthenticationVersion;
         this.updatedAt = LocalDateTime.now();
     }
 

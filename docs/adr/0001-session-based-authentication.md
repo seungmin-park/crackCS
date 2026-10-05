@@ -34,6 +34,8 @@ CrackCS의 초기 배포 구조는 Vue 애플리케이션과 Spring API가 같�
    ↓
 Spring Security Authentication 생성
    ↓
+최종 로그인 시각 저장 성공
+   ↓
 session ID 교체 (session fixation 방어)
    ↓
 SecurityContext를 HttpSession에 저장
@@ -70,8 +72,12 @@ Spring Security가 상태 변경 요청 거부
 
 ## 결과
 
+- 2026-10-06 보완: 회원 상태 변경 시 DB 인증 버전 증가. 각 인증 요청은 현재 상태·역할·버전을 재조회, 불일치 시 기존 세션 무효화·401
+- 차단→활성 이후에도 차단 전 세션 재사용 불가. `V003` schema 적용과 재로그인 필요
+- 최종 로그인 저장 실패 때 새 인증 세션 발급 금지
+- [보안 회귀 검증](../changes/2026-10-06-security-hardening/verification.md)
+
 - 새로고침 시 `/api/members/me`로 서버 세션을 확인해 상태를 복구한다.
 - 로그아웃은 서버 세션과 SecurityContext를 무효화한다.
 - 수평 확장 시 Redis 같은 공용 session store 도입을 검토해야 한다.
 - 네이티브 앱이나 외부 API client가 추가되면 해당 client용 token 인증을 별도 SecurityFilterChain으로 검토한다.
-

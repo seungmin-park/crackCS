@@ -8,6 +8,9 @@ import com.example.crackcs.auth.repository.LoginAttemptRepository;
 import com.example.crackcs.auth.service.AuthService;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberStatus;
+import com.example.crackcs.member.domain.MemberRole;
+import com.example.crackcs.member.controller.request.MemberStatusUpdateRequest;
+import com.example.crackcs.member.service.MemberService;
 import com.example.crackcs.member.repository.MemberRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,12 +18,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.system.CapturedOutput;
 import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -56,6 +61,12 @@ class AuthenticationFlowTest {
 
     @Autowired
     private LoginAttemptRepository loginAttemptRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private MemberService memberService;
 
     @AfterEach
     void cleanUp() {
@@ -164,6 +175,89 @@ class AuthenticationFlowTest {
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/members/me").session(authenticatedSession))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"/api/admin/topics", "/api/admin/concepts", "/api/admin/knowledge-documents",
+            "/api/admin/questions", "/api/admin/members", "/api/admin/evaluations"})
+    @DisplayName("로그인한 관리자가 차단되면 기존 세션으로 모든 관리자 API 계열에 접근할 수 없다")
+    void rejectsBlockedAdministratorSession(String path) throws Exception {
+        Member administrator = memberRepository.save(Member.builder()
+                .nickname("관리자").role(MemberRole.ADMIN).build());
+        authAccountRepository.save(AuthAccount.builder().member(administrator)
+                .loginId("admin@example.com").passwordHash(passwordEncoder.encode(PASSWORD)).build());
+        CsrfFixture csrf = issueCsrfToken();
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login").session(csrf.session())
+                        .header(csrf.headerName(), csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("admin@example.com", PASSWORD)))
+                .andExpect(status().isOk()).andReturn();
+        MockHttpSession authenticatedSession = sessionOf(loginResult);
+        mockMvc.perform(get("/api/admin/members").session(authenticatedSession)).andExpect(status().isOk());
+
+        memberService.changeStatus(administrator.getId(), MemberStatus.BLOCKED);
+
+        mockMvc.perform(get(path).session(authenticatedSession))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("AUTHENTICATION_REQUIRED"));
+        assertThat(authenticatedSession.isInvalid()).isTrue();
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = MemberStatus.class, names = {"BLOCKED", "WITHDRAWN"})
+    @DisplayName("차단 또는 탈퇴한 관리자는 기존 세션으로 자신을 다시 활성화할 수 없다")
+    void rejectsInactiveAdministratorSelfReactivation(MemberStatus status) throws Exception {
+        Member administrator = memberRepository.save(Member.builder()
+                .nickname("관리자").role(MemberRole.ADMIN).build());
+        authAccountRepository.save(AuthAccount.builder().member(administrator)
+                .loginId("admin@example.com").passwordHash(passwordEncoder.encode(PASSWORD)).build());
+        CsrfFixture csrf = issueCsrfToken();
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login").session(csrf.session())
+                        .header(csrf.headerName(), csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("admin@example.com", PASSWORD)))
+                .andExpect(status().isOk()).andReturn();
+
+        memberService.changeStatus(administrator.getId(), status);
+
+        mockMvc.perform(patch("/api/admin/members/{memberId}/status", administrator.getId())
+                        .session(sessionOf(loginResult)).header(csrf.headerName(), csrf.token())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new MemberStatusUpdateRequest(MemberStatus.ACTIVE))))
+                .andExpect(status().isUnauthorized());
+        assertThat(memberRepository.findById(administrator.getId()).orElseThrow().getStatus()).isEqualTo(status);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = MemberStatus.class, names = {"BLOCKED", "WITHDRAWN"})
+    @DisplayName("일반 회원도 차단 또는 탈퇴 후 기존 세션으로 현재 회원을 조회할 수 없다")
+    void rejectsInactiveUserSession(MemberStatus status) throws Exception {
+        Member member = authService.register("user@example.com", PASSWORD, "회원");
+        CsrfFixture csrf = issueCsrfToken();
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login").session(csrf.session())
+                        .header(csrf.headerName(), csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("user@example.com", PASSWORD)))
+                .andExpect(status().isOk()).andReturn();
+
+        memberService.changeStatus(member.getId(), status);
+
+        mockMvc.perform(get("/api/members/me").session(sessionOf(loginResult)))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("차단 후 다시 활성화해도 차단 전에 발급한 세션은 재사용할 수 없다")
+    void rejectsOldSessionAfterMemberReactivation() throws Exception {
+        Member member = authService.register("user@example.com", PASSWORD, "회원");
+        CsrfFixture csrf = issueCsrfToken();
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login").session(csrf.session())
+                        .header(csrf.headerName(), csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("user@example.com", PASSWORD)))
+                .andExpect(status().isOk()).andReturn();
+
+        memberService.changeStatus(member.getId(), MemberStatus.BLOCKED);
+        memberService.changeStatus(member.getId(), MemberStatus.ACTIVE);
+
+        mockMvc.perform(get("/api/members/me").session(sessionOf(loginResult)))
                 .andExpect(status().isUnauthorized());
     }
 
