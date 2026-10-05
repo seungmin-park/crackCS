@@ -54,7 +54,7 @@ export OPENAI_MONTHLY_BUDGET_USD=2
 Browser :5173 → Vite /api proxy → Spring :8080
                                     ↓ validate
                           PostgreSQL :55432
-                          명시적 V001 + V002 + V003 schema
+                          명시적 V001 + V002 + V003 + V004 schema
 ```
 
 ## backup·새 DB restore
@@ -118,6 +118,21 @@ docker compose -p crackcs-local -f compose.local.yaml exec -T postgres \
 - `schema_version` 003 행, `member.authentication_version` NOT NULL·기본값 0 확인
 - V003 없는 기존 DB는 새 앱의 schema validate에서 거부
 - [검증 기록](../2026-10-06-security-hardening/verification.md)
+
+### 기존 V003 DB에 V004 적용
+
+- 앞의 backup·복구 DB 리허설·앱 종료 절차 적용
+- 새 volume은 V004까지 자동 초기화. 기존 DB는 아래 SQL 수동 적용 후 새 앱 validate 기동
+- 이전 앱과 새 앱을 동시에 실행하지 않음: 조합 key·계정 key의 의미가 다름
+- V004는 기존 임시 로그인 실패만 초기화, 회원·인증 계정 유지
+
+```bash
+docker compose -p crackcs-local -f compose.local.yaml exec -T postgres \
+  psql -v ON_ERROR_STOP=1 -U crackcs_local -d crackcs_local \
+  < src/main/resources/db/postgres/V004__authentication_request_budget.sql
+```
+
+- schema_version 004, 새 테이블·UNIQUE key·창 인덱스 확인
 
 ## 종료
 

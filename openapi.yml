@@ -92,16 +92,16 @@ paths:
             schema:
               $ref: '#/components/schemas/SignUpRequest'
       responses:
-        '201':
-          description: 회원가입 성공
+        '202':
+          description: 신규·중복 이메일에 같은 요청 처리 응답. 계정 존재 여부·회원 정보 미노출
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MemberResponse'
+                $ref: '#/components/schemas/SignUpResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/DuplicateAuthAccount'
+        '429':
+          $ref: '#/components/responses/AuthenticationRateLimit'
   /api/auth/login:
     post:
       tags: [Authentication]
@@ -125,6 +125,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/InvalidCredentials'
+        '429':
+          $ref: '#/components/responses/AuthenticationRateLimit'
   /api/auth/logout:
     post:
       tags: [Authentication]
@@ -1135,9 +1137,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ApiErrorResponse'
-    DuplicateAuthAccount:
-      description: 같은 LOCAL 이메일 계정이 이미 존재함
+    AuthenticationRateLimit:
+      description: 계정 실패·주소·전체 요청·저장 용량 한도 초과
       headers:
+        Retry-After:
+          schema: { type: integer, minimum: 1 }
+          description: 재시도 전 대기할 최소 초
         X-Request-Id:
           $ref: '#/components/headers/RequestId'
       content:
@@ -1351,6 +1356,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/EvaluationEvidenceResponse'
+    SignUpResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+          const: 회원가입 요청을 처리했습니다. 가입한 이메일과 비밀번호로 로그인해 주세요.
     SignUpRequest:
       type: object
       required: [email, password, nickname]

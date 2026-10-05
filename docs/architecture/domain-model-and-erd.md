@@ -27,6 +27,7 @@ Answer ──▶ Follow-up Question
 
 - 회원 기본 정보, 권한과 상태를 가진다.
 - `USER`와 `ADMIN` 역할을 구분한다.
+- 상태 변경 시 인증 버전 증가. 요청 보안 필터가 현재 상태·역할·버전과 세션 snapshot 비교
 - 답변 평가나 추천 규칙까지 담당하지 않는다.
 
 ### AuthAccount
@@ -219,6 +220,7 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 | nickname | VARCHAR(100) | NOT NULL | 표시 이름 |
 | role | VARCHAR(20) | NOT NULL | USER, ADMIN |
 | status | VARCHAR(20) | NOT NULL | ACTIVE, BLOCKED, WITHDRAWN |
+| authentication_version | BIGINT | NOT NULL, DEFAULT 0 | 상태 변경 전 세션 회수용 버전 |
 | created_at | TIMESTAMP | NOT NULL | 등록 일시 |
 | updated_at | TIMESTAMP | NOT NULL | 수정 일시 |
 
@@ -245,6 +247,14 @@ EVALUATED Evaluation → 모든 필수 QuestionConcept의 EvaluationConcept 존�
 - 상태·시간 경계는 LoginAttempt 소유, Service는 DB 잠금·최초 UNIQUE 충돌 재시도·정리 조정
 - Member FK 없음: 존재하지 않는 계정의 실패도 제한 필요
 - V002 만료 조회 인덱스: updated_at, blocked_until
+- V004부터 계정별 key 사용, 주소를 바꿔도 실패 누적. 최대 상태 행 수·요청 예산은 [ADR-0003](../adr/0003-authentication-security-baseline.md) 기준
+
+### AUTHENTICATION_REQUEST_BUCKET
+
+- id, bucket_key(64자 SHA-256, UNIQUE), window_started_at(Instant), request_count
+- 창·횟수 규칙: AuthenticationRequestBucket 소유. Service는 capacity guard 잠금·전역/source 예약 조정
+- login·sign-up별 전역·주소 key, 공용 capacity key. Member FK 없음
+- V004 window_started_at 인덱스, source 만료 삭제. 고정 guard key 보존
 
 ### FOLLOW_UP_GENERATION / FOLLOW_UP_GENERATION_EVIDENCE
 

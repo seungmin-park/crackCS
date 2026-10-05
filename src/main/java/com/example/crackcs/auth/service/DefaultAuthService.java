@@ -25,6 +25,7 @@ public class DefaultAuthService implements AuthService {
     @Transactional
     public Member register(String email, String rawPassword, String nickname) {
         String loginId = AuthAccount.normalizeLoginId(email);
+        String passwordHash = passwordEncoder.encode(rawPassword);
         if (authAccountRepository.existsByProviderAndLoginId(AuthProvider.LOCAL, loginId)) {
             throw new DuplicateAuthAccountException();
         }
@@ -32,7 +33,6 @@ public class DefaultAuthService implements AuthService {
         Member member = memberRepository.save(Member.builder()
                 .nickname(nickname)
                 .build());
-        String passwordHash = passwordEncoder.encode(rawPassword);
         AuthAccount account = AuthAccount.builder()
                 .member(member)
                 .loginId(loginId)

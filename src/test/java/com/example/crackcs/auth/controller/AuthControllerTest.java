@@ -2,7 +2,9 @@ package com.example.crackcs.auth.controller;
 
 import com.example.crackcs.auth.controller.request.SignUpRequest;
 import com.example.crackcs.auth.service.AuthService;
+import com.example.crackcs.auth.service.AuthenticationRequestLimitService;
 import com.example.crackcs.exception.DuplicateAuthAccountException;
+import com.example.crackcs.exception.TooManyAuthenticationRequestsException;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.domain.MemberStatus;
@@ -35,8 +37,11 @@ class AuthControllerTest {
     @MockitoBean
     private AuthService authService;
 
+    @MockitoBean
+    private AuthenticationRequestLimitService authenticationRequestLimitService;
+
     @Test
-    @DisplayName("유효한 이메일과 비밀번호 및 닉네임으로 회원가입하면 201을 반환한다")
+    @DisplayName("신규 이메일의 회원가입 요청은 계정 정보를 노출하지 않는 202 응답을 반환한다")
     void signsUpMember() throws Exception {
         Member registeredMember = mockMember(1L, "크랙러", MemberRole.USER, MemberStatus.ACTIVE);
         SignUpRequest request = new SignUpRequest(
@@ -53,12 +58,11 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/sign-up")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isCreated())
-                .andExpect(header().string("Location", "/api/members/me"))
-                .andExpect(jsonPath("$.id").value(1))
-                .andExpect(jsonPath("$.nickname").value("크랙러"))
-                .andExpect(jsonPath("$.role").value("USER"))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
+                .andExpect(status().isAccepted())
+                .andExpect(header().doesNotExist("Location"))
+                .andExpect(jsonPath("$.message").value("회원가입 요청을 처리했습니다. 가입한 이메일과 비밀번호로 로그인해 주세요."))
+                .andExpect(jsonPath("$.id").doesNotExist())
+                .andExpect(jsonPath("$.nickname").doesNotExist());
 
         verify(authService).register(
                 request.email(),
@@ -85,8 +89,8 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("중복 LOCAL 이메일은 공통 409 응답으로 변환한다")
-    void returnsConflictForDuplicatedEmail() throws Exception {
+    @DisplayName("중복 이메일도 신규 이메일과 같은 202 응답과 안내 문구를 반환한다")
+    void hidesDuplicatedEmailInAcceptedResponse() throws Exception {
         SignUpRequest request = new SignUpRequest(
                 "user@example.com",
                 "correct horse battery staple",
@@ -98,9 +102,25 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/sign-up")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.code").value("DUPLICATE_AUTH_ACCOUNT"))
-                .andExpect(jsonPath("$.message").value("이미 가입된 이메일입니다."));
+                .andExpect(status().isAccepted())
+                .andExpect(header().doesNotExist("Location"))
+                .andExpect(jsonPath("$.message").value("회원가입 요청을 처리했습니다. 가입한 이메일과 비밀번호로 로그인해 주세요."))
+                .andExpect(jsonPath("$.code").doesNotExist())
+                .andExpect(jsonPath("$.id").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("회원가입 요청 한도 초과는 계정 생성 Service 호출 전에 429로 거부된다")
+    void rejectsRateLimitBeforeRegistrationWork() throws Exception {
+        SignUpRequest request = new SignUpRequest("user@example.com", "correct horse battery staple", "회원");
+        doThrow(new TooManyAuthenticationRequestsException(30)).when(authenticationRequestLimitService)
+                .reserveSignUpRequest(anyString());
+
+        mockMvc.perform(post("/api/auth/sign-up").contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isTooManyRequests()).andExpect(header().string("Retry-After", "30"));
+
+        verifyNoInteractions(authService);
     }
 
     private Member mockMember(Long id, String nickname, MemberRole role, MemberStatus status) {

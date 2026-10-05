@@ -30,7 +30,7 @@ describe("회원가입 화면", () => {
   });
 
   it("이메일과 비밀번호 및 닉네임으로 가입한 뒤 로그인 화면으로 이동한다", async () => {
-    signUp.mockResolvedValue({ id: 1, nickname: "크랙러", role: "USER", status: "ACTIVE" });
+    signUp.mockResolvedValue({ message: "회원가입 요청을 처리했습니다." });
     const wrapper = mount(SignUpView, {
       global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } },
     });
@@ -66,8 +66,8 @@ describe("회원가입 화면", () => {
     expect(wrapper.get("input[name='email']").attributes("aria-invalid")).toBe("true");
   });
 
-  it("중복 이메일 오류는 양식 공통 오류로 표시한다", async () => {
-    signUp.mockRejectedValue(new ApiClientError(409, "이미 가입된 이메일입니다."));
+  it("회원가입 요청 제한은 양식 공통 오류로 표시하고 입력을 유지한다", async () => {
+    signUp.mockRejectedValue(new ApiClientError(429, "요청이 너무 많습니다."));
     const wrapper = mount(SignUpView, {
       global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } },
     });
@@ -75,11 +75,11 @@ describe("회원가입 화면", () => {
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
-    expect(wrapper.get("[role='alert']").text()).toBe("이미 가입된 이메일입니다.");
+    expect(wrapper.get("[role='alert']").text()).toContain("잠시");
   });
 
   it("가입 처리 중 중복 제출을 무시하고 최초 입력 스냅샷을 보낸다", async () => {
-    let resolveSignUp!: (member: { id: number; nickname: string; role: "USER"; status: "ACTIVE" }) => void;
+    let resolveSignUp!: (response: { message: string }) => void;
     signUp.mockReturnValue(new Promise((resolve) => { resolveSignUp = resolve; }));
     const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
     await wrapper.get("input[name='email']").setValue("first@example.com");
@@ -97,18 +97,18 @@ describe("회원가입 화면", () => {
       password: "first-password-value",
       nickname: "처음닉네임",
     });
-    resolveSignUp({ id: 1, nickname: "처음닉네임", role: "USER", status: "ACTIVE" });
+    resolveSignUp({ message: "회원가입 요청을 처리했습니다." });
     await flushPromises();
   });
 
   it("화면을 떠난 뒤 끝난 가입은 로그인 화면으로 이동하지 않는다", async () => {
-    let resolveSignUp!: (member: { id: number; nickname: string; role: "USER"; status: "ACTIVE" }) => void;
+    let resolveSignUp!: (response: { message: string }) => void;
     signUp.mockReturnValue(new Promise((resolve) => { resolveSignUp = resolve; }));
     const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
 
     await wrapper.get("form").trigger("submit");
     wrapper.unmount();
-    resolveSignUp({ id: 1, nickname: "학습자", role: "USER", status: "ACTIVE" });
+    resolveSignUp({ message: "회원가입 요청을 처리했습니다." });
     await flushPromises();
 
     expect(push).not.toHaveBeenCalled();

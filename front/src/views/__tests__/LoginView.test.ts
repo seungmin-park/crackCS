@@ -70,14 +70,14 @@ describe("로그인 화면", () => {
     expect(push).toHaveBeenCalledWith("/questions/7");
   });
 
-  it("가입 직후에는 계정 생성 완료 안내를 표시한다", () => {
+  it("가입 직후에는 이메일 존재 여부를 드러내지 않는 요청 처리 안내를 표시한다", () => {
     query = { registered: "true" };
 
     const wrapper = mount(LoginView, {
       global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } },
     });
 
-    expect(wrapper.get("[role='status']").text()).toContain("계정이 만들어졌습니다");
+    expect(wrapper.get("[role='status']").text()).toContain("회원가입 요청을 처리했습니다");
   });
 
   it("인증 실패는 계정 존재 여부를 구분하지 않는 메시지로 표시한다", async () => {
