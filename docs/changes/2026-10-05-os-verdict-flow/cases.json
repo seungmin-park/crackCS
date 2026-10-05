@@ -1,0 +1,113 @@
+{
+  "version": "os-published-diagnostic-1",
+  "labelStatus": "AGENT_AUTHORED_NOT_HUMAN_REVIEWED",
+  "scope": "Published OS-101..105 diagnostic cases; not reference-v1 or a representative release benchmark",
+  "policy": "docs/product/content-and-ai-policy.md#개념별-판정-기준--oq-003",
+  "cases": [
+    {
+      "id": "OS-101-C", "questionKey": "OS-101", "kind": "correct",
+      "answer": "fork가 성공하면 부모를 바탕으로 별도의 자식 프로세스가 생기고 부모와 자식 모두 실행을 이어갑니다. 자식에서 성공한 exec는 그 자식의 PID를 유지하면서 프로그램 이미지를 새 프로그램으로 교체합니다. 새 프로세스를 하나 더 만드는 것이 아니며, 이전 프로그램의 exec 다음 문장으로 돌아오지 않습니다.",
+      "expectedVerdict": "CORRECT",
+      "expectedConcepts": {"OS_101_FORK": "CORRECT", "OS_101_EXEC": "CORRECT"},
+      "reason": "새 자식 생성과 기존 자식의 프로그램 교체를 구분; 성공한 exec의 비복귀 설명"
+    },
+    {
+      "id": "OS-101-P", "questionKey": "OS-101", "kind": "partial",
+      "answer": "fork는 부모와 별도의 자식 프로세스를 만들어 부모와 자식이 모두 실행을 계속하게 합니다. exec는 자식에서 새 프로그램을 실행하는 호출입니다. 이때 기존 프로그램 이미지와 프로세스가 어떻게 되는지, 성공한 호출 다음 문장으로 돌아오는지는 설명하지 못하겠습니다.",
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "expectedConcepts": {"OS_101_FORK": "CORRECT", "OS_101_EXEC": "PARTIALLY_CORRECT"},
+      "reason": "fork 충족; exec 실행 방향은 맞지만 질문의 핵심인 이미지 교체·프로세스 유지 설명 누락"
+    },
+    {
+      "id": "OS-101-I", "questionKey": "OS-101", "kind": "incorrect",
+      "answer": "fork는 현재 프로세스 안에서 프로그램 코드만 복사하는 호출이라 별도의 자식 프로세스나 새 PID를 만들지 않습니다. exec가 성공할 때 비로소 새 PID의 자식 프로세스가 생겨 새 프로그램을 실행합니다. 원래 호출한 프로세스는 기존 프로그램을 유지하고 exec 다음 문장부터 계속 실행합니다.",
+      "expectedVerdict": "INCORRECT",
+      "expectedConcepts": {"OS_101_FORK": "INCORRECT", "OS_101_EXEC": "INCORRECT"},
+      "reason": "fork의 생성과 exec의 교체를 반대로 설명; 성공 exec의 복귀 주장"
+    },
+    {
+      "id": "OS-102-C", "questionKey": "OS-102", "kind": "correct",
+      "answer": "sleep(1)은 부모에게 1초를 쉬게 할 뿐 대상 자식이 끝났다는 확인이 아닙니다. 부하와 스케줄링에 따라 자식이 더 오래 실행할 수 있습니다. wait 계열로 대상 자식의 종료를 확인하고 종료 상태를 정상 회수한 뒤 부모가 결과를 출력해야 종료 사건에 맞춘 실행 순서를 보장할 수 있습니다.",
+      "expectedVerdict": "CORRECT",
+      "expectedConcepts": {"OS_102_WAIT": "CORRECT", "OS_102_ORDER": "CORRECT"},
+      "reason": "대상 자식 종료·회수와 시간 경과 대신 완료 사건에 연결한 후속 작업 설명"
+    },
+    {
+      "id": "OS-102-P", "questionKey": "OS-102", "kind": "partial",
+      "answer": "wait는 종료한 자식의 종료 상태를 회수하는 호출입니다. sleep은 지정한 시간만큼 부모의 실행을 미룹니다. wait가 대상 자식의 종료를 기다리는 과정과, 부모의 결과 출력을 두 호출 중 어떤 사건에 연결해야 하는지는 설명하지 못하겠습니다.",
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "expectedConcepts": {"OS_102_WAIT": "PARTIALLY_CORRECT", "OS_102_ORDER": "PARTIALLY_CORRECT"},
+      "reason": "회수·시간 지연의 방향만 설명; 대상 종료 대기와 완료 기반 선후관계 누락"
+    },
+    {
+      "id": "OS-102-I", "questionKey": "OS-102", "kind": "incorrect",
+      "answer": "wait는 정해진 시간을 기다리는 함수이며 자식의 종료 상태를 회수하지 않습니다. 반대로 sleep(1)은 자식에게 CPU를 먼저 양보하고 자식이 반드시 종료한 다음에 부모를 깨우므로 1초가 지나면 종료가 보장됩니다. 부모는 sleep 뒤 바로 출력해도 완료 순서가 항상 맞습니다.",
+      "expectedVerdict": "INCORRECT",
+      "expectedConcepts": {"OS_102_WAIT": "INCORRECT", "OS_102_ORDER": "INCORRECT"},
+      "reason": "wait의 사건 대기·회수 부정; 고정 시간 지연으로 자식 완료 보장 주장"
+    },
+    {
+      "id": "OS-103-C", "questionKey": "OS-103", "kind": "correct",
+      "answer": "부모와 자식의 디스크립터 테이블은 따로 있지만 상속한 참조는 같은 열린 파일 설명을 가리킵니다. 따라서 파일 위치는 공유되어 한쪽의 읽기가 다른 쪽의 다음 읽기 위치에 영향을 줍니다. 읽기 순서는 별도 동기화 없이는 정해지지 않습니다. 자식의 close는 자식의 참조만 제거하므로 부모의 디스크립터는 계속 사용할 수 있습니다.",
+      "expectedVerdict": "CORRECT",
+      "expectedConcepts": {"OS_103_FD": "CORRECT", "OS_103_OFFSET": "CORRECT"},
+      "reason": "프로세스별 참조·독립 close와 열린 파일 오프셋 공유를 구분"
+    },
+    {
+      "id": "OS-103-P", "questionKey": "OS-103", "kind": "partial",
+      "answer": "fork로 상속한 디스크립터는 같은 열린 파일을 참조하므로 파일 오프셋을 공유합니다. 한쪽에서 읽으면 다른 쪽이 다음에 읽는 위치에도 영향을 주며 읽기 순서는 동기화가 필요합니다. 디스크립터 테이블이 프로세스별이라는 것은 알지만 자식의 close가 부모의 사용에 어떤 영향을 주는지는 설명하지 못하겠습니다.",
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "expectedConcepts": {"OS_103_FD": "PARTIALLY_CORRECT", "OS_103_OFFSET": "CORRECT"},
+      "reason": "오프셋 공유 충족; 질문이 요구한 프로세스별 close 효과 누락"
+    },
+    {
+      "id": "OS-103-I", "questionKey": "OS-103", "kind": "incorrect",
+      "answer": "fork는 열린 파일 상태까지 깊게 복사하므로 부모와 자식의 파일 오프셋은 독립적입니다. 자식이 읽어도 부모는 원래 위치에서 읽습니다. 두 프로세스의 디스크립터 번호가 같기 때문에 자식에서 close하면 부모의 디스크립터도 함께 닫혀 부모는 그 파일을 더 이상 읽을 수 없습니다.",
+      "expectedVerdict": "INCORRECT",
+      "expectedConcepts": {"OS_103_FD": "INCORRECT", "OS_103_OFFSET": "INCORRECT"},
+      "reason": "공유 오프셋과 프로세스별 디스크립터 제거 효과를 모두 반대로 설명"
+    },
+    {
+      "id": "OS-104-C", "questionKey": "OS-104", "kind": "correct",
+      "answer": "바로 꺼내면 안 됩니다. 다른 소비자가 먼저 항목을 가져가거나 불필요한 깨움이 생길 수 있으므로 깨어난 뒤 같은 mutex를 잡고 while로 큐 상태를 다시 검사합니다. 생산자의 조건 변경과 소비자의 검사를 같은 잠금으로 보호합니다. wait가 잠금 해제와 대기 진입을 원자적으로 연결해야 검사와 대기 사이의 알림 손실을 막고, 깨어나면 mutex를 다시 획득한 뒤 조건을 확인합니다.",
+      "expectedVerdict": "CORRECT",
+      "expectedConcepts": {"OS_104_PREDICATE": "CORRECT", "OS_104_WAIT_LOCK": "CORRECT"},
+      "reason": "while·같은 mutex·원자적 해제/대기와 재획득·알림 손실 이유 설명"
+    },
+    {
+      "id": "OS-104-P", "questionKey": "OS-104", "kind": "partial",
+      "answer": "깨어났다는 알림은 큐가 여전히 차 있다는 보장이 아닙니다. 다른 소비자가 먼저 가져가거나 불필요하게 깨어날 수 있어서 같은 mutex로 큐 상태를 보호하며 while로 다시 검사해야 합니다. wait가 mutex를 놓고 대기한 뒤 깨어나서 다시 잡는다는 것은 알지만, 잠금 해제와 대기 진입이 왜 원자적으로 연결되어야 하는지는 설명하지 못하겠습니다.",
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "expectedConcepts": {"OS_104_PREDICATE": "CORRECT", "OS_104_WAIT_LOCK": "PARTIALLY_CORRECT"},
+      "reason": "조건 재검사 충족; 질문이 직접 요구한 해제/대기 원자성과 알림 손실 이유 누락"
+    },
+    {
+      "id": "OS-104-I", "questionKey": "OS-104", "kind": "incorrect",
+      "answer": "signal은 깨어난 소비자에게 큐 항목 하나를 예약하므로 if로 한 번 검사한 뒤 대기하고 깨어나면 바로 꺼내면 됩니다. 불필요한 깨움이나 다른 소비자의 선점은 POSIX 조건 변수에서 발생하지 않습니다. wait 중에도 mutex를 계속 잡아야 안전하며 잠금 해제와 대기 진입을 연결할 필요는 없습니다.",
+      "expectedVerdict": "INCORRECT",
+      "expectedConcepts": {"OS_104_PREDICATE": "INCORRECT", "OS_104_WAIT_LOCK": "INCORRECT"},
+      "reason": "signal의 상태 예약 주장·재검사 부정·잠금을 유지한 대기 주장"
+    },
+    {
+      "id": "OS-105-C", "questionKey": "OS-105", "kind": "correct",
+      "answer": "항상 좋아지지는 않습니다. 짧은 시간 조각을 순환 배분하면 다른 실행 가능한 작업도 CPU를 빨리 한 번 받을 수 있어 첫 실행까지의 응답 시간에는 유리할 수 있습니다. 하지만 문맥 교환이 잦아져 상태 전환과 캐시 효과 등의 비용이 커집니다. 너무 짧으면 실제 작업 비중이 줄어 처리량이나 완료 시간이 나빠지므로 응답성과 교환 비용 사이에서 절충해야 합니다.",
+      "expectedVerdict": "CORRECT",
+      "expectedConcepts": {"OS_105_RR": "CORRECT", "OS_105_SWITCH_COST": "CORRECT"},
+      "reason": "첫 CPU 기회와 문맥 교환 부가 비용·처리량 절충 설명"
+    },
+    {
+      "id": "OS-105-P", "questionKey": "OS-105", "kind": "partial",
+      "answer": "시간 조각을 짧게 순환 배분하면 여러 실행 가능한 작업이 CPU를 빨리 한 번씩 받아 첫 실행까지의 응답 시간을 줄이는 데 유리할 수 있습니다. 문맥 교환 횟수가 늘어난다는 것은 알지만 교환의 부가 비용이 무엇인지, 처리량과 완료 시간에 어떤 영향을 주는지는 설명하지 못하겠습니다.",
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "expectedConcepts": {"OS_105_RR": "CORRECT", "OS_105_SWITCH_COST": "PARTIALLY_CORRECT"},
+      "reason": "라운드 로빈 응답성 충족; 질문이 요구한 교환 부가 비용과 성능 절충 누락"
+    },
+    {
+      "id": "OS-105-I", "questionKey": "OS-105", "kind": "incorrect",
+      "answer": "라운드 로빈에서는 실행 중인 작업이 끝날 때까지 CPU를 독점하므로 타임 슬라이스가 짧아도 다른 작업의 첫 실행 기회는 생기지 않습니다. 문맥 교환은 CPU 상태나 캐시를 바꾸지 않아 부가 비용이 전혀 없으므로 타임 슬라이스를 계속 줄이면 처리량과 완료 시간은 항상 좋아집니다.",
+      "expectedVerdict": "INCORRECT",
+      "expectedConcepts": {"OS_105_RR": "INCORRECT", "OS_105_SWITCH_COST": "INCORRECT"},
+      "reason": "순환 실행 기회 부정·교환 비용 부정·모든 성능 개선 주장"
+    }
+  ]
+}
