@@ -1,0 +1,2176 @@
+{
+  "scope": "Local published OS diagnostic, agent-authored labels, not independently reviewed release certification",
+  "sourceCommit": "b1b1b35c07e9a2e6dcf59137d61400e3be0a0959",
+  "branch": "test/os-verdict-flow",
+  "casesSha256": "caeb8f668fa6345e3abf617e12c8f076b7f92db1dc61db3e65c7f7d51ac85367",
+  "startedAt": "2026-10-05T07:41:56.379737+00:00",
+  "memberId": 3,
+  "cmux": {
+    "workspace": "workspace:2",
+    "caller": "surface:2",
+    "pane": "pane:8",
+    "browser": "surface:10",
+    "serverLogs": "surface:8",
+    "runner": "surface:14"
+  },
+  "runtime": {
+    "java": "21.0.7",
+    "node": "24.21.0",
+    "postgres": "17.11",
+    "backendPort": 18080,
+    "frontendPort": 5174,
+    "keyHandoffPort": 18083
+  },
+  "summary": {
+    "basicCases": 15,
+    "overallAgreement": 15,
+    "binaryAgreement": 10,
+    "binaryDenominator": 10,
+    "falseCorrect": 0,
+    "incorrectDenominator": 5,
+    "conceptAgreement": 30,
+    "conceptDenominator": 30,
+    "behaviorChecks": 240,
+    "diagnosticComparisons": 45,
+    "followUpBehaviorChecks": 20,
+    "followUpDiagnosticComparisons": 2,
+    "followUpAndUiAuditChecks": 49,
+    "flowExitCode": 0,
+    "followUpAndUiAuditExitCode": 0
+  },
+  "cases": [
+    {
+      "caseId": "OS-101-C",
+      "answerId": 9,
+      "evaluationId": 9,
+      "expectedVerdict": "CORRECT",
+      "actualVerdict": "CORRECT",
+      "score": 100,
+      "feedback": "fork 성공 시 부모를 바탕으로 별도의 자식 프로세스가 생성되어 양쪽이 실행을 계속하고, 자식의 성공한 exec가 동일한 자식 프로세스(PID 유지)의 프로그램 이미지만 새 프로그램으로 교체한다는 점을 정확히 설명했습니다. 또한 exec가 새 프로세스를 만들지 않고 이전 코드로 돌아오지 않는다는 핵심도 맞습니다.",
+      "concepts": [
+        {
+          "conceptId": 3,
+          "conceptName": "exec의 프로그램 교체",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "성공한 exec가 호출한 자식의 프로그램 이미지를 교체하고 이전 코드로 돌아오지 않으며, 새 프로세스를 만들지 않는다고 정확히 설명했습니다."
+        },
+        {
+          "conceptId": 2,
+          "conceptName": "fork의 프로세스 생성",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "성공한 fork가 부모를 바탕으로 별도의 자식 프로세스를 만들고 부모와 자식이 모두 실행을 이어간다고 정확히 설명했습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 10,
+          "documentVersion": 2,
+          "startOffset": 114,
+          "endOffset": 353
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 13,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "BASIC",
+          "content": "그렇다면 셸이 외부 명령을 실행할 때, 부모 셸은 계속 살아 있으면서 자식만 `exec()`로 명령 프로그램을 실행해야 하는 이유를 `fork()`와 `exec()`의 역할 차이로 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 12,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-101-P",
+      "answerId": 10,
+      "evaluationId": 10,
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "actualVerdict": "PARTIALLY_CORRECT",
+      "score": 50,
+      "feedback": "fork가 부모와 별도의 자식 프로세스를 만들고 둘 다 계속 실행한다는 설명은 맞습니다. 다만 exec에 대해서는 새 프로그램을 실행한다고만 했을 뿐, 호출한 자식 프로세스 자체를 새로 만드는 것이 아니라 그 프로세스의 프로그램 이미지를 교체한다는 핵심과 성공 시 이전 프로그램의 다음 문장으로 돌아오지 않는다는 동작을 설명하지 못했습니다.",
+      "concepts": [
+        {
+          "conceptId": 3,
+          "conceptName": "exec의 프로그램 교체",
+          "verdict": "PARTIALLY_CORRECT",
+          "score": 50,
+          "feedback": "exec가 새 프로그램을 실행한다고 했지만, 기존 프로그램 이미지의 교체와 성공 후 이전 코드로 돌아오지 않는 핵심 동작을 설명하지 못했습니다."
+        },
+        {
+          "conceptId": 2,
+          "conceptName": "fork의 프로세스 생성",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "fork가 부모와 별도의 자식 프로세스를 만들고 부모와 자식이 모두 실행을 계속한다는 설명이 맞습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 10,
+          "documentVersion": 2,
+          "startOffset": 114,
+          "endOffset": 353
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 14,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "BASIC",
+          "content": "fork 후 자식이 exec에 성공했을 때, 자식 프로세스의 기존 프로그램 이미지와 exec 호출 다음 문장은 각각 어떻게 되며, exec가 새 프로세스를 추가로 만드는지 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 12,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-101-I",
+      "answerId": 11,
+      "evaluationId": 11,
+      "expectedVerdict": "INCORRECT",
+      "actualVerdict": "INCORRECT",
+      "score": 0,
+      "feedback": "fork와 exec의 역할을 모두 반대로 설명했습니다. fork 성공 시 기존 부모와 별도의 자식 프로세스가 생성되어 둘 다 실행을 이어가며, exec는 그 호출 프로세스의 프로그램 이미지를 새 프로그램으로 교체할 뿐 새 PID나 새 자식 프로세스를 만들지 않습니다. 또한 성공한 exec는 이전 프로그램의 exec 다음 문장으로 돌아오지 않습니다.",
+      "concepts": [
+        {
+          "conceptId": 3,
+          "conceptName": "exec의 프로그램 교체",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "exec는 호출한 프로세스의 프로그램 이미지를 교체하며 새 프로세스를 만들지 않습니다. 성공하면 이전 코드로 돌아오지 않습니다."
+        },
+        {
+          "conceptId": 2,
+          "conceptName": "fork의 프로세스 생성",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "fork는 새 자식 프로세스를 생성하며, 성공 후 부모와 자식이 각각 실행을 이어갑니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 10,
+          "documentVersion": 2,
+          "startOffset": 114,
+          "endOffset": 353
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 15,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "BASIC",
+          "content": "fork()가 성공한 직후와 자식이 exec()에 성공한 직후를 나누어, (1) 프로세스 수와 각 프로세스의 실행 상태, (2) PID의 변화 여부, (3) exec() 뒤에 이전 프로그램의 다음 문장이 실행되는지를 각각 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 12,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-102-C",
+      "answerId": 12,
+      "evaluationId": 12,
+      "expectedVerdict": "CORRECT",
+      "actualVerdict": "CORRECT",
+      "score": 100,
+      "feedback": "sleep(1)이 단지 시간 경과만 보장할 뿐 자식의 종료를 보장하지 않는다는 점과, 스케줄링·부하에 따라 실행 시간이 달라질 수 있다는 점을 정확히 설명했습니다. 또한 wait 계열 호출로 대상 자식의 종료를 확인하고 종료 상태를 회수한 뒤 부모의 후속 출력이 수행되도록 해야 한다고 밝혀, 조건 기반 실행 순서와 자식 종료 대기·회수의 핵심을 충족합니다.",
+      "concepts": [
+        {
+          "conceptId": 5,
+          "conceptName": "조건 기반 실행 순서",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "자식 종료라는 조건이 충족된 뒤 부모가 출력하도록 해야 한다는 조건 기반 실행 순서를 정확히 설명했습니다."
+        },
+        {
+          "conceptId": 4,
+          "conceptName": "자식 종료 대기와 회수",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "wait 계열로 대상 자식의 종료를 확인하고 종료 상태를 회수한다고 설명했습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 11,
+          "documentVersion": 2,
+          "startOffset": 355,
+          "endOffset": 627
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 16,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "BASIC",
+          "content": "부모가 특정 자식 프로세스의 종료 후에만 결과를 출력해야 합니다. 이때 `wait` 계열 호출이 오류나 중단으로 반환된 경우에도 부모가 결과를 출력하면 안 되는 이유와, 정상적으로 자식의 종료 상태를 회수한 뒤에만 출력해야 하는 이유를 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 14,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-102-P",
+      "answerId": 13,
+      "evaluationId": 13,
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "actualVerdict": "PARTIALLY_CORRECT",
+      "score": 50,
+      "feedback": "wait가 종료한 자식의 종료 상태를 회수한다는 점과 sleep이 단지 부모를 일정 시간 지연한다는 점은 맞습니다. 그러나 핵심인 ‘sleep은 대상 자식의 종료를 보장하지 못하고, wait 계열은 대상 자식의 종료 확인 및 상태 회수 후 부모의 출력이 실행되게 한다’는 조건 기반 실행 순서를 설명하지 못했습니다. 특히 답변에서 그 연결을 설명하지 못한다고 직접 밝히고 있어, 질문의 핵심 요구를 충족하지 못했습니다.",
+      "concepts": [
+        {
+          "conceptId": 5,
+          "conceptName": "조건 기반 실행 순서",
+          "verdict": "PARTIALLY_CORRECT",
+          "score": 50,
+          "feedback": "sleep이 시간 지연이라는 언급은 있으나, 자식 종료·상태 회수 이후 부모의 후속 출력을 수행해야 하는 조건 기반 실행 순서를 설명하지 못했습니다."
+        },
+        {
+          "conceptId": 4,
+          "conceptName": "자식 종료 대기와 회수",
+          "verdict": "PARTIALLY_CORRECT",
+          "score": 50,
+          "feedback": "종료한 자식의 상태를 회수한다는 설명은 맞지만, 대상 자식의 종료를 기다리고 확인한 뒤 회수한다는 핵심 동작이 충분히 설명되지 않았습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 11,
+          "documentVersion": 2,
+          "startOffset": 355,
+          "endOffset": 627
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 17,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "BASIC",
+          "content": "sleep(1)과 달리 wait 계열 호출이 ‘대상 자식의 종료’라는 조건을 기준으로 부모의 결과 출력을 순서화하는 과정을 설명해 보세요. 또한 wait 계열 호출이 오류나 중단으로 반환한 경우에도 부모가 결과를 출력해도 되는지 함께 답하세요."
+        }
+      },
+      "behaviorCheckCount": 14,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-102-I",
+      "answerId": 14,
+      "evaluationId": 14,
+      "expectedVerdict": "INCORRECT",
+      "actualVerdict": "INCORRECT",
+      "score": 0,
+      "feedback": "답변이 wait와 sleep의 동작을 정반대로 설명했습니다. sleep(1)은 단지 일정 시간 동안 부모를 지연시킬 뿐 대상 자식이 그 시간 안에 종료한다는 보장도, 자식의 종료 상태를 회수하는 기능도 없습니다. 반대로 wait 계열 호출은 대상 자식의 종료를 확인하고 종료 상태를 회수한 뒤 부모의 후속 출력을 진행하게 합니다.",
+      "concepts": [
+        {
+          "conceptId": 4,
+          "conceptName": "자식 종료 대기와 회수",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "wait 계열은 자식 종료를 확인하고 상태를 회수하며, 답변은 이를 부정했습니다."
+        },
+        {
+          "conceptId": 5,
+          "conceptName": "조건 기반 실행 순서",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "sleep은 시간 지연일 뿐 자식 완료라는 조건을 보장하지 않으므로, sleep만으로 부모 출력 순서를 항상 보장할 수 없습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 11,
+          "documentVersion": 2,
+          "startOffset": 355,
+          "endOffset": 627
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 18,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "BASIC",
+          "content": "sleep(1)과 wait 계열 호출의 차이를, (1) 대상 자식의 종료 보장 여부와 (2) 자식 종료 상태 회수 여부로 나누어 설명해 보세요. 또한 sleep(1) 뒤 부모가 출력할 때 완료 순서가 항상 보장되지 않는 이유도 답하세요."
+        }
+      },
+      "behaviorCheckCount": 14,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-103-C",
+      "answerId": 15,
+      "evaluationId": 15,
+      "expectedVerdict": "CORRECT",
+      "actualVerdict": "CORRECT",
+      "score": 100,
+      "feedback": "상속된 디스크립터가 같은 열린 파일 설명을 참조하여 오프셋을 공유한다는 점, 읽기 순서가 동기화 없이는 정해지지 않는다는 점, 자식의 close가 자식 측 참조만 제거하여 부모 디스크립터 사용에는 영향을 주지 않는다는 점을 모두 정확히 설명했습니다.",
+      "concepts": [
+        {
+          "conceptId": 7,
+          "conceptName": "상속한 열린 파일의 오프셋 공유",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "상속된 디스크립터가 같은 열린 파일 설명을 가리키며 파일 오프셋을 공유한다고 정확히 설명했습니다."
+        },
+        {
+          "conceptId": 6,
+          "conceptName": "프로세스별 파일 디스크립터",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "부모와 자식의 파일 디스크립터 테이블이 별개이며, 자식의 close가 부모 디스크립터를 닫지 않는다고 정확히 설명했습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 12,
+          "documentVersion": 2,
+          "startOffset": 629,
+          "endOffset": 949
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 19,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "INTERMEDIATE",
+          "content": "부모가 일반 파일을 열어 파일 디스크립터 `fd`를 얻은 뒤 `fork()`했습니다. 이후 동기화 없이 부모가 상속된 `fd`로 10바이트를 읽고, 자식이 같은 `fd`로 5바이트를 읽은 다음 자식이 `close(fd)`를 호출했습니다. 이때 자식의 읽기가 시작되는 파일 위치와, 자식의 `close` 뒤 부모가 계속 `fd`를 사용할 수 있는지를 설명해 보세요. 단, 어느 프로세스의 read가 먼저 실행되는지는 보장되지 않는다고 가정하세요."
+        }
+      },
+      "behaviorCheckCount": 16,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-103-P",
+      "answerId": 16,
+      "evaluationId": 16,
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "actualVerdict": "PARTIALLY_CORRECT",
+      "score": 50,
+      "feedback": "상속된 디스크립터가 같은 열린 파일 상태를 참조하여 파일 오프셋을 공유하고, 한쪽 읽기가 다른 쪽의 다음 읽기 위치에 영향을 준다는 설명은 정확합니다. 다만 질문이 명시적으로 요구한 자식의 close 영향에 대해 답하지 않았습니다. 자식이 자신의 디스크립터를 close해도 디스크립터 테이블은 프로세스별이므로 부모의 디스크립터와 파일 사용은 유지됩니다.",
+      "concepts": [
+        {
+          "conceptId": 7,
+          "conceptName": "상속한 열린 파일의 오프셋 공유",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "상속된 디스크립터가 같은 열린 파일 상태를 참조하므로 파일 오프셋을 공유하며, 한쪽 읽기가 다른 쪽의 다음 읽기 위치에 영향을 준다고 정확히 설명했습니다."
+        },
+        {
+          "conceptId": 6,
+          "conceptName": "프로세스별 파일 디스크립터",
+          "verdict": "PARTIALLY_CORRECT",
+          "score": 50,
+          "feedback": "디스크립터 테이블이 프로세스별임을 언급했지만, 그 결과로 자식의 close가 부모의 디스크립터 사용에 영향을 주지 않는다는 설명을 제시하지 못했습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 12,
+          "documentVersion": 2,
+          "startOffset": 629,
+          "endOffset": 949
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 20,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "INTERMEDIATE",
+          "content": "자식 프로세스가 fork()로 상속받은 파일 디스크립터를 close()한 뒤에도, 부모는 자신의 파일 디스크립터로 해당 파일을 계속 읽거나 쓸 수 있나요? 그 이유를 프로세스별 파일 디스크립터 테이블 관점에서 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 16,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-103-I",
+      "answerId": 17,
+      "evaluationId": 17,
+      "expectedVerdict": "INCORRECT",
+      "actualVerdict": "INCORRECT",
+      "score": 0,
+      "feedback": "답변은 fork 후 상속된 파일 디스크립터의 동작을 두 핵심 모두 반대로 설명했습니다. 상속된 디스크립터는 같은 열린 파일 상태를 참조하므로 파일 오프셋을 공유하며, 자식이 읽으면 부모의 다음 읽기 위치에도 영향을 줄 수 있습니다. 또한 파일 디스크립터 테이블은 프로세스별이므로 자식이 자신의 디스크립터를 close해도 부모의 디스크립터는 닫히지 않고 계속 사용할 수 있습니다.",
+      "concepts": [
+        {
+          "conceptId": 6,
+          "conceptName": "프로세스별 파일 디스크립터",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "파일 디스크립터 테이블은 프로세스별이므로 자식의 close는 자식 쪽 디스크립터만 닫으며 부모의 참조는 유지됩니다."
+        },
+        {
+          "conceptId": 7,
+          "conceptName": "상속한 열린 파일의 오프셋 공유",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "fork로 상속된 디스크립터는 같은 열린 파일 상태를 참조하므로 파일 오프셋을 공유합니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 12,
+          "documentVersion": 2,
+          "startOffset": 629,
+          "endOffset": 949
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 21,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "INTERMEDIATE",
+          "content": "fork()로 상속된 일반 파일 디스크립터에서 부모가 먼저 일부를 읽은 뒤 자식이 읽으면, 자식의 읽기 시작 위치는 어떻게 되나요? 또한 자식이 자신의 디스크립터를 close한 뒤 부모가 그 디스크립터로 계속 읽을 수 있는 이유를 파일 오프셋과 프로세스별 디스크립터 테이블 관점에서 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 16,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-104-C",
+      "answerId": 18,
+      "evaluationId": 18,
+      "expectedVerdict": "CORRECT",
+      "actualVerdict": "CORRECT",
+      "score": 100,
+      "feedback": "깨어난 뒤 즉시 dequeue하면 안 되는 이유, while 재검사, 같은 mutex로 상태 검사·변경을 보호해야 하는 이유, 그리고 wait의 mutex 해제와 대기 등록 사이 원자성이 알림 유실을 막는 이유를 모두 정확히 설명했습니다. wait 반환 후 mutex를 재획득한다는 점도 올바르게 언급했습니다.",
+      "concepts": [
+        {
+          "conceptId": 9,
+          "conceptName": "잠금과 대기 전환의 원자성",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "wait의 mutex 해제와 대기 진입이 원자적으로 연결되어야 알림 유실을 막는다는 점과, 반환 시 mutex를 재획득한다는 점을 정확히 설명했습니다."
+        },
+        {
+          "conceptId": 8,
+          "conceptName": "조건 변수의 조건 재검사",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "다른 소비자에 의한 선점 및 불필요한 깨움 가능성 때문에 mutex를 획득한 상태에서 while로 조건을 재검사해야 한다고 정확히 설명했습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 13,
+          "documentVersion": 2,
+          "startOffset": 951,
+          "endOffset": 1356
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 22,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "INTERMEDIATE",
+          "content": "다중 소비자 큐에서 producer가 같은 mutex를 잡고 항목을 넣은 뒤 `pthread_cond_signal()`을 호출합니다. consumer는 `pthread_cond_wait()`에서 깨어난 직후 어떤 순서로 동작해야 하나요? 다른 consumer와의 경쟁 및 spurious wakeup 가능성을 고려해, 올바른 의사코드를 작성하고 왜 `if`가 아니라 `while`이어야 하는지 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 18,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-104-P",
+      "answerId": 19,
+      "evaluationId": 19,
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "actualVerdict": "PARTIALLY_CORRECT",
+      "score": 50,
+      "feedback": "깨어난 뒤에도 항목이 존재한다는 보장이 없으므로 같은 mutex를 잡고 while로 조건을 재검사해야 한다는 점을 정확히 설명했습니다. 다른 소비자가 먼저 소비하는 경우와 불필요한 깨움도 올바르게 언급했습니다. 다만 질문의 핵심 항목 중 하나인, mutex 해제와 대기 등록이 원자적으로 연결되지 않으면 조건 검사 후 실제 대기에 들어가기 전 알림을 놓쳐 영원히 기다릴 수 있다는 이유를 설명하지 못했습니다.",
+      "concepts": [
+        {
+          "conceptId": 9,
+          "conceptName": "잠금과 대기 전환의 원자성",
+          "verdict": "PARTIALLY_CORRECT",
+          "score": 50,
+          "feedback": "wait의 mutex 해제·재획득은 언급했지만, 해제와 대기 등록의 원자성이 알림 유실을 막는 이유는 설명하지 못했다."
+        },
+        {
+          "conceptId": 8,
+          "conceptName": "조건 변수의 조건 재검사",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "깨어난 뒤 mutex를 획득한 상태에서 while로 재검사해야 하는 이유를 정확히 설명했다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 13,
+          "documentVersion": 2,
+          "startOffset": 951,
+          "endOffset": 1356
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 23,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "INTERMEDIATE",
+          "content": "소비자가 같은 mutex를 잡고 큐가 비었음을 검사한 직후 mutex를 풀고, 아직 조건 변수의 대기열에 등록되기 전에 생산자가 항목을 넣고 signal한다면 어떤 문제가 생기나요? 이 문제를 막기 위해 `pthread_cond_wait`가 mutex 해제와 대기 등록을 원자적으로 연결해야 하는 이유를 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 18,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-104-I",
+      "answerId": 20,
+      "evaluationId": 20,
+      "expectedVerdict": "INCORRECT",
+      "actualVerdict": "INCORRECT",
+      "score": 0,
+      "feedback": "답변은 POSIX 조건 변수의 핵심 동작을 반대로 설명했습니다. signal은 특정 소비자에게 큐 항목을 예약하지 않으며, 깨어난 뒤에도 다른 소비자가 항목을 먼저 가져가거나 불필요한 깨움이 있을 수 있으므로 mutex를 다시 얻은 상태에서 while로 조건을 재검사해야 합니다. 또한 wait는 mutex 해제와 대기 등록을 원자적으로 연결해야 검사와 대기 사이에 발생한 알림을 놓치지 않습니다. wait 중 mutex를 계속 잡는다는 주장도 잘못입니다.",
+      "concepts": [
+        {
+          "conceptId": 9,
+          "conceptName": "잠금과 대기 전환의 원자성",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "wait의 mutex 해제와 대기 등록은 원자적으로 연결되어야 하며, 그렇지 않으면 검사와 대기 사이의 알림을 잃을 수 있습니다. 답변은 이를 부정하고 wait 중 mutex를 계속 잡아야 한다고 하여 핵심 메커니즘을 반대로 설명했습니다."
+        },
+        {
+          "conceptId": 8,
+          "conceptName": "조건 변수의 조건 재검사",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "알림은 항목을 예약하지 않으므로 깨어난 뒤 mutex를 얻은 상태에서 while로 조건을 재검사해야 합니다. 답변은 if 뒤 즉시 dequeue해도 된다고 하여 틀렸습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 13,
+          "documentVersion": 2,
+          "startOffset": 951,
+          "endOffset": 1356
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 24,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "INTERMEDIATE",
+          "content": "생산자와 소비자 두 개가 같은 큐를 공유한다고 할 때, `if (empty) pthread_cond_wait(...);` 뒤에 바로 dequeue하면 어떤 경쟁 상황에서 오류가 날 수 있나요? 그 오류를 막기 위해 `while` 재검사, 같은 mutex로 큐 상태 보호, 그리고 `pthread_cond_wait`의 «mutex 해제와 대기 등록의 원자성»이 각각 어떻게 작동하는지 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 18,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-105-C",
+      "answerId": 21,
+      "evaluationId": 21,
+      "expectedVerdict": "CORRECT",
+      "actualVerdict": "CORRECT",
+      "score": 100,
+      "feedback": "타임 슬라이스를 매우 작게 해도 모든 성능 지표가 좋아지는 것은 아니라는 점을 정확히 설명했습니다. 짧은 슬라이스가 여러 실행 가능 작업의 첫 CPU 실행 기회를 앞당겨 응답 시간에 유리할 수 있음을 언급했고, 문맥 교환 증가에 따른 상태 전환·캐시 관련 비용 및 처리량/완료 시간 악화를 함께 제시했습니다.",
+      "concepts": [
+        {
+          "conceptId": 10,
+          "conceptName": "라운드 로빈의 응답성",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "짧은 타임 슬라이스가 실행 가능 작업들의 첫 CPU 실행 기회를 빠르게 하여 응답 시간에 유리할 수 있음을 정확히 설명했습니다."
+        },
+        {
+          "conceptId": 11,
+          "conceptName": "문맥 교환의 부가 비용",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "짧은 슬라이스로 문맥 교환이 잦아지고 상태 전환 및 캐시 관련 비용이 증가한다는 점을 정확히 설명했습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 14,
+          "documentVersion": 2,
+          "startOffset": 1358,
+          "endOffset": 1651
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 25,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "INTERMEDIATE",
+          "content": "대화형 작업 10개가 동시에 실행 가능 상태이고, 각 작업은 아직 첫 CPU 실행을 받지 못했다고 가정해 봅시다. 라운드 로빈의 타임 슬라이스를 줄이면 이 작업들의 ‘도착부터 첫 CPU 실행까지’ 응답 시간에는 어떤 변화가 예상되며, 너무 짧게 줄였을 때 문맥 교환 비용 때문에 처리량이나 완료 시간이 왜 오히려 나빠질 수 있나요?"
+        }
+      },
+      "behaviorCheckCount": 20,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-105-P",
+      "answerId": 22,
+      "evaluationId": 22,
+      "expectedVerdict": "PARTIALLY_CORRECT",
+      "actualVerdict": "PARTIALLY_CORRECT",
+      "score": 50,
+      "feedback": "짧은 타임 슬라이스가 여러 실행 가능 작업의 첫 CPU 실행 기회를 앞당겨 첫 실행까지의 응답 시간을 줄일 수 있다는 핵심은 정확합니다. 다만 질문이 중심적으로 요구한 문맥 교환 비용과 그 성능 영향은 설명하지 못했습니다. 타임 슬라이스가 지나치게 짧으면 문맥 교환이 잦아지고 레지스터 전환·캐시 효과 등의 오버헤드로 실제 작업 시간이 감소해 처리량이나 완료 시간이 나빠질 수 있으므로, 모든 성능 지표가 좋아지는 것은 아니라는 결론이 필요합니다.",
+      "concepts": [
+        {
+          "conceptId": 11,
+          "conceptName": "문맥 교환의 부가 비용",
+          "verdict": "PARTIALLY_CORRECT",
+          "score": 50,
+          "feedback": "문맥 교환 횟수 증가는 언급했지만, 그 부가 비용의 내용과 성능상 결과를 설명하지 못했다."
+        },
+        {
+          "conceptId": 10,
+          "conceptName": "라운드 로빈의 응답성",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "짧은 타임 슬라이스가 여러 작업의 첫 CPU 실행 기회를 빠르게 하여 첫 실행까지의 응답 시간을 줄일 수 있다고 정확히 설명했다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 14,
+          "documentVersion": 2,
+          "startOffset": 1358,
+          "endOffset": 1651
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 26,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "INTERMEDIATE",
+          "content": "라운드 로빈에서 타임 슬라이스를 매우 짧게 하면 첫 CPU 실행까지의 응답 시간은 왜 좋아질 수 있지만, 처리량이나 완료 시간은 왜 오히려 나빠질 수 있나요? 문맥 교환 때 발생하는 레지스터 전환과 캐시 효과를 포함해 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 20,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    },
+    {
+      "caseId": "OS-105-I",
+      "answerId": 23,
+      "evaluationId": 23,
+      "expectedVerdict": "INCORRECT",
+      "actualVerdict": "INCORRECT",
+      "score": 0,
+      "feedback": "답변은 라운드 로빈의 핵심 동작과 문맥 교환 비용을 모두 반대로 설명했습니다. 라운드 로빈은 타임 슬라이스가 만료되면 실행 가능한 다른 작업으로 CPU를 넘기므로, 슬라이스를 짧게 하면 여러 작업이 첫 CPU 실행 기회를 더 빨리 얻어 응답 시간이 개선될 수 있습니다. 반면 짧은 슬라이스는 문맥 교환을 더 자주 발생시켜 레지스터 전환·캐시 효과 등의 비용을 늘리고, 지나치면 처리량과 완료 시간이 오히려 나빠질 수 있습니다. 따라서 모든 성능 지표가 항상 좋아지는 것은 아닙니다.",
+      "concepts": [
+        {
+          "conceptId": 11,
+          "conceptName": "문맥 교환의 부가 비용",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "문맥 교환은 레지스터 전환과 캐시 효과 등 부가 비용을 발생시키며, 짧은 타임 슬라이스일수록 이를 더 자주 지불합니다."
+        },
+        {
+          "conceptId": 10,
+          "conceptName": "라운드 로빈의 응답성",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "feedback": "응답 시간은 도착부터 첫 CPU 실행까지이며, 짧은 타임 슬라이스는 순환 대기를 줄여 첫 실행 기회를 더 빠르게 할 수 있습니다."
+        }
+      ],
+      "evidence": [
+        {
+          "chunkId": 14,
+          "documentVersion": 2,
+          "startOffset": 1358,
+          "endOffset": 1651
+        }
+      ],
+      "followUp": {
+        "status": "READY",
+        "reason": null,
+        "question": {
+          "id": 27,
+          "topic": {
+            "id": 1,
+            "code": "OPERATING_SYSTEM",
+            "name": "운영체제"
+          },
+          "difficulty": "INTERMEDIATE",
+          "content": "라운드 로빈에서 타임 슬라이스를 짧게 하면 작업의 첫 CPU 실행까지 걸리는 응답 시간은 왜 개선될 수 있나요? 반대로, 슬라이스가 지나치게 짧을 때 레지스터 전환과 캐시 효과를 포함한 문맥 교환 비용이 처리량·완료 시간에 미치는 영향을 설명해 보세요."
+        }
+      },
+      "behaviorCheckCount": 20,
+      "behaviorFailures": [],
+      "diagnosticDifferences": []
+    }
+  ],
+  "followUpVerification": {
+    "case": {
+      "id": "FOLLOW-UP-EXEC-C",
+      "sourceCaseId": "OS-101-P",
+      "questionId": 14,
+      "question": "fork 후 자식이 exec에 성공했을 때, 자식 프로세스의 기존 프로그램 이미지와 exec 호출 다음 문장은 각각 어떻게 되며, exec가 새 프로세스를 추가로 만드는지 설명해 보세요.",
+      "expectedVerdict": "CORRECT",
+      "expectedConcepts": {
+        "OS_101_EXEC": "CORRECT"
+      },
+      "answer": "성공한 exec는 이미 존재하는 자식 프로세스의 프로그램 이미지를 새 프로그램으로 교체합니다. 자식의 PID는 그대로이고 exec 자체가 새 프로세스를 추가로 만들지 않습니다. 기존 프로그램은 교체되므로 성공한 exec는 이전 프로그램의 호출 다음 문장으로 돌아오지 않습니다.",
+      "labelStatus": "AGENT_AUTHORED_NOT_HUMAN_REVIEWED",
+      "frozenAt": "2026-10-05T07:48:55.006842+00:00"
+    },
+    "result": {
+      "caseId": "FOLLOW-UP-EXEC-C",
+      "answer": {
+        "answerId": 24,
+        "questionId": 14,
+        "questionContent": "fork 후 자식이 exec에 성공했을 때, 자식 프로세스의 기존 프로그램 이미지와 exec 호출 다음 문장은 각각 어떻게 되며, exec가 새 프로세스를 추가로 만드는지 설명해 보세요.",
+        "content": "성공한 exec는 이미 존재하는 자식 프로세스의 프로그램 이미지를 새 프로그램으로 교체합니다. 자식의 PID는 그대로이고 exec 자체가 새 프로세스를 추가로 만들지 않습니다. 기존 프로그램은 교체되므로 성공한 exec는 이전 프로그램의 호출 다음 문장으로 돌아오지 않습니다.",
+        "submittedAt": "2026-10-05T16:48:55.232306",
+        "evaluation": {
+          "status": "EVALUATED",
+          "verdict": "CORRECT",
+          "score": 100,
+          "feedback": "답변은 exec 성공 시 기존 자식 프로세스의 프로그램 이미지가 새 프로그램으로 교체되고, 이전 프로그램의 exec 다음 문장으로 반환하지 않으며, exec 자체가 새 프로세스를 추가 생성하지 않는다는 핵심을 정확히 설명했습니다. PID가 유지된다는 부연도 내용상 타당합니다.",
+          "failureReason": null,
+          "concepts": [
+            {
+              "conceptId": 3,
+              "conceptName": "exec의 프로그램 교체",
+              "verdict": "CORRECT",
+              "score": 100,
+              "feedback": "exec 성공 시 호출한 자식 프로세스의 프로그램 이미지가 교체되며 이전 코드로 반환하지 않는다는 핵심을 정확히 설명했습니다."
+            }
+          ],
+          "strengths": [
+            "exec를 새 프로세스 생성이 아닌 기존 프로세스의 프로그램 이미지 교체로 정확히 구분했습니다.",
+            "성공한 exec가 이전 코드로 돌아오지 않는다는 동작을 명확히 설명했습니다.",
+            "fork와 exec의 역할을 혼동하지 않고 exec가 추가 프로세스를 만들지 않는다고 설명했습니다."
+          ],
+          "omissions": [],
+          "misconceptions": [],
+          "evidence": [
+            {
+              "chunkId": 10,
+              "documentTitle": "운영체제 핵심 동작과 경계",
+              "documentVersion": 2,
+              "startOffset": 114,
+              "endOffset": 353,
+              "content": "[OS-101]\nfork의 프로세스 생성과 exec의 프로그램 교체는 별개의 동작이다. fork가 성공하면 부모와 새 자식이 각각 실행을 이어간다. exec가 성공하면 호출한 자식 프로세스의 프로그램 이미지가 교체되고 이전 코드로 돌아오지 않는다. exec 자체가 새 프로세스를 하나 더 만드는 것은 아니다.\n근거: OS-API — 5.1 fork, 5.3 exec; OS-XV6 — 1.1 Processes and memory"
+            }
+          ]
+        },
+        "evaluationId": 24
+      },
+      "followUp": {
+        "status": "UNAVAILABLE",
+        "reason": "FOLLOW_UP_LIMIT",
+        "question": null
+      },
+      "knowledgeBefore": [
+        {
+          "conceptId": 1,
+          "conceptName": "프로세스와 스레드",
+          "status": "UNKNOWN",
+          "masteryScore": null,
+          "confidenceScore": 0,
+          "attemptCount": 0,
+          "lastEvaluatedAt": null
+        },
+        {
+          "conceptId": 2,
+          "conceptName": "fork의 프로세스 생성",
+          "status": "LEARNING",
+          "masteryScore": 50.0,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:42:22.187212"
+        },
+        {
+          "conceptId": 3,
+          "conceptName": "exec의 프로그램 교체",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:42:22.187212"
+        },
+        {
+          "conceptId": 4,
+          "conceptName": "자식 종료 대기와 회수",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:42:51.984244"
+        },
+        {
+          "conceptId": 5,
+          "conceptName": "조건 기반 실행 순서",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:42:51.984244"
+        },
+        {
+          "conceptId": 6,
+          "conceptName": "프로세스별 파일 디스크립터",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:43:21.345264"
+        },
+        {
+          "conceptId": 7,
+          "conceptName": "상속한 열린 파일의 오프셋 공유",
+          "status": "LEARNING",
+          "masteryScore": 50.0,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:43:21.345264"
+        },
+        {
+          "conceptId": 8,
+          "conceptName": "조건 변수의 조건 재검사",
+          "status": "LEARNING",
+          "masteryScore": 50.0,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:43:59.647001"
+        },
+        {
+          "conceptId": 9,
+          "conceptName": "잠금과 대기 전환의 원자성",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:43:59.647001"
+        },
+        {
+          "conceptId": 10,
+          "conceptName": "라운드 로빈의 응답성",
+          "status": "LEARNING",
+          "masteryScore": 50.0,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:44:37.436363"
+        },
+        {
+          "conceptId": 11,
+          "conceptName": "문맥 교환의 부가 비용",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:44:37.436363"
+        }
+      ],
+      "knowledgeAfter": [
+        {
+          "conceptId": 1,
+          "conceptName": "프로세스와 스레드",
+          "status": "UNKNOWN",
+          "masteryScore": null,
+          "confidenceScore": 0,
+          "attemptCount": 0,
+          "lastEvaluatedAt": null
+        },
+        {
+          "conceptId": 2,
+          "conceptName": "fork의 프로세스 생성",
+          "status": "LEARNING",
+          "masteryScore": 50.0,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:42:22.187212"
+        },
+        {
+          "conceptId": 3,
+          "conceptName": "exec의 프로그램 교체",
+          "status": "LEARNING",
+          "masteryScore": 70.0,
+          "confidenceScore": 100,
+          "attemptCount": 4,
+          "lastEvaluatedAt": "2026-10-05T16:48:58.976496"
+        },
+        {
+          "conceptId": 4,
+          "conceptName": "자식 종료 대기와 회수",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:42:51.984244"
+        },
+        {
+          "conceptId": 5,
+          "conceptName": "조건 기반 실행 순서",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:42:51.984244"
+        },
+        {
+          "conceptId": 6,
+          "conceptName": "프로세스별 파일 디스크립터",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:43:21.345264"
+        },
+        {
+          "conceptId": 7,
+          "conceptName": "상속한 열린 파일의 오프셋 공유",
+          "status": "LEARNING",
+          "masteryScore": 50.0,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:43:21.345264"
+        },
+        {
+          "conceptId": 8,
+          "conceptName": "조건 변수의 조건 재검사",
+          "status": "LEARNING",
+          "masteryScore": 50.0,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:43:59.647001"
+        },
+        {
+          "conceptId": 9,
+          "conceptName": "잠금과 대기 전환의 원자성",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:43:59.647001"
+        },
+        {
+          "conceptId": 10,
+          "conceptName": "라운드 로빈의 응답성",
+          "status": "LEARNING",
+          "masteryScore": 50.0,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:44:37.436363"
+        },
+        {
+          "conceptId": 11,
+          "conceptName": "문맥 교환의 부가 비용",
+          "status": "LEARNING",
+          "masteryScore": 37.5,
+          "confidenceScore": 75,
+          "attemptCount": 3,
+          "lastEvaluatedAt": "2026-10-05T16:44:37.436363"
+        }
+      ],
+      "uiHeading": "정답 · 100점",
+      "behaviorChecks": [
+        {
+          "name": "submitted answer and question preserved",
+          "passed": true
+        },
+        {
+          "name": "evaluation completes successfully",
+          "passed": true,
+          "expected": "EVALUATED",
+          "actual": "EVALUATED"
+        },
+        {
+          "name": "API overall score follows actual verdict",
+          "passed": true
+        },
+        {
+          "name": "published document v2 evidence attached",
+          "passed": true
+        },
+        {
+          "name": "result visible in browser",
+          "passed": true
+        },
+        {
+          "name": "UI result heading matches API verdict and score",
+          "passed": true,
+          "expected": "정답 · 100점",
+          "actual": "정답 · 100점"
+        },
+        {
+          "name": "required Concept IDs preserved",
+          "passed": true
+        },
+        {
+          "name": "Concept 3 score follows actual verdict",
+          "passed": true
+        },
+        {
+          "name": "Concept 3 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 4,
+            "confidence": 100,
+            "mastery": 70.0,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 4,
+            "confidence": 100,
+            "mastery": 70.0,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "Concept 2 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 50.0,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 50.0,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "Concept 5 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "Concept 4 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "Concept 7 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 50.0,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 50.0,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "Concept 6 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "Concept 9 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "Concept 8 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 50.0,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 50.0,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "Concept 10 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 50.0,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 50.0,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "Concept 11 exactly-once count/confidence/mastery/status",
+          "passed": true,
+          "expected": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          },
+          "actual": {
+            "count": 3,
+            "confidence": 75,
+            "mastery": 37.5,
+            "status": "LEARNING"
+          }
+        },
+        {
+          "name": "unrelated Concept states unchanged",
+          "passed": true
+        },
+        {
+          "name": "follow-up status matches source type",
+          "passed": true,
+          "expected": "UNAVAILABLE",
+          "actual": "UNAVAILABLE"
+        }
+      ],
+      "diagnosticComparisons": [
+        {
+          "name": "overall diagnostic verdict",
+          "passed": true,
+          "expected": "CORRECT",
+          "actual": "CORRECT"
+        },
+        {
+          "name": "OS_101_EXEC diagnostic verdict",
+          "passed": true,
+          "expected": "CORRECT",
+          "actual": "CORRECT"
+        }
+      ]
+    },
+    "checks": [
+      {
+        "name": "follow-up of follow-up blocked",
+        "passed": true,
+        "expected": "FOLLOW_UP_LIMIT",
+        "actual": "FOLLOW_UP_LIMIT"
+      },
+      {
+        "name": "UI links to next basic questions",
+        "passed": true
+      }
+    ],
+    "uiAudit": [
+      {
+        "name": "OS-101-C exact UI verdict/score",
+        "passed": true,
+        "expected": "정답 · 100점",
+        "actual": "정답 · 100점"
+      },
+      {
+        "name": "OS-101-C UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-101-C stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-101-P exact UI verdict/score",
+        "passed": true,
+        "expected": "부분 정답 · 50점",
+        "actual": "부분 정답 · 50점"
+      },
+      {
+        "name": "OS-101-P UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-101-P stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-101-I exact UI verdict/score",
+        "passed": true,
+        "expected": "오답 · 0점",
+        "actual": "오답 · 0점"
+      },
+      {
+        "name": "OS-101-I UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-101-I stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-102-C exact UI verdict/score",
+        "passed": true,
+        "expected": "정답 · 100점",
+        "actual": "정답 · 100점"
+      },
+      {
+        "name": "OS-102-C UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-102-C stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-102-P exact UI verdict/score",
+        "passed": true,
+        "expected": "부분 정답 · 50점",
+        "actual": "부분 정답 · 50점"
+      },
+      {
+        "name": "OS-102-P UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-102-P stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-102-I exact UI verdict/score",
+        "passed": true,
+        "expected": "오답 · 0점",
+        "actual": "오답 · 0점"
+      },
+      {
+        "name": "OS-102-I UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-102-I stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-103-C exact UI verdict/score",
+        "passed": true,
+        "expected": "정답 · 100점",
+        "actual": "정답 · 100점"
+      },
+      {
+        "name": "OS-103-C UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-103-C stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-103-P exact UI verdict/score",
+        "passed": true,
+        "expected": "부분 정답 · 50점",
+        "actual": "부분 정답 · 50점"
+      },
+      {
+        "name": "OS-103-P UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-103-P stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-103-I exact UI verdict/score",
+        "passed": true,
+        "expected": "오답 · 0점",
+        "actual": "오답 · 0점"
+      },
+      {
+        "name": "OS-103-I UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-103-I stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-104-C exact UI verdict/score",
+        "passed": true,
+        "expected": "정답 · 100점",
+        "actual": "정답 · 100점"
+      },
+      {
+        "name": "OS-104-C UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-104-C stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-104-P exact UI verdict/score",
+        "passed": true,
+        "expected": "부분 정답 · 50점",
+        "actual": "부분 정답 · 50점"
+      },
+      {
+        "name": "OS-104-P UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-104-P stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-104-I exact UI verdict/score",
+        "passed": true,
+        "expected": "오답 · 0점",
+        "actual": "오답 · 0점"
+      },
+      {
+        "name": "OS-104-I UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-104-I stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-105-C exact UI verdict/score",
+        "passed": true,
+        "expected": "정답 · 100점",
+        "actual": "정답 · 100점"
+      },
+      {
+        "name": "OS-105-C UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-105-C stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-105-P exact UI verdict/score",
+        "passed": true,
+        "expected": "부분 정답 · 50점",
+        "actual": "부분 정답 · 50점"
+      },
+      {
+        "name": "OS-105-P UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-105-P stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "OS-105-I exact UI verdict/score",
+        "passed": true,
+        "expected": "오답 · 0점",
+        "actual": "오답 · 0점"
+      },
+      {
+        "name": "OS-105-I UI Concept verdicts",
+        "passed": true
+      },
+      {
+        "name": "OS-105-I stored answer unchanged after reload",
+        "passed": true
+      },
+      {
+        "name": "UI reloads do not apply knowledge twice",
+        "passed": true
+      },
+      {
+        "name": "recommendation UI matches API question",
+        "passed": true
+      }
+    ],
+    "finalKnowledge": [
+      {
+        "conceptId": 1,
+        "conceptName": "프로세스와 스레드",
+        "status": "UNKNOWN",
+        "masteryScore": null,
+        "confidenceScore": 0,
+        "attemptCount": 0,
+        "lastEvaluatedAt": null
+      },
+      {
+        "conceptId": 2,
+        "conceptName": "fork의 프로세스 생성",
+        "status": "LEARNING",
+        "masteryScore": 50.0,
+        "confidenceScore": 75,
+        "attemptCount": 3,
+        "lastEvaluatedAt": "2026-10-05T16:42:22.187212"
+      },
+      {
+        "conceptId": 3,
+        "conceptName": "exec의 프로그램 교체",
+        "status": "LEARNING",
+        "masteryScore": 70.0,
+        "confidenceScore": 100,
+        "attemptCount": 4,
+        "lastEvaluatedAt": "2026-10-05T16:48:58.976496"
+      },
+      {
+        "conceptId": 4,
+        "conceptName": "자식 종료 대기와 회수",
+        "status": "LEARNING",
+        "masteryScore": 37.5,
+        "confidenceScore": 75,
+        "attemptCount": 3,
+        "lastEvaluatedAt": "2026-10-05T16:42:51.984244"
+      },
+      {
+        "conceptId": 5,
+        "conceptName": "조건 기반 실행 순서",
+        "status": "LEARNING",
+        "masteryScore": 37.5,
+        "confidenceScore": 75,
+        "attemptCount": 3,
+        "lastEvaluatedAt": "2026-10-05T16:42:51.984244"
+      },
+      {
+        "conceptId": 6,
+        "conceptName": "프로세스별 파일 디스크립터",
+        "status": "LEARNING",
+        "masteryScore": 37.5,
+        "confidenceScore": 75,
+        "attemptCount": 3,
+        "lastEvaluatedAt": "2026-10-05T16:43:21.345264"
+      },
+      {
+        "conceptId": 7,
+        "conceptName": "상속한 열린 파일의 오프셋 공유",
+        "status": "LEARNING",
+        "masteryScore": 50.0,
+        "confidenceScore": 75,
+        "attemptCount": 3,
+        "lastEvaluatedAt": "2026-10-05T16:43:21.345264"
+      },
+      {
+        "conceptId": 8,
+        "conceptName": "조건 변수의 조건 재검사",
+        "status": "LEARNING",
+        "masteryScore": 50.0,
+        "confidenceScore": 75,
+        "attemptCount": 3,
+        "lastEvaluatedAt": "2026-10-05T16:43:59.647001"
+      },
+      {
+        "conceptId": 9,
+        "conceptName": "잠금과 대기 전환의 원자성",
+        "status": "LEARNING",
+        "masteryScore": 37.5,
+        "confidenceScore": 75,
+        "attemptCount": 3,
+        "lastEvaluatedAt": "2026-10-05T16:43:59.647001"
+      },
+      {
+        "conceptId": 10,
+        "conceptName": "라운드 로빈의 응답성",
+        "status": "LEARNING",
+        "masteryScore": 50.0,
+        "confidenceScore": 75,
+        "attemptCount": 3,
+        "lastEvaluatedAt": "2026-10-05T16:44:37.436363"
+      },
+      {
+        "conceptId": 11,
+        "conceptName": "문맥 교환의 부가 비용",
+        "status": "LEARNING",
+        "masteryScore": 37.5,
+        "confidenceScore": 75,
+        "attemptCount": 3,
+        "lastEvaluatedAt": "2026-10-05T16:44:37.436363"
+      }
+    ],
+    "progress": {
+      "totalAnswers": 16,
+      "recentAnswerCount": 16,
+      "recentEvaluations": [
+        {
+          "answerId": 24,
+          "questionTitle": "fork 후 자식이 exec에 성공했을 때, 자식 프로세스의 기존 프로그램 이미지와 exec 호출 다음 문장은 각각 어떻게 되며, exec가 새 프로세스를 추가로 만드는지 설명해 보세요.",
+          "status": "EVALUATED",
+          "verdict": "CORRECT",
+          "score": 100,
+          "submittedAt": "2026-10-05T16:48:55.232306"
+        },
+        {
+          "answerId": 23,
+          "questionTitle": "라운드 로빈 스케줄러의 타임 슬라이스를 매우 작게 줄이면 모든 성능 지표가 좋아질까요? 첫 CPU 실행까지의 응답 시간과 문맥 교환 비용을 중심으로 설명하세요.",
+          "status": "EVALUATED",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "submittedAt": "2026-10-05T16:44:32.397802"
+        },
+        {
+          "answerId": 22,
+          "questionTitle": "라운드 로빈 스케줄러의 타임 슬라이스를 매우 작게 줄이면 모든 성능 지표가 좋아질까요? 첫 CPU 실행까지의 응답 시간과 문맥 교환 비용을 중심으로 설명하세요.",
+          "status": "EVALUATED",
+          "verdict": "PARTIALLY_CORRECT",
+          "score": 50,
+          "submittedAt": "2026-10-05T16:44:17.496249"
+        },
+        {
+          "answerId": 21,
+          "questionTitle": "라운드 로빈 스케줄러의 타임 슬라이스를 매우 작게 줄이면 모든 성능 지표가 좋아질까요? 첫 CPU 실행까지의 응답 시간과 문맥 교환 비용을 중심으로 설명하세요.",
+          "status": "EVALUATED",
+          "verdict": "CORRECT",
+          "score": 100,
+          "submittedAt": "2026-10-05T16:44:06.762756"
+        },
+        {
+          "answerId": 20,
+          "questionTitle": "POSIX 조건 변수를 쓰는 소비자가 큐가 비었는지 if로 검사한 뒤 기다립니다. 깨어나면 바로 항목을 꺼내도 될까요? while 재검사, 같은 mutex를 이용한 상태 보호, wait의 잠금 해제·대기 전환이 각각 필요한 이유를 설명하세요.",
+          "status": "EVALUATED",
+          "verdict": "INCORRECT",
+          "score": 0,
+          "submittedAt": "2026-10-05T16:43:49.790899"
+        }
+      ],
+      "topics": [
+        {
+          "topicId": 1,
+          "topicName": "운영체제",
+          "status": "LEARNING",
+          "masteryScore": 45.75,
+          "confidenceScore": 70.45454545454545,
+          "unknownCount": 1,
+          "learningCount": 10,
+          "stableCount": 0,
+          "concepts": [
+            {
+              "conceptId": 1,
+              "conceptName": "프로세스와 스레드",
+              "status": "UNKNOWN",
+              "masteryScore": null,
+              "confidenceScore": 0,
+              "attemptCount": 0,
+              "lastEvaluatedAt": null
+            },
+            {
+              "conceptId": 2,
+              "conceptName": "fork의 프로세스 생성",
+              "status": "LEARNING",
+              "masteryScore": 50.0,
+              "confidenceScore": 75,
+              "attemptCount": 3,
+              "lastEvaluatedAt": "2026-10-05T16:42:22.187212"
+            },
+            {
+              "conceptId": 3,
+              "conceptName": "exec의 프로그램 교체",
+              "status": "LEARNING",
+              "masteryScore": 70.0,
+              "confidenceScore": 100,
+              "attemptCount": 4,
+              "lastEvaluatedAt": "2026-10-05T16:48:58.976496"
+            },
+            {
+              "conceptId": 4,
+              "conceptName": "자식 종료 대기와 회수",
+              "status": "LEARNING",
+              "masteryScore": 37.5,
+              "confidenceScore": 75,
+              "attemptCount": 3,
+              "lastEvaluatedAt": "2026-10-05T16:42:51.984244"
+            },
+            {
+              "conceptId": 5,
+              "conceptName": "조건 기반 실행 순서",
+              "status": "LEARNING",
+              "masteryScore": 37.5,
+              "confidenceScore": 75,
+              "attemptCount": 3,
+              "lastEvaluatedAt": "2026-10-05T16:42:51.984244"
+            },
+            {
+              "conceptId": 6,
+              "conceptName": "프로세스별 파일 디스크립터",
+              "status": "LEARNING",
+              "masteryScore": 37.5,
+              "confidenceScore": 75,
+              "attemptCount": 3,
+              "lastEvaluatedAt": "2026-10-05T16:43:21.345264"
+            },
+            {
+              "conceptId": 7,
+              "conceptName": "상속한 열린 파일의 오프셋 공유",
+              "status": "LEARNING",
+              "masteryScore": 50.0,
+              "confidenceScore": 75,
+              "attemptCount": 3,
+              "lastEvaluatedAt": "2026-10-05T16:43:21.345264"
+            },
+            {
+              "conceptId": 8,
+              "conceptName": "조건 변수의 조건 재검사",
+              "status": "LEARNING",
+              "masteryScore": 50.0,
+              "confidenceScore": 75,
+              "attemptCount": 3,
+              "lastEvaluatedAt": "2026-10-05T16:43:59.647001"
+            },
+            {
+              "conceptId": 9,
+              "conceptName": "잠금과 대기 전환의 원자성",
+              "status": "LEARNING",
+              "masteryScore": 37.5,
+              "confidenceScore": 75,
+              "attemptCount": 3,
+              "lastEvaluatedAt": "2026-10-05T16:43:59.647001"
+            },
+            {
+              "conceptId": 10,
+              "conceptName": "라운드 로빈의 응답성",
+              "status": "LEARNING",
+              "masteryScore": 50.0,
+              "confidenceScore": 75,
+              "attemptCount": 3,
+              "lastEvaluatedAt": "2026-10-05T16:44:37.436363"
+            },
+            {
+              "conceptId": 11,
+              "conceptName": "문맥 교환의 부가 비용",
+              "status": "LEARNING",
+              "masteryScore": 37.5,
+              "confidenceScore": 75,
+              "attemptCount": 3,
+              "lastEvaluatedAt": "2026-10-05T16:44:37.436363"
+            }
+          ]
+        }
+      ],
+      "recommendation": {
+        "questionId": 1,
+        "title": "프로세스와 스레드의 차이를 설명하세요.",
+        "conceptId": 1,
+        "conceptName": "프로세스와 스레드",
+        "reason": "UNASSESSED_CONCEPT",
+        "reasonText": "아직 평가하지 않은 개념을 확인해 보세요."
+      }
+    }
+  },
+  "usage": {
+    "evaluations": [
+      {
+        "answer_id": 9,
+        "evaluation_id": 9,
+        "status": "EVALUATED",
+        "verdict": "CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 878,
+        "output_tokens": 284,
+        "processing_duration_millis": 4959
+      },
+      {
+        "answer_id": 10,
+        "evaluation_id": 10,
+        "status": "EVALUATED",
+        "verdict": "PARTIALLY_CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 865,
+        "output_tokens": 381,
+        "processing_duration_millis": 4869
+      },
+      {
+        "answer_id": 11,
+        "evaluation_id": 11,
+        "status": "EVALUATED",
+        "verdict": "INCORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 876,
+        "output_tokens": 285,
+        "processing_duration_millis": 3838
+      },
+      {
+        "answer_id": 12,
+        "evaluation_id": 12,
+        "status": "EVALUATED",
+        "verdict": "CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 939,
+        "output_tokens": 295,
+        "processing_duration_millis": 3737
+      },
+      {
+        "answer_id": 13,
+        "evaluation_id": 13,
+        "status": "EVALUATED",
+        "verdict": "PARTIALLY_CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 918,
+        "output_tokens": 511,
+        "processing_duration_millis": 6750
+      },
+      {
+        "answer_id": 14,
+        "evaluation_id": 14,
+        "status": "EVALUATED",
+        "verdict": "INCORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 930,
+        "output_tokens": 318,
+        "processing_duration_millis": 4066
+      },
+      {
+        "answer_id": 15,
+        "evaluation_id": 15,
+        "status": "EVALUATED",
+        "verdict": "CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 1023,
+        "output_tokens": 313,
+        "processing_duration_millis": 3216
+      },
+      {
+        "answer_id": 16,
+        "evaluation_id": 16,
+        "status": "EVALUATED",
+        "verdict": "PARTIALLY_CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 1013,
+        "output_tokens": 381,
+        "processing_duration_millis": 4153
+      },
+      {
+        "answer_id": 17,
+        "evaluation_id": 17,
+        "status": "EVALUATED",
+        "verdict": "INCORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 1007,
+        "output_tokens": 381,
+        "processing_duration_millis": 3716
+      },
+      {
+        "answer_id": 18,
+        "evaluation_id": 18,
+        "status": "EVALUATED",
+        "verdict": "CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 1079,
+        "output_tokens": 345,
+        "processing_duration_millis": 3813
+      },
+      {
+        "answer_id": 19,
+        "evaluation_id": 19,
+        "status": "EVALUATED",
+        "verdict": "PARTIALLY_CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 1064,
+        "output_tokens": 426,
+        "processing_duration_millis": 5014
+      },
+      {
+        "answer_id": 20,
+        "evaluation_id": 20,
+        "status": "EVALUATED",
+        "verdict": "INCORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 1052,
+        "output_tokens": 450,
+        "processing_duration_millis": 9156
+      },
+      {
+        "answer_id": 21,
+        "evaluation_id": 21,
+        "status": "EVALUATED",
+        "verdict": "CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 1005,
+        "output_tokens": 300,
+        "processing_duration_millis": 3743
+      },
+      {
+        "answer_id": 22,
+        "evaluation_id": 22,
+        "status": "EVALUATED",
+        "verdict": "PARTIALLY_CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 982,
+        "output_tokens": 454,
+        "processing_duration_millis": 4946
+      },
+      {
+        "answer_id": 23,
+        "evaluation_id": 23,
+        "status": "EVALUATED",
+        "verdict": "INCORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 989,
+        "output_tokens": 443,
+        "processing_duration_millis": 4782
+      },
+      {
+        "answer_id": 24,
+        "evaluation_id": 24,
+        "status": "EVALUATED",
+        "verdict": "CORRECT",
+        "model_name": "gpt-5.6-terra",
+        "evaluator_version": "os-evaluator-v3",
+        "attempt_count": 1,
+        "input_tokens": 819,
+        "output_tokens": 230,
+        "processing_duration_millis": 3411
+      }
+    ],
+    "followUps": [
+      {
+        "answer_id": 9,
+        "question_id": 13,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 445,
+        "output_tokens": 157,
+        "duration_millis": 3428
+      },
+      {
+        "answer_id": 10,
+        "question_id": 14,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 519,
+        "output_tokens": 121,
+        "duration_millis": 2730
+      },
+      {
+        "answer_id": 11,
+        "question_id": 15,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 515,
+        "output_tokens": 237,
+        "duration_millis": 3334
+      },
+      {
+        "answer_id": 12,
+        "question_id": 16,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 516,
+        "output_tokens": 246,
+        "duration_millis": 3209
+      },
+      {
+        "answer_id": 13,
+        "question_id": 17,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 606,
+        "output_tokens": 203,
+        "duration_millis": 2926
+      },
+      {
+        "answer_id": 14,
+        "question_id": 18,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 576,
+        "output_tokens": 220,
+        "duration_millis": 3643
+      },
+      {
+        "answer_id": 15,
+        "question_id": 19,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 533,
+        "output_tokens": 324,
+        "duration_millis": 4173
+      },
+      {
+        "answer_id": 16,
+        "question_id": 20,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 603,
+        "output_tokens": 205,
+        "duration_millis": 2903
+      },
+      {
+        "answer_id": 17,
+        "question_id": 21,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 676,
+        "output_tokens": 274,
+        "duration_millis": 3535
+      },
+      {
+        "answer_id": 18,
+        "question_id": 22,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 568,
+        "output_tokens": 394,
+        "duration_millis": 5201
+      },
+      {
+        "answer_id": 19,
+        "question_id": 23,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 660,
+        "output_tokens": 317,
+        "duration_millis": 5140
+      },
+      {
+        "answer_id": 20,
+        "question_id": 24,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 747,
+        "output_tokens": 336,
+        "duration_millis": 5369
+      },
+      {
+        "answer_id": 21,
+        "question_id": 25,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 521,
+        "output_tokens": 329,
+        "duration_millis": 4770
+      },
+      {
+        "answer_id": 22,
+        "question_id": 26,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 652,
+        "output_tokens": 314,
+        "duration_millis": 8440
+      },
+      {
+        "answer_id": 23,
+        "question_id": 27,
+        "status": "READY",
+        "reason": null,
+        "model_name": "gpt-5.6-terra",
+        "generator_version": "follow-up-v1",
+        "attempt_count": 1,
+        "input_tokens": 718,
+        "output_tokens": 240,
+        "duration_millis": 3574
+      }
+    ],
+    "knowledgeApplications": 31
+  },
+  "usageTotals": {
+    "successfulEvaluations": 16,
+    "successfulFollowUpGenerations": 15,
+    "inputTokens": 24294,
+    "outputTokens": 9714,
+    "estimatedUsdAtAppConfigured2And12PerMillion": 0.165156,
+    "limit": "Configured estimate, not provider billing or externally enforced spend proof"
+  },
+  "limits": [
+    "Agent-authored cases and labels, no independent human label approval",
+    "Synthetic explicit omissions and contradictions, not a representative learner sample",
+    "No provider outage reproduced",
+    "Existing seed Concept 1 remains UNKNOWN and is selected ahead of low mastery by the current recommendation contract",
+    "Evidence rendering and recorded-state assertions are distinct from model correctness"
+  ]
+}

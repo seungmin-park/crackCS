@@ -51,6 +51,7 @@ docs/
 | 화면 오류 복구·초기 콘텐츠 준비 | 구현·초안 등록 완료, 사람 검수 대기 | [계획](changes/2026-09-27-ui-content/plan.md), [검증](changes/2026-09-27-ui-content/verification.md) | 화면 상태·콘텐츠 준비 범위 변경 |
 | 로컬 PostgreSQL 실행·복구 | 기존 검증 이력 | [실행 안내](changes/2026-09-27-release-readiness/local-runbook.md), [당시 검증](changes/2026-09-27-release-readiness/verification.md) | DB·복구·기동 경로 변경 |
 | 운영체제 콘텐츠 검수·공개·버전 보존 | OS 수정·사람 승인·로컬 공개·실제 GPT·AC-007 완료 | [검증·승인 기록](changes/2026-10-05-os-content/verification.md) | OS 콘텐츠·승인·실행 결과 변경 |
+| 공개 운영체제 정답·부분 정답·오답 판정 | 합성 진단15/15·후속·지식 상태·cmux 검증 완료, 독립 대표 품질 별도 | [검증](changes/2026-10-05-os-verdict-flow/verification.md), [사례](changes/2026-10-05-os-verdict-flow/cases.json), [결과](changes/2026-10-05-os-verdict-flow/runtime-results.json) | 판정 사례·모델 결과·학습 상태 검증 변경 |
 | 실제 GPT 연결·로컬 시연 | 로컬 시연 범위 완료, 공개 운영 별도 | [계획](changes/2026-09-29-openai-completion/plan.md), [검증](changes/2026-09-29-openai-completion/verification.md), [영상](changes/2026-09-29-openai-completion/demo.mp4) | 모델·비용 한도·품질 지표·시연 경로 변경 |
 | 도메인 네이밍·메서드 책임 개선 | 변경 범위 검증 완료 | [fix.md](../fix.md) | 관련 코드·상시 점검 기준 변경 |
 | Phase 8 운영 안정화 범위·실행 순서 | 부분 완료 | [설계](changes/2026-09-21-phase-8/design.md), [구현 계획](changes/2026-09-21-phase-8/implementation-plan.md), [검증](changes/2026-09-21-phase-8/verification.md) | Phase 8 범위·Gate·책임·순서·증거 변경 |
