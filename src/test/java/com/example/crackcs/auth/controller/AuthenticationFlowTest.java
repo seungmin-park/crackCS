@@ -5,6 +5,7 @@ import com.example.crackcs.auth.domain.AuthAccount;
 import com.example.crackcs.auth.domain.AuthProvider;
 import com.example.crackcs.auth.repository.AuthAccountRepository;
 import com.example.crackcs.auth.repository.LoginAttemptRepository;
+import com.example.crackcs.auth.repository.AuthenticationRequestBucketRepository;
 import com.example.crackcs.auth.service.AuthService;
 import com.example.crackcs.member.domain.Member;
 import com.example.crackcs.member.domain.MemberStatus;
@@ -68,9 +69,13 @@ class AuthenticationFlowTest {
     @Autowired
     private MemberService memberService;
 
+    @Autowired
+    private AuthenticationRequestBucketRepository authenticationRequestBucketRepository;
+
     @AfterEach
     void cleanUp() {
         loginAttemptRepository.deleteAll();
+        authenticationRequestBucketRepository.deleteAllInBatch();
         authAccountRepository.deleteAllInBatch();
         memberRepository.deleteAllInBatch();
     }

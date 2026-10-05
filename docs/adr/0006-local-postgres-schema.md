@@ -17,6 +17,7 @@
 - `local,local-postgres`: 앱 시작 시 `ddl-auto=validate`, seed 자동 재실행 금지
 - V002: 로그인 실패 aggregate·순서가 있는 실패 시각 목록·만료 조회 인덱스 추가. 기존 테이블 변경 없음
 - V003: 회원 `authentication_version` 추가, 상태 변경 뒤 기존 세션 회수. 기존 행 기본값 0
+- V004: 공유 인증 요청 예산 추가·기존 조합별 임시 로그인 실패 기록 초기화. 계정·회원 데이터 유지
 - 변경: 기존 baseline 수정 대신 새 버전 SQL + 적용 transaction + 버전 기록
 - 적용 전 backup·새 DB restore·회귀 리허설
 - rollback: 이전 앱 + 검증한 복구 DB. 데이터를 잃는 역방향 DDL 자동 실행 금지

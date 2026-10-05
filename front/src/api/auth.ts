@@ -18,8 +18,10 @@ export type LoginInput = {
   password: string;
 };
 
-export function signUp(input: SignUpInput): Promise<Member> {
-  return post<Member>("/api/auth/sign-up", input, undefined, { authentication: "anonymous" });
+export type SignUpResponse = { message: string };
+
+export function signUp(input: SignUpInput): Promise<SignUpResponse> {
+  return post<SignUpResponse>("/api/auth/sign-up", input, undefined, { authentication: "anonymous" });
 }
 
 export function login(input: LoginInput): Promise<Member> {

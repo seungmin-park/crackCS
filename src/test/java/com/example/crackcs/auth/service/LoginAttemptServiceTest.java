@@ -2,6 +2,7 @@ package com.example.crackcs.auth.service;
 
 import com.example.crackcs.exception.TooManyLoginAttemptsException;
 import com.example.crackcs.auth.repository.LoginAttemptRepository;
+import com.example.crackcs.auth.repository.AuthenticationRequestBucketRepository;
 import com.example.crackcs.auth.domain.LoginAttempt;
 import com.example.crackcs.support.ConcurrentRequests;
 import java.util.ArrayList;
@@ -44,9 +45,13 @@ class LoginAttemptServiceTest {
     @Autowired
     private LoginAttemptRepository loginAttemptRepository;
 
+    @Autowired
+    private AuthenticationRequestBucketRepository authenticationRequestBucketRepository;
+
     @AfterEach
     void cleanUp() {
         loginAttemptRepository.deleteAll();
+        authenticationRequestBucketRepository.deleteAllInBatch();
         clock.instant = INITIAL_TIME;
     }
 
@@ -78,11 +83,11 @@ class LoginAttemptServiceTest {
     }
 
     @Test
-    @DisplayName("한 주소의 실패 기록은 다른 주소의 동일 계정까지 차단하지 않는다")
-    void isolatesRemoteAddress() {
+    @DisplayName("한 계정의 실패는 주소를 교체해도 같은 계정에서 누적된다")
+    void blocksAccountAcrossRemoteAddresses() {
         for (int failure = 0; failure < 5; failure++) loginAttemptService.recordFailure("source@example.com", "127.0.0.1");
-        assertThatCode(() -> loginAttemptService.checkAllowed("source@example.com", "127.0.0.2"))
-                .doesNotThrowAnyException();
+        assertThatThrownBy(() -> loginAttemptService.checkAllowed("source@example.com", "127.0.0.2"))
+                .isInstanceOf(TooManyLoginAttemptsException.class);
     }
 
     @Test
@@ -161,6 +166,22 @@ class LoginAttemptServiceTest {
                 .doesNotThrowAnyException();
         assertThatCode(() -> loginAttemptService.checkAllowed("expiry@example.com", "127.0.0.1"))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("만료 실패 기록이 한 페이지를 넘으면 모든 페이지를 정리한다")
+    void drainsExpiredRecordsBeyondOnePage() {
+        for (int attempt = 0; attempt < 201; attempt++) {
+            String attemptKey = String.format("%064x", attempt);
+            LoginAttempt expiredAttempt = LoginAttempt.builder().attemptKey(attemptKey)
+                    .now(INITIAL_TIME.minus(Duration.ofMinutes(20))).build();
+            expiredAttempt.recordFailure(INITIAL_TIME.minus(Duration.ofMinutes(20)));
+            loginAttemptRepository.save(expiredAttempt);
+        }
+
+        loginAttemptService.purgeExpiredAttempts();
+
+        assertThat(loginAttemptRepository.count()).isZero();
     }
 
     @TestConfiguration

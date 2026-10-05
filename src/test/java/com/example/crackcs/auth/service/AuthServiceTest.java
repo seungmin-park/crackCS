@@ -87,6 +87,18 @@ class AuthServiceTest {
         assertThat(authAccountRepository.count()).isZero();
     }
 
+    @Test
+    @DisplayName("중복 이메일도 존재 여부를 조회하기 전에 같은 비밀번호 해시 작업을 거친다")
+    void hashesPasswordBeforeDuplicateLookup() {
+        authService.register("user@example.com", RAW_PASSWORD, "첫 회원");
+
+        assertThatThrownBy(() -> authService.register("user@example.com",
+                FailingPasswordEncoderConfiguration.FAILING_PASSWORD, "둘째 회원"))
+                .isInstanceOf(IllegalStateException.class).hasMessage("forced password encoding failure");
+
+        assertThat(memberRepository.count()).isEqualTo(1);
+    }
+
     @TestConfiguration
     static class FailingPasswordEncoderConfiguration {
 

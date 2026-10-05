@@ -2,6 +2,9 @@
   "backend": [
     "com.example.crackcs.architecture.ArchitectureTest",
     "com.example.crackcs.auth.controller.AuthenticationFlowTest",
+    "com.example.crackcs.auth.controller.AuthenticationAbuseFlowTest",
+    "com.example.crackcs.auth.service.AuthenticationRequestLimitServiceTest",
+    "com.example.crackcs.auth.service.LoginAttemptCapacityServiceTest",
     "com.example.crackcs.auth.service.AuthServiceTest",
     "com.example.crackcs.auth.service.LoginAttemptServiceTest",
     "com.example.crackcs.common.web.ActuatorEndpointTest",
@@ -25,6 +28,9 @@
     "com.example.crackcs.learning.recommendation.service.RecommendationServiceTest"
   ],
   "postgres": [
+    "com.example.crackcs.auth.controller.AuthenticationAbuseFlowTest",
+    "com.example.crackcs.auth.service.AuthenticationRequestLimitServiceTest",
+    "com.example.crackcs.auth.service.LoginAttemptCapacityServiceTest",
     "com.example.crackcs.integration.postgres.PostgresPersistenceTest",
     "com.example.crackcs.learning.answer.service.AnswerServiceTest",
     "com.example.crackcs.learning.answer.service.KnowledgeAnswerSerializationTest",

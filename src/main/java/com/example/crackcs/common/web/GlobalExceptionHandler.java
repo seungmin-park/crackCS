@@ -55,6 +55,14 @@ public class GlobalExceptionHandler {
                 .body(response);
     }
 
+    @ExceptionHandler(TooManyAuthenticationRequestsException.class)
+    public ResponseEntity<ApiErrorResponse> handleTooManyAuthenticationRequests(TooManyAuthenticationRequestsException exception) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header("Retry-After", Long.toString(exception.getRetryAfterSeconds()))
+                .body(new ApiErrorResponse("TOO_MANY_AUTHENTICATION_REQUESTS", exception.getMessage(), List.of(),
+                        RequestIds.current(request)));
+    }
+
     @ExceptionHandler(MemberNotFoundException.class)
     public ResponseEntity<ApiErrorResponse> handleMemberNotFound(MemberNotFoundException exception) {
         return error(HttpStatus.NOT_FOUND, "MEMBER_NOT_FOUND", exception.getMessage(), List.of());
