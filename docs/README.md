@@ -37,7 +37,7 @@ docs/
 | 제품 범위·기능·인수 조건 | 현재 기준 | [제품 명세](product/spec.md) | 요구사항·출시 범위 변경 |
 | 콘텐츠 검수·평가 정책 | 현재 기준 | [콘텐츠 정책](product/content-and-ai-policy.md) | 검수·평가·공개 정책 변경 |
 | 도메인 관계·불변식·테이블 | 현재 기준 | [도메인·ERD](architecture/domain-model-and-erd.md) | 엔티티·관계·schema 변경 |
-| 초기 학습 콘텐츠·출처·등록 | DRAFT 등록 템플릿, OS 로컬 승인·나머지 검수 대기 | [initial-v1](content/initial-v1/README.md), [원본](content/initial-v1/bundle.json), [검수용 읽기 사본](content/initial-v1/review.md) | 콘텐츠·출처·검수 상태 변경 |
+| 초기 학습 콘텐츠·출처·등록 | DRAFT 등록 템플릿, OS·Java 로컬 승인·나머지3개 Topic 검수 대기 | [initial-v1](content/initial-v1/README.md), [원본](content/initial-v1/bundle.json), [검수용 읽기 사본](content/initial-v1/review.md) | 콘텐츠·출처·검수 상태 변경 |
 | 평가 정답의 구성·실행법 | v1 확정 | [평가 정답 기준](evaluation/reference-v1/README.md) | 원본·manifest·도구 계약 변경 |
 | OS 실제 답변 독립 검수 방법·도구 | 준비 완료·사용자 위임 대리 진단, 독립 대표 표본 미완료 | [독립 검수 안내](evaluation/independent-review/README.md), [실행·진단](changes/2026-10-05-learner-review/verification.md) | 표본 출처·사람 판정·동결·비교 계약 변경 |
 | provider 장애 때 원문·화면·재시도·지식 반영 | 통제 timeout·429·503의 cmux 9시나리오 완료, 실제 외부 장애 별도 | [검증·실행 결과](changes/2026-10-05-provider-fault-flow/verification.md) | 장애 주입·재시도·멱등·화면·저장 계약 변경 |
@@ -53,6 +53,7 @@ docs/
 | 화면 오류 복구·초기 콘텐츠 준비 | 구현·초안 등록 완료, 사람 검수 대기 | [계획](changes/2026-09-27-ui-content/plan.md), [검증](changes/2026-09-27-ui-content/verification.md) | 화면 상태·콘텐츠 준비 범위 변경 |
 | 로컬 PostgreSQL 실행·복구 | 기존 검증 이력 | [실행 안내](changes/2026-09-27-release-readiness/local-runbook.md), [당시 검증](changes/2026-09-27-release-readiness/verification.md) | DB·복구·기동 경로 변경 |
 | 운영체제 콘텐츠 검수·공개·버전 보존 | OS 수정·사람 승인·로컬 공개·실제 GPT·AC-007 완료 | [검증·승인 기록](changes/2026-10-05-os-content/verification.md) | OS 콘텐츠·승인·실행 결과 변경 |
+| Java 사용자 검수·로컬 공개·학습 상태 | 5문항·10개 개념·문서1개 공개, cmux46개 PASS·합성 provider | [검수·검증](changes/2026-10-05-java-content-flow/verification.md), [승인 기록](changes/2026-10-05-java-content-flow/review-record.json) | Java 검수·공개·실행 결과 변경 |
 | 공개 운영체제 정답·부분 정답·오답 판정 | 합성 진단15/15·후속·지식 상태·cmux 검증 완료, 독립 대표 품질 별도 | [검증](changes/2026-10-05-os-verdict-flow/verification.md), [사례](changes/2026-10-05-os-verdict-flow/cases.json), [결과](changes/2026-10-05-os-verdict-flow/runtime-results.json) | 판정 사례·모델 결과·학습 상태 검증 변경 |
 | 실제 GPT 연결·로컬 시연 | 로컬 시연 범위 완료, 공개 운영 별도 | [계획](changes/2026-09-29-openai-completion/plan.md), [검증](changes/2026-09-29-openai-completion/verification.md), [영상](changes/2026-09-29-openai-completion/demo.mp4) | 모델·비용 한도·품질 지표·시연 경로 변경 |
 | 도메인 네이밍·메서드 책임 개선 | 변경 범위 검증 완료 | [fix.md](../fix.md) | 관련 코드·상시 점검 기준 변경 |

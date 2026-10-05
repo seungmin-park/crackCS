@@ -5,7 +5,7 @@
 - 검수용 읽기 자료: [문항·답안·개념·근거를 모은 화면](review.md). 원본 변경 시 `python3 scripts/render_content_review.py`로 재생성
 - 기준 원본: [bundle.json](bundle.json)
 - 준비: 2026-09-27, AI 작성·출처 본문 대조·자동 구조 검사
-- **등록용 DRAFT**: 자동 공개 없음. OS-101~105의 [출처 재대조·수정·사람 승인 기록](../../changes/2026-10-05-os-content/verification.md)은 별도 관리. OS 묶음은 프로젝트 소유자의 로컬 공개 승인 완료, 다른 Topic 승인 대기
+- **등록용 DRAFT**: 자동 공개 없음. [OS 승인 기록](../../changes/2026-10-05-os-content/verification.md), [Java 사용자 검수·승인·실행 기록](../../changes/2026-10-05-java-content-flow/verification.md)은 별도 관리. OS·Java 각5문항 로컬 공개 승인 완료, 나머지3개 Topic 승인 대기
 - 5개 말단 Topic, Topic당 5문항·1문서, 총 25문항·50개 필수 Concept·5문서
 - 각 문항: 필수 개념 2개, 가중치 각 0.50, 합계 1.00
 - 난이도: BASIC 8, INTERMEDIATE 17. 심화 질문·전 분야를 포괄하는 문제집 아님
