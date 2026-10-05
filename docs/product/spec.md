@@ -313,6 +313,7 @@ flowchart TD
 
 - 성공한 Evaluation은 EVALUATED 상태가 된다.
 - 외부 AI 오류, 시간 초과와 스키마 검증 실패는 제한된 횟수만 재시도한다.
+- provider 응답 크기 초과는 재호출 없이 평가 NEEDS_REVIEW·후속 질문 FAILED로 종료. 수신·내부 JSON 크기 한도는 [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md) 참조
 - 최종 실패 시 FAILED 상태와 진단 가능한 실패 원인을 저장한다.
 - FAILED와 NEEDS_REVIEW 결과는 Knowledge State를 변경하지 않는다.
 
@@ -580,7 +581,7 @@ Persistence / AI / Embedding adapter
 - 로그인과 AI 평가 API의 과도한 요청 제한
   - 신규 답변 접수: 기본 회원별 최근 1분 10개. 같은 요청 키·같은 원문의 재전송은 기존 결과 반환
   - 한도 초과: HTTP 429, `Retry-After: 60`. 회원 DB 잠금 안에서 확인·저장
-  - 로그인 제한은 같은 정규화 이메일+접속 주소의 DB 공유 기록. 10분 내 5회 실패 후 15분 차단, 성공 시 삭제. 두 로컬 앱에서 공유 검증. 다중 계정·분산 주소의 전역 제한은 별도 운영 과제
+  - 로그인 제한: 정규화 이메일별 10분 내 5회 실패 후 15분 차단, 성공 시 계정 실패 삭제. 주소·전체 요청 예산은 별도로 유지. DB 공유 동시성·만료·저장 상한 검증, 운영 부하 적정성은 별도 과제. [정책](../adr/0003-authentication-security-baseline.md)
 
 ### 데이터 일관성
 

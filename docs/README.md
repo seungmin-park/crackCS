@@ -66,7 +66,7 @@ docs/
 | 답할 질문 | 상태 | 기준 문서 | 갱신 계기 |
 |---|---|---|---|
 | 인증 상태 유지 방식 | 승인 | [ADR-0001](adr/0001-session-based-authentication.md) | 인증 방식 변경 |
-| Security Cloud 발견 항목 개선·검증 | 세션 회수·인증 요청 제한·가입 응답 숨김 로컬 검증 완료, provider 제한 조사 | [검증 기록](changes/2026-10-06-security-hardening/verification.md) | 보안 계약·회귀·PR 결과 변경 |
+| Security Cloud 발견 항목 개선·검증 | 5건 선택 범위 구현·로컬 검증 완료, 세션·인증 제한 main 반영 | [검증 기록](changes/2026-10-06-security-hardening/verification.md) | 보안 계약·회귀·PR 결과 변경 |
 | LOCAL 비밀번호 정책 | 승인 | [ADR-0002](adr/0002-password-policy.md) | 비밀번호 정책 변경 |
 | 인증 보안 최소 기준 | 승인 | [ADR-0003](adr/0003-authentication-security-baseline.md) | 보안 기준 변경 |
 | DB migration 도구 도입 시점 | 도구 보류 유지, 로컬 절차 ADR-0006으로 대체 | [ADR-0004](adr/0004-defer-versioned-database-migrations.md) | persistent DB·배포 절차 확정 |

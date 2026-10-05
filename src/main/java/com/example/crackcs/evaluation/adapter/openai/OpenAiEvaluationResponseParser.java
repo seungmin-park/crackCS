@@ -2,6 +2,7 @@ package com.example.crackcs.evaluation.adapter.openai;
 
 import com.example.crackcs.evaluation.adapter.EvaluationResultParser;
 import com.example.crackcs.evaluation.domain.EvaluationResult;
+import com.example.crackcs.exception.ProviderRequestRejectedException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -28,9 +29,12 @@ public class OpenAiEvaluationResponseParser {
         try {
             JsonNode response = objectMapper.readTree(responseBody);
             String evaluationJson = findOutputText(response);
+            OpenAiOutputTextLimit.requireWithinLimit(evaluationJson);
             long inputTokens = requiredNonNegativeLong(response.at("/usage/input_tokens"));
             long outputTokens = requiredNonNegativeLong(response.at("/usage/output_tokens"));
             return resultParser.parse(evaluationJson, durationMillis, inputTokens, outputTokens);
+        } catch (ProviderRequestRejectedException rejected) {
+            throw rejected;
         } catch (IllegalArgumentException failure) {
             if (failure.getMessage() != null && failure.getMessage().contains("provider schema")) {
                 throw failure;

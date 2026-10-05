@@ -1,6 +1,7 @@
 package com.example.crackcs.learning.followup.adapter;
 
 import com.example.crackcs.learning.followup.domain.FollowUpGenerationResult;
+import com.example.crackcs.exception.ProviderRequestRejectedException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -8,6 +9,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
 
 import java.util.stream.Stream;
 
@@ -15,11 +18,41 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 class OpenAiFollowUpResponseParserTest {
 
     private final OpenAiFollowUpResponseParser openAiFollowUpResponseParser =
             new OpenAiFollowUpResponseParser(new ObjectMapper(), "test-model");
+
+    @Test
+    @DisplayName("내부 후속 질문 JSON이 정확히 byte 한도이면 정상 결과를 반환한다")
+    void acceptsNestedQuestionAtByteLimit() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode response = (ObjectNode) mapper.readTree(successResponse());
+        ObjectNode textPart = (ObjectNode) response.at("/output/0/content/0");
+        String outputText = textPart.get("text").stringValue();
+        textPart.put("text", outputText + " ".repeat(65_536 - outputText.getBytes(StandardCharsets.UTF_8).length));
+
+        FollowUpGenerationResult result = openAiFollowUpResponseParser.parse(mapper.writeValueAsString(response), 1L);
+
+        assertThat(result.content()).isEqualTo("질문");
+    }
+
+    @Test
+    @DisplayName("한도를 넘는 후속 질문 output text는 내부 JSON을 파싱하기 전에 영구 거부한다")
+    void rejectsOversizedNestedQuestion() {
+        String responseBody = successResponse().replace("질문", "가".repeat(22_000));
+        String outputText = new ObjectMapper().readTree(responseBody).at("/output/0/content/0/text").stringValue();
+        ObjectMapper mapper = spy(new ObjectMapper());
+        OpenAiFollowUpResponseParser parser = new OpenAiFollowUpResponseParser(mapper, "test-model");
+
+        assertThatThrownBy(() -> parser.parse(responseBody, 1L))
+                .isInstanceOf(ProviderRequestRejectedException.class)
+                .hasMessage("PROVIDER_RESPONSE_TOO_LARGE");
+        verify(mapper, never()).readTree(outputText);
+    }
 
     static Stream<String> invalidQuestionResults() {
         return Stream.of(
