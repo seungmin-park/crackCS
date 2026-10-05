@@ -1,0 +1,83 @@
+{
+  "reviewLabel": "사용자 검수",
+  "reviewAuthority": "USER",
+  "performedBy": "Codex",
+  "method": "DELEGATED_CONTENT_SOURCE_REVIEW",
+  "localPublicationAuthorized": true,
+  "authorization": "전부 순차적으로 진행; 너가 대신 진행; 사용자 검수로 기록",
+  "scope": "Java 21 initial-v1 5 questions, 10 concepts, 1 document; local app only",
+  "reviewedDate": "2026-10-05",
+  "fixedAt": "2026-10-05T09:23:02Z",
+  "bundleSha256": "e91d4a1bbe4bef1ab6092d51dab8cad49a80212d0296865f250353dcabe0cc24",
+  "questions": [
+    {
+      "key": "JAVA-101",
+      "decision": "APPROVE",
+      "sourceUrl": "https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html",
+      "locator": "8.10.3; 8.10.4",
+      "reason": "컴포넌트 필드의 final 참조와 참조 대상의 가변 상태 구분. 생성·반환 경계의 소유권 확인. List<String>의 원소는 불변; 가변 원소 설명은 일반화 조건."
+    },
+    {
+      "key": "JAVA-102",
+      "decision": "APPROVE",
+      "sourceUrl": "https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html",
+      "locator": "15.12.2; 15.12.4.4",
+      "reason": "Object 정적 인수 타입으로 print(Object) 선택. 이후 선택된 시그니처의 수신 객체에 대한 overriding을 별도로 구분."
+    },
+    {
+      "key": "JAVA-103",
+      "decision": "APPROVE",
+      "sourceUrl": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html",
+      "locator": "clone() implementation requirements",
+      "reason": "Object.clone 기본 복사는 필드 값 복사. 복사본 필드의 재대입과 공유 리스트 변경의 서로 다른 영향을 설명. clone 호출 가능성은 문항의 전제."
+    },
+    {
+      "key": "JAVA-104",
+      "decision": "APPROVE",
+      "sourceUrl": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html",
+      "locator": "cohorts; equals(Object); compareTo(BigDecimal)",
+      "reason": "2.0과 2.00: equals false·compareTo 0. 수치 동등성과 scale 표현 동등성 및 컬렉션 정책 구분."
+    },
+    {
+      "key": "JAVA-105",
+      "decision": "APPROVE",
+      "sourceUrl": "https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html",
+      "locator": "sleep(long); interrupt(); interrupted(); isInterrupted()",
+      "reason": "sleep의 InterruptedException은 상태 소거. 취소 책임 계층에서 종료·전파·상태 복구, 강제 종료와 구분."
+    }
+  ],
+  "criteria": "문항별 필수 개념 2개, 가중치 각 0.50; 모범 답안·오개념 메모·근거 위치 대응 확인",
+  "sourceUse": "새 한국어 설명과 원문 링크만 공개. 원문·예제 코드·그림 재배포 없음. 이용 권리 확보 또는 법률 검토 완료 주장 없음.",
+  "referenceOverlap": "JAVA-101↔JAVA-03; JAVA-103↔JAVA-02/JAVA-03; JAVA-105↔JAVA-13. 동일 주제 공유, 신규 독립 모델 평가 표본으로 간주하지 않음.",
+  "draftChanges": "공개 전 문서의 승인 대기 문구·license 메모만 완료 상태로 변경. 본문 사실·문항·모범 답안·개념 가중치 유지. 원본 DRAFT 번들과 수집 해시 유지.",
+  "independentHumanReview": false,
+  "pilotAuthorized": false,
+  "publicServiceDeploymentAuthorized": false,
+  "retrievedSources": [
+    {
+      "file": ".firecrawl/java-review/jls-8.md",
+      "retrievedAt": "2026-10-05",
+      "artifactSha256": "bd8adad5101f7a9780919fba2cce2ae9a5d8fa15a23d32879be37374491f10c3"
+    },
+    {
+      "file": ".firecrawl/java-review/jls-15.md",
+      "retrievedAt": "2026-10-05",
+      "artifactSha256": "f422280d8c7b8e110844f4eef5e08d14bd119ceb600cdf3ab7188dbc5c94bddf"
+    },
+    {
+      "file": ".firecrawl/java-review/object.md",
+      "retrievedAt": "2026-10-05",
+      "artifactSha256": "85f5e0b30f886517a3fa1289d7da0798ac441c5fb1170dd9b0c76d6c58beb5fd"
+    },
+    {
+      "file": ".firecrawl/java-review/decimal.md",
+      "retrievedAt": "2026-10-05",
+      "artifactSha256": "87829c9e16125493f125bb96085a3287d1ab635806c13ae1b5b9b0660c5eec2b"
+    },
+    {
+      "file": ".firecrawl/java-review/thread.md",
+      "retrievedAt": "2026-10-05",
+      "artifactSha256": "42814d73d29d6e2f502e0625944afce8043b3db0f28f8b88a38907ee273f743a"
+    }
+  ]
+}

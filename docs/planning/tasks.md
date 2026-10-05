@@ -9,7 +9,7 @@
 | 개발 기반·인증·콘텐츠 운영·답변·개인화·후속 흐름 | 구현·로컬 회귀 완료 | 공개 운영 규모·인프라 별도 |
 | Retrieval·평가 처리 골격 | 실제 GPT 후보 42/42 호출·지표 목표 통과, 앱 흐름 확인 | 대표 사용자 표본·공개 운영 품질 인증 별도 |
 | 운영 안정화 | 로컬 시연 범위 검증 완료 | 실제 참가자 파일럿·공개 출시 미실행 |
-| initial-v1 | OS 5문항·문서 사람 승인·로컬 공개·학습·버전 보존 확인 | 나머지 4개 Topic 사람 검수·승인, 공개 서비스·전체 파일럿 승인 대기 |
+| initial-v1 | OS·Java 각5문항 로컬 승인·공개·학습 흐름 확인. OS 실제 GPT·버전 보존, Java 통제 합성 provider | 나머지3개 Topic 검수·승인, Java 실제 모델 품질·공개 서비스·전체 파일럿 승인 대기 |
 
 로컬 시연과 실제 학습 서비스 출시 구분:
 
@@ -59,7 +59,7 @@ GPT-5.6 Terra의 개발 138건과 후보 provider 대상 42건을 측정. 이전
 
 현재 공개 OS의 정답·핵심 누락·모순 판정 진단: [합성15/15·보강 후속·지식 상태·cmux 검증 완료](../changes/2026-10-05-os-verdict-flow/verification.md). 에이전트 작성 라벨·의도적 합성 답변이며 독립 사람 검수 골든 세트·대표 표본과 구분.
 
-후속 순서: [독립 검수 도구·사용자 위임 대리 진단](../changes/2026-10-05-learner-review/verification.md) → 통제 timeout·429·503 cmux 검증 → 다음 Java Topic 검수·로컬 공개. 선택된 기존 답변 4개는 과거 GPT 2·stub 2의 동일 개념 시연 이력. 사용자 검수로 기록하며 독립 대표 표본 조건은 미완료 유지.
+순차 작업: [기존4개 사용자 검수·비교 도구](../changes/2026-10-05-learner-review/verification.md) → [통제 timeout·429·503 복구116개 검증](../changes/2026-10-05-provider-fault-flow/verification.md) → [Java 사용자 검수·로컬 공개·학습46개 검증](../changes/2026-10-05-java-content-flow/verification.md) 완료. 기존4개는 과거 GPT2·stub2의 동일 개념 시연 이력. 독립 대표 표본·Java 실제 모델 품질·파일럿 승인 조건 미완료 유지.
 
 완료 조건:
 
@@ -175,10 +175,10 @@ GPT-5.6 Terra의 개발 138건과 후보 provider 대상 42건을 측정. 이전
 
 - [x] 초기 Topic·Concept 체계 구성 — [5개 Topic·50개 Concept 초안](../content/initial-v1/README.md), 사람 검수·공개는 별도
 - [x] Topic별 최소 문제·문서 수 `OQ-006` 확정
-- [ ] 출처와 라이선스 검수 — [OS 출처·이용 메모 로컬 승인](../changes/2026-10-05-os-content/verification.md), 나머지 4개 Topic 사람 검수 대기
+- [ ] 출처와 라이선스 검수 — [OS 로컬 승인](../changes/2026-10-05-os-content/verification.md), [Java 사용자 검수·로컬 승인](../changes/2026-10-05-java-content-flow/verification.md), 나머지3개 Topic 검수 대기
 - [x] Java 21, Spring Boot 4.1.x, Spring Framework 7.0.x, Jakarta Persistence 3.2 표시 — 등록 문서·번들 일치 검증
-- [ ] 문제별 필수 Concept와 reference answer 검수 — OS 5문항·10개 Concept 승인, 나머지 20문항 검수 대기
-- [ ] reference-v1과 실제 공개 문제의 편향·중복 점검 — OS 공유 개념·문항 의미 점검 완료. 나머지 Topic·전체 공개본 점검 대기
+- [ ] 문제별 필수 Concept와 reference answer 검수 — OS·Java 총10문항·20개 Concept 로컬 승인, 나머지15문항 검수 대기
+- [ ] reference-v1과 실제 공개 문제의 편향·중복 점검 — OS·Java 공유 개념·문항 의미 점검 완료. 나머지3개 Topic·전체 공개본 점검 대기
 
 ### P8-T08 제한 파일럿
 
@@ -224,7 +224,7 @@ GPT-5.6 Terra의 개발 138건과 후보 provider 대상 42건을 측정. 이전
 - [x] backup·restore 실제 검증 — 로컬 논리 복구 범위, 원격 재해 복구는 별도
 - [x] 성능 결과와 미달 대응 계획 — 로컬 HTTP·GPT 후보 p95 10.859초, 이전 로컬 모델 미달·환경 차이 기록
 - [x] 백엔드 자동 테스트 성공 — 최신 실행은 마무리 검증 기록 참조
-- [x] 프런트 테스트·type-check·production build 성공 — [최신 OS 전달 검증의 프런트 338개 성공](../changes/2026-10-05-os-content/verification.md#실행검증-결과), 전체 952개 성공
+- [x] 프런트 테스트·type-check·production build 성공 — [최신 Java 전달 검증의 프런트338개·전체978개 성공](../changes/2026-10-05-java-content-flow/verification.md#검증-결과)
 - [x] 관련 제품 명세·ERD·ADR·문서 목록 최신 상태 — 로그인 DB·후속 생성·시연 범위 반영
 - [x] 코드 작성 문제, 사용자 문제 게시, 결제 기능의 P0 제외 유지
 

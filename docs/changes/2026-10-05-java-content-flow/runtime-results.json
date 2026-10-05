@@ -1,0 +1,596 @@
+{
+  "sourceRevision": "c4595f28d06a3eae766c22e1fe022b2062a8b24a",
+  "assertionCount": 46,
+  "externalOpenAiCalls": 0,
+  "phases": {
+    "register": {
+      "phase": "register",
+      "completedAt": "2026-10-05T09:23:31.542874+00:00",
+      "scope": "LOCAL_CONTENT_PIPELINE_WITH_CONTROLLED_SYNTHETIC_PROVIDER",
+      "externalOpenAiCalls": 0,
+      "checks": [
+        {
+          "name": "Java draft scope: 5 questions, 10 concepts, 1 document",
+          "passed": true
+        },
+        {
+          "name": "JAVA-101 remains unreviewed DRAFT",
+          "passed": true
+        },
+        {
+          "name": "JAVA-102 remains unreviewed DRAFT",
+          "passed": true
+        },
+        {
+          "name": "JAVA-103 remains unreviewed DRAFT",
+          "passed": true
+        },
+        {
+          "name": "JAVA-104 remains unreviewed DRAFT",
+          "passed": true
+        },
+        {
+          "name": "JAVA-105 remains unreviewed DRAFT",
+          "passed": true
+        },
+        {
+          "name": "Java document remains unreviewed DRAFT",
+          "passed": true
+        }
+      ],
+      "results": {
+        "registeredIds": {
+          "topics": {
+            "JAVA": 2
+          },
+          "concepts": {
+            "JAVA_101_RECORD_FINAL": 12,
+            "JAVA_101_MUTABLE_REF": 13,
+            "JAVA_102_OVERLOAD": 14,
+            "JAVA_102_DISPATCH": 15,
+            "JAVA_103_SHALLOW": 16,
+            "JAVA_103_REASSIGN": 17,
+            "JAVA_104_DECIMAL_SCALE": 18,
+            "JAVA_104_DECIMAL_EQUAL": 19,
+            "JAVA_105_INTERRUPT": 20,
+            "JAVA_105_INTERRUPT_CLEAR": 21
+          },
+          "documents": {
+            "java-v1": 4
+          },
+          "questions": {
+            "JAVA-101": 34,
+            "JAVA-102": 35,
+            "JAVA-103": 36,
+            "JAVA-104": 37,
+            "JAVA-105": 38
+          }
+        },
+        "structure": {
+          "version": "initial-v1",
+          "status": "DRAFT",
+          "questionCount": 5,
+          "documentCount": 1,
+          "conceptCount": 10,
+          "questionsByTopic": {
+            "JAVA": 5
+          },
+          "nearestReferenceQuestions": [
+            {
+              "questionKey": "JAVA-101",
+              "referenceId": "AX-10",
+              "textSimilarity": 0.324
+            },
+            {
+              "questionKey": "JAVA-102",
+              "referenceId": "JAVA-04",
+              "textSimilarity": 0.313
+            },
+            {
+              "questionKey": "JAVA-103",
+              "referenceId": "JAVA-02",
+              "textSimilarity": 0.369
+            },
+            {
+              "questionKey": "JAVA-104",
+              "referenceId": "CS-07",
+              "textSimilarity": 0.326
+            },
+            {
+              "questionKey": "JAVA-105",
+              "referenceId": "JPA-10",
+              "textSimilarity": 0.323
+            }
+          ],
+          "similarityLimit": "Text comparison only; human semantic/bias review remains necessary."
+        }
+      }
+    },
+    "publish": {
+      "phase": "publish",
+      "completedAt": "2026-10-05T09:24:30.356082+00:00",
+      "scope": "LOCAL_CONTENT_PIPELINE_WITH_CONTROLLED_SYNTHETIC_PROVIDER",
+      "externalOpenAiCalls": 0,
+      "checks": [
+        {
+          "name": "review fixed before publication with exact Java scope",
+          "passed": true
+        },
+        {
+          "name": "document reviewed by local admin before publish",
+          "passed": true
+        },
+        {
+          "name": "published Java chunks preserve approved offsets and cover all five sections",
+          "passed": true
+        },
+        {
+          "name": "Java publication metadata and checksum preserved",
+          "passed": true
+        },
+        {
+          "name": "JAVA-101 exact reviewed question and criteria",
+          "passed": true
+        },
+        {
+          "name": "JAVA-101 review metadata saved before publication",
+          "passed": true
+        },
+        {
+          "name": "JAVA-102 exact reviewed question and criteria",
+          "passed": true
+        },
+        {
+          "name": "JAVA-102 review metadata saved before publication",
+          "passed": true
+        },
+        {
+          "name": "JAVA-103 exact reviewed question and criteria",
+          "passed": true
+        },
+        {
+          "name": "JAVA-103 review metadata saved before publication",
+          "passed": true
+        },
+        {
+          "name": "JAVA-104 exact reviewed question and criteria",
+          "passed": true
+        },
+        {
+          "name": "JAVA-104 review metadata saved before publication",
+          "passed": true
+        },
+        {
+          "name": "JAVA-105 exact reviewed question and criteria",
+          "passed": true
+        },
+        {
+          "name": "JAVA-105 review metadata saved before publication",
+          "passed": true
+        },
+        {
+          "name": "five Java questions visible to learner",
+          "passed": true
+        }
+      ],
+      "results": {
+        "registeredIds": {
+          "topics": {
+            "JAVA": 2
+          },
+          "concepts": {
+            "JAVA_101_RECORD_FINAL": 12,
+            "JAVA_101_MUTABLE_REF": 13,
+            "JAVA_102_OVERLOAD": 14,
+            "JAVA_102_DISPATCH": 15,
+            "JAVA_103_SHALLOW": 16,
+            "JAVA_103_REASSIGN": 17,
+            "JAVA_104_DECIMAL_SCALE": 18,
+            "JAVA_104_DECIMAL_EQUAL": 19,
+            "JAVA_105_INTERRUPT": 20,
+            "JAVA_105_INTERRUPT_CLEAR": 21
+          },
+          "documents": {
+            "java-v1": 4
+          },
+          "questions": {
+            "JAVA-101": 34,
+            "JAVA-102": 35,
+            "JAVA-103": 36,
+            "JAVA-104": 37,
+            "JAVA-105": 38
+          }
+        },
+        "document": {
+          "id": 4,
+          "status": "PUBLISHED",
+          "checksum": "ae960a8881485cd4e9ad8616282678f3c90595587054445de6312aa7106c13d0",
+          "documentVersion": 1,
+          "reviewedAt": "2026-10-05T18:24:24.32281",
+          "reviewedByMemberId": 1
+        },
+        "chunkCount": 7,
+        "questions": [
+          {
+            "key": "JAVA-101",
+            "id": 34,
+            "status": "PUBLISHED",
+            "reviewedAt": "2026-10-05T18:24:25.868517",
+            "reviewedByMemberId": 1
+          },
+          {
+            "key": "JAVA-102",
+            "id": 35,
+            "status": "PUBLISHED",
+            "reviewedAt": "2026-10-05T18:24:26.807079",
+            "reviewedByMemberId": 1
+          },
+          {
+            "key": "JAVA-103",
+            "id": 36,
+            "status": "PUBLISHED",
+            "reviewedAt": "2026-10-05T18:24:27.839575",
+            "reviewedByMemberId": 1
+          },
+          {
+            "key": "JAVA-104",
+            "id": 37,
+            "status": "PUBLISHED",
+            "reviewedAt": "2026-10-05T18:24:28.736338",
+            "reviewedByMemberId": 1
+          },
+          {
+            "key": "JAVA-105",
+            "id": 38,
+            "status": "PUBLISHED",
+            "reviewedAt": "2026-10-05T18:24:29.619974",
+            "reviewedByMemberId": 1
+          }
+        ]
+      }
+    },
+    "learn": {
+      "phase": "learn",
+      "completedAt": "2026-10-05T09:25:05.107927+00:00",
+      "scope": "LOCAL_CONTENT_PIPELINE_WITH_CONTROLLED_SYNTHETIC_PROVIDER",
+      "externalOpenAiCalls": 0,
+      "checks": [
+        {
+          "name": "all ten Java concepts initially UNKNOWN",
+          "passed": true
+        },
+        {
+          "name": "JAVA-101 original and synthetic verdict visible",
+          "passed": true
+        },
+        {
+          "name": "JAVA-101 published Java v1 evidence only",
+          "passed": true
+        },
+        {
+          "name": "JAVA-101 required concepts applied exactly once",
+          "passed": true
+        },
+        {
+          "name": "JAVA-101 all other states preserved",
+          "passed": true
+        },
+        {
+          "name": "JAVA-102 original and synthetic verdict visible",
+          "passed": true
+        },
+        {
+          "name": "JAVA-102 published Java v1 evidence only",
+          "passed": true
+        },
+        {
+          "name": "JAVA-102 required concepts applied exactly once",
+          "passed": true
+        },
+        {
+          "name": "JAVA-102 all other states preserved",
+          "passed": true
+        },
+        {
+          "name": "JAVA-103 original and synthetic verdict visible",
+          "passed": true
+        },
+        {
+          "name": "JAVA-103 published Java v1 evidence only",
+          "passed": true
+        },
+        {
+          "name": "JAVA-103 required concepts applied exactly once",
+          "passed": true
+        },
+        {
+          "name": "JAVA-103 all other states preserved",
+          "passed": true
+        },
+        {
+          "name": "JAVA-104 original and synthetic verdict visible",
+          "passed": true
+        },
+        {
+          "name": "JAVA-104 published Java v1 evidence only",
+          "passed": true
+        },
+        {
+          "name": "JAVA-104 required concepts applied exactly once",
+          "passed": true
+        },
+        {
+          "name": "JAVA-104 all other states preserved",
+          "passed": true
+        },
+        {
+          "name": "JAVA-105 original and synthetic verdict visible",
+          "passed": true
+        },
+        {
+          "name": "JAVA-105 published Java v1 evidence only",
+          "passed": true
+        },
+        {
+          "name": "JAVA-105 required concepts applied exactly once",
+          "passed": true
+        },
+        {
+          "name": "JAVA-105 all other states preserved",
+          "passed": true
+        },
+        {
+          "name": "Java ten concepts each one learning application",
+          "passed": true
+        },
+        {
+          "name": "OS states preserved across new Topic",
+          "passed": true
+        },
+        {
+          "name": "DB five Java answers and ten unique applications",
+          "passed": true
+        }
+      ],
+      "results": {
+        "memberId": 4,
+        "answers": [
+          {
+            "key": "JAVA-101",
+            "questionId": 34,
+            "answerId": 34,
+            "evaluationId": 34,
+            "evidence": [
+              {
+                "chunkId": 17,
+                "documentTitle": "Java 핵심 동작과 경계 · initial-v1",
+                "documentVersion": 1,
+                "startOffset": 72,
+                "endOffset": 304,
+                "content": "[JAVA-101]\nrecord는 고정된 컴포넌트 구조와 접근자·동등성 등의 기본 동작을 제공한다. 필드 참조를 다시 대입할 수 없다는 성질은 객체 그래프 전체의 불변성과 다르다. 생성 경계에서 소유권을 분리하고 외부로 내보내는 참조를 점검해야 변경 경로를 통제할 수 있다.\n근거: JAVA-CLASS — 8.10.3 Record Members; 8.10.4 Record Constructor Declarations"
+              },
+              {
+                "chunkId": 19,
+                "documentTitle": "Java 핵심 동작과 경계 · initial-v1",
+                "documentVersion": 1,
+                "startOffset": 560,
+                "endOffset": 775,
+                "content": "[JAVA-103]\nObject.clone의 기본 복사는 참조가 가리키는 모든 내부 객체를 재귀적으로 만들지 않는다. 바깥 객체는 구분되더라도 내부 리스트는 공유될 수 있다. 필드의 참조 교체와 공유 객체의 변경을 구분하면 복사 후 생기는 예상 밖의 결합을 설명할 수 있다.\n근거: JAVA-OBJECT — Object.clone(): implementation requirements"
+              }
+            ],
+            "requiredConceptIds": [
+              12,
+              13
+            ],
+            "stored": {
+              "modelName": "controlled-openai-contract",
+              "attemptCount": 1
+            }
+          },
+          {
+            "key": "JAVA-102",
+            "questionId": 35,
+            "answerId": 35,
+            "evaluationId": 35,
+            "evidence": [
+              {
+                "chunkId": 18,
+                "documentTitle": "Java 핵심 동작과 경계 · initial-v1",
+                "documentVersion": 1,
+                "startOffset": 306,
+                "endOffset": 558,
+                "content": "[JAVA-102]\n메서드 호출에는 어떤 선언이 적용 가능한지 고르는 단계와 실행할 인스턴스 구현을 찾는 단계가 있다. 인수의 정적 타입은 오버로드 해석에 참여한다. 런타임의 동적 디스패치는 오버라이딩된 인스턴스 구현에 관한 것이며, 인수의 실제 객체를 보고 모든 오버로드 후보를 다시 비교하는 방식이 아니다.\n근거: JAVA-EXPR — 15.12.2 Compile-Time Step 2; 15.12.4.4 Locate Method to Invoke"
+              }
+            ],
+            "requiredConceptIds": [
+              14,
+              15
+            ],
+            "stored": {
+              "modelName": "controlled-openai-contract",
+              "attemptCount": 1
+            }
+          },
+          {
+            "key": "JAVA-103",
+            "questionId": 36,
+            "answerId": 36,
+            "evaluationId": 36,
+            "evidence": [
+              {
+                "chunkId": 19,
+                "documentTitle": "Java 핵심 동작과 경계 · initial-v1",
+                "documentVersion": 1,
+                "startOffset": 560,
+                "endOffset": 775,
+                "content": "[JAVA-103]\nObject.clone의 기본 복사는 참조가 가리키는 모든 내부 객체를 재귀적으로 만들지 않는다. 바깥 객체는 구분되더라도 내부 리스트는 공유될 수 있다. 필드의 참조 교체와 공유 객체의 변경을 구분하면 복사 후 생기는 예상 밖의 결합을 설명할 수 있다.\n근거: JAVA-OBJECT — Object.clone(): implementation requirements"
+              },
+              {
+                "chunkId": 17,
+                "documentTitle": "Java 핵심 동작과 경계 · initial-v1",
+                "documentVersion": 1,
+                "startOffset": 72,
+                "endOffset": 304,
+                "content": "[JAVA-101]\nrecord는 고정된 컴포넌트 구조와 접근자·동등성 등의 기본 동작을 제공한다. 필드 참조를 다시 대입할 수 없다는 성질은 객체 그래프 전체의 불변성과 다르다. 생성 경계에서 소유권을 분리하고 외부로 내보내는 참조를 점검해야 변경 경로를 통제할 수 있다.\n근거: JAVA-CLASS — 8.10.3 Record Members; 8.10.4 Record Constructor Declarations"
+              }
+            ],
+            "requiredConceptIds": [
+              16,
+              17
+            ],
+            "stored": {
+              "modelName": "controlled-openai-contract",
+              "attemptCount": 1
+            }
+          },
+          {
+            "key": "JAVA-104",
+            "questionId": 37,
+            "answerId": 37,
+            "evaluationId": 37,
+            "evidence": [
+              {
+                "chunkId": 20,
+                "documentTitle": "Java 핵심 동작과 경계 · initial-v1",
+                "documentVersion": 1,
+                "startOffset": 777,
+                "endOffset": 1041,
+                "content": "[JAVA-104]\nBigDecimal은 정수 형태의 값과 scale을 함께 갖는다. 수치 순서는 같은 수를 나타내는 표현을 같은 위치로 비교할 수 있지만 객체 동등성은 표현 정보까지 반영한다. 시스템이 필요한 것은 수치 비교인지 동일한 표현인지 먼저 정하고, 정규화 규칙을 쓴다면 저장·조회 경계에서 일관되게 적용한다.\n근거: JAVA-DECIMAL — class description: cohorts; equals(Object); compareTo(BigDecimal)"
+              }
+            ],
+            "requiredConceptIds": [
+              18,
+              19
+            ],
+            "stored": {
+              "modelName": "controlled-openai-contract",
+              "attemptCount": 1
+            }
+          },
+          {
+            "key": "JAVA-105",
+            "questionId": 38,
+            "answerId": 38,
+            "evaluationId": 38,
+            "evidence": [
+              {
+                "chunkId": 21,
+                "documentTitle": "Java 핵심 동작과 경계 · initial-v1",
+                "documentVersion": 1,
+                "startOffset": 1043,
+                "endOffset": 1437,
+                "content": "[JAVA-105]\n인터럽트는 협력적으로 중단 의사를 전달하는 메커니즘이다. Thread.sleep이 InterruptedException을 던질 때 현재 스레드의 인터럽트 상태는 지워진다. 해당 계층에서 취소를 처리하지 못하면 예외를 전파하거나 Thread.currentThread().interrupt()로 상태를 복구해 상위 흐름이 관찰하도록 한다.  대기 API가 예외로 신호를 전달하는 경우와 코드가 상태를 검사하는 경우가 연결되어야 한다. sleep에서 받은 예외를 처리했다는 이유만으로 작업을 계속해도 되는 것은 아니며, 누가 취소를 책임지는지 정해야 한다.\n근거: JAVA-THREAD — interrupt(); sleep(long); interrupted(); isInterrupted()"
+              }
+            ],
+            "requiredConceptIds": [
+              20,
+              21
+            ],
+            "stored": {
+              "modelName": "controlled-openai-contract",
+              "attemptCount": 1
+            }
+          }
+        ],
+        "dbCounts": {
+          "answers": 5,
+          "concepts": 10,
+          "evaluations": 5,
+          "applications": 10
+        },
+        "finalJavaKnowledge": [
+          {
+            "conceptId": 12,
+            "conceptName": "record 컴포넌트의 final 참조",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:24:56.719723"
+          },
+          {
+            "conceptId": 13,
+            "conceptName": "참조 대상의 가변성",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:24:56.719723"
+          },
+          {
+            "conceptId": 14,
+            "conceptName": "컴파일 시 오버로드 선택",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:24:58.761995"
+          },
+          {
+            "conceptId": 15,
+            "conceptName": "인스턴스 메서드의 동적 디스패치",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:24:58.761995"
+          },
+          {
+            "conceptId": 16,
+            "conceptName": "얕은 복사의 참조 공유",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:24:59.808572"
+          },
+          {
+            "conceptId": 17,
+            "conceptName": "참조 재대입과 대상 변경",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:24:59.808572"
+          },
+          {
+            "conceptId": 18,
+            "conceptName": "BigDecimal의 scale과 표현",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:25:01.876378"
+          },
+          {
+            "conceptId": 19,
+            "conceptName": "BigDecimal 동등성과 순서 비교",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:25:01.876378"
+          },
+          {
+            "conceptId": 20,
+            "conceptName": "협력적 인터럽트 처리",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:25:03.950406"
+          },
+          {
+            "conceptId": 21,
+            "conceptName": "InterruptedException과 상태 소거",
+            "status": "LEARNING",
+            "masteryScore": 100.0,
+            "confidenceScore": 25,
+            "attemptCount": 1,
+            "lastEvaluatedAt": "2026-10-05T18:25:03.950406"
+          }
+        ]
+      }
+    }
+  }
+}
