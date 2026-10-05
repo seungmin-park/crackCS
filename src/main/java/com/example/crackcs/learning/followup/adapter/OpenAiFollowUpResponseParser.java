@@ -1,6 +1,7 @@
 package com.example.crackcs.learning.followup.adapter;
 
 import com.example.crackcs.learning.followup.domain.FollowUpGenerationResult;
+import com.example.crackcs.evaluation.adapter.openai.OpenAiOutputTextLimit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -36,7 +37,9 @@ public class OpenAiFollowUpResponseParser {
     public FollowUpGenerationResult parse(String responseBody, long durationMillis) {
         try {
             JsonNode response = objectMapper.readTree(responseBody);
-            JsonNode generatedQuestion = objectMapper.readTree(extractSingleOutputText(response));
+            String outputText = extractSingleOutputText(response);
+            OpenAiOutputTextLimit.requireWithinLimit(outputText);
+            JsonNode generatedQuestion = objectMapper.readTree(outputText);
             requireExactResultFields(generatedQuestion);
             return new FollowUpGenerationResult(
                     requireNonBlankText(generatedQuestion.path("content")),

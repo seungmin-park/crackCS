@@ -13,7 +13,7 @@
 | 로그인 제한 우회·실패 기록 증가 (medium) | 구현·로컬 검증 완료 | 주소·이메일 교체로 제한 우회 불가, 인증 전에 요청 수 제한 |
 | 공개 회원가입 남용 (medium) | 요청 제한 구현·로컬 검증 완료 | source·전체 요청 제한 뒤 hashing·DB 생성 |
 | 회원가입 이메일 존재 노출 (low) | 공개 응답 통일·로컬 검증 완료 | 신규·중복 요청의 같은 공개 응답 |
-| provider 응답 무제한 buffering (medium) | 조사 | Content-Length와 chunked 응답의 실제 byte 제한 |
+| provider 응답 무제한 buffering (medium) | 구현·로컬 검증 완료 | Content-Length와 chunked 응답의 실제 byte 제한 |
 
 ## 세션 회수
 
@@ -101,3 +101,52 @@ Member.changeStatus → DB 인증 버전 증가
 - DB 재조회: 관리자 1명·새 회원 1명 유지, 중복 회원 추가 없음. 실패 상태 2행·request bucket 5행
 - 화면: `/private/tmp/crackcs-security-20261006/login-rate-limited.png`, `sign-up-rate-limited.png`
 - 로그: `/private/tmp/crackcs-security-20261006/auth-runtime-start.log`, `backend.log`
+
+### 전달 결과
+
+- [PR #10](https://github.com/seungmin-park/crackCS/pull/10) MERGED, main `55ce8476da3dbee58a4ffbed3999f71a84629c25`
+- [main CI](https://github.com/seungmin-park/crackCS/actions/runs/37359532833) success
+- 최종 문서 체크리스트 한 줄은 auto-merge 시점 뒤 수정. provider PR에 포함
+
+## provider 응답 크기
+
+- 상태 소유자: 요청별 BoundedResponseBodySubscriber의 수신 byte 수·본문 buffer·완료 future
+- HTTP 클라이언트: 한도 설정·전체 timeout·상태 분류. 평가·후속 질문 adapter는 같은 클라이언트 사용
+- 기본 외부 응답 1 MiB, 내부 output_text 64 KiB. 성공·오류와 Content-Length·chunked 모두 제한
+- header의 큰 선언은 본문 대기 전 취소. 실제 byte 초과는 해당 chunk를 buffer에 넣기 전 취소
+- 문자열 변환은 정상 수신 완료 뒤, 내부 JSON 파싱은 작은 output_text 검사 뒤
+- 크기 초과는 영구 ProviderRequestRejectedException. 기존 실행기가 평가 검토·후속 질문 실패로 종료, 재시도 대상 아님
+- 전체 future 완료 대기 시간 제한으로 header 뒤 본문 정지까지 취소
+- JDK 21 [BodySubscriber 계약](https://docs.oracle.com/en/java/javase/21/docs/api/java.net.http/java/net/http/HttpResponse.BodySubscriber.html)·[sendAsync 취소 계약](https://docs.oracle.com/en/java/javase/21/docs/api/java.net.http/java/net/http/HttpClient.html#sendAsync(java.net.http.HttpRequest,java.net.http.HttpResponse.BodyHandler)) 검토. 버전·의존성 변경 없음
+
+```text
+provider bytes → byte 제한 subscriber → 제한된 String → output_text 제한 → JSON tree
+                        ↓ 초과                  ↓ 초과
+                 HTTP subscription 취소 → 영구 거부 → 반복 호출 없음
+```
+
+### TDD·실제 HTTP 검증
+
+- `provider-red.log`: 40건 중 추가 4건 기대 실패. 큰 성공·오류 body와 큰 평가·후속 질문 output_text의 제한 부재 재현
+- 최소 구현 뒤 `provider-green.log` 통과
+- `provider-boundaries.log`: chunked 누적 한도·UTF-8 byte·정확한 한도·전송 미완료 상태 중단·header 뒤 정지 timeout 통과
+- `provider-flow.log` 첫 실패 2건: ApplicationContextRunner의 Duration 변환 설정 누락. production 실패나 RED로 집계하지 않음
+- 테스트 context에 Boot 변환기 추가 후 `provider-flow-final.log` 통과. Spring 구성의 평가·후속 질문만 활성 경로에 공용 제한 적용 확인
+- 내부 결과 초과 때 두 parser 모두 작은 JSON의 readTree 미호출 assertion, 정확히 64 KiB인 정상 결과 허용
+- 호출 workspace:2 / surface:2 재확인, 기존 runner surface:14에서 실제 loopback HTTP 서버·JDK 클라이언트 테스트 실행
+- 모델 호출·품질·유료 API·동시 호출 전체 heap·실제 외부 HTTPS 부하는 미검증
+- 최종 `bash scripts/verify.sh all`: Python 57건·문서19항목, backend 557건·frontend 338건·PostgreSQL 75건 모두 통과, 종료 0
+- 전체 로그: `/private/tmp/crackcs-security-20261006/provider-all-final.log`
+
+### 실제 cmux 답변 제출
+
+- 새 JAR·기존 테스트 전용 PostgreSQL DB validate 기동, health UP. 실제 브라우저 surface:15에서 원래 비밀번호 로그인 → 공개 문제 → 답변 입력·제출
+- 제공자 endpoint는 `127.0.0.1:18121` 모의 HTTP 서버. 4097-byte chunked 응답·클라이언트 한도 4096, 외부 모델 API 호출 없음
+- `/answers/1` 화면·실제 API assertion: NEEDS_REVIEW, failureReason PROVIDER_RESPONSE_TOO_LARGE
+- DB 재조회: attempt_count 1, 지식 상태 0행. 30초 이상 뒤 모의 제공자 호출 수 1 유지
+- 초기 브라우저 assertion은 feedback 대신 failureReason을 봐야 했음. 실제 API 계약 확인 뒤 수정·통과. 잘못 선택한 홈 CSS 대기도 URL·snapshot 확인으로 교정, 앱 오류로 집계하지 않음
+- 기존 화면은 제공자 오류도 근거 부족으로 설명. `provider-panel-red.log` 6건 중 추가 1건 기대 실패 확인 후 처리 실패·답변 보존 안내로 수정, `provider-panel-green.log` 6건 통과
+- 실제 브라우저 assertion: 맞는 안내·답변 원문 보존·raw 내부 코드 숨김 모두 true. 화면 `/private/tmp/crackcs-security-20261006/provider-response-rejected.png`
+- UI 변경 후 전체 최종 재검증: Python 57건·문서19항목, backend 557건·frontend 339건·PostgreSQL 75건 모두 통과, 종료 0
+- 최종 전체 로그: `/private/tmp/crackcs-security-20261006/security-all-final.log`
+- runtime 로그: `/private/tmp/crackcs-security-20261006/provider-runtime-start.log`, `provider.log`, `backend.log`

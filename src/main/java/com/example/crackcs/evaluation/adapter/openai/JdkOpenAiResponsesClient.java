@@ -3,10 +3,10 @@ package com.example.crackcs.evaluation.adapter.openai;
 import com.example.crackcs.exception.EvaluationTimeoutException;
 import com.example.crackcs.exception.ProviderRequestRejectedException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -14,6 +14,10 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -31,15 +35,24 @@ public class JdkOpenAiResponsesClient implements OpenAiResponsesClient {
     private final ObjectMapper objectMapper;
     private final String apiKey;
     private final URI endpoint;
+    private final int maxResponseBytes;
 
+    public JdkOpenAiResponsesClient(String apiKey, URI endpoint) {
+        this(apiKey, endpoint, 1_048_576);
+    }
+
+    @Autowired
     public JdkOpenAiResponsesClient(
             @Value("${crackcs.evaluation.openai.api-key}") String apiKey,
-            @Value("${crackcs.evaluation.openai.endpoint:https://api.openai.com/v1/responses}") URI endpoint
+            @Value("${crackcs.evaluation.openai.endpoint:https://api.openai.com/v1/responses}") URI endpoint,
+            @Value("${crackcs.evaluation.openai.max-response-bytes:1048576}") int maxResponseBytes
     ) {
+        if (maxResponseBytes < 1) throw new IllegalArgumentException("response byte limit must be positive");
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
         this.objectMapper = new ObjectMapper();
         this.apiKey = apiKey;
         this.endpoint = endpoint;
+        this.maxResponseBytes = maxResponseBytes;
     }
 
     @Override
@@ -50,19 +63,29 @@ public class JdkOpenAiResponsesClient implements OpenAiResponsesClient {
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))
                 .build();
+        CompletableFuture<HttpResponse<String>> pendingResponse = httpClient.sendAsync(request,
+                info -> new BoundedResponseBodySubscriber(maxResponseBytes,
+                        info.headers().firstValueAsLong("Content-Length").orElse(-1)));
         try {
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            // Bound the entire exchange, including a provider that stalls after sending headers.
+            HttpResponse<String> response = pendingResponse.get(timeout.toNanos(), TimeUnit.NANOSECONDS);
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 rejectPermanentFailure(response);
                 throw new OpenAiProviderException("OpenAI response status " + response.statusCode());
             }
             return response.body();
-        } catch (HttpTimeoutException timeoutException) {
+        } catch (TimeoutException timeoutException) {
+            pendingResponse.cancel(true);
             throw new EvaluationTimeoutException();
         } catch (InterruptedException interrupted) {
+            pendingResponse.cancel(true);
             Thread.currentThread().interrupt();
             throw new OpenAiProviderException("OpenAI request interrupted", interrupted);
-        } catch (IOException failure) {
+        } catch (ExecutionException failure) {
+            for (Throwable cause = failure.getCause(); cause != null; cause = cause.getCause()) {
+                if (cause instanceof ProviderRequestRejectedException rejected) throw rejected;
+                if (cause instanceof HttpTimeoutException) throw new EvaluationTimeoutException();
+            }
             throw new OpenAiProviderException("OpenAI request failed", failure);
         }
     }

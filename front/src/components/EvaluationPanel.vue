@@ -14,6 +14,7 @@ const presentation = computed(() => presentEvaluation(
   props.evaluation.status,
   props.evaluation.verdict,
 ));
+const providerResponseRejected = computed(() => props.evaluation.failureReason === "PROVIDER_RESPONSE_TOO_LARGE");
 </script>
 
 <template>
@@ -34,8 +35,11 @@ const presentation = computed(() => presentEvaluation(
     <template v-else-if="presentation.kind === 'review'">
       <p class="eyebrow">검토 필요</p>
       <h2>사람의 검토가 필요합니다</h2>
-      <p>근거가 충분하지 않거나 서로 충돌합니다. 학습 상태에는 반영되지 않습니다.</p>
-      <small v-if="evaluation.failureReason">{{ evaluation.failureReason }}</small>
+      <p v-if="providerResponseRejected">
+        평가 서비스의 응답을 처리하지 못했습니다. 답변은 저장됐고 학습 상태에는 반영되지 않습니다.
+      </p>
+      <p v-else>근거가 충분하지 않거나 서로 충돌합니다. 학습 상태에는 반영되지 않습니다.</p>
+      <small v-if="evaluation.failureReason && !providerResponseRejected">{{ evaluation.failureReason }}</small>
     </template>
     <template v-else>
       <p class="eyebrow">평가 결과</p>

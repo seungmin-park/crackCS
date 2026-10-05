@@ -313,6 +313,7 @@ flowchart TD
 
 - 성공한 Evaluation은 EVALUATED 상태가 된다.
 - 외부 AI 오류, 시간 초과와 스키마 검증 실패는 제한된 횟수만 재시도한다.
+- provider 응답 크기 초과는 재호출 없이 평가 NEEDS_REVIEW·후속 질문 FAILED로 종료. 수신·내부 JSON 크기 한도는 [ADR-0005](../adr/0005-phase-5-evaluation-runtime.md) 참조
 - 최종 실패 시 FAILED 상태와 진단 가능한 실패 원인을 저장한다.
 - FAILED와 NEEDS_REVIEW 결과는 Knowledge State를 변경하지 않는다.
 

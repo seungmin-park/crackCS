@@ -2,17 +2,51 @@ package com.example.crackcs.evaluation.adapter.openai;
 
 import com.example.crackcs.evaluation.domain.EvaluationResult;
 import com.example.crackcs.evaluation.domain.Verdict;
+import com.example.crackcs.exception.ProviderRequestRejectedException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
+import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
 class OpenAiEvaluationResponseParserTest {
 
     private final OpenAiEvaluationResponseParser openAiEvaluationResponseParser =
             new OpenAiEvaluationResponseParser(new ObjectMapper(), "gpt-5.6-terra", "os-evaluator-v1");
+
+    @Test
+    @DisplayName("내부 평가 JSON이 정확히 byte 한도이면 정상 결과를 반환한다")
+    void acceptsNestedEvaluationAtByteLimit() {
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode response = (ObjectNode) mapper.readTree(successResponse());
+        ObjectNode textPart = (ObjectNode) response.at("/output/0/content/0");
+        String outputText = textPart.get("text").stringValue();
+        textPart.put("text", outputText + " ".repeat(65_536 - outputText.getBytes(StandardCharsets.UTF_8).length));
+
+        EvaluationResult result = openAiEvaluationResponseParser.parse(mapper.writeValueAsString(response), 1L);
+
+        assertThat(result.verdict()).isEqualTo(Verdict.CORRECT);
+    }
+
+    @Test
+    @DisplayName("한도를 넘는 평가 output text는 내부 JSON을 파싱하기 전에 영구 거부한다")
+    void rejectsOversizedNestedEvaluation() {
+        String responseBody = successResponse().replace("정확함", "가".repeat(22_000));
+        String outputText = new ObjectMapper().readTree(responseBody).at("/output/0/content/0/text").stringValue();
+        ObjectMapper mapper = spy(new ObjectMapper());
+        OpenAiEvaluationResponseParser parser = new OpenAiEvaluationResponseParser(mapper, "test-model", "test-version");
+
+        assertThatThrownBy(() -> parser.parse(responseBody, 1L))
+                .isInstanceOf(ProviderRequestRejectedException.class)
+                .hasMessage("PROVIDER_RESPONSE_TOO_LARGE");
+        verify(mapper, never()).readTree(outputText);
+    }
 
     @Test
     @DisplayName("구조화 결과와 token 사용량을 내부 평가 계약으로 변환한다")

@@ -84,6 +84,13 @@ Terra 선택 이유:
 - prompt: 지시와 사용자 데이터를 별도 메시지/데이터 구획으로 분리
 - 일반 로그: API key, 답변 원문, provider 응답 본문 제외
 - Evidence: 실제 전달 Chunk ID의 부분집합만 허용
+- provider 응답: 평가·후속 질문 공용 HTTP 수신 경계에서 기본 1 MiB 제한. 큰 Content-Length는 즉시 거부, chunked는 실제 누적 byte로 검사
+- `crackcs.evaluation.openai.max-response-bytes` / PostgreSQL profile의 `OPENAI_MAX_RESPONSE_BYTES`로 한도 조정. 양수 필수
+- 내부 `output_text`: JSON 재파싱 전 UTF-8 64 KiB 제한. 외부 응답 한도를 올려도 내부 제한 유지
+- 크기 초과: 연결 취소·`PROVIDER_RESPONSE_TOO_LARGE`, 평가 NEEDS_REVIEW·후속 질문 FAILED로 영구 종료. 반복 호출 없음
+- 요청 deadline: header·본문 수신을 포함한 전체 HTTP 완료 대기. 시간 초과·호출 thread 중단 시 전송 취소
+- 수신·문자열·JSON 객체의 메모리 overhead와 동시 호출 수는 별도 경계. byte 상한을 heap 사용량 상한으로 표현하지 않음
+- [크기 제한 검증](../changes/2026-10-06-security-hardening/verification.md), [JDK 21 BodySubscriber](https://docs.oracle.com/en/java/javase/21/docs/api/java.net.http/java/net/http/HttpResponse.BodySubscriber.html)
 
 필요한 데이터만 보내는 이유: 평가 정확도에 불필요한 회원 정보와 전체 문서가 유출 범위·token 비용·prompt 공격 면적만 확대.
 

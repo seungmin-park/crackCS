@@ -4,6 +4,19 @@ import { describe, expect, it } from "vitest";
 import EvaluationPanel from "./EvaluationPanel.vue";
 
 describe("평가 결과 패널", () => {
+  it("제공자 응답 거부는 근거 부족 대신 처리 실패와 답변 보존을 안내한다", () => {
+    const wrapper = mount(EvaluationPanel, { props: { evaluation: {
+      status: "NEEDS_REVIEW", verdict: "NEEDS_REVIEW", score: null, feedback: null,
+      failureReason: "PROVIDER_RESPONSE_TOO_LARGE", concepts: [], strengths: [], omissions: [],
+      misconceptions: [], evidence: [],
+    } } });
+
+    expect(wrapper.text()).toContain("평가 서비스의 응답을 처리하지 못했습니다.");
+    expect(wrapper.text()).toContain("답변은 저장됐고 학습 상태에는 반영되지 않습니다.");
+    expect(wrapper.text()).not.toContain("근거가 충분하지 않거나");
+    expect(wrapper.text()).not.toContain("PROVIDER_RESPONSE_TOO_LARGE");
+  });
+
   it.each(["EVALUATING", "PROCESSING"] as const)(
     "%s 상태는 평가 결과 없음이 아니라 진행 중 안내를 표시한다",
     (status) => {

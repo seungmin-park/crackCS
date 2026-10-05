@@ -21,6 +21,7 @@ crackcs:
     openai:
       enabled: ${OPENAI_EVALUATION_ENABLED:false}
       api-key: ${OPENAI_API_KEY:}
+      max-response-bytes: ${OPENAI_MAX_RESPONSE_BYTES:1048576}
     monthly-budget-usd: ${OPENAI_MONTHLY_BUDGET_USD:2}
   followup:
     openai:

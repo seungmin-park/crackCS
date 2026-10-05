@@ -16,6 +16,9 @@
     "com.example.crackcs.content.knowledge.chunk.service.KnowledgeChunkServiceTest",
     "com.example.crackcs.evaluation.domain.EvaluationTest",
     "com.example.crackcs.evaluation.adapter.openai.JdkOpenAiResponsesClientTest",
+    "com.example.crackcs.evaluation.adapter.openai.OpenAiProviderResponseLimitFlowTest",
+    "com.example.crackcs.evaluation.adapter.openai.OpenAiEvaluationResponseParserTest",
+    "com.example.crackcs.learning.followup.adapter.OpenAiFollowUpResponseParserTest",
     "com.example.crackcs.evaluation.adapter.openai.OpenAiEvaluationAdapterTest",
     "com.example.crackcs.evaluation.service.EvaluationCompletionTransactionTest",
     "com.example.crackcs.learning.answer.controller.AnswerFlowTest",
@@ -51,6 +54,7 @@
     "src/views/__tests__/SignUpView.test.ts",
     "src/views/__tests__/QuestionDetailView.test.ts",
     "src/views/__tests__/AnswerDetailView.test.ts",
+    "src/components/EvaluationPanel.test.ts",
     "src/views/__tests__/LearningViews.test.ts",
     "src/views/admin/__tests__/AdminEvaluationView.test.ts"
   ]
