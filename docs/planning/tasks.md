@@ -52,6 +52,7 @@ GPT-5.6 Terra의 개발 138건과 후보 provider 대상 42건을 측정. 이전
 - [x] 제품 명세 목표와 후보 실측 비교, 오프라인 후보 통과 기록
 - [x] `AC-002`의 실제 GPT 정상 평가·근거·학습 상태 확인
 - [ ] `AC-003` 실제 provider 장애 경로 확인 — 계약·통합 회귀 완료, 실제 외부 장애 미발생
+- [x] `AC-003` 통제 timeout·429·503의 화면·원문·재시도·멱등 반영 — [cmux 9시나리오·116 assertion](../changes/2026-10-05-provider-fault-flow/verification.md), 실제 OpenAI 외부 장애와 구분
 - [x] `AC-007` GPT 평가 뒤 콘텐츠 교체 경로 확인 — [OS 로컬 v1·v2 근거·과거 API 보존](../changes/2026-10-05-os-content/verification.md#ac-007-교체와-보존의-책임), 다른 Topic·공개 운영 별도
 - [x] 골든 세트의 호출 대상 후보 42건 오프라인 품질 Gate 판정
 - [ ] 독립 대표 답변과 실제 provider 장애·콘텐츠 교체 경로를 포함한 공개 출시 Gate 판정

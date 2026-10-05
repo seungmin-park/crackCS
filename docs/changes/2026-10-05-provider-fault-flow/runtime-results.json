@@ -1,0 +1,675 @@
+{
+  "scope": "CONTROLLED_LOCAL_FAULTS_AND_SYNTHETIC_RECOVERY",
+  "externalOpenAiCalls": 0,
+  "memberId": 4,
+  "questionId": 2,
+  "checks": [
+    {
+      "name": "fresh fault learner starts with no answers",
+      "passed": true
+    },
+    {
+      "name": "approved OS-101 is uniquely published",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover submitted original visible during evaluation",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover API original preserved",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover original restored after refresh",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover bounded attempts",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover exact injected transport attempts",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover controlled synthetic recovery evaluated",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover published v2 evidence preserved",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover exactly one application per required concept",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover unrelated concepts preserved",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover repeated request returns same answer and evaluation",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover repeated request cannot reapply knowledge",
+      "passed": true
+    },
+    {
+      "name": "timeout-recover repeated request cannot call provider again",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted submitted original visible during evaluation",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted API original preserved",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted original restored after refresh",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted bounded attempts",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted exact injected transport attempts",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted final failure is not an incorrect verdict",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted failure guidance visible",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted no evidence attached to failure",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted no knowledge state changed",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted repeated request returns same answer and evaluation",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted repeated request cannot reapply knowledge",
+      "passed": true
+    },
+    {
+      "name": "timeout-exhausted repeated request cannot call provider again",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission submitted original visible during evaluation",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission API original preserved",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission original restored after refresh",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission bounded attempts",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission exact injected transport attempts",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission controlled synthetic recovery evaluated",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission published v2 evidence preserved",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission exactly one application per required concept",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission unrelated concepts preserved",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission repeated request returns same answer and evaluation",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission repeated request cannot reapply knowledge",
+      "passed": true
+    },
+    {
+      "name": "timeout-new-submission repeated request cannot call provider again",
+      "passed": true
+    },
+    {
+      "name": "timeout retry creates new answer and preserves old failure",
+      "passed": true
+    },
+    {
+      "name": "429-recover submitted original visible during evaluation",
+      "passed": true
+    },
+    {
+      "name": "429-recover API original preserved",
+      "passed": true
+    },
+    {
+      "name": "429-recover original restored after refresh",
+      "passed": true
+    },
+    {
+      "name": "429-recover bounded attempts",
+      "passed": true
+    },
+    {
+      "name": "429-recover exact injected transport attempts",
+      "passed": true
+    },
+    {
+      "name": "429-recover controlled synthetic recovery evaluated",
+      "passed": true
+    },
+    {
+      "name": "429-recover published v2 evidence preserved",
+      "passed": true
+    },
+    {
+      "name": "429-recover exactly one application per required concept",
+      "passed": true
+    },
+    {
+      "name": "429-recover unrelated concepts preserved",
+      "passed": true
+    },
+    {
+      "name": "429-recover repeated request returns same answer and evaluation",
+      "passed": true
+    },
+    {
+      "name": "429-recover repeated request cannot reapply knowledge",
+      "passed": true
+    },
+    {
+      "name": "429-recover repeated request cannot call provider again",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted submitted original visible during evaluation",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted API original preserved",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted original restored after refresh",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted bounded attempts",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted exact injected transport attempts",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted final failure is not an incorrect verdict",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted failure guidance visible",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted no evidence attached to failure",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted no knowledge state changed",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted repeated request returns same answer and evaluation",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted repeated request cannot reapply knowledge",
+      "passed": true
+    },
+    {
+      "name": "429-exhausted repeated request cannot call provider again",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission submitted original visible during evaluation",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission API original preserved",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission original restored after refresh",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission bounded attempts",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission exact injected transport attempts",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission controlled synthetic recovery evaluated",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission published v2 evidence preserved",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission exactly one application per required concept",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission unrelated concepts preserved",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission repeated request returns same answer and evaluation",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission repeated request cannot reapply knowledge",
+      "passed": true
+    },
+    {
+      "name": "429-new-submission repeated request cannot call provider again",
+      "passed": true
+    },
+    {
+      "name": "429 retry creates new answer and preserves old failure",
+      "passed": true
+    },
+    {
+      "name": "503-recover submitted original visible during evaluation",
+      "passed": true
+    },
+    {
+      "name": "503-recover API original preserved",
+      "passed": true
+    },
+    {
+      "name": "503-recover original restored after refresh",
+      "passed": true
+    },
+    {
+      "name": "503-recover bounded attempts",
+      "passed": true
+    },
+    {
+      "name": "503-recover exact injected transport attempts",
+      "passed": true
+    },
+    {
+      "name": "503-recover controlled synthetic recovery evaluated",
+      "passed": true
+    },
+    {
+      "name": "503-recover published v2 evidence preserved",
+      "passed": true
+    },
+    {
+      "name": "503-recover exactly one application per required concept",
+      "passed": true
+    },
+    {
+      "name": "503-recover unrelated concepts preserved",
+      "passed": true
+    },
+    {
+      "name": "503-recover repeated request returns same answer and evaluation",
+      "passed": true
+    },
+    {
+      "name": "503-recover repeated request cannot reapply knowledge",
+      "passed": true
+    },
+    {
+      "name": "503-recover repeated request cannot call provider again",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted submitted original visible during evaluation",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted API original preserved",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted original restored after refresh",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted bounded attempts",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted exact injected transport attempts",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted final failure is not an incorrect verdict",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted failure guidance visible",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted no evidence attached to failure",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted no knowledge state changed",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted repeated request returns same answer and evaluation",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted repeated request cannot reapply knowledge",
+      "passed": true
+    },
+    {
+      "name": "503-exhausted repeated request cannot call provider again",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission submitted original visible during evaluation",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission API original preserved",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission original restored after refresh",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission bounded attempts",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission exact injected transport attempts",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission controlled synthetic recovery evaluated",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission published v2 evidence preserved",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission exactly one application per required concept",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission unrelated concepts preserved",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission repeated request returns same answer and evaluation",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission repeated request cannot reapply knowledge",
+      "passed": true
+    },
+    {
+      "name": "503-new-submission repeated request cannot call provider again",
+      "passed": true
+    },
+    {
+      "name": "503 retry creates new answer and preserves old failure",
+      "passed": true
+    },
+    {
+      "name": "all nine originals persist in answer history",
+      "passed": true
+    },
+    {
+      "name": "DB unique evaluations and applications",
+      "passed": true
+    },
+    {
+      "name": "provider requests bounded to 21 total",
+      "passed": true
+    }
+  ],
+  "results": [
+    {
+      "scenario": "timeout-recover",
+      "answerId": 25,
+      "evaluationId": 25,
+      "status": "EVALUATED",
+      "attemptCount": 3,
+      "failureReason": null,
+      "events": [
+        {
+          "attempt": 1,
+          "injected": "timeout",
+          "synthetic": true
+        },
+        {
+          "attempt": 2,
+          "injected": "timeout",
+          "synthetic": true
+        },
+        {
+          "attempt": 3,
+          "injected": "success",
+          "synthetic": true
+        }
+      ]
+    },
+    {
+      "scenario": "timeout-exhausted",
+      "answerId": 26,
+      "evaluationId": 26,
+      "status": "FAILED",
+      "attemptCount": 3,
+      "failureReason": "PROVIDER_TIMEOUT",
+      "events": [
+        {
+          "attempt": 1,
+          "injected": "timeout",
+          "synthetic": true
+        },
+        {
+          "attempt": 2,
+          "injected": "timeout",
+          "synthetic": true
+        },
+        {
+          "attempt": 3,
+          "injected": "timeout",
+          "synthetic": true
+        }
+      ]
+    },
+    {
+      "scenario": "timeout-new-submission",
+      "answerId": 27,
+      "evaluationId": 27,
+      "status": "EVALUATED",
+      "attemptCount": 1,
+      "failureReason": null,
+      "events": [
+        {
+          "attempt": 1,
+          "injected": "success",
+          "synthetic": true
+        }
+      ]
+    },
+    {
+      "scenario": "429-recover",
+      "answerId": 28,
+      "evaluationId": 28,
+      "status": "EVALUATED",
+      "attemptCount": 3,
+      "failureReason": null,
+      "events": [
+        {
+          "attempt": 1,
+          "injected": "429",
+          "synthetic": true
+        },
+        {
+          "attempt": 2,
+          "injected": "429",
+          "synthetic": true
+        },
+        {
+          "attempt": 3,
+          "injected": "success",
+          "synthetic": true
+        }
+      ]
+    },
+    {
+      "scenario": "429-exhausted",
+      "answerId": 29,
+      "evaluationId": 29,
+      "status": "FAILED",
+      "attemptCount": 3,
+      "failureReason": "PROVIDER_ERROR",
+      "events": [
+        {
+          "attempt": 1,
+          "injected": "429",
+          "synthetic": true
+        },
+        {
+          "attempt": 2,
+          "injected": "429",
+          "synthetic": true
+        },
+        {
+          "attempt": 3,
+          "injected": "429",
+          "synthetic": true
+        }
+      ]
+    },
+    {
+      "scenario": "429-new-submission",
+      "answerId": 30,
+      "evaluationId": 30,
+      "status": "EVALUATED",
+      "attemptCount": 1,
+      "failureReason": null,
+      "events": [
+        {
+          "attempt": 1,
+          "injected": "success",
+          "synthetic": true
+        }
+      ]
+    },
+    {
+      "scenario": "503-recover",
+      "answerId": 31,
+      "evaluationId": 31,
+      "status": "EVALUATED",
+      "attemptCount": 3,
+      "failureReason": null,
+      "events": [
+        {
+          "attempt": 1,
+          "injected": "503",
+          "synthetic": true
+        },
+        {
+          "attempt": 2,
+          "injected": "503",
+          "synthetic": true
+        },
+        {
+          "attempt": 3,
+          "injected": "success",
+          "synthetic": true
+        }
+      ]
+    },
+    {
+      "scenario": "503-exhausted",
+      "answerId": 32,
+      "evaluationId": 32,
+      "status": "FAILED",
+      "attemptCount": 3,
+      "failureReason": "PROVIDER_ERROR",
+      "events": [
+        {
+          "attempt": 1,
+          "injected": "503",
+          "synthetic": true
+        },
+        {
+          "attempt": 2,
+          "injected": "503",
+          "synthetic": true
+        },
+        {
+          "attempt": 3,
+          "injected": "503",
+          "synthetic": true
+        }
+      ]
+    },
+    {
+      "scenario": "503-new-submission",
+      "answerId": 33,
+      "evaluationId": 33,
+      "status": "EVALUATED",
+      "attemptCount": 1,
+      "failureReason": null,
+      "events": [
+        {
+          "attempt": 1,
+          "injected": "success",
+          "synthetic": true
+        }
+      ]
+    }
+  ],
+  "dbCounts": {
+    "answers": 9,
+    "concepts": 12,
+    "evaluations": 9,
+    "applications": 12
+  }
+}
