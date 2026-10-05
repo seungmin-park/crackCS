@@ -62,6 +62,7 @@ public class SessionController {
             loginAttemptService.recordFailure(request.email(), remoteAddress);
             throw exception;
         }
+        AuthAccount account = authService.recordSuccessfulLogin(authentication.getName());
         loginAttemptService.recordSuccess(request.email(), remoteAddress);
         sessionAuthenticationStrategy.onAuthentication(authentication, httpRequest, httpResponse);
 
@@ -70,7 +71,6 @@ public class SessionController {
         SecurityContextHolder.setContext(securityContext);
         securityContextRepository.saveContext(securityContext, httpRequest, httpResponse);
 
-        AuthAccount account = authService.recordSuccessfulLogin(authentication.getName());
         return MemberResponse.from(account.getMember());
     }
 

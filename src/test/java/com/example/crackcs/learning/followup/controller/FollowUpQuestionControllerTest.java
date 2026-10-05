@@ -5,6 +5,9 @@ import com.example.crackcs.auth.security.ApiAccessDeniedHandler;
 import com.example.crackcs.auth.security.ApiAuthenticationEntryPoint;
 import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.auth.security.SecurityErrorResponseWriter;
+import com.example.crackcs.member.service.MemberService;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.exception.AnswerNotFoundException;
 import com.example.crackcs.learning.followup.domain.FollowUpReason;
@@ -49,6 +52,9 @@ class FollowUpQuestionControllerTest {
     private UserDetailsService userDetailsService;
     @MockitoBean
     private PasswordEncoder encoder;
+
+    @MockitoBean
+    private MemberService memberService;
 
     @Test
     @DisplayName("본인 후속 질문은 공개 질문 형태로 반환하고 모범 답안을 숨긴다")
@@ -99,7 +105,10 @@ class FollowUpQuestionControllerTest {
     }
 
     private AuthenticatedMember principal() {
+        Member member = Member.builder().nickname("회원").build();
+        given(memberService.findById(41L)).willReturn(member);
         AuthenticatedMember authenticatedMember = mock(AuthenticatedMember.class);
+        given(authenticatedMember.role()).willReturn(MemberRole.USER);
         given(authenticatedMember.memberId()).willReturn(41L);
         given(authenticatedMember.getUsername()).willReturn("learner");
         given(authenticatedMember.getPassword()).willReturn("unused");

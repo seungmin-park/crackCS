@@ -54,7 +54,7 @@ export OPENAI_MONTHLY_BUDGET_USD=2
 Browser :5173 → Vite /api proxy → Spring :8080
                                     ↓ validate
                           PostgreSQL :55432
-                          명시적 V001 + V002 schema
+                          명시적 V001 + V002 + V003 schema
 ```
 
 ## backup·새 DB restore
@@ -102,6 +102,22 @@ docker compose -p crackcs-local -f compose.local.yaml exec -T postgres \
 - V002 이전 백업을 새 앱에 연결하려면 복구 DB에도 V002 적용 필요
 - schema drift는 앱 시작 검증에서 중단. 이전 앱은 추가 테이블을 사용하지 않아 호환
 - 적용·보존 근거: [V002 검증](../2026-09-27-service-completion/verification.md)
+
+### 기존 V002 DB에 V003 적용
+
+- backup·새 DB restore에서 먼저 리허설. 원본 적용 전 앱 종료
+- 새 volume은 Compose에서 V003까지 적용. 기존 volume 자동 변경 없음
+- 복구 DB 이름으로 `-d crackcs_local`을 바꿔 같은 SQL 적용 후 새 앱 `validate` 확인
+
+```bash
+docker compose -p crackcs-local -f compose.local.yaml exec -T postgres \
+  psql -v ON_ERROR_STOP=1 -U crackcs_local -d crackcs_local \
+  < src/main/resources/db/postgres/V003__member_authentication_version.sql
+```
+
+- `schema_version` 003 행, `member.authentication_version` NOT NULL·기본값 0 확인
+- V003 없는 기존 DB는 새 앱의 schema validate에서 거부
+- [검증 기록](../2026-10-06-security-hardening/verification.md)
 
 ## 종료
 

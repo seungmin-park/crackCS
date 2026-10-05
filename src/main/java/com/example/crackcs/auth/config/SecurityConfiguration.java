@@ -2,6 +2,8 @@ package com.example.crackcs.auth.config;
 
 import com.example.crackcs.auth.security.ApiAccessDeniedHandler;
 import com.example.crackcs.auth.security.ApiAuthenticationEntryPoint;
+import com.example.crackcs.auth.security.MemberSessionValidationFilter;
+import com.example.crackcs.member.service.MemberService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.security.autoconfigure.actuate.web.servlet.EndpointRequest;
 import org.springframework.context.annotation.Bean;
@@ -22,6 +24,7 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 
 @Configuration
 public class SecurityConfiguration {
@@ -46,12 +49,15 @@ public class SecurityConfiguration {
             HttpSecurity http,
             ApiAuthenticationEntryPoint authenticationEntryPoint,
             ApiAccessDeniedHandler accessDeniedHandler,
-            SecurityContextRepository securityContextRepository
+            SecurityContextRepository securityContextRepository,
+            MemberService memberService
     ) throws Exception {
         HttpSessionCsrfTokenRepository httpSessionCsrfTokenRepository = new HttpSessionCsrfTokenRepository();
         httpSessionCsrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
 
         http
+                .addFilterBefore(new MemberSessionValidationFilter(memberService, authenticationEntryPoint),
+                        AuthorizationFilter.class)
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers("/api/auth/sign-up", "/api/auth/login", "/api/auth/csrf")
                         .permitAll()

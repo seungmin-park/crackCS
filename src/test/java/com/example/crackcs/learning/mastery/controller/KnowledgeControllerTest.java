@@ -5,6 +5,9 @@ import com.example.crackcs.auth.security.ApiAccessDeniedHandler;
 import com.example.crackcs.auth.security.ApiAuthenticationEntryPoint;
 import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.auth.security.SecurityErrorResponseWriter;
+import com.example.crackcs.member.service.MemberService;
+import com.example.crackcs.member.domain.Member;
+import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.evaluation.domain.Verdict;
 import com.example.crackcs.learning.mastery.domain.KnowledgeStatus;
@@ -61,6 +64,8 @@ class KnowledgeControllerTest {
     UserDetailsService userDetailsService;
     @MockitoBean
     PasswordEncoder passwordEncoder;
+    @MockitoBean
+    MemberService memberService;
     @Autowired
     private MockMvc mockMvc;
 
@@ -139,7 +144,10 @@ class KnowledgeControllerTest {
     }
 
     private AuthenticatedMember principal(String role) {
+        Member member = Member.builder().nickname("회원").role(MemberRole.valueOf(role)).build();
+        given(memberService.findById(41L)).willReturn(member);
         AuthenticatedMember principal = mock(AuthenticatedMember.class);
+        given(principal.role()).willReturn(MemberRole.valueOf(role));
         given(principal.memberId()).willReturn(41L);
         given(principal.getUsername()).willReturn("member@example.com");
         given(principal.getPassword()).willReturn("encoded");

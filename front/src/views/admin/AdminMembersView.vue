@@ -69,7 +69,7 @@ onBeforeUnmount(() => { disposed = true; loadGeneration++; });
 
 <template>
   <section>
-    <header class="admin-page-heading"><div><p class="eyebrow">MEMBERS</p><h1>회원</h1></div><p>BLOCKED와 WITHDRAWN 회원은 다음 인증부터 로그인할 수 없습니다.</p></header>
+    <header class="admin-page-heading"><div><p class="eyebrow">MEMBERS</p><h1>회원</h1></div><p>차단·탈퇴한 회원은 기존 세션도 다음 요청부터 사용할 수 없습니다. 다시 활성화하면 재로그인이 필요합니다.</p></header>
     <AdminFeedback :success="feedback.successMessage.value" :error="feedback.formError.value" :field-errors="feedback.fieldErrors.value" />
     <div class="admin-toolbar"><label>상태 <select v-model="statusFilter" @change="changeFilter"><option value="">전체</option><option>ACTIVE</option><option>BLOCKED</option><option>WITHDRAWN</option></select></label></div>
     <RequestFailure v-if="loadError" :failure="loadError" title="회원 목록을 불러오지 못했습니다." retry-key="list" @retry="loadMembers" />
