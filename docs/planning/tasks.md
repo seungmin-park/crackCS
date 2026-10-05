@@ -58,6 +58,8 @@ GPT-5.6 Terra의 개발 138건과 후보 provider 대상 42건을 측정. 이전
 
 현재 공개 OS의 정답·핵심 누락·모순 판정 진단: [합성15/15·보강 후속·지식 상태·cmux 검증 완료](../changes/2026-10-05-os-verdict-flow/verification.md). 에이전트 작성 라벨·의도적 합성 답변이며 독립 사람 검수 골든 세트·대표 표본과 구분.
 
+후속 순서: [독립 검수 도구·사용자 위임 대리 진단](../changes/2026-10-05-learner-review/verification.md) → 통제 timeout·429·503 cmux 검증 → 다음 Java Topic 검수·로컬 공개. 선택된 기존 답변 4개는 과거 GPT 2·stub 2의 동일 개념 시연 이력. 사용자 검수로 기록하며 독립 대표 표본 조건은 미완료 유지.
+
 완료 조건:
 
 - 정답 라벨과 provider 입력 분리

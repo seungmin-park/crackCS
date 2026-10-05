@@ -39,6 +39,7 @@ docs/
 | 도메인 관계·불변식·테이블 | 현재 기준 | [도메인·ERD](architecture/domain-model-and-erd.md) | 엔티티·관계·schema 변경 |
 | 초기 학습 콘텐츠·출처·등록 | DRAFT 등록 템플릿, OS 로컬 승인·나머지 검수 대기 | [initial-v1](content/initial-v1/README.md), [원본](content/initial-v1/bundle.json), [검수용 읽기 사본](content/initial-v1/review.md) | 콘텐츠·출처·검수 상태 변경 |
 | 평가 정답의 구성·실행법 | v1 확정 | [평가 정답 기준](evaluation/reference-v1/README.md) | 원본·manifest·도구 계약 변경 |
+| OS 실제 답변 독립 검수 방법·도구 | 준비 완료·사용자 위임 대리 진단, 독립 대표 표본 미완료 | [독립 검수 안내](evaluation/independent-review/README.md), [실행·진단](changes/2026-10-05-learner-review/verification.md) | 표본 출처·사람 판정·동결·비교 계약 변경 |
 | 평가 기준 버전·사람 검수·해시 | v1.0.0 확정 | [manifest](evaluation/reference-v1/manifest.json) | 원본 재검수 또는 새 버전 확정 |
 | retrieval 측정 이력과 현재 재측정 | 기존 측정·충돌 수정 후 재측정, 출시 성능 인증 아님 | [개선 전](evaluation/reference-v1/benchmarks/retrieval-baseline.json), [현재](evaluation/reference-v1/benchmarks/retrieval-improved.json), [현재 재측정](changes/2026-10-05-evidence-conflict/verification.md) | 검색 정책·자료·DB 환경 변경 |
 | 구현 순서와 의존성 | 계획 | [개발 계획](planning/plan.md) | 순서·의존성 변경 |

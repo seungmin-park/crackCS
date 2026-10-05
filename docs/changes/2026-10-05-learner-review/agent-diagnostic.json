@@ -1,0 +1,24 @@
+{
+  "reviewAuthority": "USER",
+  "reviewLabel": "사용자 검수",
+  "performedBy": "Codex",
+  "method": "DELEGATED_NONBLIND_DIAGNOSTIC",
+  "independentHumanReview": false,
+  "representativeLearnerSample": false,
+  "freshProviderCalls": 0,
+  "caseCount": 4,
+  "questionCount": 3,
+  "memberCount": 2,
+  "overallMatches": 4,
+  "conceptMatches": 4,
+  "priorGptMatches": {"matched": 2, "total": 2},
+  "priorStubMatches": {"matched": 2, "total": 2},
+  "falseCorrect": {"count": 0, "total": 0, "rate": null},
+  "cases": [
+    {"caseId": "LOCAL-1", "sourceAnswerId": 1, "category": "OTHER", "expectedVerdict": "CORRECT", "expectedConcepts": {"PROCESS_THREAD": "CORRECT"}, "reason": "독립 주소 공간과 스레드의 공유·개별 자원을 정확히 구분", "priorModel": "stub", "priorVerdict": "CORRECT"},
+    {"caseId": "LOCAL-2", "sourceAnswerId": 2, "category": "SHORT", "expectedVerdict": "CORRECT", "expectedConcepts": {"PROCESS_THREAD": "CORRECT"}, "reason": "적용 사례를 묻는 후속 질문에 공유 카운터의 경쟁 상태와 동기화 필요성을 설명. 원 질문 전체 정의 반복은 요구되지 않음", "priorModel": "stub", "priorVerdict": "CORRECT"},
+    {"caseId": "LOCAL-3", "sourceAnswerId": 3, "category": "OTHER", "expectedVerdict": "CORRECT", "expectedConcepts": {"PROCESS_THREAD": "CORRECT"}, "reason": "독립 프로세스 자원과 스레드의 공유 힙·개별 실행 문맥을 정확히 설명", "priorModel": "gpt-5.6-terra", "priorVerdict": "CORRECT"},
+    {"caseId": "LOCAL-4", "sourceAnswerId": 4, "category": "OTHER", "expectedVerdict": "CORRECT", "expectedConcepts": {"PROCESS_THREAD": "CORRECT"}, "reason": "증가 유실의 메커니즘과 임계구역 또는 원자적 연산을 설명. 특정 동기화 수단 하나만 쓰도록 제한하지 않음", "priorModel": "gpt-5.6-terra", "priorVerdict": "CORRECT"}
+  ],
+  "limitations": ["기존 GPT 시연 결과에 노출된 대리 판정", "모의 평가 2건을 GPT 분모에서 제외", "과거 기본·후속 문항의 동일 개념만 포함", "TERMINOLOGY·MIXED·INCORRECT 표본 없음", "실제 학습자 원문의 독립 출처 인증 미완료", "신규 GPT 재측정 미실행"]
+}
