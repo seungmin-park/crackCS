@@ -18,7 +18,7 @@
 | `TESTING` | 5·10·1 | 검증 수준·double·서버 transaction·조건 대기·증거의 범위 |
 | 합계 | **30·64·6** | BASIC 6·INTERMEDIATE 16·ADVANCED 8 |
 
-주제당5문항은 제작·검수의 첫 묶음. DB의 RDB/NoSQL 선택, SQL의 윈도 함수, HTTP 쿠키, 부하·concurrency 테스트 등 커리큘럼 전체 범위의 완성은 아님. 전체28개 Topic 중 기존5개와 A1 신규6개에 초안이 있고, A2·B·C의 신규17개와 선택2개는 콘텐츠 미제작. 승인·공개 상태는 별도.
+주제당5문항은 제작·검수의 첫 묶음. DB의 RDB/NoSQL 선택, SQL의 윈도 함수, HTTP 쿠키, 부하·concurrency 테스트 등 커리큘럼 전체 범위의 완성은 아님. 전체28개 Topic 중 기존5개·A1 신규6개·[A2 신규6개](../a2-v1/README.md)에 초안이 있고, B·C의 신규11개와 선택2개는 콘텐츠 미제작. 승인·공개 상태는 별도.
 
 ```text
 DB       어떤 상태를 저장해도 되는가?
@@ -94,4 +94,4 @@ python3 -m unittest scripts/test_render_content_review.py -v
 운영 환경·schema 관리·배포/복구·관측 → 참가자 파일럿 → 출시 판단
 ```
 
-운영 준비는 콘텐츠 검수와 병행 가능. 전체28개 제작을 운영 환경 준비의 자동 선행 조건으로 추가하지 않음. 기존3개 Topic 검수·A1 승인·A2/B/C 제작·운영 상태는 [tasks.md](../../planning/tasks.md)가 관리.
+운영 준비는 콘텐츠 검수와 병행 가능. 전체28개 제작을 운영 환경 준비의 자동 선행 조건으로 추가하지 않음. 기존3개 Topic 검수·A1/A2 승인·B/C 제작·운영 상태는 [tasks.md](../../planning/tasks.md)가 관리.
