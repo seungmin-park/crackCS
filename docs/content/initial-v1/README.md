@@ -7,6 +7,7 @@
 - 준비: 2026-09-27, AI 작성·출처 본문 대조·자동 구조 검사
 - **등록용 DRAFT**: 자동 공개 없음. [OS 승인 기록](../../changes/2026-10-05-os-content/verification.md), [Java 사용자 검수·승인·실행 기록](../../changes/2026-10-05-java-content-flow/verification.md)은 별도 관리. OS·Java 각5문항 로컬 공개 승인 완료, 나머지3개 Topic 승인 대기
 - 5개 말단 Topic, Topic당 5문항·1문서, 총 25문항·50개 필수 Concept·5문서
+- 이 원본은 기존5개 Topic 등록 템플릿. CS·HTTP/API·객체 설계·테스트·운영의 신규 제작 범위는 [백엔드 커리큘럼](../backend-curriculum/README.md)에서 관리. 확장 계획이 이 번들의 문항·승인 수를 변경하지 않음
 - 각 문항: 필수 개념 2개, 가중치 각 0.50, 합계 1.00
 - 난이도: BASIC 8, INTERMEDIATE 17. 심화 질문·전 분야를 포괄하는 문제집 아님
 - 등록 도구: 기존 관리자 API 사용. DB 직접 삽입·검수 필드 조작 없음

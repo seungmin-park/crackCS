@@ -6,6 +6,7 @@
 
 - [도메인 모델·ERD](../architecture/domain-model-and-erd.md): 관계·불변식·테이블 구조
 - [콘텐츠·AI 정책](content-and-ai-policy.md): 검수·근거·판정 정책
+- [백엔드 기반 지식 커리큘럼](../content/backend-curriculum/README.md): CS·웹·설계·테스트·운영의 확장 범위·제작 순서. [시장조사](../content/backend-curriculum/market-research.md)는 수요 근거 소유
 - [확장 후보](../planning/extension-features.md): 출시 이후 아이디어
 - [개발 계획](../planning/plan.md): 순서·의존성
 - [작업 목록](../planning/tasks.md): 진행·검증 상태
@@ -79,7 +80,10 @@ AI 정오 판정
 
 - CS 기초를 공부하는 취업 준비생
 - Java·Spring·JPA 백엔드 면접을 준비하는 개발자
+- 국내 경력 백엔드의 설계·성능·정합성·장애 대응 판단을 점검하려는 개발자
 - 자신의 취약 개념을 주관식 답변으로 확인하고 싶은 사용자
+
+기초 설명부터 실무 적용·운영 설계까지 서술형으로 점검. 실제 코드 작성·운영 경력 인증은 별도. 자료구조·알고리즘도 원리·실행 과정·복잡도·경계 조건을 설명하는 범위.
 
 ### 관리자
 
@@ -94,7 +98,9 @@ AI 정오 판정
 |---|---|
 | 문제 형식 | 모든 문제는 서술형 주관식 |
 | 초기 콘텐츠 | 관리자가 등록하고 검수한 문제 은행 |
-| 초기 주제 | CS 기초, Java 21, Spring Boot 4.1.x, Spring Framework 7.0.x, Jakarta Persistence 3.2 |
+| 현재 초기 콘텐츠 | OS·Java·Spring Framework·Spring Boot·JPA의 5개 Topic. Java 21, Boot 4.1.x, Framework 7.0.x, Persistence 3.2. OS·Java 로컬 승인, 나머지3개 검수 대기 |
+| 확장 콘텐츠 범위 | 기존5개 포함 핵심28개·선택2개 Topic의 [제작 계획](../content/backend-curriculum/README.md). DB·자료구조·알고리즘·네트워크·HTTP·REST/API·객체 설계·테스트·운영 포함. 신규 콘텐츠 공개 미실행 |
+| 출시 콘텐츠 경계 | 전체 로드맵과 실제 출시 묶음 구분. 선택한 leaf Topic별 검수·근거·평가 Gate 충족. 전체28개 완성을 제한 파일럿의 자동 선행 조건으로 추가하지 않음 |
 | 인증 | 이메일·비밀번호 기반 LOCAL 계정 |
 | 인증 상태 유지 | 동일 출처 웹 기준 HttpOnly 서버 세션, CSRF token 병행 |
 | 비밀번호 정책 | 15~64자 passphrase, 제어 문자 금지, UTF-8 72 byte 이하 |
@@ -394,7 +400,7 @@ flowchart TD
 
 ## 12. API 설계 범위
 
-아래 목록: 미구현 기능을 포함한 목표 API. 현재 문서화된 HTTP 계약은 [OpenAPI](../../openapi.yml), 구현 여부는 [작업 목록](../planning/tasks.md#api-uri-구현-체크리스트) 참조. 목표 목록만으로 구현 완료 판단 금지.
+아래 목록: 미구현 기능을 포함한 목표 API. 현재 문서화된 HTTP 계약은 [OpenAPI](../../openapi.yml), 영역별 진행 상태는 [작업 목록](../planning/tasks.md#현재-상태) 참조. 목표 목록만으로 구현 완료 판단 금지.
 
 향후 API 구현 시 목표 항목의 상세 계약을 OpenAPI로 이관하고 이 문서에는 목적·권한 요구만 유지.
 

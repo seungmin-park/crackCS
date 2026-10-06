@@ -1,6 +1,6 @@
 # 문서 지도
 
-확인일: 2026-10-05
+확인일: 2026-10-06
 
 이 파일은 문서 내용을 반복하지 않는다. 독자가 가진 질문과 그 답을 소유한 기준 문서를 연결한다.
 
@@ -38,6 +38,9 @@ docs/
 | 콘텐츠 검수·평가 정책 | 현재 기준 | [콘텐츠 정책](product/content-and-ai-policy.md) | 검수·평가·공개 정책 변경 |
 | 도메인 관계·불변식·테이블 | 현재 기준 | [도메인·ERD](architecture/domain-model-and-erd.md) | 엔티티·관계·schema 변경 |
 | 초기 학습 콘텐츠·출처·등록 | DRAFT 등록 템플릿, OS·Java 로컬 승인·나머지3개 Topic 검수 대기 | [initial-v1](content/initial-v1/README.md), [원본](content/initial-v1/bundle.json), [검수용 읽기 사본](content/initial-v1/review.md) | 콘텐츠·출처·검수 상태 변경 |
+| CS·웹·설계·테스트·운영을 어디까지 확장하나? | 핵심28개·선택2개 Topic 제작 계획, 신규 콘텐츠 미공개 | [백엔드 커리큘럼](content/backend-curriculum/README.md) | 대상 사용자·학습 범위·선수 지식·제작 순서 변경 |
+| 국내 경력 백엔드 수요·교육 공급 근거는? | 2026-10-06 공식 상세9개·5개 채용 사이트의 목적 표본, 대표 통계 아님 | [시장조사](content/backend-curriculum/market-research.md), [출처 기록](content/backend-curriculum/sources.json) | 공고·교육 구성·기술 근거 재조사 |
+| 확장 문서의 검사·전달 결과는? | 문서 검사·공용 검증의 실행 기록 | [검증 기록](content/backend-curriculum/verification.md) | 문서 구조·근거·연결·전달 결과 변경 |
 | 평가 정답의 구성·실행법 | v1 확정 | [평가 정답 기준](evaluation/reference-v1/README.md) | 원본·manifest·도구 계약 변경 |
 | OS 실제 답변 독립 검수 방법·도구 | 준비 완료·사용자 위임 대리 진단, 독립 대표 표본 미완료 | [독립 검수 안내](evaluation/independent-review/README.md), [실행·진단](changes/2026-10-05-learner-review/verification.md) | 표본 출처·사람 판정·동결·비교 계약 변경 |
 | provider 장애 때 원문·화면·재시도·지식 반영 | 통제 timeout·429·503의 cmux 9시나리오 완료, 실제 외부 장애 별도 | [검증·실행 결과](changes/2026-10-05-provider-fault-flow/verification.md) | 장애 주입·재시도·멱등·화면·저장 계약 변경 |
