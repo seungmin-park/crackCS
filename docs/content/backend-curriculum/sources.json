@@ -4,7 +4,6 @@
   "scope": "국내 Java/JVM·Spring 백엔드 취업 준비부터 경력까지",
   "sampleMethod": "공식 상세 본문을 확인한 목적 표본; 대표 통계 아님",
   "jobDetailCount": 9,
-  "companyGroupCount": 5,
   "educationSupplyCount": 4,
   "technicalOrCsPrimaryCount": 31,
   "rawArchiveNote": "localRaw는 원 저장소 루트의 Git 제외 조사 자료. 커밋에는 원문 대신 확인 메타데이터·해시·요약만 포함. 다른 checkout에서 원문 존재 보장 없음",
@@ -22,7 +21,6 @@
       "scrapeId": "01a111a7-71f9-76b0-85b0-af69e8b73ae3",
       "markdownSha256": "fe30ea37293227e9ce3f6b859345e693cf066800f51e5b8c1828b5edc4656cfa",
       "localRaw": ".firecrawl/curriculum-20261006/toss-product.json",
-      "companyGroup": "Toss",
       "company": "토스뱅크",
       "role": "Server Developer (Product)",
       "experience": "최소 연차 미명시",
@@ -37,7 +35,8 @@
       "stackExamples": [
         "JPA/Hibernate·MySQL·Redis·Kafka·K8s"
       ],
-      "interpretationNote": "자격 안내의 필요/선호 표현 구분. 스택을 필수 목록으로 사용하지 않음"
+      "interpretationNote": "자격 안내의 필요/선호 표현 구분. 스택을 필수 목록으로 사용하지 않음",
+      "recruitmentSite": "toss.im"
     },
     {
       "id": "J02",
@@ -51,7 +50,6 @@
       "scrapeId": "01a111aa-ba68-772d-9687-bfd0eda9c85a",
       "markdownSha256": "99c87577014fb2c0cdfae237f1d040c24415ccd2e1f5786934e1e26e5642f357",
       "localRaw": ".firecrawl/curriculum-20261006/toss-core-junior.json",
-      "companyGroup": "Toss",
       "company": "토스",
       "role": "Server Developer (Product) (3년 이하)",
       "experience": "실무 1년 이상·3년 이하",
@@ -66,7 +64,8 @@
       "stackExamples": [
         "Kotlin·Spring·MySQL·MongoDB·Redis·Kafka"
       ],
-      "interpretationNote": "신입 전용으로 분류하지 않음. 모든 사용 기술을 요구하지 않는다는 안내"
+      "interpretationNote": "신입 전용으로 분류하지 않음. 모든 사용 기술을 요구하지 않는다는 안내",
+      "recruitmentSite": "toss.im"
     },
     {
       "id": "J03",
@@ -80,7 +79,6 @@
       "scrapeId": "01a111a8-5cbc-707c-a581-6c339b08e291",
       "markdownSha256": "090650812be5184a2b50bc73c6049e552fedf860cf0b6569e64f6b371c0e3f36",
       "localRaw": ".firecrawl/curriculum-20261006/line-backend.json",
-      "companyGroup": "LINE",
       "company": "LINE Pay Thailand 한국 오피스",
       "role": "Backend Software Engineer",
       "experience": "4년 이상·12년 미만",
@@ -96,7 +94,8 @@
         "대용량 운영·NoSQL"
       ],
       "stackExamples": [],
-      "interpretationNote": "한국 근무 조직. 기술 요건을 완벽히 충족하지 않아도 지원 가능하다는 조건"
+      "interpretationNote": "한국 근무 조직. 기술 요건을 완벽히 충족하지 않아도 지원 가능하다는 조건",
+      "recruitmentSite": "careers.linecorp.com"
     },
     {
       "id": "J04",
@@ -110,7 +109,6 @@
       "scrapeId": "01a111a9-fa74-70b9-a47a-7917da71010f",
       "markdownSha256": "afef5e6aea47c39db13df6d38f43526656b1e0371759d8b55cf06b23db49fbb3",
       "localRaw": ".firecrawl/curriculum-20261006/line-pay.json",
-      "companyGroup": "LINE",
       "company": "LINE PayPlus",
       "role": "LINE Pay Server Engineer",
       "experience": "3년 이상 또는 동등 깊이",
@@ -126,7 +124,8 @@
         "장애 예방·배포·멘토링"
       ],
       "stackExamples": [],
-      "interpretationNote": "한국 오피스 판교. AI 활용은 자격 요건에도 명시"
+      "interpretationNote": "한국 오피스 판교. AI 활용은 자격 요건에도 명시",
+      "recruitmentSite": "careers.linecorp.com"
     },
     {
       "id": "J05",
@@ -140,7 +139,6 @@
       "scrapeId": "01a111a8-a543-763f-a02a-5a3c19e3269a",
       "markdownSha256": "c67fe0a76abf7427e21ea734560fdf34ffad0c69af5b3fa022224bbbf7db6526",
       "localRaw": ".firecrawl/curriculum-20261006/daangn-community.json",
-      "companyGroup": "Daangn",
       "company": "당근",
       "role": "Software Engineer, Backend 커뮤니티 아파트팀",
       "experience": "3년 이상 또는 동등 실력; 한 제품 1년 이상 책임 경험",
@@ -156,7 +154,8 @@
       "stackExamples": [
         "Kotlin·Spring·MySQL·Redis·Kafka·관측 도구"
       ],
-      "interpretationNote": "스키마·인덱스 개선·장애 대응은 업무에 포함"
+      "interpretationNote": "스키마·인덱스 개선·장애 대응은 업무에 포함",
+      "recruitmentSite": "careers.daangn.com"
     },
     {
       "id": "J06",
@@ -170,7 +169,6 @@
       "scrapeId": "01a111a9-5b30-73c6-8604-4e252df9de93",
       "markdownSha256": "7c60a5d42669d7f846edf705c606f3dce46439c2066a226db7fc0bedbc347842",
       "localRaw": ".firecrawl/curriculum-20261006/daangn-my.json",
-      "companyGroup": "Daangn",
       "company": "당근",
       "role": "Software Engineer, Backend 나의당근",
       "experience": "3년 이상 또는 동등 역량",
@@ -186,7 +184,8 @@
       "stackExamples": [
         "Kotlin·Spring Boot·Spring Batch·MySQL·Redis·Kafka·K8s"
       ],
-      "interpretationNote": "Java/Spring을 별도 필수 자격으로 승격하지 않음"
+      "interpretationNote": "Java/Spring을 별도 필수 자격으로 승격하지 않음",
+      "recruitmentSite": "careers.daangn.com"
     },
     {
       "id": "J07",
@@ -200,7 +199,6 @@
       "scrapeId": "01a111a9-fa5e-778b-b259-8fd7f919a29a",
       "markdownSha256": "3a0ce01125c8cd04dabbe54c8e60f32e4bbaaa7046d96f91731ca9156e588645",
       "localRaw": ".firecrawl/curriculum-20261006/kakaobank-banking.json",
-      "companyGroup": "KakaoBank",
       "company": "카카오뱅크",
       "role": "서버 개발자 - 뱅킹",
       "experience": "서버 개발 5년 이상; JVM·Boot·ORM 실무 1년 이상은 별도",
@@ -215,7 +213,8 @@
         "모놀리스/MSA 전환"
       ],
       "stackExamples": [],
-      "interpretationNote": "상단 2026.10.07 날짜와 본문 영입 완료시 마감 안내 병존. 마감 확정 주장 제외"
+      "interpretationNote": "상단 2026.10.07 날짜와 본문 영입 완료시 마감 안내 병존. 마감 확정 주장 제외",
+      "recruitmentSite": "recruit.kakaobank.com"
     },
     {
       "id": "J08",
@@ -229,7 +228,6 @@
       "scrapeId": "01a111aa-9263-74f8-a31f-26f7d1705ce5",
       "markdownSha256": "85359cff2279fa7cb12410f81351f28d745469302e7893d748047cd1f21c1fda",
       "localRaw": ".firecrawl/curriculum-20261006/nhn-backend.json",
-      "companyGroup": "NHN",
       "company": "NHN PAYCO",
       "role": "Java 서버 개발",
       "experience": "Java/Spring 3년 이상; RDB 3년 이상",
@@ -243,7 +241,8 @@
         "UML·기능명세·코드 리뷰·협업"
       ],
       "stackExamples": [],
-      "interpretationNote": "같은 페이지의 다른 채용 목록은 표본 직무로 중복 계산하지 않음"
+      "interpretationNote": "같은 페이지의 다른 채용 목록은 표본 직무로 중복 계산하지 않음",
+      "recruitmentSite": "careers.nhn.com"
     },
     {
       "id": "J09",
@@ -257,7 +256,6 @@
       "scrapeId": "01a111aa-926a-71df-b4f8-595196fa223a",
       "markdownSha256": "fe2d828b5afa5f78162ac1b8391acec87ddd89951f645840190f31ddf0be56ae",
       "localRaw": ".firecrawl/curriculum-20261006/nhn-cloud.json",
-      "companyGroup": "NHN",
       "company": "NHN Cloud",
       "role": "PaaS Backend",
       "experience": "Java/Spring 10년 이상",
@@ -270,7 +268,8 @@
         "LLM 업무 개선·하네스 엔지니어링"
       ],
       "stackExamples": [],
-      "interpretationNote": "플랫폼 직무 조건을 전체 백엔드 입문 필수로 일반화하지 않음"
+      "interpretationNote": "플랫폼 직무 조건을 전체 백엔드 입문 필수로 일반화하지 않음",
+      "recruitmentSite": "careers.nhn.com"
     },
     {
       "id": "E01",
@@ -770,5 +769,6 @@
       "reason": "오류/찾을 수 없음 본문. 상세 채용 수요의 근거로 제외",
       "markdownSha256": "55a63cf265480f1b4b8804144ed661519d96550b40c100faee49a4905766e759"
     }
-  ]
+  ],
+  "recruitmentSiteCount": 5
 }

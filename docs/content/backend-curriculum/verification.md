@@ -21,7 +21,7 @@
 
 | 검사 | 실제 결과 |
 |---|---|
-| 문서 정합성 일회성 검사 | 출처45개·본문 해시45개 일치, 공식 상세9개·기업군5개·교육4개·기술/CS31개·모집 안내1개, 핵심28개·선택2개, 내부 링크169개, 기존 bundle 원본 동일. exit 0 |
+| 문서 정합성 일회성 검사 | 출처45개·본문 해시45개 일치, 공식 상세9개·채용 사이트5개·교육4개·기술/CS31개·모집 안내1개, 핵심28개·선택2개, 내부 링크169개, 기존 bundle 원본 동일. exit 0 |
 | `bash scripts/verify.sh all` | Python57·backend557·frontend339·PostgreSQL75, 총1,028개 통과. 필수 suite·JAR·type-check·프런트 production build 통과. exit 0 |
 | `python3 scripts/check_stack_docs.py` | 설치 선언과 공식 문서19항목 일치 |
 | `python3 scripts/check_test_reports.py backend` | 557개·99 suite, 실패0·오류0·skip0. exit 0 |
@@ -36,6 +36,7 @@
 - 보존 보고서: `build/test-results/test/`, `build/test-results/postgresTest/`, `front/test-results/vitest.json`. 요약·문서 검사: `build/reports/backend-curriculum/`
 - 기존 제품 명세의 삭제된 `API URI 구현 체크리스트` 앵커 발견·수정. 현재 작업 상태로 연결하고 내부 링크 재검사
 - diff 검토: 기존5개 Topic code·승인 상태 유지, 신규 콘텐츠는 계획 표시, 연차/우대/스택 구분, 전체 로드맵과 출시 묶음 분리, 원문 전문·비밀 미포함
+- 최종 표본 단위 검토: 같은 채용 사이트의 서로 다른 법인을 한 기업군으로 집계하지 않도록 공식 사이트5개·직무9개로 정정. 기술 코드·원문 해시 변경 없음. 정정 뒤 문서 정합성·docs job 재검사
 
 ## 전달 경계
 
@@ -45,7 +46,7 @@
 
 ## 검증 한계·다음 단계
 
-- 채용9개·5개 기업군은 플랫폼·금융 중심의 목적 표본. 국내 전체 수요 비율·취업률 추정 불가
+- 채용9개·5개 채용 사이트은 플랫폼·금융 중심의 목적 표본. 국내 전체 수요 비율·취업률 추정 불가
 - 원문 해시는 수집 본문 추적 수단. 출처의 정확성·대표성 인증이 아님
 - 핵심28개는 기존5개 포함. 새23개 핵심·선택2개 콘텐츠 초안·등록·사람 검수·공개 미실행
 - 표의 주제·문항 방향은 계획. 완성된 Concept 목록·reference answer·독립 대표 평가 표본 아님
