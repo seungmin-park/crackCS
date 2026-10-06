@@ -41,6 +41,8 @@ docs/
 | CS·웹·설계·테스트·운영을 어디까지 확장하나? | 핵심28개·선택2개 Topic 제작 계획, 신규 콘텐츠 미공개 | [백엔드 커리큘럼](content/backend-curriculum/README.md) | 대상 사용자·학습 범위·선수 지식·제작 순서 변경 |
 | 국내 경력 백엔드 수요·교육 공급 근거는? | 2026-10-06 공식 상세9개·5개 채용 사이트의 목적 표본, 대표 통계 아님 | [시장조사](content/backend-curriculum/market-research.md), [출처 기록](content/backend-curriculum/sources.json) | 공고·교육 구성·기술 근거 재조사 |
 | 확장 문서의 검사·전달 결과는? | 문서 검사·공용 검증의 실행 기록 | [검증 기록](content/backend-curriculum/verification.md) | 문서 구조·근거·연결·전달 결과 변경 |
+| DB·SQL·tx·HTTP·API·테스트의 첫 문항을 어떻게 검수하나? | A1 6개 Topic·30문항·64개 Concept·6문서·150개 작성자 진단 사례, 미등록·검수 대기 | [A1 안내](content/a1-v1/README.md), [원본](content/a1-v1/bundle.json), [읽기 사본](content/a1-v1/review.md) | 문항·Concept·근거·허용 대안·검수 상태 변경 |
+| A1 제작 도구·DB/SQL 사실 확인 결과는? | 구조·renderer·17개 PostgreSQL 예시·공용 검증의 실행 기록 | [A1 검증](content/a1-v1/verification.md), [SQL 예시](content/a1-v1/postgres-examples.sql) | 도구·내용·실행·전달 결과 변경 |
 | 평가 정답의 구성·실행법 | v1 확정 | [평가 정답 기준](evaluation/reference-v1/README.md) | 원본·manifest·도구 계약 변경 |
 | OS 실제 답변 독립 검수 방법·도구 | 준비 완료·사용자 위임 대리 진단, 독립 대표 표본 미완료 | [독립 검수 안내](evaluation/independent-review/README.md), [실행·진단](changes/2026-10-05-learner-review/verification.md) | 표본 출처·사람 판정·동결·비교 계약 변경 |
 | provider 장애 때 원문·화면·재시도·지식 반영 | 통제 timeout·429·503의 cmux 9시나리오 완료, 실제 외부 장애 별도 | [검증·실행 결과](changes/2026-10-05-provider-fault-flow/verification.md) | 장애 주입·재시도·멱등·화면·저장 계약 변경 |
