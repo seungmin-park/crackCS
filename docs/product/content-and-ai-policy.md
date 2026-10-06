@@ -146,6 +146,8 @@ PUBLISHED → Retrieval 사용
 
 ### 파일럿 공개 준비 — OQ-006
 
+- 확장 범위·제작 순서: [백엔드 커리큘럼](../content/backend-curriculum/README.md). 채용·교육 자료는 범위 근거, 기술 정답은 공식 명세·문서로 별도 검수
+- 아래 leaf Topic 기준은 실제 출시 대상으로 선택한 범위에 적용. 전체 제작 로드맵을 공개 완료로 간주하지 않음. 선택 범위 밖 Topic의 활성 등록·노출은 보류
 - 각 leaf Topic에 `PUBLISHED` 기본 문제 5개 이상
 - 각 leaf Topic의 모든 필수 Concept을 근거로 덮는 `PUBLISHED` KnowledgeDocument 1개 이상
 - 상위 Topic 합계로 leaf Topic의 부족분 대체 금지
@@ -153,6 +155,8 @@ PUBLISHED → Retrieval 사용
 - 문서마다 source URL 또는 문헌 locator, license note, reviewer, review date 기록
 - 버전 의존 문서는 해당되는 `Java 21`, `Spring Boot 4.1.x`, `Spring Framework 7.0.x`, `Jakarta Persistence 3.2` label 기록
 - [reference-v1](../evaluation/reference-v1/README.md)과 실제 공개 문제의 문구 중복·분야 편향 점검
+- 수량은 최소 공개 Gate. 해당 주제 전체의 충분한 학습·평가 품질을 보장하지 않음
+- 설계·운영 문항: 입력 제약·허용 대안·보장 범위·실패 조건 명시. 복수의 유효한 선택을 한 가지 표현으로 강제하지 않음
 
 상세 승인표와 rollback 절차는 [Phase 8 콘텐츠 준비 기준](../changes/2026-09-21-phase-8/content-readiness.md)이 소유한다.
 
