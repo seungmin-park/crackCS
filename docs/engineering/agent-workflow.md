@@ -95,3 +95,30 @@ build.gradle / package-lock.json → 문서 목록 → 검사 → CI
 - 에이전트가 승인된 작업을 PR로 전달하는 절차. 별도 주기 실행·새 기능을 계속 만드는 무인 봇은 생성하지 않음
 - 공개 범위·유료 요금제 변경 없이 설정. 공개 CrackCS에서 native auto-merge 사용
 - 공식 근거: [자동 머지](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/automatically-merging-a-pull-request), [보호 브랜치](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches), [ArchUnit](https://www.archunit.org/userguide/html/000_Index.html)
+
+## 운영 CI/CD 경계 (2026-10-12)
+
+```text
+main push → 기존 CI 전체 gate → 성공한 CI artifact
+          → Production CD → 출처·해시·현재 main 확인
+          → 앱 전용 WIF/IAP·forced SSH → VM blue/green 조정자
+          → 준비 상태·공개 경로 확인 → 기존 요청 종료 → 이전 슬롯 정지
+```
+
+- 진입: `.github/workflows/deploy.yml`. `CD_ENABLED=true`인 경우에만 자동 배포
+- 실행물: `scripts/cd_release.py`가 기존 CI artifact와 manifest를 검증. VM에서 재빌드하지 않음
+- 자격 증명: 앱별 WIF·SSH 계정 분리. DB·OpenAI 비밀은 VM의 root 전용 환경 파일에 유지
+- 실패: 준비 실패는 기존 슬롯 유지. 공개 경로 실패는 기존 경로 복구. drain 미완료는 양쪽 슬롯 보존·다음 배포 거부
+- 재시도: 현재 main의 성공한 push CI만 허용. VM의 실행 순서 기준으로 오래된 실행물 거부
+- 운영 롤백: VM의 `deploy-service.py --app crackcs rollback`; DB 파괴적 변경을 되돌리는 명령은 아님
+- DB 변경: 이전·새 앱이 함께 사용할 수 있는 변경만 먼저 적용. 삭제·타입 축소는 별도 배포 단계 필요
+- 활성화·실제 운영 결과: gcp-deployment 저장소의 운영 기록이 소유. workflow 파일 존재를 배포 완료로 간주하지 않음
+
+### CrackCS 로그인 상태 소유권
+
+- `postgres` 프로필: `SharedSessionConfiguration`이 Spring Session JDBC를 명시적으로 활성화
+- PostgreSQL이 로그인·CSRF·만료 상태 소유. 두 JVM이 같은 세션 ID 사용
+- 운영 스키마: gcp-deployment `V005__shared_http_session.sql`을 앱 기동 전에 적용. 런타임 자동 DDL 금지
+- 기본 H2 개발·기존 테스트: 서블릿 메모리 세션 유지
+- PostgreSQL 검증: `SharedSessionPersistenceTest` 필수 suite, 두 독립 저장소의 인증·CSRF 복원·로그아웃·만료 검사
+- 검증 근거: 백엔드 557개, PostgreSQL 77개 통과. 실제 HTTP 전환 검증은 별도 운영 기록으로 확인

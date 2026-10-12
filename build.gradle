@@ -42,6 +42,7 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 	testImplementation 'org.springframework.security:spring-security-test'
+	implementation 'org.springframework.session:spring-session-jdbc'
 	testCompileOnly 'org.projectlombok:lombok'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -141,6 +142,7 @@ tasks.register('postgresTest', Test) {
 	useJUnitPlatform()
 	filter {
 		includeTestsMatching '*PostgresPersistenceTest'
+		includeTestsMatching '*SharedSessionPersistenceTest'
 		includeTestsMatching '*VersionConcurrencyTest'
 		includeTestsMatching '*LearningProgressServiceTest'
 		includeTestsMatching '*KnowledgeCompletionTest'
@@ -154,7 +156,7 @@ tasks.register('postgresTest', Test) {
 		includeTestsMatching '*AuthenticationRequestLimitServiceTest'
 		includeTestsMatching '*AuthenticationAbuseFlowTest'
 	}
-	systemProperty 'spring.datasource.url', 'jdbc:tc:postgresql:17-alpine:///crackcs_test'
+	systemProperty 'spring.datasource.url', 'jdbc:tc:postgresql:17-alpine:///crackcs_test?TC_INITSCRIPT=shared-session.sql'
 	systemProperty 'spring.profiles.active', 'postgres-test'
 	systemProperty 'spring.datasource.driver-class-name', 'org.testcontainers.jdbc.ContainerDatabaseDriver'
 	systemProperty 'spring.datasource.username', 'test'
