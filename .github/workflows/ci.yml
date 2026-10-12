@@ -40,6 +40,17 @@ jobs:
           java-version: "21"
           cache: gradle
       - run: bash scripts/verify.sh backend
+      - name: Package the verified backend
+        env:
+          DEPLOY_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci_component.py crackcs-backend
+      - name: Preserve backend deployment payload
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: deployment-crackcs-backend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/deployment/
+          retention-days: 7
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -61,6 +72,17 @@ jobs:
           cache: npm
           cache-dependency-path: front/package-lock.json
       - run: bash scripts/verify.sh frontend
+      - name: Package the verified frontend
+        env:
+          DEPLOY_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: python3 scripts/ci_component.py crackcs-frontend
+      - name: Preserve frontend deployment payload
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: deployment-crackcs-frontend-${{ github.run_id }}-${{ github.run_attempt }}
+          path: build/deployment/
+          retention-days: 7
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         if: always()
         with:

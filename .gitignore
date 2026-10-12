@@ -46,3 +46,6 @@ __pycache__/
 
 ### Verification evidence ###
 front/test-results/
+
+# Verified CI release assembly
+bundle/

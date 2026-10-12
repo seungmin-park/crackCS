@@ -39,7 +39,8 @@
     "com.example.crackcs.learning.answer.service.KnowledgeAnswerSerializationTest",
     "com.example.crackcs.learning.progress.service.LearningProgressServiceTest",
     "com.example.crackcs.content.question.service.QuestionVersionConcurrencyTest",
-    "com.example.crackcs.content.knowledge.service.KnowledgeDocumentVersionConcurrencyTest"
+    "com.example.crackcs.content.knowledge.service.KnowledgeDocumentVersionConcurrencyTest",
+    "com.example.crackcs.integration.postgres.SharedSessionPersistenceTest"
   ],
   "frontend": [
     "src/api/client.test.ts",
