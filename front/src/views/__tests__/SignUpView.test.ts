@@ -13,6 +13,31 @@ vi.mock("vue-router", () => ({
 }));
 
 describe("회원가입 화면", () => {
+  it("최종 버튼에 회원가입하기를 표시한다", () => {
+    const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
+    expect(wrapper.get("button[type='submit']").text()).toBe("회원가입하기");
+  });
+
+  it.each([
+    ["", "비밀번호를 한 번 더 입력해 주세요."],
+    ["different-password-value", "비밀번호가 일치하지 않습니다."],
+    ["correct horse battery staple ", "비밀번호가 일치하지 않습니다."],
+  ])("비밀번호 확인 오류를 표시하고 가입 요청을 차단한다: %s", async (confirmation, message) => {
+    const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
+    await wrapper.get("input[name='password']").setValue("correct horse battery staple");
+    await wrapper.get("input[name='passwordConfirmation']").setValue(confirmation);
+    await wrapper.get("form").trigger("submit");
+    expect(wrapper.get("#password-confirmation-error").text()).toBe(message);
+    expect(wrapper.get("input[name='passwordConfirmation']").attributes("aria-invalid")).toBe("true");
+    expect(signUp).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled();
+    await wrapper.get("input[name='passwordConfirmation']").setValue("correct horse battery staple");
+    signUp.mockResolvedValue({ message: "회원가입 요청을 처리했습니다." });
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.find("#password-confirmation-error").exists()).toBe(false);
+    expect(push).toHaveBeenCalledWith({ name: "login", query: { registered: "true" } });
+  });
   beforeEach(() => {
     signUp.mockReset();
     push.mockReset();
@@ -22,6 +47,8 @@ describe("회원가입 화면", () => {
     signUp.mockRejectedValue(new ApiClientError(500, "internal database failure"));
     const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
     await wrapper.get("input[name='email']").setValue("user@example.com");
+    await wrapper.get("input[name='password']").setValue("test-password-value");
+    await wrapper.get("input[name='passwordConfirmation']").setValue("test-password-value");
     await wrapper.get("form").trigger("submit");
     await flushPromises();
     expect(wrapper.get('[role="alert"]').text()).toBe("서버가 요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.");
@@ -38,6 +65,7 @@ describe("회원가입 화면", () => {
     await wrapper.get("input[name='email']").setValue("user@example.com");
     await wrapper.get("input[name='password']").setValue("correct horse battery staple");
     await wrapper.get("input[name='nickname']").setValue("크랙러");
+    await wrapper.get("input[name='passwordConfirmation']").setValue("correct horse battery staple");
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
@@ -58,6 +86,8 @@ describe("회원가입 화면", () => {
       global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } },
     });
 
+    await wrapper.get("input[name='password']").setValue("test-password-value");
+    await wrapper.get("input[name='passwordConfirmation']").setValue("test-password-value");
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
@@ -72,6 +102,8 @@ describe("회원가입 화면", () => {
       global: { stubs: { RouterLink: { template: "<a><slot /></a>" } } },
     });
 
+    await wrapper.get("input[name='password']").setValue("test-password-value");
+    await wrapper.get("input[name='passwordConfirmation']").setValue("test-password-value");
     await wrapper.get("form").trigger("submit");
     await flushPromises();
 
@@ -85,6 +117,7 @@ describe("회원가입 화면", () => {
     await wrapper.get("input[name='email']").setValue("first@example.com");
     await wrapper.get("input[name='password']").setValue("first-password-value");
     await wrapper.get("input[name='nickname']").setValue("처음닉네임");
+    await wrapper.get("input[name='passwordConfirmation']").setValue("first-password-value");
 
     await wrapper.get("form").trigger("submit");
     await wrapper.get("input[name='email']").setValue("changed@example.com");
@@ -106,6 +139,8 @@ describe("회원가입 화면", () => {
     signUp.mockReturnValue(new Promise((resolve) => { resolveSignUp = resolve; }));
     const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
 
+    await wrapper.get("input[name='password']").setValue("test-password-value");
+    await wrapper.get("input[name='passwordConfirmation']").setValue("test-password-value");
     await wrapper.get("form").trigger("submit");
     wrapper.unmount();
     resolveSignUp({ message: "회원가입 요청을 처리했습니다." });
@@ -120,6 +155,8 @@ describe("회원가입 화면", () => {
     const wrapper = mount(SignUpView, { global: { stubs: { RouterLink: true } } });
     const setupState = wrapper.vm.$.setupState as { generalError: string };
 
+    await wrapper.get("input[name='password']").setValue("test-password-value");
+    await wrapper.get("input[name='passwordConfirmation']").setValue("test-password-value");
     await wrapper.get("form").trigger("submit");
     wrapper.unmount();
     rejectSignUp(new Error("late failure"));
