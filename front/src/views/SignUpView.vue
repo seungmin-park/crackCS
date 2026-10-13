@@ -7,6 +7,7 @@ import { presentRequestError } from "@/presentation/requestErrorPresentation";
 
 const router = useRouter();
 const form = reactive({ email: "", password: "", nickname: "" });
+const passwordConfirmation = ref("");
 const fieldErrors = reactive<Record<string, string>>({});
 const generalError = ref("");
 const submitting = ref(false);
@@ -17,6 +18,14 @@ async function submitSignUp() {
   if (submitting.value) return;
   Object.keys(fieldErrors).forEach((field) => delete fieldErrors[field]);
   generalError.value = "";
+  if (!passwordConfirmation.value) {
+    fieldErrors.passwordConfirmation = "비밀번호를 한 번 더 입력해 주세요.";
+    return;
+  }
+  if (form.password !== passwordConfirmation.value) {
+    fieldErrors.passwordConfirmation = "비밀번호가 일치하지 않습니다.";
+    return;
+  }
   submitting.value = true;
   const request = { ...form };
 
@@ -88,6 +97,20 @@ async function submitSignUp() {
         </label>
 
         <label class="form-field">
+          <span>비밀번호 확인</span>
+          <input
+            v-model="passwordConfirmation"
+            type="password"
+            name="passwordConfirmation"
+            autocomplete="new-password"
+            placeholder="비밀번호를 한 번 더 입력하세요"
+            :aria-invalid="Boolean(fieldErrors.passwordConfirmation)"
+            :aria-describedby="fieldErrors.passwordConfirmation ? 'password-confirmation-error' : undefined"
+          />
+          <small v-if="fieldErrors.passwordConfirmation" id="password-confirmation-error" class="field-error">{{ fieldErrors.passwordConfirmation }}</small>
+        </label>
+
+        <label class="form-field">
           <span>닉네임</span>
           <input
             v-model="form.nickname"
@@ -104,7 +127,7 @@ async function submitSignUp() {
         <p v-if="generalError" class="form-alert" role="alert">{{ generalError }}</p>
 
         <button class="auth-submit" type="submit" :disabled="submitting">
-          {{ submitting ? "계정을 만들고 있어요" : "학습 시작하기" }}
+          {{ submitting ? "계정을 만들고 있어요" : "회원가입하기" }}
         </button>
       </form>
 
