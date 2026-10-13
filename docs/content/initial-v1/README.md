@@ -1,5 +1,7 @@
 # 초기 학습 콘텐츠 initial-v1
 
+- 운영 등록: 2026-10-13, 미검수 DRAFT 등록 완료. 사용자 검수·공개 결정 대기. [운영 등록 증거](../../changes/2026-10-13-content-review/verification.md)
+
 ## 상태와 범위
 
 - 검수용 읽기 자료: [문항·답안·개념·근거를 모은 화면](review.md). 원본 변경 시 `python3 scripts/render_content_review.py`로 재생성
