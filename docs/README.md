@@ -110,6 +110,8 @@ ADR 작성 기준: 독자가 판단할 결정 하나, 대안과 선택 이유, �
 | Phase 5 평가 실행 기반 | 당시 구현 증거, 현행 GPT 품질은 별도 측정 | [Phase 5 검증](changes/2026-09-08-phase-5/verification.md), [현행 GPT 검증](changes/2026-09-29-openai-completion/verification.md) | 평가·검색·품질 결과 변경 |
 | 이전 로컬 모델 실측 | 보존된 비교 자료, 현재 실행 경로 아님 | [Ollama 후보 검증](changes/2026-09-26-local-ollama/verification.md), [당시 후보 표본](changes/2026-09-27-release-readiness/verification.md) | 모델 대안 검토·동일 사례 비교 |
 | Phase 6 개인화·구조 정리 | 완료 증거 | [Phase 6 검증](changes/2026-09-13-phase-6/verification.md) | 상태·추천·구조·검증 변경 |
+| 운영 콘텐츠 검토 대기 등록 | DRAFT 85문항·17문서 등록 완료, 공개 0건 | [운영 등록 증거](changes/2026-10-13-content-review/verification.md) | 운영 등록·사람 검수·공개 상태 변경 |
+
 `changes/`의 과거 테스트 수는 당시 증거다. 현재 통과 여부는 새 실행 결과로 판단한다.
 
 ## 로컬 전용 자료

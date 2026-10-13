@@ -1,7 +1,9 @@
 # A2 CS·객체 설계 콘텐츠
 
+- 운영 등록: 2026-10-13, 미검수 DRAFT 등록 완료. 사용자 검수·공개 결정 대기. [운영 등록 증거](../../changes/2026-10-13-content-review/verification.md)
+
 - 독자·질문: 콘텐츠 제작자·검수자 / 자료구조·알고리즘·네트워크·객체 설계와 그 기반을 어떤 사례로 검수할 것인가?
-- 상태: **DRAFT 초안 제작**. 관리자 등록·사람 검수·공개·검색·실제 모델 실행 미실행
+- 상태: **DRAFT 초안 제작**. 사람 검수·공개·검색·실제 모델 실행 미실행. 운영 DRAFT 등록 완료(2026-10-13)
 - A2: [확장 커리큘럼](../backend-curriculum/README.md#콘텐츠-제작-순서)의 작업 묶음. 난이도 등급과 별개
 - 수정 원본: [bundle.json](bundle.json). 사람이 읽을 자료: [review.md](review.md). 실행 결과: [verification.md](verification.md)
 - 공개 기준: [콘텐츠 정책](../../product/content-and-ai-policy.md). 승인된 기존 콘텐츠는 [initial-v1](../initial-v1/README.md)에서 유지
@@ -93,7 +95,7 @@ bash scripts/verify.sh all
 - [Python 예제](worked-examples.py): 45개 assertion. 단위·p95·캐시·힙·lower_bound 경계·병합·BFS·동전 DP의 작은 입력·상환 복사량·윈도/TTL 계산
 - [Java 예제](JavaExamples.java): 실제 Java 21 정수 연산·확대 시점 3개 assertion
 - 예제는 독립 학습 코드. 앱 도메인·DB·네트워크의 실행 검사, benchmark, 복잡도 증명, 전체 입력에 대한 정확성 증명과 구분
-- `--apply` 없는 구조 검사는 앱 등록을 하지 않음. 이번 작업에서 `--apply` 미사용
+- `--apply` 없는 구조 검사는 앱 등록을 하지 않음. 초안 제작 당시 `--apply` 미사용. 운영 등록은 2026-10-13 별도 실행 기록 참조
 - 공용 테스트와 CI 통과는 콘텐츠의 사실·의미 독립성·사람 승인·검색·모델 품질을 대신하지 않음
 
 ## 사람 검수·공개 순서
