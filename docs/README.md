@@ -111,7 +111,7 @@ ADR 작성 기준: 독자가 판단할 결정 하나, 대안과 선택 이유, �
 | 이전 로컬 모델 실측 | 보존된 비교 자료, 현재 실행 경로 아님 | [Ollama 후보 검증](changes/2026-09-26-local-ollama/verification.md), [당시 후보 표본](changes/2026-09-27-release-readiness/verification.md) | 모델 대안 검토·동일 사례 비교 |
 | Phase 6 개인화·구조 정리 | 완료 증거 | [Phase 6 검증](changes/2026-09-13-phase-6/verification.md) | 상태·추천·구조·검증 변경 |
 | 최초 운영 콘텐츠 등록 | 2026-10-13 DRAFT 85문항·17문서 등록 이력 | [초기 등록 증거](changes/2026-10-13-content-review/verification.md) | 최초 등록·계정 변경 이력 정정 |
-| 주제별 면접 문항 추가·검증·재개 | 누적 확보 1,978수업·DRAFT 1,223문항·33문서, 미확인 1,737수업 | [현재 기록](changes/2026-10-15-source-content/verification.md), [이전 교체·등록](changes/2026-10-14-source-content/verification.md) | 문항 교체·추가·API 검증·미확인 자료 재개 |
+| 주제별 면접 문항 추가·검증·재개 | 누적 확보 2,327수업·DRAFT 1,317문항·34문서, 미확인 1,388수업 | [현재 기록](changes/2026-10-17-source-content/verification.md), [이전 추가](changes/2026-10-15-source-content/verification.md), [최초 교체·등록](changes/2026-10-14-source-content/verification.md) | 문항 교체·추가·평가 설명·API 검증·미확인 자료 재개 |
 | 회원가입 확인·제출 문구 | 구현·로컬 검증 완료 | [가입 검증](changes/2026-10-13-signup/verification.md) | 가입 입력·제출·오류 처리 변경 |
 
 `changes/`의 과거 테스트 수는 당시 증거다. 현재 통과 여부는 새 실행 결과로 판단한다.
