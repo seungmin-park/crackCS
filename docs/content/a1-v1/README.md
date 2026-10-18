@@ -1,9 +1,7 @@
 # A1 서버 기본 지식 콘텐츠
 
-- 운영 등록: 2026-10-13, 미검수 DRAFT 등록 완료. 사용자 검수·공개 결정 대기. [운영 등록 증거](../../changes/2026-10-13-content-review/verification.md)
-
 - 독자·질문: 콘텐츠 제작자·검수자 / DB·SQL·트랜잭션·HTTP·API·테스트의 첫 문항을 무엇으로 검수할 것인가?
-- 상태: **DRAFT 초안 제작**. 사람 검수·공개·실제 모델 실행 미실행. 운영 DRAFT 등록 완료(2026-10-13)
+- 상태: DRAFT
 - 기준: [확장 커리큘럼](../backend-curriculum/README.md), [콘텐츠 정책](../../product/content-and-ai-policy.md)
 - 수정 원본: [bundle.json](bundle.json). 읽기 사본: [review.md](review.md). 실제 검사: [verification.md](verification.md)
 - 기존 OS·Java 승인 이력과 Spring Framework·Boot·JPA 검수 대기본은 [initial-v1](../initial-v1/README.md)에서 유지

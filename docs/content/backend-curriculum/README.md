@@ -3,7 +3,7 @@
 - 확인일: 2026-10-06
 - 제작 상태 갱신: 2026-10-07, A1·A2 DRAFT 초안
 - 독자·질문: 학습자·콘텐츠 제작자 / 국내 Java·Spring 백엔드 입문부터 경력까지 무엇을 어떤 순서·깊이로 공부할 것인가?
-- 상태: **범위·제작 계획 + A1·A2 초안 제작**. A1·A2 운영 DRAFT 등록 완료(2026-10-13), 사람 검수·공개 미실행. [등록 증거](../../changes/2026-10-13-content-review/verification.md)
+- 상태: 범위·제작 계획 및 A1·A2 초안
 - 범위 근거: [시장조사](market-research.md), [출처 기록](sources.json)
 - 품질·공개 기준: [콘텐츠 정책](../../product/content-and-ai-policy.md). 진행 상태: [작업 목록](../../planning/tasks.md)
 
