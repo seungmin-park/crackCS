@@ -1,12 +1,9 @@
 # 초기 학습 콘텐츠 initial-v1
 
-- 운영 등록: 2026-10-13, 미검수 DRAFT 등록 완료. 사용자 검수·공개 결정 대기. [운영 등록 증거](../../changes/2026-10-13-content-review/verification.md)
-
 ## 상태와 범위
 
 - 검수용 읽기 자료: [문항·답안·개념·근거를 모은 화면](review.md). 원본 변경 시 `python3 scripts/render_content_review.py`로 재생성
 - 기준 원본: [bundle.json](bundle.json)
-- 준비: 2026-09-27, AI 작성·출처 본문 대조·자동 구조 검사
 - **등록용 DRAFT**: 자동 공개 없음. [OS 승인 기록](../../changes/2026-10-05-os-content/verification.md), [Java 사용자 검수·승인·실행 기록](../../changes/2026-10-05-java-content-flow/verification.md)은 별도 관리. OS·Java 각5문항 로컬 공개 승인 완료, 나머지3개 Topic 승인 대기
 - 5개 말단 Topic, Topic당 5문항·1문서, 총 25문항·50개 필수 Concept·5문서
 - 이 원본은 기존5개 Topic 등록 템플릿. CS·HTTP/API·객체 설계·테스트·운영의 신규 제작 범위는 [백엔드 커리큘럼](../backend-curriculum/README.md)에서 관리. 확장 계획이 이 번들의 문항·승인 수를 변경하지 않음
@@ -64,8 +61,6 @@ python3 scripts/content_bundle.py --apply --report build/reports/content/import.
 - 운영체제 문항마다 교재 2종 연결
 - 원본별 URL·확인일·본문 SHA-256·이용 메모: `sources`
 - 문항별 근거 절 위치: `sourceRefs`; 자료 전체 복사 대신 새 한국어 설명
-- 기존 수집 자료 4개 재대조, 나머지 16개 2026-09-27 수집
-- 수집 본문은 git 제외 `.firecrawl/`에 보관. 새 수집본과 기존 수집본의 구분은 `retrieval` 참조
 - 원문·예제 코드·도표를 배포하지 않음. 원문 이용 권리를 확보했다는 주장이나 법률 검토 완료 표시 없음
 - 기술 버전은 해당 문항의 전제. 이동 가능한 패치 버전 문서는 URL·확인일·해시를 함께 확인
 - **공개 전 사람의 사실·출처·이용 조건 검수 필요**. 자동 구조 검사 통과로 이를 대체하지 않음

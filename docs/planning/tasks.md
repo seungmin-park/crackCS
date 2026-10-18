@@ -10,7 +10,7 @@
 | Retrieval·평가 처리 골격 | 실제 GPT 후보 42/42 호출·지표 목표 통과, 앱 흐름 확인 | 대표 사용자 표본·공개 운영 품질 인증 별도 |
 | 운영 안정화 | 로컬 시연 범위 검증 완료 | 실제 참가자 파일럿·공개 출시 미실행 |
 | initial-v1 | OS·Java 각5문항 로컬 승인·공개·학습 흐름 확인. OS 실제 GPT·버전 보존, Java 통제 합성 provider | 나머지3개 Topic 검수·승인, Java 실제 모델 품질·공개 서비스·전체 파일럿 승인 대기 |
-| 백엔드 콘텐츠 확장 | [시장조사·핵심28개/선택2개 Topic 제작 계획](../content/backend-curriculum/README.md)·[A1 신규6개 초안](../content/a1-v1/README.md)·[A2 신규6개 초안](../content/a2-v1/README.md), 두 묶음 총60문항·124개 Concept·12문서·300개 작성자 진단 사례 | A1·A2 운영 DRAFT 등록 완료(2026-10-13)·미검수·미공개, B/C 신규11개 핵심 Topic·선택2개 콘텐츠 미제작 |
+| 백엔드 콘텐츠 확장 | [시장조사·핵심28개/선택2개 Topic 제작 계획](../content/backend-curriculum/README.md)·[A1 신규6개 초안](../content/a1-v1/README.md)·[A2 신규6개 초안](../content/a2-v1/README.md), 두 묶음 총60문항·124개 Concept·12문서·300개 작성자 진단 사례 | A1·A2 초안, B/C 신규11개 핵심 Topic·선택2개 콘텐츠 미제작 |
 
 로컬 시연과 실제 학습 서비스 출시 구분:
 
@@ -200,7 +200,6 @@ GPT-5.6 Terra의 개발 138건과 후보 provider 대상 42건을 측정. 이전
 - [x] 핵심28개·선택2개 Topic의 범위·설명 목표·문항 방향·권장 선수 지식·제작 묶음 정리. 코드·DB 콘텐츠 공개와 구분
 - [ ] 실제 출시 묶음 선택·노출 범위 기록 — 전체28개 완성을 제한 파일럿 조건으로 자동 추가하지 않음
 - [x] A1 첫 묶음의 Concept·근거 문서·문항·rubric 초안 제작 — [DB/SQL/tx·HTTP/API·테스트 30문항·64개 Concept·6문서·150개 작성자 진단 사례](../content/a1-v1/README.md). 커리큘럼 전체 개념·모델 진단 runner 완성 아님
-- [x] A1·A2 운영 DRAFT 등록 — [미검수 60문항·12문서 등록 증거](../changes/2026-10-13-content-review/verification.md). 검수·공개 0건
 - [ ] A1 사람 검수·출시 범위 결정·공개·검색 확인. 기존 평가 자료의 격리·인덱스 개념 중첩과 독립 표본 분리
 - [x] A2 CS·객체 설계의 첫 초안 제작 — [6개 Topic·30문항·60개 Concept·6문서·150개 작성자 진단 사례](../content/a2-v1/README.md). 근거26개·계산/알고리즘45개·Java3개 assertion 확인, 커리큘럼 전체 개념 완성 아님
 - [ ] A2 사람 검수·선택 출시 범위·공개·검색·실제 모델·독립 대표 표본 검증. 기존 CS·Java와 개념 중첩 분리
