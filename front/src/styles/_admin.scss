@@ -1,0 +1,411 @@
+.admin-workspace {
+  display: grid;
+  grid-template-columns: 185px minmax(0, 1fr);
+  align-items: start;
+  gap: 36px;
+  width: min(1360px, calc(100% - 80px));
+  min-height: calc(100vh - 172px);
+  margin: auto;
+  padding: 38px 0 72px;
+}
+.admin-sidebar {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  padding: 20px 20px 20px 0;
+  border-right: 1px solid var(--line);
+}
+.admin-home-link {
+  padding-bottom: 24px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.admin-sidebar nav {
+  display: grid;
+  gap: 8px;
+}
+.admin-sidebar nav a {
+  padding: 11px 12px;
+  border: 1px solid transparent;
+  color: var(--muted);
+  font-size: 14px;
+}
+.admin-sidebar nav a.router-link-active {
+  border-color: var(--accent);
+  background: var(--subtle);
+  color: var(--accent);
+  font-weight: 600;
+}
+.admin-sidebar small {
+  padding-top: 30px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.admin-content {
+  min-width: 0;
+}
+.admin-page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 24px;
+  padding-bottom: 24px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-page-heading h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+.admin-page-heading > p {
+  max-width: 390px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+  line-height: 1.8;
+}
+.admin-page-heading .eyebrow {
+  margin-bottom: 8px;
+}
+.admin-flow,
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.admin-flow a,
+.admin-card {
+  display: grid;
+  gap: 20px;
+  min-height: 200px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.admin-flow a:hover {
+  border-color: var(--accent);
+}
+.admin-flow span {
+  color: var(--accent);
+  font-size: 14px;
+  line-height: 20px;
+}
+.admin-flow strong {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 600;
+}
+.admin-flow small,
+.admin-card p,
+.admin-card small {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 20px;
+}
+.admin-two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.admin-panel {
+  min-width: 0;
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.admin-panel h2 {
+  margin: 0 0 24px;
+  font-size: 18px;
+  font-weight: 600;
+}
+.admin-form {
+  display: grid;
+  gap: 18px;
+}
+.admin-form > label {
+  display: grid;
+  gap: 7px;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+}
+.admin-form input,
+.admin-form textarea,
+.admin-form select,
+.admin-toolbar select,
+.admin-list select,
+.criteria-row input,
+.criteria-row select,
+.criteria-add select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--input);
+  border: 1px solid var(--control-border);
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 400;
+}
+.admin-form textarea {
+  resize: vertical;
+  line-height: 1.8;
+}
+.admin-form label small {
+  min-height: 0.8rem;
+  color: var(--danger);
+  font-size: 12px;
+}
+.admin-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.admin-actions button,
+.admin-toolbar button,
+.admin-list button,
+.section-heading button,
+.criteria-row button,
+.admin-form > button {
+  padding: 9px 13px;
+  color: var(--ink);
+  background: var(--subtle);
+  border: 1px solid var(--control-border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+button.admin-primary {
+  padding: 11px 16px;
+  color: var(--on-primary);
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+}
+.admin-list {
+  display: grid;
+  gap: 9px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.admin-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.admin-list li > div:first-child {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.admin-list li > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.admin-list strong {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 600;
+}
+.admin-list small {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.admin-list li > select {
+  width: auto;
+  max-width: 150px;
+}
+.admin-list li.inactive {
+  border-style: dashed;
+  background: var(--subtle);
+}
+.admin-list.selectable {
+  align-content: start;
+  max-height: 760px;
+  margin: 0;
+  padding: 4px;
+  overflow: auto;
+}
+.admin-list.selectable li {
+  padding: 0;
+}
+.admin-list.selectable li > button {
+  display: grid;
+  width: 100%;
+  padding: 16px;
+  text-align: left;
+  border: 0;
+  background: transparent;
+}
+.admin-list.selectable li.selected {
+  border: 2px solid var(--accent);
+  background: var(--subtle);
+}
+.admin-editor-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.7fr) minmax(0, 1.4fr);
+  gap: 20px;
+}
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.admin-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--muted);
+}
+.admin-toolbar select {
+  width: auto;
+}
+.admin-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.admin-pagination button {
+  padding: 8px 12px;
+  color: var(--ink);
+  background: var(--subtle);
+  border: 1px solid var(--control-border);
+  border-radius: 4px;
+}
+.admin-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.admin-feedback {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid currentColor;
+  font-size: 14px;
+}
+.admin-feedback.success {
+  color: var(--success);
+  background: var(--success-bg);
+}
+.admin-feedback.error {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+.admin-loading {
+  padding: 30px;
+  color: var(--muted);
+  text-align: center;
+}
+.admin-meta {
+  overflow-wrap: anywhere;
+  margin: 24px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.9;
+}
+.criteria-panel {
+  margin-top: 30px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.criteria-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) 80px 58px auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.criteria-row label {
+  font-size: 12px;
+}
+.criteria-row label input {
+  width: auto;
+}
+.criteria-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.criteria-add select {
+  width: auto;
+  max-width: 200px;
+}
+
+@media (max-width: 1100px) {
+  .admin-editor-layout,
+  .admin-two-column {
+    grid-template-columns: 1fr;
+  }
+  .admin-list.selectable {
+    max-height: 330px;
+  }
+  .admin-page-heading {
+    display: block;
+  }
+  .admin-page-heading > p {
+    margin-top: 16px;
+  }
+}
+@media (max-width: 760px) {
+  .admin-workspace {
+    display: block;
+    width: calc(100% - 32px);
+    padding-top: 24px;
+  }
+  .admin-sidebar {
+    position: static;
+    border: 0;
+    padding: 0 0 24px;
+  }
+  .admin-sidebar nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .admin-sidebar small {
+    display: none;
+  }
+  .admin-flow,
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+  .admin-panel {
+    padding: 24px 16px;
+  }
+  .admin-list li {
+    flex-wrap: wrap;
+  }
+  .criteria-row {
+    grid-template-columns: minmax(0, 1fr) 80px;
+  }
+  .admin-form input,
+  .admin-form textarea,
+  .admin-form select {
+    font-size: 16px;
+    line-height: 24px;
+  }
+}

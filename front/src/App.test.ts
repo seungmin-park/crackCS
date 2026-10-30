@@ -91,6 +91,67 @@ describe("화면 테마", () => {
 });
 
 describe("애플리케이션 헤더", () => {
+  it("모바일 메뉴를 연 채 넓은 화면으로 바꾸면 메뉴와 스크롤 잠금을 해제한다", async () => {
+    const media = Object.assign(new EventTarget(), { matches: true });
+    vi.stubGlobal("matchMedia", () => media);
+    const wrapper = mount(App, { global: { stubs: {
+      RouterLink: { props: ["to"], template: '<a :href="to"><slot /></a>' }, RouterView: true,
+    } } });
+    const toggle = wrapper.get('button[aria-controls="primary-navigation"]');
+    const originalOverflow = document.body.style.overflow;
+    try {
+      await toggle.trigger("click");
+      expect(document.body.style.overflow).toBe("hidden");
+
+      media.matches = false;
+      media.dispatchEvent(new Event("change"));
+      await wrapper.vm.$nextTick();
+
+      expect(toggle.attributes("aria-expanded")).toBe("false");
+      expect(document.body.style.overflow).toBe(originalOverflow);
+    } finally {
+      wrapper.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("비로그인 사용자가 브랜드를 누르면 공개 소개 화면으로 돌아간다", () => {
+    const wrapper = mount(App, { global: { stubs: {
+      RouterLink: { props: ["to"], template: '<a :href="to"><slot /></a>' }, RouterView: true,
+    } } });
+
+    expect(wrapper.get(".brand").attributes("href")).toBe("/about");
+  });
+
+  it("모바일 메뉴를 열고 Escape로 닫으면 열기 버튼으로 포커스를 돌린다", async () => {
+    member.value = { nickname: "학습자", role: "USER" };
+    const wrapper = mount(App, { attachTo: document.body, global: { stubs: {
+      RouterLink: { props: ["to"], template: '<a :href="to" @click.prevent><slot /></a>' }, RouterView: true,
+    } } });
+    const toggle = wrapper.get('button[aria-controls="primary-navigation"]');
+
+    await toggle.trigger("click");
+
+    expect(toggle.attributes("aria-expanded")).toBe("true");
+    expect(wrapper.get("#primary-navigation").text()).toContain("문제집");
+    await wrapper.trigger("keydown", { key: "Escape" });
+    expect(toggle.attributes("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(toggle.element);
+  });
+
+  it("메뉴에서 화면을 선택하면 모바일 메뉴를 닫는다", async () => {
+    member.value = { nickname: "학습자", role: "USER" };
+    const wrapper = mount(App, { global: { stubs: {
+      RouterLink: { props: ["to"], template: '<a :href="to" @click.prevent><slot /></a>' }, RouterView: true,
+    } } });
+    const toggle = wrapper.get('button[aria-controls="primary-navigation"]');
+
+    await toggle.trigger("click");
+    await wrapper.get('nav a[href="/questions"]').trigger("click");
+
+    expect(toggle.attributes("aria-expanded")).toBe("false");
+  });
+
   it("USER가 학습 홈과 문제집 및 지식 지도로 이동할 수 있다", () => {
     member.value = { nickname: "학습자", role: "USER" };
     const wrapper = mount(App, { global: { stubs: {

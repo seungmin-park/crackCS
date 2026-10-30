@@ -65,3 +65,14 @@ Phase 7 화면: 일반 답변 평가 완료 → 같은 답변의 후속 질문 �
 - 관리자 validation: 입력별 이유를 공통 alert에 빠짐없이 표시, 입력값 유지
 - 인증 경계의 401 판정은 `useAuth`의 세션 정책 책임. 일반 화면의 HTTP 분류 중복과 구분
 - 실제 검증: [화면·콘텐츠 검증](../docs/changes/2026-09-27-ui-content/verification.md)
+
+## 화면과 디자인
+
+- 공개 소개: `/about`. 인증 서버 장애와 관계없이 소개·FAQ 열람 가능
+- 학습 홈: 기존 `/` 유지. 문제집 → 답변 → 평가·근거 → 지식 지도·답변 이력의 API·인증 계약 유지
+- 테마: 목업의 밝은 배경·올리브 카드와 기존 시스템·화이트·다크 선택 지원
+- 폰트: `public/fonts/PretendardVariable.woff2`, Pretendard 1.3.9 자체 제공. [SIL OFL](public/fonts/OFL.txt) 포함, 외부 폰트 요청 없음
+- 스타일 책임: `styles/main.scss` 공통 토큰·학습·인증·반응형, `_landing.scss` 소개·reveal, `_admin.scss` 관리자 편집 레이아웃
+- 작은 화면: 전체 높이 메뉴, Escape 닫기·포커스 복귀·메뉴 안 Tab 순환. 기존 테마 메뉴 유지
+- 목업과 다른 부분: 일별 집계·전체 문제 검색·개념별 문제 연결은 현재 API에 없어 표시하지 않음. 실제 판정·지식 상태의 명칭과 수치 유지
+- 검증: [UI 교체 검증](../docs/changes/2026-10-30-mockup-ui/verification.md)

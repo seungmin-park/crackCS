@@ -1,17 +1,33 @@
 <script setup lang="ts">
 import RequestFailure from "@/components/RequestFailure.vue";
-import { presentRequestError, type RequestErrorPresentation } from "@/presentation/requestErrorPresentation";
+import {
+  presentRequestError,
+  type RequestErrorPresentation,
+} from "@/presentation/requestErrorPresentation";
 
-import { onBeforeUnmount, ref } from "vue";
-import { fetchProgress, type LearningProgress, type RecentEvaluation } from "@/api/learning";
+import { computed, onBeforeUnmount, ref } from "vue";
+import {
+  fetchProgress,
+  type LearningProgress,
+  type RecentEvaluation,
+} from "@/api/learning";
 import KnowledgeTopics from "@/components/KnowledgeTopics.vue";
 import { presentEvaluation } from "@/presentation/evaluationPresentation";
 
 const progress = ref<LearningProgress>();
 const loading = ref(true);
 const failed = ref<RequestErrorPresentation>();
+const stableConceptCount = computed(
+  () =>
+    progress.value?.topics.reduce(
+      (total, topic) => total + topic.stableCount,
+      0,
+    ) ?? 0,
+);
 let active = true;
-onBeforeUnmount(() => { active = false; });
+onBeforeUnmount(() => {
+  active = false;
+});
 function resultLabel(value: RecentEvaluation) {
   return presentEvaluation(value.status, value.verdict).label;
 }
@@ -32,29 +48,96 @@ void loadLearningProgress();
 
 <template>
   <main class="learning-shell">
-    <header class="page-intro"><p class="eyebrow">한 질문씩, 내 언어로</p><h1>오늘의 학습</h1><p>아직 살펴보지 않은 개념부터, 다시 설명하고 싶은 개념까지.</p></header>
-    <p v-if="loading" role="status" aria-busy="true">학습 현황을 불러오는 중…</p>
-    <RequestFailure v-else-if="failed" :failure="failed" title="학습 현황을 불러오지 못했어요" @retry="loadLearningProgress" />
+    <header class="page-intro">
+      <p class="eyebrow">한 질문씩, 내 언어로</p>
+      <h1>오늘도, 한 개념 더 분명하게.</h1>
+      <p>아직 살펴보지 않은 개념부터, 다시 설명하고 싶은 개념까지.</p>
+    </header>
+    <p v-if="loading" role="status" aria-busy="true">
+      학습 현황을 불러오는 중…
+    </p>
+    <RequestFailure
+      v-else-if="failed"
+      :failure="failed"
+      title="학습 현황을 불러오지 못했어요"
+      @retry="loadLearningProgress"
+    />
     <template v-else-if="progress">
-      <section class="learning-summary" aria-label="풀이 현황"><p>전체 풀이 {{ progress.totalAnswers }}회</p><p>최근 7일 {{ progress.recentAnswerCount }}회</p></section>
-      <p v-if="progress.totalAnswers === 0" class="learning-welcome">첫 답변을 남겨 나의 지식 지도를 채워 보세요.</p>
-      <section class="learning-recommendation" aria-labelledby="recommendation-heading">
-        <p class="eyebrow">다음 한 걸음</p><h2 id="recommendation-heading">다음 추천 문제</h2>
+      <section class="learning-summary" aria-label="풀이 현황">
+        <article>
+          <p>
+            전체 풀이 <strong>{{ progress.totalAnswers }}<span>회</span></strong>
+          </p>
+          <small>생각을 꺼낸 기록</small>
+        </article>
+        <article>
+          <p>
+            최근 7일 <strong>{{ progress.recentAnswerCount }}<span>회</span></strong>
+          </p>
+          <small>조금씩 쌓이는 학습</small>
+        </article>
+        <article aria-label="안정 개념 수">
+          <p>
+            안정 개념 <strong>{{ stableConceptCount }}<span>개</span></strong>
+          </p>
+          <small>반복 평가로 확인한 이해</small>
+        </article>
+      </section>
+      <p v-if="progress.totalAnswers === 0" class="learning-welcome">
+        첫 답변을 남겨 나의 지식 지도를 채워 보세요.
+      </p>
+      <section
+        class="learning-recommendation"
+        aria-labelledby="recommendation-heading"
+      >
+        <p class="eyebrow">다음 한 걸음</p>
+        <h2 id="recommendation-heading">다음 추천 문제</h2>
         <p>{{ progress.recommendation.reasonText }}</p>
-        <p v-if="progress.recommendation.conceptName">먼저 살펴볼 개념: {{ progress.recommendation.conceptName }}</p>
-        <RouterLink v-if="progress.recommendation.questionId !== null" class="recommendation-link" :to="`/questions/${progress.recommendation.questionId}`">{{ progress.recommendation.title }} <span aria-hidden="true">↗</span></RouterLink>
-        <RouterLink v-else class="text-link" to="/questions">문제집 둘러보기</RouterLink>
+        <p v-if="progress.recommendation.conceptName">
+          먼저 살펴볼 개념: {{ progress.recommendation.conceptName }}
+        </p>
+        <RouterLink
+          v-if="progress.recommendation.questionId !== null"
+          class="recommendation-link"
+          :to="`/questions/${progress.recommendation.questionId}`"
+          >{{ progress.recommendation.title }}
+          <span aria-hidden="true">↗</span></RouterLink
+        >
+        <RouterLink v-else class="text-link" to="/questions"
+          >문제집 둘러보기</RouterLink
+        >
       </section>
       <section class="learning-section" aria-labelledby="topics-heading">
-        <div class="section-heading"><h2 id="topics-heading">주제별 학습 상태</h2><RouterLink class="text-link" to="/knowledge-map">지식 지도 보기 →</RouterLink></div>
+        <div class="section-heading">
+          <h2 id="topics-heading">주제별 학습 상태</h2>
+          <RouterLink class="text-link" to="/knowledge-map"
+            >지식 지도 보기 →</RouterLink
+          >
+        </div>
         <KnowledgeTopics :topics="progress.topics" />
       </section>
       <section class="learning-section" aria-labelledby="recent-heading">
-        <div class="section-heading"><h2 id="recent-heading">최근 평가</h2><RouterLink class="text-link" to="/answers">답변 이력 →</RouterLink></div>
-        <p v-if="!progress.recentEvaluations.length">아직 평가할 답변이 없어요.</p>
+        <div class="section-heading">
+          <h2 id="recent-heading">최근 평가</h2>
+          <RouterLink class="text-link" to="/answers">답변 이력 →</RouterLink>
+        </div>
+        <p v-if="!progress.recentEvaluations.length">
+          아직 평가할 답변이 없어요.
+        </p>
         <ul v-else class="recent-evaluations">
-          <li v-for="evaluation in progress.recentEvaluations" :key="evaluation.answerId">
-            <RouterLink :to="`/answers/${evaluation.answerId}`"><span>{{ evaluation.questionTitle }}</span><span>{{ resultLabel(evaluation) }}<template v-if="evaluation.score !== null"> · {{ evaluation.score }}점</template></span></RouterLink>
+          <li
+            v-for="evaluation in progress.recentEvaluations"
+            :key="evaluation.answerId"
+          >
+            <RouterLink :to="`/answers/${evaluation.answerId}`"
+              ><span>{{ evaluation.questionTitle }}</span
+              ><span
+                >{{ resultLabel(evaluation)
+                }}<template v-if="evaluation.score !== null">
+                  · {{ evaluation.score }}점</template
+                ></span
+              ></RouterLink
+            >
           </li>
         </ul>
       </section>
