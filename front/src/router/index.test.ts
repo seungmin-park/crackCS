@@ -22,6 +22,17 @@ vi.mock("@/api/answers", async (importOriginal) => ({
 import router, { authorizationGuard } from "@/router";
 
 describe("인증 라우트 가드", () => {
+  it("소개 화면은 인증 서버 연결 없이 공개 경로로 열린다", async () => {
+    const route = router.resolve("/about");
+    expect(route.name).toBe("about");
+    expect(await authorizationGuard(route as never)).toBe(true);
+    expect(restoreAuthentication).not.toHaveBeenCalled();
+  });
+
+  it("알 수 없는 주소는 브랜드 오류 화면으로 연결한다", () => {
+    expect(router.resolve("/missing-page").name).toBe("not-found");
+  });
+
   it("실제 router도 인증 장애 시 복구 화면을 열어 원래 경로를 유지한다", async () => {
     restoreAuthentication.mockRejectedValue(new TypeError("network"));
     await router.push("/questions/22");

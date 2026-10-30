@@ -29,6 +29,17 @@ function progress() {
 }
 
 describe("개인 학습 화면", () => {
+  it("안정 개념 요약은 서버에서 받은 주제별 안정 개수를 합산한다", async () => {
+    const network = topic();
+    network.stableCount = 2;
+    const operatingSystem = { ...topic(), topicId: 2, topicName: "운영체제", stableCount: 3 };
+    fetchProgress.mockResolvedValue({ ...progress(), topics: [network, operatingSystem] });
+    const wrapper = mount(LearningHomeView, { global });
+    await flushPromises();
+
+    expect(wrapper.get('[aria-label="안정 개념 수"]').text()).toContain("5");
+  });
+
   beforeEach(() => { fetchProgress.mockReset(); fetchKnowledgeStates.mockReset(); });
 
   it.each([
