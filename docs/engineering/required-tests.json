@@ -28,7 +28,9 @@
     "com.example.crackcs.learning.mastery.controller.KnowledgeFlowTest",
     "com.example.crackcs.learning.mastery.service.KnowledgeCompletionTest",
     "com.example.crackcs.learning.progress.service.LearningProgressServiceTest",
-    "com.example.crackcs.learning.recommendation.service.RecommendationServiceTest"
+    "com.example.crackcs.learning.recommendation.service.RecommendationServiceTest",
+    "com.example.crackcs.auth.config.AllowedHostFlowTest",
+    "com.example.crackcs.auth.config.LocalProfileNetworkBoundaryTest"
   ],
   "postgres": [
     "com.example.crackcs.auth.controller.AuthenticationAbuseFlowTest",
