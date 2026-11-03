@@ -14,15 +14,16 @@ permissions:
   contents: read
   actions: read
   id-token: write
-concurrency:
-  group: crackcs-production
-  cancel-in-progress: false
 jobs:
   deploy:
     if: >-
       vars.CD_ENABLED == 'true' && github.ref == 'refs/heads/main' &&
       (github.event_name == 'workflow_dispatch' ||
        (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    # Job-level group: runs whose deploy job is skipped never enter or cancel a pending deployment.
+    concurrency:
+      group: crackcs-production
+      cancel-in-progress: false
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     environment: production

@@ -110,6 +110,7 @@ main push → 기존 CI 전체 gate → 성공한 CI artifact
 - 자격 증명: 앱별 WIF·SSH 계정 분리. DB·OpenAI 비밀은 VM의 root 전용 환경 파일에 유지
 - 실패: 준비 실패는 기존 슬롯 유지. 공개 경로 실패는 기존 경로 복구. drain 미완료는 양쪽 슬롯 보존·다음 배포 거부
 - 재시도: 현재 main의 성공한 push CI만 허용. VM의 실행 순서 기준으로 오래된 실행물 거부
+- 동시 실행: `crackcs-production` 그룹은 `deploy` job 수준. 포크 PR CI 완료처럼 job이 생략되는 실행은 그룹에 들어가지 않아 대기 중인 배포를 취소하지 않음. 구조 검사 `scripts/test_deploy_workflow.py`
 - 운영 롤백: VM의 `deploy-service.py --app crackcs rollback`; DB 파괴적 변경을 되돌리는 명령은 아님
 - DB 변경: 이전·새 앱이 함께 사용할 수 있는 변경만 먼저 적용. 삭제·타입 축소는 별도 배포 단계 필요
 - 활성화·실제 운영 결과: gcp-deployment 저장소의 운영 기록이 소유. workflow 파일 존재를 배포 완료로 간주하지 않음
