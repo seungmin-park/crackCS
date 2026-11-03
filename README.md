@@ -4,7 +4,9 @@
 
 문제에 답하면 평가 결과와 참고 문서의 근거를 확인하고, 부족한 개념을 지식 지도와 후속 질문으로 이어서 학습할 수 있습니다.
 
-> 현재 상태: 로컬 시연 가능. 기본 실행은 비용이 들지 않는 모의 평가를 사용하며, 실제 GPT 평가는 별도로 활성화해야 합니다. 콘텐츠의 사람 검수, 참가자 파일럿, 공개 배포는 아직 진행하지 않았습니다.
+> 서비스 주소: https://crackcs-app.duckdns.org
+>
+> 현재 상태: GCP VM에 배포해 운영 중입니다. 로컬 기본 실행은 비용이 들지 않는 모의 평가를 사용하며, 실제 GPT 평가는 별도로 활성화해야 합니다. 콘텐츠의 사람 검수와 참가자 파일럿은 아직 진행하지 않았습니다.
 
 ![CrackCS 문제집 화면](docs/changes/2026-09-06-ui/assets/implemented/library-light.jpg)
 
@@ -147,6 +149,6 @@ npm run build
 
 - 기본 평가는 모의 응답입니다. 실제 GPT는 별도 API 키와 지출 한도를 설정한 로컬 시연에서 확인했습니다.
 - 초기 콘텐츠는 25문항·50개 개념·5개 문서의 **사람 검수 전 초안**입니다. 자동으로 공개하지 않습니다. [콘텐츠 안내](docs/content/initial-v1/README.md)
-- 공개 서비스 운영, 실제 참가자 파일럿, 운영 부하와 공유 세션은 검증 범위 밖입니다. [현재 작업 상태](docs/planning/tasks.md)
+- 실제 참가자 파일럿과 운영 부하는 검증 범위 밖입니다. 배포 경로는 [운영 CI/CD 경계](docs/engineering/agent-workflow.md#운영-cicd-경계-2026-10-12), 남은 작업은 [현재 작업 상태](docs/planning/tasks.md)에 있습니다.
 - 기능과 HTTP 계약: [제품 명세](docs/product/spec.md) · [OpenAPI](openapi.yml)
 - 개발·검증 문서: [문서 지도](docs/README.md) · [협업 규칙](AGENTS.md)
