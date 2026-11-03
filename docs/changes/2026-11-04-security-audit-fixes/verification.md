@@ -3,6 +3,7 @@
 - 독자·질문: CrackCS 작업자 / 2026-11-04 소스 감사에서 나온 항목 중 무엇을 고쳤고 무엇으로 확인했는가?
 - 감사: 저장소 밖 `security-audit-skill/crackCS/run-1`(로컬 보관). 확정 0, 확인 필요 9, 기각 1. 대상 코드 실행 불가 환경에서 수행한 소스 추적 결과
 - 전달: 목적 하나당 PR 하나. 각 PR이 아래 자기 절을 갱신
+- 결과: 5건 모두 main 반영, PR·main CI 성공. 운영 반영은 배포 VM 디스크 부족으로 Production CD 실패 중(저장소 밖 조치 필요)
 
 ## 변경 단위와 상태
 
@@ -12,7 +13,7 @@
 | 로그인 뒤 CSRF 토큰 유지 | 구현·main 반영([#25](https://github.com/seungmin-park/crackCS/pull/25), `15a7f91`) | 로그인 전 토큰 거부, 로그인 뒤 새 토큰 사용 |
 | 포크 PR CI 완료의 운영 배포 대기 취소 | 구현·main 반영([#26](https://github.com/seungmin-park/crackCS/pull/26), `e611a1a`) | 배포 job만 동시 실행 그룹 참여 |
 | 예상 밖 500의 원인 로그 누락 | 구현·main 반영([#27](https://github.com/seungmin-park/crackCS/pull/27), `2a552b6`) | requestId와 예외를 서버 로그에 기록 |
-| 세션에 직렬화되는 비밀번호 해시 | 구현·로컬 검증 완료 | 인증 뒤 principal의 해시 제거 |
+| 세션에 직렬화되는 비밀번호 해시 | 구현·main 반영([#28](https://github.com/seungmin-park/crackCS/pull/28), `7f764c7`) | 인증 뒤 principal의 해시 제거 |
 
 ## 로컬 서버 Host·바인딩 보호
 

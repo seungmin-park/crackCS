@@ -112,7 +112,7 @@ ADR 작성 기준: 독자가 판단할 결정 하나, 대안과 선택 이유, �
 | Phase 6 개인화·구조 정리 | 완료 증거 | [Phase 6 검증](changes/2026-09-13-phase-6/verification.md) | 상태·추천·구조·검증 변경 |
 | 회원가입 확인·제출 문구 | 구현·로컬 검증 완료 | [가입 검증](changes/2026-10-13-signup/verification.md) | 가입 입력·제출·오류 처리 변경 |
 | 목업 디자인과 실제 학습 화면의 연결 | 구현·로컬 검증 완료, 원격 전달 결과는 연결 기록 | [UI 교체 검증](changes/2026-10-30-mockup-ui/verification.md) | 공통 디자인·소개 경로·모바일 메뉴·폰트 변경 |
-| 2026-11-04 보안 감사 후속 수정 | PR별 진행: 로컬 Host·바인딩 보호·CSRF 토큰 교체·배포 동시 실행 그룹·500 원인 로그 main 반영, 세션 해시 제거 구현 | [수정 검증](changes/2026-11-04-security-audit-fixes/verification.md) | 수정 범위·테스트·PR 결과 변경 |
+| 2026-11-04 보안 감사 후속 수정 | 5건 main 반영 완료(#24~#28), 운영 배포는 VM 디스크 부족으로 미반영 | [수정 검증](changes/2026-11-04-security-audit-fixes/verification.md) | 수정 범위·테스트·PR 결과 변경 |
 
 `changes/`의 과거 테스트 수는 당시 증거다. 현재 통과 여부는 새 실행 결과로 판단한다.
 
