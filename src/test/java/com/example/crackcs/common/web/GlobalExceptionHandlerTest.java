@@ -13,6 +13,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -30,6 +33,7 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -41,6 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(QuestionController.class)
 @AutoConfigureMockMvc(addFilters = false)
 @Import(GlobalExceptionHandlerTest.FailureController.class)
+@ExtendWith(OutputCaptureExtension.class)
 class GlobalExceptionHandlerTest {
     @Autowired
     private MockMvc mockMvc;
@@ -190,6 +195,18 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.message").value("서버에서 요청을 처리하는 중 오류가 발생했습니다."))
                 .andExpect(jsonPath("$.message").value(
                         Matchers.not(Matchers.containsString("database password"))));
+    }
+
+    @Test
+    @DisplayName("예상하지 못한 예외는 응답의 requestId와 함께 원인을 서버 로그에 남긴다")
+    void logsUnexpectedExceptionWithRequestId(CapturedOutput output) throws Exception {
+        String requestId = "6f1c2b8e-1d2a-4e7b-9c3f-0a5b6c7d8e9f";
+
+        mockMvc.perform(get("/test/errors/unexpected").requestAttr(RequestIds.ATTRIBUTE, requestId))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.requestId").value(requestId));
+
+        assertThat(output).contains("requestId=" + requestId, "java.lang.RuntimeException");
     }
 
     @RestController
