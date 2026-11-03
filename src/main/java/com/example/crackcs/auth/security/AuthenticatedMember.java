@@ -3,6 +3,7 @@ package com.example.crackcs.auth.security;
 import com.example.crackcs.auth.domain.AuthAccount;
 import com.example.crackcs.member.domain.MemberRole;
 import com.example.crackcs.member.domain.MemberStatus;
+import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -11,14 +12,14 @@ import java.io.Serial;
 import java.util.Collection;
 import java.util.List;
 
-public class AuthenticatedMember implements UserDetails {
+public class AuthenticatedMember implements UserDetails, CredentialsContainer {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
     private final Long memberId;
     private final String loginId;
-    private final String passwordHash;
+    private String passwordHash;
     private final MemberRole role;
     private final MemberStatus status;
     private final long authenticationVersion;
@@ -63,6 +64,14 @@ public class AuthenticatedMember implements UserDetails {
     @Override
     public String getPassword() {
         return passwordHash;
+    }
+
+    /**
+     * Called by ProviderManager after authentication so the hash is not kept in the session store.
+     */
+    @Override
+    public void eraseCredentials() {
+        passwordHash = null;
     }
 
     @Override
