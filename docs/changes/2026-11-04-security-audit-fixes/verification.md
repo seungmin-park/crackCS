@@ -8,8 +8,8 @@
 
 | 대상 | 상태 | 검증 목표 |
 |---|---|---|
-| 로컬 서버의 LAN 노출·DNS 리바인딩 | 구현·로컬 검증 완료 | `local` 프로필 loopback 바인딩, 허용 밖 Host 400 |
-| 로그인 뒤 CSRF 토큰 유지 | 계획 | 로그인 전 토큰 거부, 로그인 뒤 새 토큰 사용 |
+| 로컬 서버의 LAN 노출·DNS 리바인딩 | 구현·main 반영([#24](https://github.com/seungmin-park/crackCS/pull/24), `86e725b`) | `local` 프로필 loopback 바인딩, 허용 밖 Host 400 |
+| 로그인 뒤 CSRF 토큰 유지 | 구현·로컬 검증 완료 | 로그인 전 토큰 거부, 로그인 뒤 새 토큰 사용 |
 | 포크 PR CI 완료의 운영 배포 대기 취소 | 계획 | 배포 job만 동시 실행 그룹 참여 |
 | 예상 밖 500의 원인 로그 누락 | 계획 | requestId와 예외를 서버 로그에 기록 |
 | 세션에 직렬화되는 비밀번호 해시 | 계획 | 인증 뒤 principal의 해시 제거 |
@@ -46,3 +46,31 @@ LAN 다른 기기 ─→ 192.168.x.x:8080 → 수신 안 함(127.0.0.1 바인딩
 - 프런트: 변경 없음. 로컬 Node 26이라 Node 24 gate는 CI 결과로 판정
 - PostgreSQL: schema·세션 저장소 변경 없음. CI `postgres` job 결과로 판정
 - 미검증: 실제 브라우저의 DNS 리바인딩 재현, 로컬 앱 기동 후 LAN 기기 접속 거부 관찰
+
+## 로그인 시 CSRF 토큰 교체
+
+```text
+GET /api/auth/csrf → 세션 S + 토큰 T
+POST /api/auth/login (T) → S→S' 교체 + T 폐기
+POST (T)  → 403        GET /api/auth/csrf → T' → POST (T') → 처리
+```
+
+- 현상: 로그인은 session ID만 교체(`ChangeSessionIdAuthenticationStrategy`). 로그인 전 CSRF 토큰이 인증 세션에 그대로 남고 SPA도 재사용
+- 위험 조건: 같은 사이트의 다른 출처나 평문 HTTP 주입으로 세션 쿠키를 심을 수 있으면, 공격자가 아는 토큰으로 본문 없는 관리자 POST 위조 가능. 배포 도메인 구성에 따라 성립 여부가 갈림
+- 상태 소유자: 세션의 CSRF 토큰은 공유 `HttpSessionCsrfTokenRepository` bean. 필터 체인과 로그인 전략이 같은 저장소 사용
+- 변경: 로그인 `SessionAuthenticationStrategy` = session ID 교체 + `CsrfAuthenticationStrategy` 조합. SPA `login()`은 성공 직후 캐시 토큰 제거
+- 기존 테스트 2곳(로그아웃·관리자 자기 재활성화)은 로그인 전 토큰 재사용을 전제로 작성되어 로그인 뒤 토큰을 새로 받도록 수정
+
+### TDD 증거
+
+- RED: `AuthenticationFlowTest`의 `rejectsPreLoginCsrfTokenAfterLogin` 실패(403 기대, 204 실제). 프런트 `src/api/auth.test.ts` 실패(토큰 발급 2회 기대, 1회 실제)
+- GREEN: 전략 조합 뒤 새 테스트 통과, 로그인 전 토큰을 재사용하던 기존 3건이 403으로 실패 → 로그인 뒤 토큰 사용으로 수정 후 통과. 프런트 캐시 제거 뒤 통과
+
+### 실행 결과
+
+- 기준: 브랜치 `fix/rotate-csrf-on-login`, main `86e725b` 기반
+- `bash scripts/verify.sh backend`: 566건 통과(이전 564 + 신규 2), 실패·skip 0, 종료 0
+- `bash scripts/verify.sh docs`: Python 61건·스택 문서 19항목 통과
+- 프런트(로컬 Node 26): `npm test` 40개 파일 353건 통과, `npm run type-check` 통과, `npm run build-only` 성공, `check_test_reports.py frontend` PASS. Node 24 gate는 CI 판정
+- 필수 suite 추가: `src/api/auth.test.ts`
+- 미검증: 같은 사이트 출처의 쿠키 심기 재현, 실제 브라우저 로그인 흐름

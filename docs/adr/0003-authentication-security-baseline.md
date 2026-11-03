@@ -47,7 +47,7 @@
 
 ## 브라우저 경계
 
-- 인증 성공 시 session ID를 교체해 session fixation을 방어한다.
+- 인증 성공 시 session ID와 CSRF token을 함께 교체해 session fixation과 로그인 전 token 재사용을 막는다. SPA는 로그인 성공 직후 캐시한 token을 버리고 다음 쓰기 요청에서 새로 받는다(2026-11-04).
 - unsafe method에는 CSRF token header를 요구한다.
 - credential을 허용하는 cross-origin CORS 정책을 구성하지 않는다.
 - same-origin Vite proxy는 개발 편의 수단이며 운영 보안 판단은 Spring Security가 수행한다.
