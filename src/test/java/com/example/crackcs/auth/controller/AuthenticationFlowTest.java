@@ -4,6 +4,7 @@ import com.example.crackcs.auth.controller.request.LoginRequest;
 import com.example.crackcs.auth.domain.AuthAccount;
 import com.example.crackcs.auth.domain.AuthProvider;
 import com.example.crackcs.auth.repository.AuthAccountRepository;
+import com.example.crackcs.auth.security.AuthenticatedMember;
 import com.example.crackcs.auth.repository.LoginAttemptRepository;
 import com.example.crackcs.auth.repository.AuthenticationRequestBucketRepository;
 import com.example.crackcs.auth.service.AuthService;
@@ -28,6 +29,8 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import tools.jackson.databind.JsonNode;
@@ -375,6 +378,26 @@ class AuthenticationFlowTest {
         mockMvc.perform(post("/api/auth/logout").session(authenticatedSession)
                         .header(postLoginCsrf.headerName(), postLoginCsrf.token()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("로그인 세션에 저장한 회원 정보에는 비밀번호 해시를 남기지 않는다")
+    void storesAuthenticatedMemberWithoutPasswordHash() throws Exception {
+        authService.register("user@example.com", PASSWORD, "회원");
+        CsrfFixture csrf = issueCsrfToken();
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login").session(csrf.session())
+                        .header(csrf.headerName(), csrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("user@example.com", PASSWORD)))
+                .andExpect(status().isOk()).andReturn();
+
+        SecurityContext storedContext = (SecurityContext) sessionOf(loginResult)
+                .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+
+        assertThat(storedContext.getAuthentication().getPrincipal())
+                .isInstanceOf(AuthenticatedMember.class)
+                .extracting(principal -> ((AuthenticatedMember) principal).getPassword())
+                .isNull();
+        assertThat(storedContext.getAuthentication().getCredentials()).isNull();
     }
 
     private CsrfFixture issueCsrfToken(MockHttpSession session) throws Exception {

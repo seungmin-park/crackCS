@@ -11,8 +11,8 @@
 | 로컬 서버의 LAN 노출·DNS 리바인딩 | 구현·main 반영([#24](https://github.com/seungmin-park/crackCS/pull/24), `86e725b`) | `local` 프로필 loopback 바인딩, 허용 밖 Host 400 |
 | 로그인 뒤 CSRF 토큰 유지 | 구현·main 반영([#25](https://github.com/seungmin-park/crackCS/pull/25), `15a7f91`) | 로그인 전 토큰 거부, 로그인 뒤 새 토큰 사용 |
 | 포크 PR CI 완료의 운영 배포 대기 취소 | 구현·main 반영([#26](https://github.com/seungmin-park/crackCS/pull/26), `e611a1a`) | 배포 job만 동시 실행 그룹 참여 |
-| 예상 밖 500의 원인 로그 누락 | 구현·로컬 검증 완료 | requestId와 예외를 서버 로그에 기록 |
-| 세션에 직렬화되는 비밀번호 해시 | 계획 | 인증 뒤 principal의 해시 제거 |
+| 예상 밖 500의 원인 로그 누락 | 구현·main 반영([#27](https://github.com/seungmin-park/crackCS/pull/27), `2a552b6`) | requestId와 예외를 서버 로그에 기록 |
+| 세션에 직렬화되는 비밀번호 해시 | 구현·로컬 검증 완료 | 인증 뒤 principal의 해시 제거 |
 
 ## 로컬 서버 Host·바인딩 보호
 
@@ -117,3 +117,21 @@ POST (T)  → 403        GET /api/auth/csrf → T' → POST (T') → 처리
 - 기준: 브랜치 `fix/log-unexpected-server-errors`, main `e611a1a` 기반
 - `bash scripts/verify.sh backend`: 567건 통과(이전 566 + 신규 1), 실패·skip 0
 - 프런트·PostgreSQL: 변경 없음. CI 판정
+
+## 세션 principal의 비밀번호 해시 제거
+
+- 현상: `AuthenticatedMember`가 bcrypt 해시를 보관하고 `CredentialsContainer`를 구현하지 않아, `postgres` 프로필의 JDBC 세션 속성에 해시가 직렬화됨
+- 변경: `AuthenticatedMember`가 `CredentialsContainer` 구현. `ProviderManager`의 기본 인증 뒤 자격 증명 삭제가 principal의 해시를 null로 바꿈
+- 영향 범위: 비밀번호 비교는 삭제 전 `DaoAuthenticationProvider`에서 끝남. 세션 검증 필터는 회원 ID·역할·상태·인증 버전만 사용
+- 호환성: `serialVersionUID` 유지, 필드 구성 유지. 기존 저장 세션도 역직렬화 가능(다음 로그인부터 해시 없음)
+
+### TDD 증거
+
+- RED: `AuthenticationFlowTest.storesAuthenticatedMemberWithoutPasswordHash` 실패(principal 비밀번호가 `{bcrypt}...` 값)
+- GREEN: `CredentialsContainer` 구현 뒤 통과, 백엔드 전체 통과
+
+### 실행 결과
+
+- 기준: 브랜치 `fix/erase-session-password-hash`, main `2a552b6` 기반
+- `bash scripts/verify.sh backend`: 568건 통과(이전 567 + 신규 1), 실패·skip 0
+- PostgreSQL 세션 직렬화: 로컬 Docker 미사용. CI `postgres` job의 `SharedSessionPersistenceTest`로 판정

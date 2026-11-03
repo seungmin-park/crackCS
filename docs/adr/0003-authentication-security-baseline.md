@@ -43,6 +43,7 @@
 - 잘못된 비밀번호 같은 일상적인 실패는 매번 기록하지 않는다.
 - 제한에 걸린 보안 이벤트만 기록하며 이메일은 첫 글자와 domain만 남겨 마스킹한다.
 - 비밀번호, password hash, session ID와 CSRF token은 로그 인자로 전달하지 않는다.
+- 인증 뒤 세션에 저장하는 principal(`AuthenticatedMember`)은 password hash를 지운다(`CredentialsContainer`, 2026-11-04). JDBC 세션 저장소에 해시 사본을 남기지 않기 위함.
 - HTTP request body 전체 logging은 인증 endpoint에 적용하지 않는다.
 
 ## 브라우저 경계
