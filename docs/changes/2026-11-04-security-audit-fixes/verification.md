@@ -10,8 +10,8 @@
 |---|---|---|
 | 로컬 서버의 LAN 노출·DNS 리바인딩 | 구현·main 반영([#24](https://github.com/seungmin-park/crackCS/pull/24), `86e725b`) | `local` 프로필 loopback 바인딩, 허용 밖 Host 400 |
 | 로그인 뒤 CSRF 토큰 유지 | 구현·main 반영([#25](https://github.com/seungmin-park/crackCS/pull/25), `15a7f91`) | 로그인 전 토큰 거부, 로그인 뒤 새 토큰 사용 |
-| 포크 PR CI 완료의 운영 배포 대기 취소 | 구현·로컬 검증 완료 | 배포 job만 동시 실행 그룹 참여 |
-| 예상 밖 500의 원인 로그 누락 | 계획 | requestId와 예외를 서버 로그에 기록 |
+| 포크 PR CI 완료의 운영 배포 대기 취소 | 구현·main 반영([#26](https://github.com/seungmin-park/crackCS/pull/26), `e611a1a`) | 배포 job만 동시 실행 그룹 참여 |
+| 예상 밖 500의 원인 로그 누락 | 구현·로컬 검증 완료 | requestId와 예외를 서버 로그에 기록 |
 | 세션에 직렬화되는 비밀번호 해시 | 계획 | 인증 뒤 principal의 해시 제거 |
 
 ## 로컬 서버 Host·바인딩 보호
@@ -99,3 +99,21 @@ POST (T)  → 403        GET /api/auth/csrf → T' → POST (T') → 처리
 - `bash scripts/verify.sh docs`: Python 63건 통과(신규 2), 스택 문서 19항목 PASS
 - 백엔드·프런트·PostgreSQL: 코드 변경 없음. CI 결과로 판정
 - 미검증: 실제 Production CD 실행에서 포크 PR CI 완료 시 그룹 미참여 관찰
+
+## 예상 밖 500 오류의 원인 로그
+
+- 현상: `GlobalExceptionHandler.handleUnexpectedException`이 일반 500 응답과 requestId만 반환하고 예외를 버림. 사용자가 전달한 requestId로 서버 원인을 찾을 수 없음
+- 변경: 같은 처리기에서 `requestId`와 예외(stack trace 포함)를 ERROR로 기록. 응답 본문은 기존 일반 메시지 유지, 예외 메시지 미노출
+- requestId 일치 조건: `RequestIdFilter`가 가장 먼저 실행되어 요청 속성에 ID를 저장. 로그와 응답이 같은 속성 값을 사용
+- 남은 경계: 로그 수집·보관 위치는 운영 VM 설정 소유
+
+### TDD 증거
+
+- RED: `GlobalExceptionHandlerTest.logsUnexpectedExceptionWithRequestId` 실패(출력에 `requestId=` 없음)
+- GREEN: 로그 추가 뒤 10건 통과
+
+### 실행 결과
+
+- 기준: 브랜치 `fix/log-unexpected-server-errors`, main `e611a1a` 기반
+- `bash scripts/verify.sh backend`: 567건 통과(이전 566 + 신규 1), 실패·skip 0
+- 프런트·PostgreSQL: 변경 없음. CI 판정
