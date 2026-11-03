@@ -9,8 +9,8 @@
 | 대상 | 상태 | 검증 목표 |
 |---|---|---|
 | 로컬 서버의 LAN 노출·DNS 리바인딩 | 구현·main 반영([#24](https://github.com/seungmin-park/crackCS/pull/24), `86e725b`) | `local` 프로필 loopback 바인딩, 허용 밖 Host 400 |
-| 로그인 뒤 CSRF 토큰 유지 | 구현·로컬 검증 완료 | 로그인 전 토큰 거부, 로그인 뒤 새 토큰 사용 |
-| 포크 PR CI 완료의 운영 배포 대기 취소 | 계획 | 배포 job만 동시 실행 그룹 참여 |
+| 로그인 뒤 CSRF 토큰 유지 | 구현·main 반영([#25](https://github.com/seungmin-park/crackCS/pull/25), `15a7f91`) | 로그인 전 토큰 거부, 로그인 뒤 새 토큰 사용 |
+| 포크 PR CI 완료의 운영 배포 대기 취소 | 구현·로컬 검증 완료 | 배포 job만 동시 실행 그룹 참여 |
 | 예상 밖 500의 원인 로그 누락 | 계획 | requestId와 예외를 서버 로그에 기록 |
 | 세션에 직렬화되는 비밀번호 해시 | 계획 | 인증 뒤 principal의 해시 제거 |
 
@@ -74,3 +74,28 @@ POST (T)  → 403        GET /api/auth/csrf → T' → POST (T') → 처리
 - 프런트(로컬 Node 26): `npm test` 40개 파일 353건 통과, `npm run type-check` 통과, `npm run build-only` 성공, `check_test_reports.py frontend` PASS. Node 24 gate는 CI 판정
 - 필수 suite 추가: `src/api/auth.test.ts`
 - 미검증: 같은 사이트 출처의 쿠키 심기 재현, 실제 브라우저 로그인 흐름
+
+## 운영 배포 동시 실행 그룹
+
+```text
+변경 전: workflow 수준 그룹 → 포크 PR CI 완료도 Production CD 실행 생성 → 그룹 대기 칸 차지
+         → 대기 중이던 정상 배포 취소 → 자기 job은 if로 생략 → 아무것도 배포 안 됨
+변경 후: deploy job 수준 그룹 → 생략된 job은 그룹에 들어가지 않음
+```
+
+- 현상: `deploy.yml`의 `crackcs-production` 그룹이 workflow 수준, 배포 자격(push 이벤트·성공)은 job `if`에서만 확인
+- 위험 조건: 공개 저장소의 포크 PR이 `main` 이름 브랜치에서 CI를 완료하면 `workflow_run` 필터와 일치할 수 있음. GitHub 큐 동작은 소스로 관찰 불가
+- 변경: 그룹을 `deploy` job으로 이동. 그룹 이름·`cancel-in-progress: false` 유지
+- 남은 경계: 실제 GitHub 큐에서의 재현, 포크 PR 실행 승인 설정은 저장소 설정 소유
+
+### TDD 증거
+
+- RED: `python3 -m unittest scripts/test_deploy_workflow.py` 2건 실패(workflow 수준 `concurrency:` 존재, job 수준 블록 없음)
+- GREEN: 블록 이동 뒤 2건 통과
+
+### 실행 결과
+
+- 기준: 브랜치 `ci/deploy-job-concurrency`, main `15a7f91` 기반
+- `bash scripts/verify.sh docs`: Python 63건 통과(신규 2), 스택 문서 19항목 PASS
+- 백엔드·프런트·PostgreSQL: 코드 변경 없음. CI 결과로 판정
+- 미검증: 실제 Production CD 실행에서 포크 PR CI 완료 시 그룹 미참여 관찰
