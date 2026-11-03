@@ -36,7 +36,7 @@ Spring Security Authentication 생성
    ↓
 최종 로그인 시각 저장 성공
    ↓
-session ID 교체 (session fixation 방어)
+session ID·CSRF token 교체 (session fixation 방어, 2026-11-04 token 교체 추가)
    ↓
 SecurityContext를 HttpSession에 저장
    ↓

@@ -1,4 +1,4 @@
-import { get, post } from "@/api/client";
+import { clearCsrfToken, get, post } from "@/api/client";
 
 export type Member = {
   id: number;
@@ -24,8 +24,11 @@ export function signUp(input: SignUpInput): Promise<SignUpResponse> {
   return post<SignUpResponse>("/api/auth/sign-up", input, undefined, { authentication: "anonymous" });
 }
 
-export function login(input: LoginInput): Promise<Member> {
-  return post<Member>("/api/auth/login", input, undefined, { authentication: "credentials" });
+export async function login(input: LoginInput): Promise<Member> {
+  const member = await post<Member>("/api/auth/login", input, undefined, { authentication: "credentials" });
+  // The server rotates the session CSRF token on login, so the pre-login token is no longer valid.
+  clearCsrfToken();
+  return member;
 }
 
 export function logout(): Promise<void> {

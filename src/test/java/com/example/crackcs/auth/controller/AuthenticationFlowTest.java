@@ -173,10 +173,11 @@ class AuthenticationFlowTest {
                 .andExpect(status().isOk())
                 .andReturn();
         MockHttpSession authenticatedSession = sessionOf(loginResult);
+        CsrfFixture authenticatedCsrf = issueCsrfToken(authenticatedSession);
 
         mockMvc.perform(post("/api/auth/logout")
                         .session(authenticatedSession)
-                        .header(csrf.headerName(), csrf.token()))
+                        .header(authenticatedCsrf.headerName(), authenticatedCsrf.token()))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/members/me").session(authenticatedSession))
@@ -222,10 +223,11 @@ class AuthenticationFlowTest {
                         .content(loginJson("admin@example.com", PASSWORD)))
                 .andExpect(status().isOk()).andReturn();
 
+        CsrfFixture authenticatedCsrf = issueCsrfToken(sessionOf(loginResult));
         memberService.changeStatus(administrator.getId(), status);
 
         mockMvc.perform(patch("/api/admin/members/{memberId}/status", administrator.getId())
-                        .session(sessionOf(loginResult)).header(csrf.headerName(), csrf.token())
+                        .session(sessionOf(loginResult)).header(authenticatedCsrf.headerName(), authenticatedCsrf.token())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(new MemberStatusUpdateRequest(MemberStatus.ACTIVE))))
                 .andExpect(status().isUnauthorized());
@@ -337,6 +339,50 @@ class AuthenticationFlowTest {
                 .andExpect(result -> assertThat(
                         result.getResponse().getHeader("Access-Control-Allow-Credentials")
                 ).isNull());
+    }
+
+    @Test
+    @DisplayName("로그인하면 로그인 전에 발급한 CSRF 토큰으로는 상태 변경 요청을 할 수 없다")
+    void rejectsPreLoginCsrfTokenAfterLogin() throws Exception {
+        authService.register("user@example.com", PASSWORD, "회원");
+        CsrfFixture preLoginCsrf = issueCsrfToken();
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login").session(preLoginCsrf.session())
+                        .header(preLoginCsrf.headerName(), preLoginCsrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("user@example.com", PASSWORD)))
+                .andExpect(status().isOk()).andReturn();
+        MockHttpSession authenticatedSession = sessionOf(loginResult);
+
+        mockMvc.perform(post("/api/auth/logout").session(authenticatedSession)
+                        .header(preLoginCsrf.headerName(), preLoginCsrf.token()))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/members/me").session(authenticatedSession))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("로그인 뒤 새로 발급한 CSRF 토큰으로 상태 변경 요청을 처리한다")
+    void acceptsCsrfTokenIssuedAfterLogin() throws Exception {
+        authService.register("user@example.com", PASSWORD, "회원");
+        CsrfFixture preLoginCsrf = issueCsrfToken();
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login").session(preLoginCsrf.session())
+                        .header(preLoginCsrf.headerName(), preLoginCsrf.token()).contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson("user@example.com", PASSWORD)))
+                .andExpect(status().isOk()).andReturn();
+        MockHttpSession authenticatedSession = sessionOf(loginResult);
+        CsrfFixture postLoginCsrf = issueCsrfToken(authenticatedSession);
+
+        mockMvc.perform(post("/api/auth/logout").session(authenticatedSession)
+                        .header(postLoginCsrf.headerName(), postLoginCsrf.token()))
+                .andExpect(status().isNoContent());
+    }
+
+    private CsrfFixture issueCsrfToken(MockHttpSession session) throws Exception {
+        MvcResult csrfResponse = mockMvc.perform(get("/api/auth/csrf").session(session))
+                .andExpect(status().isOk())
+                .andReturn();
+        JsonNode responseBody = objectMapper.readTree(csrfResponse.getResponse().getContentAsString());
+        return new CsrfFixture(session, responseBody.get("headerName").asText(), responseBody.get("token").asText());
     }
 
     private CsrfFixture issueCsrfToken() throws Exception {

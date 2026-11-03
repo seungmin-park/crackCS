@@ -20,6 +20,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.CompositeSessionAuthenticationStrategy;
+import org.springframework.security.web.csrf.CsrfAuthenticationStrategy;
 import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -55,11 +57,9 @@ public class SecurityConfiguration {
             ApiAuthenticationEntryPoint authenticationEntryPoint,
             ApiAccessDeniedHandler accessDeniedHandler,
             SecurityContextRepository securityContextRepository,
-            MemberService memberService
+            MemberService memberService,
+            HttpSessionCsrfTokenRepository httpSessionCsrfTokenRepository
     ) throws Exception {
-        HttpSessionCsrfTokenRepository httpSessionCsrfTokenRepository = new HttpSessionCsrfTokenRepository();
-        httpSessionCsrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
-
         http
                 .addFilterBefore(new MemberSessionValidationFilter(memberService, authenticationEntryPoint),
                         AuthorizationFilter.class)
@@ -128,7 +128,20 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    public SessionAuthenticationStrategy sessionAuthenticationStrategy() {
-        return new ChangeSessionIdAuthenticationStrategy();
+    public HttpSessionCsrfTokenRepository httpSessionCsrfTokenRepository() {
+        HttpSessionCsrfTokenRepository httpSessionCsrfTokenRepository = new HttpSessionCsrfTokenRepository();
+        httpSessionCsrfTokenRepository.setHeaderName("X-CSRF-TOKEN");
+        return httpSessionCsrfTokenRepository;
+    }
+
+    @Bean
+    public SessionAuthenticationStrategy sessionAuthenticationStrategy(
+            HttpSessionCsrfTokenRepository httpSessionCsrfTokenRepository
+    ) {
+        // Login rotates both the session ID and the session-bound CSRF token.
+        return new CompositeSessionAuthenticationStrategy(List.of(
+                new ChangeSessionIdAuthenticationStrategy(),
+                new CsrfAuthenticationStrategy(httpSessionCsrfTokenRepository)
+        ));
     }
 }
