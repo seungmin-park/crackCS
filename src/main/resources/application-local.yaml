@@ -14,3 +14,11 @@ spring:
   h2:
     console:
       enabled: true
+server:
+  address: 127.0.0.1
+management:
+  server:
+    address: 127.0.0.1
+crackcs:
+  security:
+    allowed-hosts: localhost,127.0.0.1,[::1]

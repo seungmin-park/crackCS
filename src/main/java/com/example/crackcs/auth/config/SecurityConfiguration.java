@@ -24,7 +24,12 @@ import org.springframework.security.web.authentication.session.SessionAuthentica
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
+import org.springframework.security.web.firewall.HttpFirewall;
+import org.springframework.security.web.firewall.StrictHttpFirewall;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.web.access.intercept.AuthorizationFilter;
+
+import java.util.List;
 
 @Configuration
 public class SecurityConfiguration {
@@ -110,6 +115,16 @@ public class SecurityConfiguration {
     @Bean
     public SecurityContextRepository securityContextRepository() {
         return new HttpSessionSecurityContextRepository();
+    }
+
+    @Bean
+    public HttpFirewall httpFirewall(@Value("${crackcs.security.allowed-hosts:}") List<String> allowedHosts) {
+        StrictHttpFirewall firewall = new StrictHttpFirewall();
+        if (!allowedHosts.isEmpty()) {
+            // Local profiles name loopback hosts so a DNS-rebinding page cannot reach the API under its own name.
+            firewall.setAllowedHostnames(allowedHosts::contains);
+        }
+        return firewall;
     }
 
     @Bean

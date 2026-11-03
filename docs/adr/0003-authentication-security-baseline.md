@@ -51,3 +51,4 @@
 - unsafe method에는 CSRF token header를 요구한다.
 - credential을 허용하는 cross-origin CORS 정책을 구성하지 않는다.
 - same-origin Vite proxy는 개발 편의 수단이며 운영 보안 판단은 Spring Security가 수행한다.
+- 2026-11-04: `local` 프로필은 API·관리 포트를 127.0.0.1에만 바인딩하고 `crackcs.security.allowed-hosts`의 loopback 이름만 허용한다. 공개 데모 관리자 계정이 있는 로컬 서버를 LAN 접근과 DNS 리바인딩에서 분리하기 위함. 운영 기본값은 빈 목록(Host 제한 없음, 외부 프록시 책임). [검증](../changes/2026-11-04-security-audit-fixes/verification.md)
