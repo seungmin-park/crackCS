@@ -51,6 +51,47 @@ Vue 화면 ──HTTP──> Spring Boot API ──> 답변 저장 ──> Postg
 
 자세한 관계와 결정 이유는 [도메인 모델·ERD](docs/architecture/domain-model-and-erd.md), [평가 실행 결정](docs/adr/0005-phase-5-evaluation-runtime.md)에 정리했습니다.
 
+## 어떤 문제를 풀었나요?
+
+### 1. 10초 가까이 걸리는 AI 평가를 요청 안에서 기다리지 않기
+
+- **문제:** 실제 GPT 평가 한 번의 p95는 7.6~10.9초였습니다. 요청 안에서 기다리면 화면이 멈추고, DB 트랜잭션을 잡은 채 외부 응답을 기다리게 됩니다. 응답이 늦어 사용자가 다시 제출하면 같은 답변이 두 번 저장됩니다.
+- **해결:**
+  - 답변은 `Idempotency-Key`와 함께 저장하고 평가 작업만 등록한 뒤 202로 응답합니다. 같은 키로 다시 보내면 기존 답변을 돌려줍니다.
+  - 평가 Worker는 DB 잠금으로 작업을 선점하고 lease 소유자·만료 시각을 기록합니다. 서버가 재시작되면 만료된 lease를 다시 가져갑니다.
+  - OpenAI 호출은 트랜잭션 밖에서 하고, 판정·근거·학습 상태는 lease를 가진 Worker만 한 트랜잭션으로 확정합니다.
+  - 실패는 최대 3회 재시도 후 FAILED로, 근거 부족·충돌·예산 초과는 관리자 검토로 넘깁니다.
+- **검증:** lease 재수령·재시도·멱등성을 자동 테스트로 확인합니다. 현재 평가기(v3)는 후보 42건 중 정답·오답을 가리는 28건에서 27건이 사람이 검수한 정답 기준과 일치했고, 오답을 정답으로 본 경우는 14건 중 0건이었습니다. [평가 실행 결정](docs/adr/0005-phase-5-evaluation-runtime.md) · [실제 GPT 검증](docs/changes/2026-09-29-openai-completion/verification.md)
+
+### 2. 차단한 회원의 로그인을 즉시 끊기
+
+- **문제:** 세션 기반 인증이라 관리자가 회원을 차단해도, 이미 로그인한 세션은 만료될 때까지 계속 동작했습니다. 외부 보안 스캔에서 high로 보고된 항목입니다.
+- **해결:** 회원 상태가 바뀔 때마다 `authenticationVersion`을 올립니다. 세션에는 로그인 시점의 회원 ID·역할·버전을 저장하고, 매 요청마다 필터가 DB의 현재 값과 비교합니다. 하나라도 다르면 세션을 무효화하고 401을 돌려줍니다. 차단했다가 다시 활성화해도 버전이 두 번 올라가므로 옛 세션은 되살아나지 않습니다.
+- **검증:** 차단·탈퇴·재활성화 뒤 옛 세션 거부, 관리자 자기 재활성화 차단을 HTTP 통합 테스트로 확인합니다. [검증 기록](docs/changes/2026-10-06-security-hardening/verification.md)
+
+### 3. 검증을 통과한 실행물만 운영에 배포하기
+
+- **문제:** 공개 저장소라 누구나 PR을 올려 CI를 실행할 수 있습니다. 배포가 아무 CI 실행물이나 받거나 VM에서 다시 빌드하면, 테스트를 거치지 않은 코드가 운영에 올라갈 수 있습니다.
+- **해결:**
+  - Production CD는 CI가 만든 실행물만 받습니다. 그 실행이 main push이고, 커밋이 현재 main과 같고, 모든 검증 job이 성공했을 때만 진행합니다.
+  - 파일마다 SHA-256·경로·심볼릭 링크를 확인하고, 고정한 SSH 호스트 키로 전송합니다. 전송 직전에 main이 바뀌었는지 다시 확인합니다.
+  - VM에서는 blue/green으로 전환하고, 준비에 실패하면 기존 슬롯을 그대로 둡니다.
+- **검증:** 현재 main(`357eef4`)이 이 경로로 배포됐습니다([실행 기록](https://github.com/seungmin-park/crackCS/actions/runs/41700379206)). 배포 동시 실행 그룹의 구조는 `scripts/test_deploy_workflow.py`가 확인합니다. [배포 경계](docs/engineering/agent-workflow.md#운영-cicd-경계-2026-10-12)
+
+### 직접 보안 감사하고 고친 것
+
+정찰 → 경계별 점검 → 독립 검증 순서로 소스 보안 감사를 진행해 31개 점검 단위를 확인했습니다. 그중 코드로 막을 수 있는 5건을 테스트부터 작성해 고쳤습니다.
+
+| 수정 | PR |
+|---|---|
+| 로컬 서버를 127.0.0.1에만 열고, 허용하지 않은 Host는 거부(DNS 리바인딩 차단) | [#24](https://github.com/seungmin-park/crackCS/pull/24) |
+| 로그인할 때 세션 ID와 함께 CSRF 토큰도 교체 | [#25](https://github.com/seungmin-park/crackCS/pull/25) |
+| 포크 PR의 CI가 대기 중인 운영 배포를 취소하지 못하게 동시 실행 그룹을 배포 job으로 이동 | [#26](https://github.com/seungmin-park/crackCS/pull/26) |
+| 예상 밖 500 오류의 원인을 requestId와 함께 서버 로그에 기록 | [#27](https://github.com/seungmin-park/crackCS/pull/27) |
+| 세션에 저장하는 회원 정보에서 비밀번호 해시 제거 | [#28](https://github.com/seungmin-park/crackCS/pull/28) |
+
+수정별 실패 테스트와 실행 결과는 [수정 검증 기록](docs/changes/2026-11-04-security-audit-fixes/verification.md)에 있습니다.
+
 ## 기술 스택
 
 | 영역 | 기술 |
