@@ -27,4 +27,6 @@ public interface KnowledgeDocumentService {
     KnowledgeDocument publishAsCurrentVersion(Long documentId);
 
     KnowledgeDocument retire(Long documentId);
+
+    void deleteDraft(Long documentId);
 }

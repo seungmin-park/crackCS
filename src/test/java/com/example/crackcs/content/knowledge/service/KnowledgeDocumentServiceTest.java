@@ -146,6 +146,34 @@ class KnowledgeDocumentServiceTest {
         );
     }
 
+    @Test
+    @DisplayName("DRAFT 문서를 삭제하면 저장소에서 사라진다")
+    void deletesDraftDocument() {
+        Topic topic = saveTopic();
+        Member contentAdmin = saveAdmin();
+        KnowledgeDocument draft = knowledgeDocumentService.create(
+                contentAdmin.getId(), knowledgeDocumentDraft(topic, "삭제할 초안 원문"));
+
+        knowledgeDocumentService.deleteDraft(draft.getId());
+
+        assertThat(knowledgeDocumentRepository.findById(draft.getId())).isEmpty();
+    }
+
+    @Test
+    @DisplayName("PUBLISHED 문서는 삭제 요청을 거부하고 그대로 남긴다")
+    void rejectsDeletionOfPublishedDocument() {
+        Topic topic = saveTopic();
+        Member contentAdmin = saveAdmin();
+        KnowledgeDocument published = knowledgeDocumentService.create(
+                contentAdmin.getId(), knowledgeDocumentDraft(topic, "공개 원문"));
+        knowledgeDocumentService.review(published.getId(), contentAdmin.getId());
+        knowledgeDocumentService.publishAsCurrentVersion(published.getId());
+
+        assertThatThrownBy(() -> knowledgeDocumentService.deleteDraft(published.getId()))
+                .isInstanceOf(InvalidContentStateException.class);
+        assertThat(knowledgeDocumentRepository.findById(published.getId())).isPresent();
+    }
+
     private Topic saveTopic() {
         return topicRepository.save(Topic.builder().code("JAVA").name("Java").build());
     }

@@ -130,9 +130,9 @@ AI 정오 판정
 - USER·ADMIN 권한 분리
 - 관리자 페이지
 - Topic·Concept 관리
-- KnowledgeDocument 등록, 검수, 공개, 폐기
+- KnowledgeDocument 등록, 검수, 공개, 폐기, 초안 삭제
 - KnowledgeChunk 생성과 Retrieval
-- 서술형 Question 등록, 검수, 공개, 폐기
+- 서술형 Question 등록, 검수, 공개, 폐기, 초안 삭제
 - QuestionConcept와 필수 여부·가중치 관리
 - 추천 문제 조회
 - Answer 제출과 이력 보존
@@ -492,6 +492,7 @@ Concept 목록은 `topicId`, `active`, `page`, `size`, `sort`를 선택적으로
 | POST | `/api/admin/knowledge-documents/{documentId}/review` | ADMIN | 200 | 문서 검수 완료 |
 | POST | `/api/admin/knowledge-documents/{documentId}/publish` | ADMIN | 200 | 문서 공개 |
 | POST | `/api/admin/knowledge-documents/{documentId}/retire` | ADMIN | 200 | 문서 폐기 상태 전환 |
+| DELETE | `/api/admin/knowledge-documents/{documentId}` | ADMIN | 204 | DRAFT 문서 삭제. 공개·폐기 문서는 409 |
 | POST | `/api/admin/knowledge-documents/{documentId}/chunks` | ADMIN | 200 | Chunk 동기 생성 또는 기존 결과 재사용 |
 | GET | `/api/admin/knowledge-documents/{documentId}/chunks` | ADMIN | 200 | 문서 Chunk 목록과 생성 상태 조회 |
 
@@ -509,6 +510,7 @@ Concept 목록은 `topicId`, `active`, `page`, `size`, `sort`를 선택적으로
 | POST | `/api/admin/questions/{questionId}/review` | ADMIN | 200 | 문제 검수 완료 |
 | POST | `/api/admin/questions/{questionId}/publish` | ADMIN | 200 | 문제 공개 |
 | POST | `/api/admin/questions/{questionId}/retire` | ADMIN | 200 | 문제 폐기 상태 전환 |
+| DELETE | `/api/admin/questions/{questionId}` | ADMIN | 204 | DRAFT 문제 삭제. 평가 Concept 연결도 삭제, 공개·폐기 문제는 409 |
 | POST | `/api/admin/questions/{questionId}/versions` | ADMIN | 201 | 공개 문제 기반 새 DRAFT 버전 생성 |
 
 문제 목록은 `topicId`, `status`, `difficulty`, `origin`, `page`, `size`, `sort`를 선택적으로 받는다. QuestionConcept를 전체 교체하는 `PUT`은 DRAFT 문제에서만 허용하고, 공개된 문제의 의미 변경은 새 버전 생성 정책을 따른다. 새 버전 공개 시 이전 공개본은 삭제하지 않고 RETIRED로 전환한다.

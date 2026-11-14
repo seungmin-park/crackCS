@@ -40,6 +40,8 @@ public interface QuestionService {
 
     Question retire(Long questionId);
 
+    void deleteDraft(Long questionId);
+
     Question createNextVersion(
             Long questionId,
             Long creatorMemberId,

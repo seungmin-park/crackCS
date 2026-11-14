@@ -111,6 +111,14 @@ public class DefaultQuestionService implements QuestionService {
 
     @Override
     @Transactional
+    public void deleteDraft(Long questionId) {
+        Question question = findQuestionWithVersionSeriesLock(questionId);
+        question.ensureDeletable();
+        questionRepository.delete(question);
+    }
+
+    @Override
+    @Transactional
     public Question retire(Long questionId) {
         Question question = findQuestionWithVersionSeriesLock(questionId);
         question.retire();

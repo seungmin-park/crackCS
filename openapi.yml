@@ -450,6 +450,16 @@ paths:
                 $ref: '#/components/schemas/KnowledgeDocumentResponse'
         '409':
           $ref: '#/components/responses/ContentConflict'
+    delete:
+      tags: [Admin Knowledge]
+      operationId: deleteDraftKnowledgeDocument
+      summary: DRAFT 문서 삭제
+      description: DRAFT 문서만 삭제. PUBLISHED·RETIRED 문서는 409.
+      responses:
+        '204':
+          description: 삭제 성공
+        '409':
+          $ref: '#/components/responses/ContentConflict'
   /api/admin/knowledge-documents/{documentId}/versions:
     parameters:
       - $ref: '#/components/parameters/DocumentIdPath'
@@ -675,6 +685,19 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/QuestionNotFound'
+    delete:
+      tags:
+        - Admin Questions
+      operationId: deleteDraftQuestion
+      summary: 초안 문제 삭제
+      description: DRAFT 문제만 삭제. 평가 Concept 연결은 함께 삭제되고 Concept은 유지. PUBLISHED·RETIRED 문제는 409.
+      responses:
+        '204':
+          description: 삭제 성공
+        '404':
+          $ref: '#/components/responses/QuestionNotFound'
+        '409':
+          $ref: '#/components/responses/ContentConflict'
   /api/admin/questions/{questionId}/concepts:
     parameters:
       - $ref: '#/components/parameters/QuestionIdPath'

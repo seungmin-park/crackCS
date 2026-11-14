@@ -220,6 +220,25 @@ class AdminContentFlowTest {
                 .andExpect(jsonPath("$.status").value("BLOCKED"));
     }
 
+    @Test
+    @DisplayName("ADMIN이 초안 문서와 초안 문제를 삭제하면 204를 받고 저장소에서 사라진다")
+    void adminDeletesDraftContent() throws Exception {
+        AuthenticatedMember admin = savePrincipal(MemberRole.ADMIN, "admin-delete-flow");
+        long topicId = createTopic(admin, "NETWORK", "네트워크");
+        long documentId = createDocument(admin, topicId, "지울 문서", "지울 원문");
+        long questionId = createQuestion(admin, topicId);
+
+        mockMvc.perform(delete("/api/admin/knowledge-documents/{id}", documentId)
+                        .with(user(admin)).with(csrf()))
+                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/api/admin/questions/{id}", questionId)
+                        .with(user(admin)).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        assertThat(knowledgeDocumentRepository.findById(documentId)).isEmpty();
+        assertThat(questionRepository.findById(questionId)).isEmpty();
+    }
+
     private long createTopic(AuthenticatedMember admin, String code, String name) throws Exception {
         MvcResult createTopicResponse = mockMvc.perform(post("/api/admin/topics")
                         .with(user(admin)).with(csrf())
