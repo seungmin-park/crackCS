@@ -138,8 +138,8 @@ onBeforeUnmount(() => {
         <h2>
           <span class="word">외운</span> <span class="word">문장보다,</span
           ><span class="tagline-line"
-            ><span class="word">내가</span> <span class="word">설명한</span>
-            <span class="word">한</span> <span class="word">문장.</span></span
+            ><span class="word">내가</span>{{ " " }}<span class="word">설명한</span
+            >{{ " " }}<span class="word">한</span>{{ " " }}<span class="word">문장.</span></span
           >
         </h2>
       </section>

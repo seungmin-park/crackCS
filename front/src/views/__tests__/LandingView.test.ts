@@ -27,3 +27,10 @@ it("동작 줄이기를 선택하면 소개 문구를 숨기거나 관찰하지 
   expect(wrapper.find(".is-observed").exists()).toBe(false);
   expect(wrapper.text()).toContain("설명할 수 있는 CS로.");
 });
+
+it("소개 문구의 단어 사이 공백을 줄바꿈 위치와 관계없이 유지한다", () => {
+  vi.stubGlobal("matchMedia", () => ({ matches: true }));
+  const wrapper = mount(LandingView, { global: { stubs: { RouterLink: true } } });
+
+  expect(wrapper.find(".tagline h2").text()).toBe("외운 문장보다,내가 설명한 한 문장.");
+});
