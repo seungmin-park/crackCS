@@ -48,7 +48,8 @@ python3 scripts/content_bundle.py --bundle docs/content/a1-v1/bundle.json --repo
 ```
 
 - 종료0. Topic별5문항·총30문항·64개 Concept·6문서, 모든 질문·문서·Concept 동일 Topic 연결, 문서의 필수 Concept 덮임, 가중치 합1.00 확인
-- 원본 SHA-256: `4c08549e6563d13fd92dea9a1fded94eab675d283d28c1079ab18d0599e67beb`
+- 원본 SHA-256: `d7a749464750d443793ee295f86da10feac8974af1560c5f1df1a000ab60f540`
+- 2026-11-15 문장 교정: 한글 뒤 숫자·영문 띄어쓰기, 질문 문장 합쇼체 통일. 수치·식별자·판정 기준·출처 불변. 교정 전 원본 SHA-256은 `4c08549e…7beb`
 - 로컬 본문 캐시 대조:22개 모두 HTTP200·Markdown UTF-8 hash 일치. Firecrawl 수집 확인일은2026-10-06 또는07로 원본에 기록
 - 별도 작성 자료 구조 확인:30개 rubric의 코드 집합과 문항 기준 일치,150개 사례의 전체·개념 판정 값/코드 일치, 근거 누락 사례의 빈 제공 근거와 동일 답안 조건 확인
 - 구조 확인은 진단 기대값의 의미 정확성·사람 승인·원문 이용 조건 확정이 아님
