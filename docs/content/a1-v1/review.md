@@ -2,7 +2,7 @@
 
 > 자동 생성 읽기 사본. 수정 기준은 [bundle.json](bundle.json). 사람 검수·공개 승인 대기.
 
-- 원본 SHA-256: `4c08549e6563d13fd92dea9a1fded94eab675d283d28c1079ab18d0599e67beb`
+- 원본 SHA-256: `d7a749464750d443793ee295f86da10feac8974af1560c5f1df1a000ab60f540`
 - 재생성: 저장소 루트에서 `python3 scripts/render_content_review.py --bundle docs/content/a1-v1/bundle.json`
 - 검수 절차·승인 기록: [콘텐츠 안내](README.md#사람-검수공개-순서)
 - 이 자료를 읽었다는 사실만으로 앱의 검수·공개 상태가 바뀌지 않음
@@ -11,7 +11,7 @@
 
 ### A1-DB-01 · BASIC
 
-팀 가입 테이블 membership(member_id, team_id, joined_at)이 있다. 한 회원은 여러 팀에 가입할 수 있고, 같은 회원·팀 조합은 한 번만 허용한다. 두 ID는 필수다. 기본키를 member_id 하나로 정하면 왜 요구를 어기는가? 대리키를 쓰는 설계도 포함해 유효한 제약 구성을 설명하라.
+팀 가입 테이블 membership(member_id, team_id, joined_at)이 있습니다. 한 회원은 여러 팀에 가입할 수 있고, 같은 회원·팀 조합은 한 번만 허용합니다. 두 ID는 필수입니다. 기본키를 member_id 하나로 정하면 왜 요구를 어기나요? 대리키를 쓰는 설계도 포함해 유효한 제약 구성을 설명하세요.
 
 **모범 답안**
 
@@ -75,7 +75,7 @@ member_id 하나를 기본키로 두면 한 회원의 두 번째 팀 가입까�
 
 ### A1-DB-02 · BASIC
 
-PostgreSQL 17에서 email text UNIQUE, age integer CHECK(age >= 18)만 선언했다. email은 선택값이고 NULL인 회원 여러 명을 허용한다. age는 반드시 있어야 하며 18 이상이어야 한다. 현재 선언은 무엇을 보장하고 무엇이 부족한가? 다른 DB에도 그대로 적용되는 규칙인지 구분하라.
+PostgreSQL 17에서 email text UNIQUE, age integer CHECK(age >= 18)만 선언했습니다. email은 선택값이고 NULL인 회원 여러 명을 허용합니다. age는 반드시 있어야 하며 18 이상이어야 합니다. 현재 선언은 무엇을 보장하고 무엇이 부족한가요? 다른 DB에도 그대로 적용되는 규칙인지 구분하세요.
 
 **모범 답안**
 
@@ -132,7 +132,7 @@ CHECK(age >= 18)는 age가 NULL이면 unknown이 되어 통과하므로 필수�
 
 ### A1-DB-03 · INTERMEDIATE
 
-orders.customer_id가 customers.id를 참조하는 nullable FK다. 모든 주문에는 고객이 필요하고, 고객을 삭제해도 주문 이력은 자동 삭제되면 안 된다. 없는 고객 ID와 NULL을 각각 누가 막는가? PostgreSQL 17의 기본 비지연 FK를 전제로 삭제 정책을 설명하라.
+orders.customer_id가 customers.id를 참조하는 nullable FK입니다. 모든 주문에는 고객이 필요하고, 고객을 삭제해도 주문 이력은 자동 삭제되면 안 됩니다. 없는 고객 ID와 NULL을 각각 누가 막나요? PostgreSQL 17의 기본 비지연 FK를 전제로 삭제 정책을 설명하세요.
 
 **모범 답안**
 
@@ -189,7 +189,7 @@ FK는 존재하지 않는 non-NULL 고객 ID를 거부하지만 nullable 열의 
 
 ### A1-DB-04 · INTERMEDIATE
 
-서로 다른 서버 두 대가 같은(resource_id, slot_at)의 예약 존재 여부를 각각 조회해 모두 없다고 확인한 뒤, 서로 다른 예약 ID로 INSERT한다. 각 ID와 슬롯은 non-NULL이다. 서버의 사전 조회만으로 중복을 막을 수 있는가? 공유 DB에서 최종 방어할 제약과 PostgreSQL 17 CHECK의 한계를 설명하라.
+서로 다른 서버 두 대가 같은 (resource_id, slot_at)의 예약 존재 여부를 각각 조회해 모두 없다고 확인한 뒤, 서로 다른 예약 ID로 INSERT합니다. 각 ID와 슬롯은 non-NULL입니다. 서버의 사전 조회만으로 중복을 막을 수 있나요? 공유 DB에서 최종 방어할 제약과 PostgreSQL 17 CHECK의 한계를 설명하세요.
 
 **모범 답안**
 
@@ -247,7 +247,7 @@ FK는 존재하지 않는 non-NULL 고객 ID를 거부하지만 nullable 열의 
 
 ### A1-DB-05 · ADVANCED
 
-주문 행의 키는(order_id, line_no)다. 같은 상품은 여러 주문에 나타난다. 업무 규칙상 product_id→현재 product_name, category_id이며 category_id→현재 category_name이다. unit_price는 주문 당시 가격이다. 모든 상품명은 현재명을 보여줘야 한다. 갱신 이상을 줄이면서 과거 가격을 보존하는 분리를 제안하고, 조회용 중복을 무조건 금지할 수 있는지 설명하라.
+주문 행의 키는 (order_id, line_no)입니다. 같은 상품은 여러 주문에 나타납니다. 업무 규칙상 product_id→현재 product_name, category_id이며 category_id→현재 category_name입니다. unit_price는 주문 당시 가격입니다. 모든 상품명은 현재명을 보여줘야 합니다. 갱신 이상을 줄이면서 과거 가격을 보존하는 분리를 제안하고, 조회용 중복을 무조건 금지할 수 있는지 설명하세요.
 
 **모범 답안**
 
@@ -311,7 +311,7 @@ FK는 존재하지 않는 non-NULL 고객 ID를 거부하지만 nullable 열의 
 
 ### A1-SQL-01 · INTERMEDIATE
 
-고객마다 결제 완료 주문 수를 구하되 0건 고객도 남겨야 한다. SELECT c.id, COUNT(*) FROM customers c LEFT JOIN orders o ON o.customer_id=c.id WHERE o.status='PAID' GROUP BY c.id의 문제와 수정 방향을 설명하라. orders.id는 NOT NULL PK다.
+고객마다 결제 완료 주문 수를 구하되 0건 고객도 남겨야 합니다. SELECT c.id, COUNT(*) FROM customers c LEFT JOIN orders o ON o.customer_id=c.id WHERE o.status='PAID' GROUP BY c.id의 문제와 수정 방향을 설명하세요. orders.id는 NOT NULL PK입니다.
 
 **모범 답안**
 
@@ -375,7 +375,7 @@ WHERE의 o.status 조건은 주문이 없어 NULL 확장된 고객 행을 탈락
 
 ### A1-SQL-02 · INTERMEDIATE
 
-members.id는 non-NULL이고 값은 1,2다. blocked.member_id에는 1,NULL이 있다. WHERE id NOT IN (SELECT member_id FROM blocked)는 어느 회원을 남기는가? 차단되지 않은 회원을 얻는 수정과 NULL 전제를 설명하라.
+members.id는 non-NULL이고 값은 1,2입니다. blocked.member_id에는 1,NULL이 있습니다. WHERE id NOT IN (SELECT member_id FROM blocked)는 어느 회원을 남기나요? 차단되지 않은 회원을 얻는 수정과 NULL 전제를 설명하세요.
 
 **모범 답안**
 
@@ -433,7 +433,7 @@ members.id는 non-NULL이고 값은 1,2다. blocked.member_id에는 1,NULL이 �
 
 ### A1-SQL-03 · BASIC
 
-데이터가 변경되지 않는 orders에서 ORDER BY created_at DESC LIMIT 10으로 최근 주문을 읽는다. 여러 주문의 created_at이 같다. 매번 같은 상위 10개와 순서를 계약하려면 무엇이 필요한가? PK가 있다는 이유로 자동 정렬되는지, 동시 변경 중 페이지 안정성까지 보장되는지 설명하라.
+데이터가 변경되지 않는 orders에서 ORDER BY created_at DESC LIMIT 10으로 최근 주문을 읽습니다. 여러 주문의 created_at이 같습니다. 매번 같은 상위 10개와 순서를 계약하려면 무엇이 필요한가요? PK가 있다는 이유로 자동 정렬되는지, 동시 변경 중 페이지 안정성까지 보장되는지 설명하세요.
 
 **모범 답안**
 
@@ -491,7 +491,7 @@ created_at 동률 사이 순서는 이 정렬만으로 정해지지 않는다. O
 
 ### A1-SQL-04 · ADVANCED
 
-PostgreSQL 17 B-tree 인덱스(tenant_id, created_at)가 있다. tenant_id=? AND created_at>=?와 created_at>=?만 있는 쿼리를 비교하라. 선두 열이 없으면 인덱스를 절대 못 쓴다는 주장과 인덱스가 있으면 항상 빠르다는 주장을 검토하고, 측정할 조건을 제시하라.
+PostgreSQL 17 B-tree 인덱스 (tenant_id, created_at)가 있습니다. tenant_id=? AND created_at>=?와 created_at>=?만 있는 쿼리를 비교하세요. 선두 열이 없으면 인덱스를 절대 못 쓴다는 주장과 인덱스가 있으면 항상 빠르다는 주장을 검토하고, 측정할 조건을 제시하세요.
 
 **모범 답안**
 
@@ -555,7 +555,7 @@ PostgreSQL 17 B-tree 인덱스(tenant_id, created_at)가 있다. tenant_id=? AND
 
 ### A1-SQL-05 · ADVANCED
 
-고객 한 명에 orders가 2행이며 각 amount=20이다. comments는 3행이다. 두 자식을 고객 ID로 동시에 JOIN한 뒤 SUM(o.amount)를 하면 120이 된다. 실제 주문 합계 40을 얻으려면 어떻게 해야 하는가? SUM(DISTINCT o.amount)가 답인지 설명하라.
+고객 한 명에 orders가 2행이며 각 amount=20입니다. comments는 3행입니다. 두 자식을 고객 ID로 동시에 JOIN한 뒤 SUM(o.amount)를 하면 120이 됩니다. 실제 주문 합계 40을 얻으려면 어떻게 해야 하나요? SUM(DISTINCT o.amount)가 답인지 설명하세요.
 
 **모범 답안**
 
@@ -613,7 +613,7 @@ PostgreSQL 17 B-tree 인덱스(tenant_id, created_at)가 있다. tenant_id=? AND
 
 ### A1-TX-01 · INTERMEDIATE
 
-로컬 DB transaction에서 주문을 저장하고 외부 결제 HTTP 호출이 성공했다. 그 뒤 DB 제약 위반으로 rollback됐다. 외부 결제는 이 DB transaction에 참여하지 않으며 XA도 없다. 결제도 자동 취소되는가? 남은 상태를 어떻게 다뤄야 하는지 설명하라.
+로컬 DB transaction에서 주문을 저장하고 외부 결제 HTTP 호출이 성공했습니다. 그 뒤 DB 제약 위반으로 rollback됐습니다. 외부 결제는 이 DB transaction에 참여하지 않으며 XA도 없습니다. 결제도 자동 취소되나요? 남은 상태를 어떻게 다뤄야 하는지 설명하세요.
 
 **모범 답안**
 
@@ -670,7 +670,7 @@ rollback은 참여한 DB 변경을 되돌리고, 이미 성공한 외부 결제�
 
 ### A1-TX-02 · INTERMEDIATE
 
-PostgreSQL 17에서 A가 transaction을 시작해 일반 SELECT로 가격10을 읽었다. B가 20으로 UPDATE하고 commit했다. A가 같은 transaction에서 다시 일반 SELECT한다. A가 Read Committed일 때와 Repeatable Read일 때의 결과를 비교하라. A 자신의 변경은 없고 다른 쓰기도 없다.
+PostgreSQL 17에서 A가 transaction을 시작해 일반 SELECT로 가격 10을 읽었습니다. B가 20으로 UPDATE하고 commit했습니다. A가 같은 transaction에서 다시 일반 SELECT합니다. A가 Read Committed일 때와 Repeatable Read일 때의 결과를 비교하세요. A 자신의 변경은 없고 다른 쓰기도 없습니다.
 
 **모범 답안**
 
@@ -678,20 +678,20 @@ Read Committed의 일반 SELECT는 문장 시작 시점의 snapshot을 사용하
 
 **필수 개념**
 
-- 문장 단위 snapshot · 가중치 0.50: PG17 Read Committed 일반 SELECT의 문장 시작 snapshot으로 두 번째 값20 설명.
-- 트랜잭션 snapshot의 시점 · 가중치 0.50: PG17 Repeatable Read는 첫 비트랜잭션 제어 문장 snapshot으로10 유지. BEGIN 시점·자신의 변경 예외 구분.
+- 문장 단위 snapshot · 가중치 0.50: PG17 Read Committed 일반 SELECT의 문장 시작 snapshot으로 두 번째 값 20 설명.
+- 트랜잭션 snapshot의 시점 · 가중치 0.50: PG17 Repeatable Read는 첫 비트랜잭션 제어 문장 snapshot으로 10 유지. BEGIN 시점·자신의 변경 예외 구분.
 
 **개념별 판정 경계**
 
 - `TX_02_01`
-  - CORRECT: PG17 Read Committed 일반 SELECT의 문장 시작 snapshot으로 두 번째 값20 설명.
+  - CORRECT: PG17 Read Committed 일반 SELECT의 문장 시작 snapshot으로 두 번째 값 20 설명.
   - PARTIALLY_CORRECT: 20을 맞히나 문장 snapshot과 commit 관계 누락.
-  - INCORRECT: 같은 transaction이면 Read Committed도 무조건10이라고 주장.
+  - INCORRECT: 같은 transaction이면 Read Committed도 무조건 10이라고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
 - `TX_02_02`
-  - CORRECT: PG17 Repeatable Read는 첫 비트랜잭션 제어 문장 snapshot으로10 유지. BEGIN 시점·자신의 변경 예외 구분.
+  - CORRECT: PG17 Repeatable Read는 첫 비트랜잭션 제어 문장 snapshot으로 10 유지. BEGIN 시점·자신의 변경 예외 구분.
   - PARTIALLY_CORRECT: 10을 맞히지만 첫 데이터 문장 시점과 자신의 변경 예외 누락.
-  - INCORRECT: Repeatable Read도 매번 최신20을 보거나 자신의 쓰기도 절대 볼 수 없다고 주장.
+  - INCORRECT: Repeatable Read도 매번 최신 20을 보거나 자신의 쓰기도 절대 볼 수 없다고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
 
 **작성자가 만든 진단 사례 — 독립 평가 표본·모델 실행 결과가 아님**
@@ -701,15 +701,15 @@ Read Committed의 일반 SELECT는 문장 시작 시점의 snapshot을 사용하
   - 예상 개념 판정: TX_02_01: CORRECT, TX_02_02: CORRECT
   - 이유: 문항에 주어진 전제와 모든 필수 개념의 조건을 충족.
 - `A1-TX-02-alternative` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
-  - 답변: A의 첫 읽기 후 B가 확정한 값은 RC의 다음 문장에 반영될 수 있다. RR은 BEGIN이 아니라 첫 데이터 문장의 snapshot으로 같은10을 읽는다. 자기 변경은 볼 수 있으나 여기서는 없다는 전제를 지킨다.
+  - 답변: A의 첫 읽기 후 B가 확정한 값은 RC의 다음 문장에 반영될 수 있다. RR은 BEGIN이 아니라 첫 데이터 문장의 snapshot으로 같은 10을 읽는다. 자기 변경은 볼 수 있으나 여기서는 없다는 전제를 지킨다.
   - 예상 개념 판정: TX_02_01: CORRECT, TX_02_02: CORRECT
   - 이유: 표현 또는 해결 방법이 달라도 필수 조건과 보장 범위가 일치. 특정 단어·해법 일치로만 채점 금지.
 - `A1-TX-02-partial` · 근거 조건 `DOCUMENT` · 예상 전체 `PARTIALLY_CORRECT`
-  - 답변: Read Committed는 다음 문장 시작 전에 B가 commit해 새 snapshot에서20을 본다. Repeatable Read는 같은 transaction의 snapshot을 유지해10이다.
+  - 답변: Read Committed는 다음 문장 시작 전에 B가 commit해 새 snapshot에서 20을 본다. Repeatable Read는 같은 transaction의 snapshot을 유지해 10이다.
   - 예상 개념 판정: TX_02_01: CORRECT, TX_02_02: PARTIALLY_CORRECT
   - 이유: 마지막 필수 개념의 조건·이유 일부가 빠짐. 이미 충족한 앞 개념을 전체 판정에 맞춰 낮추지 않음.
 - `A1-TX-02-incorrect` · 근거 조건 `DOCUMENT` · 예상 전체 `INCORRECT`
-  - 답변: Read Committed도 transaction 전체에10을 고정한다. Repeatable Read는 문장마다 최신20을 보고 자신의 쓰기는 절대 보지 못한다.
+  - 답변: Read Committed도 transaction 전체에 10을 고정한다. Repeatable Read는 문장마다 최신 20을 보고 자신의 쓰기는 절대 보지 못한다.
   - 예상 개념 판정: TX_02_01: INCORRECT, TX_02_02: INCORRECT
   - 이유: 각 필수 개념의 핵심을 뒤집거나 문항 전제와 충돌. 단순 생략과 구분.
 - `A1-TX-02-missing-evidence` · 근거 조건 `MISSING_REQUIRED_CONCEPTS` · 예상 전체 `NEEDS_REVIEW`
@@ -727,23 +727,23 @@ Read Committed의 일반 SELECT는 문장 시작 시점의 snapshot을 사용하
 
 ### A1-TX-03 · INTERMEDIATE
 
-PostgreSQL 17 Read Committed에서 재고10을 A와 B가 일반 SELECT로 읽고, 각각 UPDATE stock SET quantity=9 WHERE id=1을 실행해 둘 다 commit한다. 최종9가 의도한 두 번 차감 결과8이 아닌 이유와, 재고가 음수가 되지 않게 차감하는 대안을 설명하라.
+PostgreSQL 17 Read Committed에서 재고 10을 A와 B가 일반 SELECT로 읽고, 각각 UPDATE stock SET quantity=9 WHERE id=1을 실행해 둘 다 commit합니다. 최종 9가 의도한 두 번 차감 결과 8이 아닌 이유와, 재고가 음수가 되지 않게 차감하는 대안을 설명하세요.
 
 **모범 답안**
 
-두 요청이 같은 과거 값을 읽어 계산한 고정값9를 덮어써 한 번의 차감이 사라진다. UPDATE stock SET quantity=quantity-1 WHERE id=1 AND quantity>=1처럼 현재 행에 대한 조건부 원자 연산을 쓰고 영향 행 수가 1인지 확인하면 성공한 각 차감이 반영된다. PG17 RC의 경쟁 갱신은 새 행 버전에 조건을 재검사한다. version 조건 갱신과 충돌 처리, 실제 행 잠금을 쓰기까지 유지하는 대안도 가능하다. transaction을 붙이기만 해서는 고정값 계산 경쟁이 없어지지 않는다.
+두 요청이 같은 과거 값을 읽어 계산한 고정값 9를 덮어써 한 번의 차감이 사라진다. UPDATE stock SET quantity=quantity-1 WHERE id=1 AND quantity>=1처럼 현재 행에 대한 조건부 원자 연산을 쓰고 영향 행 수가 1인지 확인하면 성공한 각 차감이 반영된다. PG17 RC의 경쟁 갱신은 새 행 버전에 조건을 재검사한다. version 조건 갱신과 충돌 처리, 실제 행 잠금을 쓰기까지 유지하는 대안도 가능하다. transaction을 붙이기만 해서는 고정값 계산 경쟁이 없어지지 않는다.
 
 **필수 개념**
 
-- 읽기·계산·덮어쓰기 경쟁 · 가중치 0.50: 같은10을 읽고 고정9를 두 번 쓰는 실행 순서로 최종9 설명. 두 commit이 각 차감 반영을 의미하지 않음.
+- 읽기·계산·덮어쓰기 경쟁 · 가중치 0.50: 같은 10을 읽고 고정 9를 두 번 쓰는 실행 순서로 최종 9 설명. 두 commit이 각 차감 반영을 의미하지 않음.
 - 조건부 원자 변경과 결과 확인 · 가중치 0.50: 현재 값의 원자 차감+quantity>=1+영향 행 수 확인 또는 동등한 version/행 잠금 방어. 충돌·재고 부족 결과 처리.
 
 **개념별 판정 경계**
 
 - `TX_03_01`
-  - CORRECT: 같은10을 읽고 고정9를 두 번 쓰는 실행 순서로 최종9 설명. 두 commit이 각 차감 반영을 의미하지 않음.
+  - CORRECT: 같은 10을 읽고 고정 9를 두 번 쓰는 실행 순서로 최종 9 설명. 두 commit이 각 차감 반영을 의미하지 않음.
   - PARTIALLY_CORRECT: 누락 갱신을 언급하나 고정값 덮어쓰기 과정 누락.
-  - INCORRECT: 두 commit이면 주어진 고정9 UPDATE만으로 최종8이라고 주장.
+  - INCORRECT: 두 commit이면 주어진 고정 9 UPDATE만으로 최종 8이라고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
 - `TX_03_02`
   - CORRECT: 현재 값의 원자 차감+quantity>=1+영향 행 수 확인 또는 동등한 version/행 잠금 방어. 충돌·재고 부족 결과 처리.
@@ -754,23 +754,23 @@ PostgreSQL 17 Read Committed에서 재고10을 A와 B가 일반 SELECT로 읽고
 **작성자가 만든 진단 사례 — 독립 평가 표본·모델 실행 결과가 아님**
 
 - `A1-TX-03-correct` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
-  - 답변: 두 요청이 같은 과거 값을 읽어 계산한 고정값9를 덮어써 한 번의 차감이 사라진다. UPDATE stock SET quantity=quantity-1 WHERE id=1 AND quantity>=1처럼 현재 행에 대한 조건부 원자 연산을 쓰고 영향 행 수가 1인지 확인하면 성공한 각 차감이 반영된다. PG17 RC의 경쟁 갱신은 새 행 버전에 조건을 재검사한다. version 조건 갱신과 충돌 처리, 실제 행 잠금을 쓰기까지 유지하는 대안도 가능하다. transaction을 붙이기만 해서는 고정값 계산 경쟁이 없어지지 않는다.
+  - 답변: 두 요청이 같은 과거 값을 읽어 계산한 고정값 9를 덮어써 한 번의 차감이 사라진다. UPDATE stock SET quantity=quantity-1 WHERE id=1 AND quantity>=1처럼 현재 행에 대한 조건부 원자 연산을 쓰고 영향 행 수가 1인지 확인하면 성공한 각 차감이 반영된다. PG17 RC의 경쟁 갱신은 새 행 버전에 조건을 재검사한다. version 조건 갱신과 충돌 처리, 실제 행 잠금을 쓰기까지 유지하는 대안도 가능하다. transaction을 붙이기만 해서는 고정값 계산 경쟁이 없어지지 않는다.
   - 예상 개념 판정: TX_03_01: CORRECT, TX_03_02: CORRECT
   - 이유: 문항에 주어진 전제와 모든 필수 개념의 조건을 충족.
 - `A1-TX-03-alternative` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
-  - 답변: 읽은 값이 아니라 DB의 현재 행을 quantity-1로 바꾸고 부족 조건을 같은 SQL에서 검사한다. 영향 행 수0이면 실패로 처리한다. 또는 version 충돌 처리·실제 행 잠금을 쓰기까지 유지할 수 있다. 원래 두 writer는 둘 다9를 기록해 결과가9다.
+  - 답변: 읽은 값이 아니라 DB의 현재 행을 quantity-1로 바꾸고 부족 조건을 같은 SQL에서 검사한다. 영향 행 수 0이면 실패로 처리한다. 또는 version 충돌 처리·실제 행 잠금을 쓰기까지 유지할 수 있다. 원래 두 writer는 둘 다 9를 기록해 결과가 9다.
   - 예상 개념 판정: TX_03_01: CORRECT, TX_03_02: CORRECT
   - 이유: 표현 또는 해결 방법이 달라도 필수 조건과 보장 범위가 일치. 특정 단어·해법 일치로만 채점 금지.
 - `A1-TX-03-partial` · 근거 조건 `DOCUMENT` · 예상 전체 `PARTIALLY_CORRECT`
-  - 답변: 둘 다10을 읽고9로 덮어써 한 차감이 사라졌다. 현재 값에서 원자적으로 빼는 UPDATE와 quantity>=1 조건을 사용한다.
+  - 답변: 둘 다 10을 읽고 9로 덮어써 한 차감이 사라졌다. 현재 값에서 원자적으로 빼는 UPDATE와 quantity>=1 조건을 사용한다.
   - 예상 개념 판정: TX_03_01: CORRECT, TX_03_02: PARTIALLY_CORRECT
   - 이유: 마지막 필수 개념의 조건·이유 일부가 빠짐. 이미 충족한 앞 개념을 전체 판정에 맞춰 낮추지 않음.
 - `A1-TX-03-incorrect` · 근거 조건 `DOCUMENT` · 예상 전체 `INCORRECT`
-  - 답변: 두 요청이 commit하면 고정9를 저장해도 결과는8이다. transaction 어노테이션과 메모리 검사만 있으면 여러 서버의 음수 재고가 자동 차단된다.
+  - 답변: 두 요청이 commit하면 고정 9를 저장해도 결과는 8이다. transaction 어노테이션과 메모리 검사만 있으면 여러 서버의 음수 재고가 자동 차단된다.
   - 예상 개념 판정: TX_03_01: INCORRECT, TX_03_02: INCORRECT
   - 이유: 각 필수 개념의 핵심을 뒤집거나 문항 전제와 충돌. 단순 생략과 구분.
 - `A1-TX-03-missing-evidence` · 근거 조건 `MISSING_REQUIRED_CONCEPTS` · 예상 전체 `NEEDS_REVIEW`
-  - 답변: 두 요청이 같은 과거 값을 읽어 계산한 고정값9를 덮어써 한 번의 차감이 사라진다. UPDATE stock SET quantity=quantity-1 WHERE id=1 AND quantity>=1처럼 현재 행에 대한 조건부 원자 연산을 쓰고 영향 행 수가 1인지 확인하면 성공한 각 차감이 반영된다. PG17 RC의 경쟁 갱신은 새 행 버전에 조건을 재검사한다. version 조건 갱신과 충돌 처리, 실제 행 잠금을 쓰기까지 유지하는 대안도 가능하다. transaction을 붙이기만 해서는 고정값 계산 경쟁이 없어지지 않는다.
+  - 답변: 두 요청이 같은 과거 값을 읽어 계산한 고정값 9를 덮어써 한 번의 차감이 사라진다. UPDATE stock SET quantity=quantity-1 WHERE id=1 AND quantity>=1처럼 현재 행에 대한 조건부 원자 연산을 쓰고 영향 행 수가 1인지 확인하면 성공한 각 차감이 반영된다. PG17 RC의 경쟁 갱신은 새 행 버전에 조건을 재검사한다. version 조건 갱신과 충돌 처리, 실제 행 잠금을 쓰기까지 유지하는 대안도 가능하다. transaction을 붙이기만 해서는 고정값 계산 경쟁이 없어지지 않는다.
   - 예상 개념 판정: TX_03_01: NEEDS_REVIEW, TX_03_02: NEEDS_REVIEW
   - 이유: 답변 내용은 정답 사례와 동일하나 필요한 근거가 전부 누락된 진단 조건. 근거 없이 정답 확정하는 평가기를 탐지하는 작성자 기대값.
 
@@ -785,7 +785,7 @@ PostgreSQL 17 Read Committed에서 재고10을 A와 B가 일반 SELECT로 읽고
 
 ### A1-TX-04 · ADVANCED
 
-PostgreSQL 17 Serializable transaction이 SQLSTATE 40001로 실패했다. 마지막 UPDATE만 같은 transaction에서 다시 실행하면 되는가? 올바른 재시도 범위와 무한 재시도·외부 부수 효과의 한계를 설명하라.
+PostgreSQL 17 Serializable transaction이 SQLSTATE 40001로 실패했습니다. 마지막 UPDATE만 같은 transaction에서 다시 실행하면 되나요? 올바른 재시도 범위와 무한 재시도·외부 부수 효과의 한계를 설명하세요.
 
 **모범 답안**
 
@@ -842,7 +842,7 @@ PostgreSQL 17 Serializable transaction이 SQLSTATE 40001로 실패했다. 마지
 
 ### A1-TX-05 · ADVANCED
 
-PostgreSQL 17 Read Committed에서 예약이 아직 없는 슬롯을 SELECT ... FOR UPDATE로 조회해 0행을 얻었다. 이것만으로 같은 슬롯의 동시 INSERT를 막을 수 있는가? 예약 유일성을 보장할 대안과 조건을 설명하라.
+PostgreSQL 17 Read Committed에서 예약이 아직 없는 슬롯을 SELECT ... FOR UPDATE로 조회해 0행을 얻었습니다. 이것만으로 같은 슬롯의 동시 INSERT를 막을 수 있나요? 예약 유일성을 보장할 대안과 조건을 설명하세요.
 
 **모범 답안**
 
@@ -901,11 +901,11 @@ FOR UPDATE는 실제 조회한 행을 잠그므로 0행이면 존재하지 않�
 
 ### A1-HTTP-01 · BASIC
 
-동일한 DELETE /items/7 요청의 첫 응답은204, 재전송 응답은404였다. 두 요청 모두 결과적으로 해당 항목이 존재하지 않게 만들었다. 응답이 달라서 비멱등인가? 안전성과 멱등성의 차이를 설명하라.
+동일한 DELETE /items/7 요청의 첫 응답은 204, 재전송 응답은 404였습니다. 두 요청 모두 결과적으로 해당 항목이 존재하지 않게 만들었습니다. 응답이 달라서 비멱등인가요? 안전성과 멱등성의 차이를 설명하세요.
 
 **모범 답안**
 
-멱등성은 같은 요청을 반복했을 때 의도한 서버 효과가 한 번 실행한 것과 같은지에 관한 성질이다. 항목이 없는 최종 효과가 같으므로 204와404 차이만으로 비멱등이라고 하지 않는다. 응답·로그가 모두 같아야 하는 것은 아니다. DELETE는 상태 제거를 의도하므로 안전하지 않지만 HTTP에서 멱등 메서드다. 실제 구현이 다른 의도한 효과를 추가하는 경우는 별도로 확인한다.
+멱등성은 같은 요청을 반복했을 때 의도한 서버 효과가 한 번 실행한 것과 같은지에 관한 성질이다. 항목이 없는 최종 효과가 같으므로 204와 404 차이만으로 비멱등이라고 하지 않는다. 응답·로그가 모두 같아야 하는 것은 아니다. DELETE는 상태 제거를 의도하므로 안전하지 않지만 HTTP에서 멱등 메서드다. 실제 구현이 다른 의도한 효과를 추가하는 경우는 별도로 확인한다.
 
 **필수 개념**
 
@@ -928,7 +928,7 @@ FOR UPDATE는 실제 조회한 행을 잠그므로 0행이면 존재하지 않�
 **작성자가 만든 진단 사례 — 독립 평가 표본·모델 실행 결과가 아님**
 
 - `A1-HTTP-01-correct` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
-  - 답변: 멱등성은 같은 요청을 반복했을 때 의도한 서버 효과가 한 번 실행한 것과 같은지에 관한 성질이다. 항목이 없는 최종 효과가 같으므로 204와404 차이만으로 비멱등이라고 하지 않는다. 응답·로그가 모두 같아야 하는 것은 아니다. DELETE는 상태 제거를 의도하므로 안전하지 않지만 HTTP에서 멱등 메서드다. 실제 구현이 다른 의도한 효과를 추가하는 경우는 별도로 확인한다.
+  - 답변: 멱등성은 같은 요청을 반복했을 때 의도한 서버 효과가 한 번 실행한 것과 같은지에 관한 성질이다. 항목이 없는 최종 효과가 같으므로 204와 404 차이만으로 비멱등이라고 하지 않는다. 응답·로그가 모두 같아야 하는 것은 아니다. DELETE는 상태 제거를 의도하므로 안전하지 않지만 HTTP에서 멱등 메서드다. 실제 구현이 다른 의도한 효과를 추가하는 경우는 별도로 확인한다.
   - 예상 개념 판정: HTTP_01_01: CORRECT, HTTP_01_02: CORRECT
   - 이유: 문항에 주어진 전제와 모든 필수 개념의 조건을 충족.
 - `A1-HTTP-01-alternative` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
@@ -940,11 +940,11 @@ FOR UPDATE는 실제 조회한 행을 잠그므로 0행이면 존재하지 않�
   - 예상 개념 판정: HTTP_01_01: CORRECT, HTTP_01_02: PARTIALLY_CORRECT
   - 이유: 마지막 필수 개념의 조건·이유 일부가 빠짐. 이미 충족한 앞 개념을 전체 판정에 맞춰 낮추지 않음.
 - `A1-HTTP-01-incorrect` · 근거 조건 `DOCUMENT` · 예상 전체 `INCORRECT`
-  - 답변: 204와404가 다르면 효과와 무관하게 비멱등이다. 멱등 메서드는 반드시 안전하고 DELETE는 상태 변경을 의도하지 않는다.
+  - 답변: 204와 404가 다르면 효과와 무관하게 비멱등이다. 멱등 메서드는 반드시 안전하고 DELETE는 상태 변경을 의도하지 않는다.
   - 예상 개념 판정: HTTP_01_01: INCORRECT, HTTP_01_02: INCORRECT
   - 이유: 각 필수 개념의 핵심을 뒤집거나 문항 전제와 충돌. 단순 생략과 구분.
 - `A1-HTTP-01-missing-evidence` · 근거 조건 `MISSING_REQUIRED_CONCEPTS` · 예상 전체 `NEEDS_REVIEW`
-  - 답변: 멱등성은 같은 요청을 반복했을 때 의도한 서버 효과가 한 번 실행한 것과 같은지에 관한 성질이다. 항목이 없는 최종 효과가 같으므로 204와404 차이만으로 비멱등이라고 하지 않는다. 응답·로그가 모두 같아야 하는 것은 아니다. DELETE는 상태 제거를 의도하므로 안전하지 않지만 HTTP에서 멱등 메서드다. 실제 구현이 다른 의도한 효과를 추가하는 경우는 별도로 확인한다.
+  - 답변: 멱등성은 같은 요청을 반복했을 때 의도한 서버 효과가 한 번 실행한 것과 같은지에 관한 성질이다. 항목이 없는 최종 효과가 같으므로 204와 404 차이만으로 비멱등이라고 하지 않는다. 응답·로그가 모두 같아야 하는 것은 아니다. DELETE는 상태 제거를 의도하므로 안전하지 않지만 HTTP에서 멱등 메서드다. 실제 구현이 다른 의도한 효과를 추가하는 경우는 별도로 확인한다.
   - 예상 개념 판정: HTTP_01_01: NEEDS_REVIEW, HTTP_01_02: NEEDS_REVIEW
   - 이유: 답변 내용은 정답 사례와 동일하나 필요한 근거가 전부 누락된 진단 조건. 근거 없이 정답 확정하는 평가기를 탐지하는 작성자 기대값.
 
@@ -958,7 +958,7 @@ FOR UPDATE는 실제 조회한 행을 잠그므로 0행이면 존재하지 않�
 
 ### A1-HTTP-02 · INTERMEDIATE
 
-응답 Cache-Control에 필드명 없는 no-cache, no-store, private를 각각 사용할 때 저장과 재사용 규칙은 어떻게 다른가? private이면 브라우저도 저장하지 않는지, no-store가 모든 개인정보 복사까지 막는지 설명하라.
+응답 Cache-Control에 필드명 없는 no-cache, no-store, private를 각각 사용할 때 저장과 재사용 규칙은 어떻게 다른가요? private이면 브라우저도 저장하지 않는지, no-store가 모든 개인정보 복사까지 막는지 설명하세요.
 
 **모범 답안**
 
@@ -1015,26 +1015,26 @@ no-cache는 저장 자체를 막지 않고 재사용 전에 원 서버의 성공
 
 ### A1-HTTP-03 · INTERMEDIATE
 
-클라이언트는 ETag "v3"인 표현을 갖고 있다. GET에 If-None-Match: "v3"를 보낸 경우와 변경 요청에 If-Match: "v3"를 보낸 경우를 비교하라. GET 시 현재 태그가 v3이고, 변경 시 현재 태그는 v4다. 다른 오류나 선행 조건은 없으며 서버는 중복 성공 요청으로 확인하지 않았다. 서버의 검사·변경 경계도 설명하라.
+클라이언트는 ETag "v3"인 표현을 갖고 있습니다. GET에 If-None-Match: "v3"를 보낸 경우와 변경 요청에 If-Match: "v3"를 보낸 경우를 비교하세요. GET 시 현재 태그가 v3이고, 변경 시 현재 태그는 v4입니다. 다른 오류나 선행 조건은 없으며 서버는 중복 성공 요청으로 확인하지 않았습니다. 서버의 검사·변경 경계도 설명하세요.
 
 **모범 답안**
 
-GET에서 태그가 같으면 If-None-Match 조건이 실패해304로 기존 표현을 재사용할 수 있다. 변경 요청에서 현재 v4와 If-Match v3가 불일치하면 사전 조건 실패412로 변경을 수행하지 않는다. 다른 오류·조건 우선순위나 이미 처리된 요청의 예외가 없는 이 문항의 전제다. 변경 시 태그 비교와 갱신은 원자적으로 보장해 중간 변경 경쟁을 막아야 하며, ETag 조건은 인증·인가를 대체하지 않는다.
+GET에서 태그가 같으면 If-None-Match 조건이 실패해 304로 기존 표현을 재사용할 수 있다. 변경 요청에서 현재 v4와 If-Match v3가 불일치하면 사전 조건 실패 412로 변경을 수행하지 않는다. 다른 오류·조건 우선순위나 이미 처리된 요청의 예외가 없는 이 문항의 전제다. 변경 시 태그 비교와 갱신은 원자적으로 보장해 중간 변경 경쟁을 막아야 하며, ETag 조건은 인증·인가를 대체하지 않는다.
 
 **필수 개념**
 
-- 조건부 읽기 검증 · 가중치 0.50: 주어진 GET의 If-None-Match 일치 조건에서304와 기존 표현 재사용 설명.
-- 변경 사전 조건의 방어 · 가중치 0.50: 주어진 If-Match 불일치에서412·미변경. 검사와 변경을 함께 보장하고 인증과 구분.
+- 조건부 읽기 검증 · 가중치 0.50: 주어진 GET의 If-None-Match 일치 조건에서 304와 기존 표현 재사용 설명.
+- 변경 사전 조건의 방어 · 가중치 0.50: 주어진 If-Match 불일치에서 412·미변경. 검사와 변경을 함께 보장하고 인증과 구분.
 
 **개념별 판정 경계**
 
 - `HTTP_03_01`
-  - CORRECT: 주어진 GET의 If-None-Match 일치 조건에서304와 기존 표현 재사용 설명.
+  - CORRECT: 주어진 GET의 If-None-Match 일치 조건에서 304와 기존 표현 재사용 설명.
   - PARTIALLY_CORRECT: 304를 맞히나 조건부 읽기 이유 누락.
-  - INCORRECT: 일치 GET이 반드시 새 본문의200이나412라고 주장.
+  - INCORRECT: 일치 GET이 반드시 새 본문의 200이나 412라고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
 - `HTTP_03_02`
-  - CORRECT: 주어진 If-Match 불일치에서412·미변경. 검사와 변경을 함께 보장하고 인증과 구분.
+  - CORRECT: 주어진 If-Match 불일치에서 412·미변경. 검사와 변경을 함께 보장하고 인증과 구분.
   - PARTIALLY_CORRECT: 412·미변경을 맞히나 비교와 변경의 원자성 조건 누락.
   - INCORRECT: 불일치에도 무조건 수정하며 분리된 검사만으로 경쟁을 막거나 인증이 대체된다고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
@@ -1042,27 +1042,27 @@ GET에서 태그가 같으면 If-None-Match 조건이 실패해304로 기존 표
 **작성자가 만든 진단 사례 — 독립 평가 표본·모델 실행 결과가 아님**
 
 - `A1-HTTP-03-correct` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
-  - 답변: GET에서 태그가 같으면 If-None-Match 조건이 실패해304로 기존 표현을 재사용할 수 있다. 변경 요청에서 현재 v4와 If-Match v3가 불일치하면 사전 조건 실패412로 변경을 수행하지 않는다. 다른 오류·조건 우선순위나 이미 처리된 요청의 예외가 없는 이 문항의 전제다. 변경 시 태그 비교와 갱신은 원자적으로 보장해 중간 변경 경쟁을 막아야 하며, ETag 조건은 인증·인가를 대체하지 않는다.
+  - 답변: GET에서 태그가 같으면 If-None-Match 조건이 실패해 304로 기존 표현을 재사용할 수 있다. 변경 요청에서 현재 v4와 If-Match v3가 불일치하면 사전 조건 실패 412로 변경을 수행하지 않는다. 다른 오류·조건 우선순위나 이미 처리된 요청의 예외가 없는 이 문항의 전제다. 변경 시 태그 비교와 갱신은 원자적으로 보장해 중간 변경 경쟁을 막아야 하며, ETag 조건은 인증·인가를 대체하지 않는다.
   - 예상 개념 판정: HTTP_03_01: CORRECT, HTTP_03_02: CORRECT
   - 이유: 문항에 주어진 전제와 모든 필수 개념의 조건을 충족.
 - `A1-HTTP-03-alternative` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
-  - 답변: 읽기에는 표현이 그대로인지 확인해304를 받는 조건을 쓰고, 쓰기에는 내가 아는 버전이 현재와 같아야 한다는 조건을 쓴다. 이 전제에서 낡은 v3 쓰기는412로 거부하며 비교와 수정 사이에 다른 쓰기가 끼지 않게 보장한다. 인증은 별도다.
+  - 답변: 읽기에는 표현이 그대로인지 확인해 304를 받는 조건을 쓰고, 쓰기에는 내가 아는 버전이 현재와 같아야 한다는 조건을 쓴다. 이 전제에서 낡은 v3 쓰기는 412로 거부하며 비교와 수정 사이에 다른 쓰기가 끼지 않게 보장한다. 인증은 별도다.
   - 예상 개념 판정: HTTP_03_01: CORRECT, HTTP_03_02: CORRECT
   - 이유: 표현 또는 해결 방법이 달라도 필수 조건과 보장 범위가 일치. 특정 단어·해법 일치로만 채점 금지.
 - `A1-HTTP-03-partial` · 근거 조건 `DOCUMENT` · 예상 전체 `PARTIALLY_CORRECT`
-  - 답변: GET 태그가 같으니304로 기존 표현을 재사용한다. 변경은 v3와 현재v4가 달라412로 거부하며 ETag는 인증을 대신하지 않는다.
+  - 답변: GET 태그가 같으니 304로 기존 표현을 재사용한다. 변경은 v3와 현재 v4가 달라 412로 거부하며 ETag는 인증을 대신하지 않는다.
   - 예상 개념 판정: HTTP_03_01: CORRECT, HTTP_03_02: PARTIALLY_CORRECT
   - 이유: 마지막 필수 개념의 조건·이유 일부가 빠짐. 이미 충족한 앞 개념을 전체 판정에 맞춰 낮추지 않음.
 - `A1-HTTP-03-incorrect` · 근거 조건 `DOCUMENT` · 예상 전체 `INCORRECT`
-  - 답변: 태그가 일치하는 GET은412다. 변경 태그가 달라도 수정하고, 태그를 먼저 조회만 하면 경쟁은 막히며 인증도 필요 없다.
+  - 답변: 태그가 일치하는 GET은 412다. 변경 태그가 달라도 수정하고, 태그를 먼저 조회만 하면 경쟁은 막히며 인증도 필요 없다.
   - 예상 개념 판정: HTTP_03_01: INCORRECT, HTTP_03_02: INCORRECT
   - 이유: 각 필수 개념의 핵심을 뒤집거나 문항 전제와 충돌. 단순 생략과 구분.
 - `A1-HTTP-03-missing-evidence` · 근거 조건 `MISSING_REQUIRED_CONCEPTS` · 예상 전체 `NEEDS_REVIEW`
-  - 답변: GET에서 태그가 같으면 If-None-Match 조건이 실패해304로 기존 표현을 재사용할 수 있다. 변경 요청에서 현재 v4와 If-Match v3가 불일치하면 사전 조건 실패412로 변경을 수행하지 않는다. 다른 오류·조건 우선순위나 이미 처리된 요청의 예외가 없는 이 문항의 전제다. 변경 시 태그 비교와 갱신은 원자적으로 보장해 중간 변경 경쟁을 막아야 하며, ETag 조건은 인증·인가를 대체하지 않는다.
+  - 답변: GET에서 태그가 같으면 If-None-Match 조건이 실패해 304로 기존 표현을 재사용할 수 있다. 변경 요청에서 현재 v4와 If-Match v3가 불일치하면 사전 조건 실패 412로 변경을 수행하지 않는다. 다른 오류·조건 우선순위나 이미 처리된 요청의 예외가 없는 이 문항의 전제다. 변경 시 태그 비교와 갱신은 원자적으로 보장해 중간 변경 경쟁을 막아야 하며, ETag 조건은 인증·인가를 대체하지 않는다.
   - 예상 개념 판정: HTTP_03_01: NEEDS_REVIEW, HTTP_03_02: NEEDS_REVIEW
   - 이유: 답변 내용은 정답 사례와 동일하나 필요한 근거가 전부 누락된 진단 조건. 근거 없이 정답 확정하는 평가기를 탐지하는 작성자 기대값.
 
-**혼동 주의:** HTTP 사전 조건의 우선순위·이미 적용한 요청 예외를 무시한 항상412 일반화를 피함.
+**혼동 주의:** HTTP 사전 조건의 우선순위·이미 적용한 요청 예외를 무시한 항상 412 일반화를 피함.
 
 **출처 대조 위치**
 
@@ -1072,50 +1072,50 @@ GET에서 태그가 같으면 If-None-Match 조건이 실패해304로 기존 표
 
 ### A1-HTTP-04 · INTERMEDIATE
 
-API 요청에서 자격 증명이 없거나 무효일 때와, 요청을 이해했지만 수행을 거부할 때 각각401·403을 어떻게 해석하는가? 403이 로그인 성공을 항상 증명하는지, 자원 존재를 숨기려404를 사용할 수 있는지 설명하라.
+API 요청에서 자격 증명이 없거나 무효일 때와, 요청을 이해했지만 수행을 거부할 때 각각 401·403을 어떻게 해석하나요? 403이 로그인 성공을 항상 증명하는지, 자원 존재를 숨기려 404를 사용할 수 있는지 설명하세요.
 
 **모범 답안**
 
-401은 요청에 유효한 인증 자격이 부족함을 나타내며 WWW-Authenticate challenge와 연결된다. 403은 서버가 요청을 이해했지만 수행을 거부함을 뜻하고, 자격은 유효하지만 권한이 부족한 경우도 포함한다. 403 자체가 항상 인증 완료를 증명하지 않는다. 금지 자원의 존재를 숨기려404로 응답하는 정책도 가능하다. 상태 코드 선택과 실제 인증·인가 검사는 별개 책임이다.
+401은 요청에 유효한 인증 자격이 부족함을 나타내며 WWW-Authenticate challenge와 연결된다. 403은 서버가 요청을 이해했지만 수행을 거부함을 뜻하고, 자격은 유효하지만 권한이 부족한 경우도 포함한다. 403 자체가 항상 인증 완료를 증명하지 않는다. 금지 자원의 존재를 숨기려 404로 응답하는 정책도 가능하다. 상태 코드 선택과 실제 인증·인가 검사는 별개 책임이다.
 
 **필수 개념**
 
-- 인증 challenge와 수행 거부 · 가중치 0.50: 401의 유효 인증 자격 부족·challenge와403의 이해 후 수행 거부를 구분.
-- 오류 응답의 정보 공개 정책 · 가중치 0.50: 403은 인증 완료의 항상 보장이 아님. 존재 은폐를 위한404 가능성과 실제 인가 검사 별도 설명.
+- 인증 challenge와 수행 거부 · 가중치 0.50: 401의 유효 인증 자격 부족·challenge와 403의 이해 후 수행 거부를 구분.
+- 오류 응답의 정보 공개 정책 · 가중치 0.50: 403은 인증 완료의 항상 보장이 아님. 존재 은폐를 위한 404 가능성과 실제 인가 검사 별도 설명.
 
 **개념별 판정 경계**
 
 - `HTTP_04_01`
-  - CORRECT: 401의 유효 인증 자격 부족·challenge와403의 이해 후 수행 거부를 구분.
+  - CORRECT: 401의 유효 인증 자격 부족·challenge와 403의 이해 후 수행 거부를 구분.
   - PARTIALLY_CORRECT: 401/403 방향은 맞지만 challenge 또는 거부 의미 일부 누락.
-  - INCORRECT: 401은 인증 성공·권한 부족이고403은 항상 자원 없음이라고 주장.
+  - INCORRECT: 401은 인증 성공·권한 부족이고 403은 항상 자원 없음이라고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
 - `HTTP_04_02`
-  - CORRECT: 403은 인증 완료의 항상 보장이 아님. 존재 은폐를 위한404 가능성과 실제 인가 검사 별도 설명.
-  - PARTIALLY_CORRECT: 404로 숨길 수 있다고 답하나403의 인증 보장 한계 누락.
-  - INCORRECT: 403이면 로그인 성공이 확정되고 금지 자원에404는 절대 불가능하다고 주장.
+  - CORRECT: 403은 인증 완료의 항상 보장이 아님. 존재 은폐를 위한 404 가능성과 실제 인가 검사 별도 설명.
+  - PARTIALLY_CORRECT: 404로 숨길 수 있다고 답하나 403의 인증 보장 한계 누락.
+  - INCORRECT: 403이면 로그인 성공이 확정되고 금지 자원에 404는 절대 불가능하다고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
 
 **작성자가 만든 진단 사례 — 독립 평가 표본·모델 실행 결과가 아님**
 
 - `A1-HTTP-04-correct` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
-  - 답변: 401은 요청에 유효한 인증 자격이 부족함을 나타내며 WWW-Authenticate challenge와 연결된다. 403은 서버가 요청을 이해했지만 수행을 거부함을 뜻하고, 자격은 유효하지만 권한이 부족한 경우도 포함한다. 403 자체가 항상 인증 완료를 증명하지 않는다. 금지 자원의 존재를 숨기려404로 응답하는 정책도 가능하다. 상태 코드 선택과 실제 인증·인가 검사는 별개 책임이다.
+  - 답변: 401은 요청에 유효한 인증 자격이 부족함을 나타내며 WWW-Authenticate challenge와 연결된다. 403은 서버가 요청을 이해했지만 수행을 거부함을 뜻하고, 자격은 유효하지만 권한이 부족한 경우도 포함한다. 403 자체가 항상 인증 완료를 증명하지 않는다. 금지 자원의 존재를 숨기려 404로 응답하는 정책도 가능하다. 상태 코드 선택과 실제 인증·인가 검사는 별개 책임이다.
   - 예상 개념 판정: HTTP_04_01: CORRECT, HTTP_04_02: CORRECT
   - 이유: 문항에 주어진 전제와 모든 필수 개념의 조건을 충족.
 - `A1-HTTP-04-alternative` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
-  - 답변: 인증 자격을 요구하는401과 수행을 거부하는403의 의미를 먼저 구분한다.403이 언제나 로그인 완료를 알려주지는 않는다. 서버는 금지 자원의 존재를 숨기는404 정책도 선택할 수 있지만 인가 검사를 생략하는 근거는 아니다.
+  - 답변: 인증 자격을 요구하는 401과 수행을 거부하는 403의 의미를 먼저 구분한다.403이 언제나 로그인 완료를 알려주지는 않는다. 서버는 금지 자원의 존재를 숨기는 404 정책도 선택할 수 있지만 인가 검사를 생략하는 근거는 아니다.
   - 예상 개념 판정: HTTP_04_01: CORRECT, HTTP_04_02: CORRECT
   - 이유: 표현 또는 해결 방법이 달라도 필수 조건과 보장 범위가 일치. 특정 단어·해법 일치로만 채점 금지.
 - `A1-HTTP-04-partial` · 근거 조건 `DOCUMENT` · 예상 전체 `PARTIALLY_CORRECT`
-  - 답변: 401은 유효 인증 자격 부족과 challenge,403은 이해한 요청 수행 거부다. 금지 자원의 존재를 숨기려404를 선택할 수 있다.
+  - 답변: 401은 유효 인증 자격 부족과 challenge,403은 이해한 요청 수행 거부다. 금지 자원의 존재를 숨기려 404를 선택할 수 있다.
   - 예상 개념 판정: HTTP_04_01: CORRECT, HTTP_04_02: PARTIALLY_CORRECT
   - 이유: 마지막 필수 개념의 조건·이유 일부가 빠짐. 이미 충족한 앞 개념을 전체 판정에 맞춰 낮추지 않음.
 - `A1-HTTP-04-incorrect` · 근거 조건 `DOCUMENT` · 예상 전체 `INCORRECT`
-  - 답변: 401은 로그인 성공 후 권한 부족이고403은 항상 없는 자원이다.403이면 로그인 성공이 확정되며 금지 자원에404는 불가능하다.
+  - 답변: 401은 로그인 성공 후 권한 부족이고 403은 항상 없는 자원이다.403이면 로그인 성공이 확정되며 금지 자원에 404는 불가능하다.
   - 예상 개념 판정: HTTP_04_01: INCORRECT, HTTP_04_02: INCORRECT
   - 이유: 각 필수 개념의 핵심을 뒤집거나 문항 전제와 충돌. 단순 생략과 구분.
 - `A1-HTTP-04-missing-evidence` · 근거 조건 `MISSING_REQUIRED_CONCEPTS` · 예상 전체 `NEEDS_REVIEW`
-  - 답변: 401은 요청에 유효한 인증 자격이 부족함을 나타내며 WWW-Authenticate challenge와 연결된다. 403은 서버가 요청을 이해했지만 수행을 거부함을 뜻하고, 자격은 유효하지만 권한이 부족한 경우도 포함한다. 403 자체가 항상 인증 완료를 증명하지 않는다. 금지 자원의 존재를 숨기려404로 응답하는 정책도 가능하다. 상태 코드 선택과 실제 인증·인가 검사는 별개 책임이다.
+  - 답변: 401은 요청에 유효한 인증 자격이 부족함을 나타내며 WWW-Authenticate challenge와 연결된다. 403은 서버가 요청을 이해했지만 수행을 거부함을 뜻하고, 자격은 유효하지만 권한이 부족한 경우도 포함한다. 403 자체가 항상 인증 완료를 증명하지 않는다. 금지 자원의 존재를 숨기려 404로 응답하는 정책도 가능하다. 상태 코드 선택과 실제 인증·인가 검사는 별개 책임이다.
   - 예상 개념 판정: HTTP_04_01: NEEDS_REVIEW, HTTP_04_02: NEEDS_REVIEW
   - 이유: 답변 내용은 정답 사례와 동일하나 필요한 근거가 전부 누락된 진단 조건. 근거 없이 정답 확정하는 평가기를 탐지하는 작성자 기대값.
 
@@ -1123,13 +1123,13 @@ API 요청에서 자격 증명이 없거나 무효일 때와, 요청을 이해�
 
 **출처 대조 위치**
 
-- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110.html) — RFC 9110 §15.5.2 401, §15.5.4 403의404 대안
+- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110.html) — RFC 9110 §15.5.2 401, §15.5.4 403의 404 대안
 
 근거 문서: `A1-HTTP-DOC`. 검수 상태: **PENDING**
 
 ### A1-HTTP-05 · INTERMEDIATE
 
-POST 결제 요청 처리 뒤 서버가 Location: /receipts/8과 함께303 또는307을 반환할 수 있다고 하자. 자동 redirect에서 목적지 요청 메서드는 어떻게 달라지는가? redirect만으로 결제 중복을 방지했다고 할 수 있는지 설명하라.
+POST 결제 요청 처리 뒤 서버가 Location: /receipts/8과 함께 303 또는 307을 반환할 수 있다고 합시다. 자동 redirect에서 목적지 요청 메서드는 어떻게 달라지나요? redirect만으로 결제 중복을 방지했다고 할 수 있는지 설명하세요.
 
 **모범 답안**
 
@@ -1137,19 +1137,19 @@ POST 결제 요청 처리 뒤 서버가 Location: /receipts/8과 함께303 또�
 
 **필수 개념**
 
-- redirect의 메서드 의미 · 가중치 0.50: 303의 다른 자원 GET/HEAD 조회와307의 자동 redirect 메서드 유지 구분.
+- redirect의 메서드 의미 · 가중치 0.50: 303의 다른 자원 GET/HEAD 조회와 307의 자동 redirect 메서드 유지 구분.
 - redirect와 업무 효과의 경계 · 가중치 0.50: 307의 목적지 POST 효과와 원 요청 재전송 계약 확인.303도 원 결제의 중복 방어를 자동 보장하지 않음.
 
 **개념별 판정 경계**
 
 - `HTTP_05_01`
-  - CORRECT: 303의 다른 자원 GET/HEAD 조회와307의 자동 redirect 메서드 유지 구분.
+  - CORRECT: 303의 다른 자원 GET/HEAD 조회와 307의 자동 redirect 메서드 유지 구분.
   - PARTIALLY_CORRECT: 303/307 방향만 제시하고 목적지 의미 생략.
-  - INCORRECT: 303은 항상 POST 유지하고307은 항상 GET으로 바뀐다고 주장.
+  - INCORRECT: 303은 항상 POST 유지하고 307은 항상 GET으로 바뀐다고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
 - `HTTP_05_02`
   - CORRECT: 307의 목적지 POST 효과와 원 요청 재전송 계약 확인.303도 원 결제의 중복 방어를 자동 보장하지 않음.
-  - PARTIALLY_CORRECT: 목적지 계약 확인은 제시하나303의 원 요청 중복 한계 누락.
+  - PARTIALLY_CORRECT: 목적지 계약 확인은 제시하나 303의 원 요청 중복 한계 누락.
   - INCORRECT: redirect만 있으면 어느 목적지 계약에서도 결제가 무조건 한 번만 처리된다고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
 
@@ -1160,15 +1160,15 @@ POST 결제 요청 처리 뒤 서버가 Location: /receipts/8과 함께303 또�
   - 예상 개념 판정: HTTP_05_01: CORRECT, HTTP_05_02: CORRECT
   - 이유: 문항에 주어진 전제와 모든 필수 개념의 조건을 충족.
 - `A1-HTTP-05-alternative` · 근거 조건 `DOCUMENT` · 예상 전체 `CORRECT`
-  - 답변: 영수증을 조회하게 할 목적이면303의 다른 자원 조회 의미를 쓸 수 있다.307 자동 이동은 기존 POST와 본문을 유지하므로 목적지 계약을 봐야 한다. 어떤 코드도 원 결제 재전송에 대한 요청 식별·중복 처리를 대신하지 않는다.
+  - 답변: 영수증을 조회하게 할 목적이면 303의 다른 자원 조회 의미를 쓸 수 있다.307 자동 이동은 기존 POST와 본문을 유지하므로 목적지 계약을 봐야 한다. 어떤 코드도 원 결제 재전송에 대한 요청 식별·중복 처리를 대신하지 않는다.
   - 예상 개념 판정: HTTP_05_01: CORRECT, HTTP_05_02: CORRECT
   - 이유: 표현 또는 해결 방법이 달라도 필수 조건과 보장 범위가 일치. 특정 단어·해법 일치로만 채점 금지.
 - `A1-HTTP-05-partial` · 근거 조건 `DOCUMENT` · 예상 전체 `PARTIALLY_CORRECT`
-  - 답변: 303은 GET/HEAD로 결과를 조회하고307은 POST 메서드를 유지한다.307 목적지에서 POST가 만드는 효과를 계약으로 확인해야 한다.
+  - 답변: 303은 GET/HEAD로 결과를 조회하고 307은 POST 메서드를 유지한다.307 목적지에서 POST가 만드는 효과를 계약으로 확인해야 한다.
   - 예상 개념 판정: HTTP_05_01: CORRECT, HTTP_05_02: PARTIALLY_CORRECT
   - 이유: 마지막 필수 개념의 조건·이유 일부가 빠짐. 이미 충족한 앞 개념을 전체 판정에 맞춰 낮추지 않음.
 - `A1-HTTP-05-incorrect` · 근거 조건 `DOCUMENT` · 예상 전체 `INCORRECT`
-  - 답변: 303은 POST를 유지하고307은 항상 GET이다. redirect만 있으면 어떤 목적지 계약이어도 결제가 무조건 한 번만 발생한다.
+  - 답변: 303은 POST를 유지하고 307은 항상 GET이다. redirect만 있으면 어떤 목적지 계약이어도 결제가 무조건 한 번만 발생한다.
   - 예상 개념 판정: HTTP_05_01: INCORRECT, HTTP_05_02: INCORRECT
   - 이유: 각 필수 개념의 핵심을 뒤집거나 문항 전제와 충돌. 단순 생략과 구분.
 - `A1-HTTP-05-missing-evidence` · 근거 조건 `MISSING_REQUIRED_CONCEPTS` · 예상 전체 `NEEDS_REVIEW`
@@ -1186,7 +1186,7 @@ POST 결제 요청 처리 뒤 서버가 Location: /receipts/8과 함께303 또�
 
 ### A1-API-01 · BASIC
 
-한 서비스가 명사형 URI와 GET·POST·PUT·DELETE, JSON을 사용한다는 정보만 있다. 이를 REST의 모든 제약을 충족한 API라고 확정할 수 있는가? Uniform interface에 필요한 내용과 확인하지 못한 제약을 설명하라.
+한 서비스가 명사형 URI와 GET·POST·PUT·DELETE, JSON을 사용한다는 정보만 있습니다. 이를 REST의 모든 제약을 충족한 API라고 확정할 수 있나요? Uniform interface에 필요한 내용과 확인하지 못한 제약을 설명하세요.
 
 **모범 답안**
 
@@ -1245,7 +1245,7 @@ Fielding Dissertation: CHAPTER 5: Representational State Transfer (REST)
 
 ### A1-API-02 · INTERMEDIATE
 
-주문은 배송 전 상태에서만 취소 가능하다. POST /orders/42/cancellations와 POST /orders/42/cancel 중 어느 하나만 유효한 설계인가? 클라이언트가 status=CANCELLED를 보내 배송 완료도 취소할 수 있게 한 API의 문제와, 성공·거부 결과 계약을 설명하라.
+주문은 배송 전 상태에서만 취소할 수 있습니다. POST /orders/42/cancellations와 POST /orders/42/cancel 중 어느 하나만 유효한 설계인가요? 클라이언트가 status=CANCELLED를 보내 배송 완료도 취소할 수 있게 한 API의 문제와, 성공·거부 결과 계약을 설명하세요.
 
 **모범 답안**
 
@@ -1292,7 +1292,7 @@ Fielding Dissertation: CHAPTER 5: Representational State Transfer (REST)
   - 예상 개념 판정: API_02_01: NEEDS_REVIEW, API_02_02: NEEDS_REVIEW
   - 이유: 답변 내용은 정답 사례와 동일하나 필요한 근거가 전부 누락된 진단 조건. 근거 없이 정답 확정하는 평가기를 탐지하는 작성자 기대값.
 
-**혼동 주의:** 409는 이 사례의 허용 설계 선택. 모든 취소 거부가 반드시409여야 한다는 표준으로 주장하지 않음.
+**혼동 주의:** 409는 이 사례의 허용 설계 선택. 모든 취소 거부가 반드시 409여야 한다는 표준으로 주장하지 않음.
 
 **출처 대조 위치**
 
@@ -1305,7 +1305,7 @@ Fielding Dissertation: CHAPTER 5: Representational State Transfer (REST)
 
 ### A1-API-03 · ADVANCED
 
-자체 주문 API 계약을 다음처럼 정했다: 보존 기간 내 같은 요청자·작업의 같은 멱등 키와 같은 내용은 업무 효과를 한 번 만들고 기록된 결과로 연결한다. 같은 키에 다른 내용은 충돌로 거부한다. 요청 두 개가 동시에 들어와도 이 계약을 지키려면 어떤 상태를 저장·검사해야 하는가? 기간 만료·외부 결제까지 자동 보장되는지 설명하라.
+자체 주문 API 계약을 다음처럼 정했습니다: 보존 기간 내 같은 요청자·작업의 같은 멱등 키와 같은 내용은 업무 효과를 한 번 만들고 기록된 결과로 연결합니다. 같은 키에 다른 내용은 충돌로 거부합니다. 요청 두 개가 동시에 들어와도 이 계약을 지키려면 어떤 상태를 저장·검사해야 하나요? 기간 만료·외부 결제까지 자동 보장되는지 설명하세요.
 
 **모범 답안**
 
@@ -1363,7 +1363,7 @@ Fielding Dissertation: CHAPTER 5: Representational State Transfer (REST)
 
 ### A1-API-04 · INTERMEDIATE
 
-목록 API의 cursor가 created_at·id 내림차순 위치와 필터 status=PAID에 연결돼 있다. 다음 요청에서 필터를 CANCELLED로 바꾸고 같은 cursor를 보냈다. API는 이를 어떻게 계약해야 하는가? cursor 인코딩이 권한 검사와 모든 조회 성능을 보장하는지도 설명하라.
+목록 API의 cursor가 created_at·id 내림차순 위치와 필터 status=PAID에 연결돼 있습니다. 다음 요청에서 필터를 CANCELLED로 바꾸고 같은 cursor를 보냈습니다. API는 이를 어떻게 계약해야 하나요? cursor 인코딩이 권한 검사와 모든 조회 성능을 보장하는지도 설명하세요.
 
 **모범 답안**
 
@@ -1421,7 +1421,7 @@ cursor가 전제한 정렬·고유 보조 키·필터와 새 요청이 일치하
 
 ### A1-API-05 · ADVANCED
 
-OpenAPI 3.1.0 응답 스키마는 필수 memberId를 integer로 선언한다. 실제 HTTP 응답은 이를 생략하거나 문자열로 보낸다. 명세 파일과 Service 단위 테스트만 있으면 계약이 검증된 것인가? 기존 소비자가 memberId를 쓰는 상태에서 userId로 바꾸는 이관도 설명하라.
+OpenAPI 3.1.0 응답 스키마는 필수 memberId를 integer로 선언합니다. 실제 HTTP 응답은 이를 생략하거나 문자열로 보냅니다. 명세 파일과 Service 단위 테스트만 있으면 계약이 검증된 것인가요? 기존 소비자가 memberId를 쓰는 상태에서 userId로 바꾸는 이관도 설명하세요.
 
 **모범 답안**
 
@@ -1479,7 +1479,7 @@ OpenAPI는 약속을 기술하며 파일 자체가 실제 응답을 자동 검�
 
 ### A1-TEST-01 · BASIC
 
-주문 수량의 불변식, Service commit 후 저장 결과, HTTP 입력 validation·JSON 이름, 로그인부터 답변 제출까지의 연결을 검증하려 한다. 각각 어느 수준의 테스트가 적절한가? HTTP 계약 테스트의 Service double이 전체 DB 흐름을 증명하는지도 설명하라.
+주문 수량의 불변식, Service commit 후 저장 결과, HTTP 입력 validation·JSON 이름, 로그인부터 답변 제출까지의 연결을 검증하려 합니다. 각각 어느 수준의 테스트가 적절한가요? HTTP 계약 테스트의 Service double이 전체 DB 흐름을 증명하는지도 설명하세요.
 
 **모범 답안**
 
@@ -1537,7 +1537,7 @@ OpenAPI는 약속을 기술하며 파일 자체가 실제 응답을 자동 검�
 
 ### A1-TEST-02 · INTERMEDIATE
 
-Repository를 mock한 Service 테스트가 모두 green이다. 운영에서는 FK 위반과 잘못된 JOIN query가 발견됐다. 기존 테스트는 무엇을 증명했고 무엇을 못 했는가? 필요한 보강을 설명하되 mock이 항상 쓸모없다는 결론을 피하라.
+Repository를 mock한 Service 테스트가 모두 green입니다. 운영에서는 FK 위반과 잘못된 JOIN query가 발견됐습니다. 기존 테스트는 무엇을 증명했고 무엇을 증명하지 못했나요? 필요한 보강을 설명하되 mock이 항상 쓸모없다는 결론은 피하세요.
 
 **모범 답안**
 
@@ -1595,7 +1595,7 @@ mock이 반환하도록 정한 값에 대한 Service의 분기·협력 동작은
 
 ### A1-TEST-03 · INTERMEDIATE
 
-@SpringBootTest(webEnvironment=RANDOM_PORT)의 HTTP 요청으로 서버가 데이터를 commit했다. 테스트 메서드의 test-level @Transactional rollback이 서버 데이터까지 지우는가? 실패 중 부분 준비와 공유 DB 병렬 실행도 고려해 정리 책임을 설명하라.
+@SpringBootTest(webEnvironment=RANDOM_PORT)의 HTTP 요청으로 서버가 데이터를 commit했습니다. 테스트 메서드의 test-level @Transactional rollback이 서버 데이터까지 지우나요? 실패 중 부분 준비와 공유 DB 병렬 실행도 고려해 정리 책임을 설명하세요.
 
 **모범 답안**
 
@@ -1653,7 +1653,7 @@ HTTP 클라이언트 테스트와 실제 서버는 다른 스레드·transaction
 
 ### A1-TEST-04 · INTERMEDIATE
 
-비동기 작업 제출 뒤 sleep(1000) 후 성공을 검사하는 테스트가 빠른 머신에서는 통과하고 느린 환경에서는 실패한다. sleep을 무조건 늘리거나 무한 polling으로 바꾸면 충분한가? 완료 조건·제한 시간·assertion을 연결한 방법을 설명하라.
+비동기 작업 제출 뒤 sleep(1000) 후 성공을 검사하는 테스트가 빠른 머신에서는 통과하고 느린 환경에서는 실패합니다. sleep을 무조건 늘리거나 무한 polling으로 바꾸면 충분한가요? 완료 조건·제한 시간·assertion을 연결한 방법을 설명하세요.
 
 **모범 답안**
 
@@ -1711,7 +1711,7 @@ HTTP 클라이언트 테스트와 실제 서버는 다른 스레드·transaction
 
 ### A1-TEST-05 · ADVANCED
 
-fake 평가 provider가 timeout·429·503을 내도록 설정하고 retry·취소·학습 화면 오류 처리가 모두 통과했다. 이것으로 실제 제공자 장애 대응과 모델 채점 품질까지 검증했다고 발표할 수 있는가? 작성자가 만든 답변 사례의 역할과 추가 증거를 설명하라.
+fake 평가 provider가 timeout·429·503을 내도록 설정하고 retry·취소·학습 화면 오류 처리가 모두 통과했습니다. 이것으로 실제 제공자 장애 대응과 모델 채점 품질까지 검증했다고 발표할 수 있나요? 작성자가 만든 답변 사례의 역할과 추가 증거를 설명하세요.
 
 **모범 답안**
 
@@ -1758,7 +1758,7 @@ fake 평가 provider가 timeout·429·503을 내도록 설정하고 retry·취�
   - 예상 개념 판정: TEST_05_01: NEEDS_REVIEW, TEST_05_02: NEEDS_REVIEW
   - 이유: 답변 내용은 정답 사례와 동일하나 필요한 근거가 전부 누락된 진단 조건. 근거 없이 정답 확정하는 평가기를 탐지하는 작성자 기대값.
 
-**혼동 주의:** 이 묶음의150개 작성자 진단 사례도 실제 모델 실행·독립 품질 평가를 대체하지 않음.
+**혼동 주의:** 이 묶음의 150개 작성자 진단 사례도 실제 모델 실행·독립 품질 평가를 대체하지 않음.
 
 **출처 대조 위치**
 
@@ -1924,8 +1924,8 @@ DB 트랜잭션·경쟁 — 전제·원리·실패 조건 · PostgreSQL 17; 외�
 원자성은 참여한 트랜잭션의 변경을 함께 성공·실패시키는 범위. 로컬 DB rollback이 이미 외부 HTTP로 성공한 결제까지 취소하지 않음. 시스템 사이 원자성이 필요하면 실제 참여 자원·프로토콜·제공자 계약을 따로 확인. 단순 어노테이션으로 모든 외부 효과가 묶이지 않음.
 
 ```text
-A: 재고10 읽음 ─────────────→ 9 기록
-B:       재고10 읽음 ─────────────→ 9 기록
+A: 재고 10 읽음 ─────────────→ 9 기록
+B:       재고 10 읽음 ─────────────→ 9 기록
 결과: 차감 두 번의 의도는 8, 고정값 덮어쓰기 결과는 9
 ```
 
@@ -1947,15 +1947,15 @@ Serializable은 모든 요청을 항상 성공시키는 설정이 아님. 직렬
 
 ### 문장 단위 snapshot
 
-PG17 Read Committed 일반 SELECT의 문장 시작 snapshot으로 두 번째 값20 설명.
+PG17 Read Committed 일반 SELECT의 문장 시작 snapshot으로 두 번째 값 20 설명.
 
 ### 트랜잭션 snapshot의 시점
 
-PG17 Repeatable Read는 첫 비트랜잭션 제어 문장 snapshot으로10 유지. BEGIN 시점·자신의 변경 예외 구분.
+PG17 Repeatable Read는 첫 비트랜잭션 제어 문장 snapshot으로 10 유지. BEGIN 시점·자신의 변경 예외 구분.
 
 ### 읽기·계산·덮어쓰기 경쟁
 
-같은10을 읽고 고정9를 두 번 쓰는 실행 순서로 최종9 설명. 두 commit이 각 차감 반영을 의미하지 않음.
+같은 10을 읽고 고정 9를 두 번 쓰는 실행 순서로 최종 9 설명. 두 commit이 각 차감 반영을 의미하지 않음.
 
 ### 조건부 원자 변경과 결과 확인
 
@@ -2022,23 +2022,23 @@ private의 공유/개별 캐시 구분과 no-store의 비준수 저장·기존 �
 
 ### 조건부 읽기 검증
 
-주어진 GET의 If-None-Match 일치 조건에서304와 기존 표현 재사용 설명.
+주어진 GET의 If-None-Match 일치 조건에서 304와 기존 표현 재사용 설명.
 
 ### 변경 사전 조건의 방어
 
-주어진 If-Match 불일치에서412·미변경. 검사와 변경을 함께 보장하고 인증과 구분.
+주어진 If-Match 불일치에서 412·미변경. 검사와 변경을 함께 보장하고 인증과 구분.
 
 ### 인증 challenge와 수행 거부
 
-401의 유효 인증 자격 부족·challenge와403의 이해 후 수행 거부를 구분.
+401의 유효 인증 자격 부족·challenge와 403의 이해 후 수행 거부를 구분.
 
 ### 오류 응답의 정보 공개 정책
 
-403은 인증 완료의 항상 보장이 아님. 존재 은폐를 위한404 가능성과 실제 인가 검사 별도 설명.
+403은 인증 완료의 항상 보장이 아님. 존재 은폐를 위한 404 가능성과 실제 인가 검사 별도 설명.
 
 ### redirect의 메서드 의미
 
-303의 다른 자원 GET/HEAD 조회와307의 자동 redirect 메서드 유지 구분.
+303의 다른 자원 GET/HEAD 조회와 307의 자동 redirect 메서드 유지 구분.
 
 ### redirect와 업무 효과의 경계
 
