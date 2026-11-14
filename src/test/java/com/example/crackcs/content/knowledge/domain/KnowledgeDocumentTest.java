@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class KnowledgeDocumentTest {
@@ -181,6 +182,26 @@ class KnowledgeDocumentTest {
         assertThat(nextDocumentVersion.getStatus()).isEqualTo(KnowledgeDocumentStatus.DRAFT);
         assertThat(nextDocumentVersion.getDocumentVersion()).isEqualTo(2);
         assertThat(nextDocumentVersion.getVersionSeriesId()).isEqualTo(publishedDocument.getVersionSeriesId());
+    }
+
+    @Test
+    @DisplayName("DRAFT 문서는 삭제할 수 있다")
+    void allowsDeletionOfDraftDocument() {
+        KnowledgeDocument draft = createDocument("원문");
+
+        assertThatCode(draft::ensureDeletable).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("PUBLISHED 문서는 삭제할 수 없다")
+    void rejectsDeletionOfPublishedDocument() {
+        KnowledgeDocument published = createDocument("원문");
+        published.review(admin("검수자"));
+        published.publish();
+
+        assertThatThrownBy(published::ensureDeletable)
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("DRAFT 문서만 삭제할 수 있습니다.");
     }
 
     private KnowledgeDocument createDocument(String content) {

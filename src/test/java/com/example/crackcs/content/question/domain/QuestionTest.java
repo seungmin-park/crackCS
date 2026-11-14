@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class QuestionTest {
@@ -391,6 +392,28 @@ class QuestionTest {
         assertThatThrownBy(() -> question.replaceConcepts(List.of(new QuestionConceptAssignment(concept, new BigDecimal("1.01"), true))))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("weight must be greater than 0 and less than or equal to 1");
+    }
+
+    @Test
+    @DisplayName("DRAFT 문제는 삭제할 수 있다")
+    void allowsDeletionOfDraftQuestion() {
+        Question draft = createQuestion(createTopic(), "초안 질문", "초안 답안");
+
+        assertThatCode(draft::ensureDeletable).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("PUBLISHED 문제는 삭제할 수 없다")
+    void rejectsDeletionOfPublishedQuestion() {
+        Topic topic = createTopic();
+        Question published = createQuestion(topic, "공개 질문", "공개 답안");
+        published.replaceConcepts(List.of(new QuestionConceptAssignment(createConcept(topic, "PROCESS_THREAD", "프로세스와 스레드"), BigDecimal.ONE, true)));
+        published.review(createAdmin());
+        published.publish();
+
+        assertThatThrownBy(published::ensureDeletable)
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("DRAFT 문제만 삭제할 수 있습니다.");
     }
 
     private Question createQuestion(Topic topic, String content, String referenceAnswer) {

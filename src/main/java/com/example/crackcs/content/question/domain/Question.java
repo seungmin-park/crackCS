@@ -302,6 +302,10 @@ public class Question {
         this.updatedAt = LocalDateTime.now();
     }
 
+    public void ensureDeletable() {
+        ensureDraft("DRAFT 문제만 삭제할 수 있습니다.");
+    }
+
     public void retire() {
         if (status != QuestionStatus.PUBLISHED) {
             throw new InvalidContentStateException("PUBLISHED 문제만 폐기할 수 있습니다.");

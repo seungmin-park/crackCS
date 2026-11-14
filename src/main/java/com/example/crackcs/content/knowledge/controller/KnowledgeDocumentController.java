@@ -105,6 +105,14 @@ public class KnowledgeDocumentController {
         return KnowledgeDocumentResponse.from(knowledgeDocumentService.retire(documentId));
     }
 
+    @DeleteMapping("/{documentId}")
+    public ResponseEntity<Void> deleteDraft(
+            @Positive(message = "documentId는 양수여야 합니다.") @PathVariable Long documentId
+    ) {
+        knowledgeDocumentService.deleteDraft(documentId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{documentId}/chunks")
     public ChunkGenerationResponse generateChunks(
             @Positive(message = "documentId는 양수여야 합니다.") @PathVariable Long documentId

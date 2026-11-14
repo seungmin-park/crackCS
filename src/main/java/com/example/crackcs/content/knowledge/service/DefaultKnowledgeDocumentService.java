@@ -129,6 +129,14 @@ public class DefaultKnowledgeDocumentService implements KnowledgeDocumentService
 
     @Override
     @Transactional
+    public void deleteDraft(Long documentId) {
+        KnowledgeDocument document = findDocumentWithVersionSeriesLock(documentId);
+        document.ensureDeletable();
+        knowledgeDocumentRepository.delete(document);
+    }
+
+    @Override
+    @Transactional
     public KnowledgeDocument retire(Long documentId) {
         KnowledgeDocument document = findDocumentWithVersionSeriesLock(documentId);
         document.retire();

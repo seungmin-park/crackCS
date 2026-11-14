@@ -5,6 +5,7 @@ import com.example.crackcs.content.question.domain.*;
 import com.example.crackcs.content.question.service.QuestionService;
 import com.example.crackcs.content.topic.domain.Topic;
 import com.example.crackcs.exception.QuestionNotFoundException;
+import com.example.crackcs.exception.InvalidContentStateException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -29,6 +30,7 @@ import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -358,6 +360,26 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.message").value("지원하지 않는 정렬 필드입니다: content"));
 
         verifyNoInteractions(questionService);
+    }
+
+    @Test
+    @DisplayName("초안 문제를 삭제하면 204를 반환한다")
+    void deletesDraftQuestion() throws Exception {
+        mockMvc.perform(delete("/api/admin/questions/{questionId}", 10L))
+                .andExpect(status().isNoContent());
+
+        verify(questionService).deleteDraft(10L);
+    }
+
+    @Test
+    @DisplayName("초안이 아닌 문제의 삭제 요청은 409와 상태 오류 코드를 반환한다")
+    void rejectsDeletionOfNonDraftQuestion() throws Exception {
+        willThrow(new InvalidContentStateException("DRAFT 문제만 삭제할 수 있습니다."))
+                .given(questionService).deleteDraft(10L);
+
+        mockMvc.perform(delete("/api/admin/questions/{questionId}", 10L))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("INVALID_CONTENT_STATE"));
     }
 
     private Topic topic(Long id, String code, String name) {

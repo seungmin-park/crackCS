@@ -99,6 +99,12 @@ public class QuestionController {
         return QuestionResponse.from(questionService.retire(request.questionId()));
     }
 
+    @DeleteMapping("/{questionId}")
+    public ResponseEntity<Void> deleteDraft(@Valid @ModelAttribute QuestionIdRequest request) {
+        questionService.deleteDraft(request.questionId());
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/{questionId}/versions")
     public ResponseEntity<QuestionResponse> createNextVersion(
             @Valid @ModelAttribute QuestionIdRequest questionIdRequest,

@@ -281,6 +281,50 @@ class QuestionServiceTest {
                 .isEqualTo(QuestionStatus.DRAFT);
     }
 
+    @Test
+    @DisplayName("DRAFT 문제를 삭제하면 평가 Concept 연결도 함께 삭제되고 Concept은 남는다")
+    void deletesDraftQuestionWithConceptLinks() {
+        Topic topic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        Question draft = saveQuestion(topic, "삭제할 초안 질문");
+        Concept concept = conceptRepository.save(Concept.builder()
+                .topic(topic).code("PROCESS_THREAD").name("프로세스와 스레드").build());
+        questionService.replaceConcepts(
+                draft.getId(), List.of(new QuestionConceptCriterion(concept.getId(), BigDecimal.ONE, true))
+        );
+
+        questionService.deleteDraft(draft.getId());
+
+        assertThat(questionRepository.findById(draft.getId())).isEmpty();
+        assertThat(questionConceptRepository.count()).isZero();
+        assertThat(conceptRepository.findById(concept.getId())).isPresent();
+    }
+
+    @Test
+    @DisplayName("PUBLISHED 문제는 삭제 요청을 거부하고 그대로 남긴다")
+    void rejectsDeletionOfPublishedQuestion() {
+        Topic topic = saveTopic("OPERATING_SYSTEM", "운영체제");
+        Member admin = saveAdmin();
+        Question published = saveQuestion(topic, "공개된 질문");
+        Concept concept = conceptRepository.save(Concept.builder()
+                .topic(topic).code("PROCESS_THREAD").name("프로세스와 스레드").build());
+        questionService.replaceConcepts(
+                published.getId(), List.of(new QuestionConceptCriterion(concept.getId(), BigDecimal.ONE, true))
+        );
+        questionService.review(published.getId(), admin.getId());
+        questionService.publishAsCurrentVersion(published.getId());
+
+        assertThatThrownBy(() -> questionService.deleteDraft(published.getId()))
+                .isInstanceOf(InvalidContentStateException.class);
+        assertThat(questionRepository.findById(published.getId())).isPresent();
+    }
+
+    @Test
+    @DisplayName("없는 문제를 삭제하려 하면 찾을 수 없다는 예외가 발생한다")
+    void rejectsDeletionOfMissingQuestion() {
+        assertThatThrownBy(() -> questionService.deleteDraft(Long.MAX_VALUE))
+                .isInstanceOf(QuestionNotFoundException.class);
+    }
+
     private Topic saveTopic(String code, String name) {
         return topicRepository.save(Topic.builder()
                 .code(code)
