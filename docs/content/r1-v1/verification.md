@@ -3,15 +3,16 @@
 - 독자·질문: 제작자·검수자 / 어떤 원본을 무엇으로 확인했고 아직 무엇을 확인하지 않았는가?
 - 확인일: 2026-11-15
 - 브랜치: `docs/content-rebuild`(17개 Topic·156문항), `docs/r1-remaining-topics`(4개 Topic·20문항 추가)
-- 기준 원본: [bundle.json](bundle.json), SHA-256 `bc92cc020642431e91a64795e7be7efe1c96d04f2ea871038b823f9831dbe0cd`
+- 기준 원본: [bundle.json](bundle.json), SHA-256 `8bec1e6ee8b52a6d3f545f3f57944acf276ec8e5aa1ca299101ae81386db4d05`
 - 산출물·검수 절차: [README](README.md), [읽기 사본](review.md)
 
 ## 제작 결과
 
 - 21개 Topic·176문항·352개 Concept·21문서·135개 출처
-- BASIC 37, INTERMEDIATE 127, ADVANCED 12
+- BASIC 35, INTERMEDIATE 129, ADVANCED 12
 - 문항마다 필수 개념 2개, 가중치 0.50+0.50, 근거 문단 1개, 출처 위치 1곳 이상
 - 앱·importer·renderer 변경 없음
+- 문장 재검토 반영: 질문 59문항의 끝맺음·용어, 개념 이름 57개, 사실 전제 3문항(R1-SQL-10 로케일 조건, R1-JPA-05 length로 한정, R1-SPR-12 Spring Boot 자동 설정 제외), 난이도 2문항(R1-SPR-10·R1-TEST-04 → INTERMEDIATE)
 
 ## 실행 명령·판정
 
