@@ -41,6 +41,12 @@
 
 - `frontend`·`postgres` 검증은 로컬에서 실행하지 않음. CI 결과로 확인
 
+## Concept 재활성화 (같은 날 추가)
+
+- `POST /api/admin/concepts/{conceptId}/activate`: 비활성 Concept을 다시 활성화, 204. 소속 Topic이 비활성이면 409
+- 이유: 비활성화는 있었지만 되돌리는 방법이 없어, 비활성 상태로 남은 Concept을 다시 쓰려면 DB를 직접 고쳐야 했다
+- RED: 빈 구현에서 새 테스트 5개 실패 → GREEN: 통과. `ConceptTest` 2개, `AdminTaxonomyServiceTest` 2개, `AdminContentFlowTest` 1개
+
 ## 범위 밖
 
 - 관리자 화면의 삭제 버튼. 현재는 API로만 제공

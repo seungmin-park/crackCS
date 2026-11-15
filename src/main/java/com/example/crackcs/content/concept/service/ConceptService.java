@@ -15,4 +15,6 @@ public interface ConceptService {
     Concept update(Long conceptId, Long topicId, String code, String name, String description);
 
     void deactivate(Long conceptId);
+
+    void activate(Long conceptId);
 }

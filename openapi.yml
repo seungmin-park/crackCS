@@ -340,6 +340,19 @@ paths:
       responses:
         '204':
           description: Concept 비활성화 완료
+  /api/admin/concepts/{conceptId}/activate:
+    parameters:
+      - $ref: '#/components/parameters/ConceptIdPath'
+    post:
+      tags: [Admin Taxonomy]
+      operationId: activateConcept
+      summary: 비활성 Concept 재활성화
+      description: 소속 Topic이 비활성이면 409.
+      responses:
+        '204':
+          description: Concept 활성화 완료
+        '409':
+          $ref: '#/components/responses/ContentConflict'
   /api/questions:
     get:
       tags:

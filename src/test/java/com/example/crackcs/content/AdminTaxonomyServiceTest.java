@@ -101,4 +101,29 @@ class AdminTaxonomyServiceTest {
         Concept deactivatedConcept = conceptService.findById(concept.getId());
         assertThat(deactivatedConcept.isActive()).isFalse();
     }
+
+    @Test
+    @DisplayName("비활성화한 Concept을 다시 활성화한다")
+    void activatesDeactivatedConcept() {
+        Topic topic = topicService.create(null, "OS", "운영체제");
+        Concept concept = conceptService.create(topic.getId(), "THREAD", "스레드", "기존 설명");
+        conceptService.deactivate(concept.getId());
+
+        conceptService.activate(concept.getId());
+
+        assertThat(conceptService.findById(concept.getId()).isActive()).isTrue();
+    }
+
+    @Test
+    @DisplayName("비활성 Topic의 Concept은 활성화 요청을 거부하고 비활성으로 남긴다")
+    void rejectsActivationUnderInactiveTopic() {
+        Topic topic = topicService.create(null, "OS", "운영체제");
+        Concept concept = conceptService.create(topic.getId(), "THREAD", "스레드", "기존 설명");
+        conceptService.deactivate(concept.getId());
+        topicService.deactivate(topic.getId());
+
+        assertThatThrownBy(() -> conceptService.activate(concept.getId()))
+                .isInstanceOf(InvalidContentStateException.class);
+        assertThat(conceptService.findById(concept.getId()).isActive()).isFalse();
+    }
 }

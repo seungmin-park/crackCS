@@ -239,6 +239,25 @@ class AdminContentFlowTest {
         assertThat(questionRepository.findById(questionId)).isEmpty();
     }
 
+    @Test
+    @DisplayName("ADMIN이 비활성화한 Concept을 다시 활성화하면 204를 받고 활성 상태로 조회된다")
+    void adminReactivatesConcept() throws Exception {
+        AuthenticatedMember admin = savePrincipal(MemberRole.ADMIN, "admin-activate-flow");
+        long topicId = createTopic(admin, "NETWORK", "네트워크");
+        long conceptId = createConcept(admin, topicId, "TCP_RELIABILITY", "TCP 신뢰성");
+        mockMvc.perform(post("/api/admin/concepts/{id}/deactivate", conceptId)
+                        .with(user(admin)).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(post("/api/admin/concepts/{id}/activate", conceptId)
+                        .with(user(admin)).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/admin/concepts/{id}", conceptId).with(user(admin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.active").value(true));
+    }
+
     private long createTopic(AuthenticatedMember admin, String code, String name) throws Exception {
         MvcResult createTopicResponse = mockMvc.perform(post("/api/admin/topics")
                         .with(user(admin)).with(csrf())

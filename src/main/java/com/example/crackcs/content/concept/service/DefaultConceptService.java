@@ -61,6 +61,12 @@ public class DefaultConceptService implements ConceptService {
         findConcept(conceptId).deactivate();
     }
 
+    @Override
+    @Transactional
+    public void activate(Long conceptId) {
+        findConcept(conceptId).activate();
+    }
+
     private void ensureUniqueCode(String code, Long conceptId) {
         boolean duplicated = conceptId == null
                 ? conceptRepository.existsByCode(code)

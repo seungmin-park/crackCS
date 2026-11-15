@@ -1,6 +1,7 @@
 package com.example.crackcs.content.concept.domain;
 
 import com.example.crackcs.content.topic.domain.Topic;
+import com.example.crackcs.exception.InvalidContentStateException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -74,6 +75,39 @@ class ConceptTest {
                 .build();
 
         assertThat(concept.getDescription()).isNull();
+    }
+
+    @Test
+    @DisplayName("비활성화한 개념을 다시 활성화한다")
+    void activatesDeactivatedConcept() {
+        Concept concept = Concept.builder()
+                .topic(createTopic())
+                .code("PROCESS_THREAD")
+                .name("프로세스와 스레드")
+                .build();
+        concept.deactivate();
+
+        concept.activate();
+
+        assertThat(concept.isActive()).isTrue();
+    }
+
+    @Test
+    @DisplayName("비활성 주제의 개념은 활성화할 수 없다")
+    void rejectsActivationUnderInactiveTopic() {
+        Topic topic = createTopic();
+        Concept concept = Concept.builder()
+                .topic(topic)
+                .code("PROCESS_THREAD")
+                .name("프로세스와 스레드")
+                .build();
+        concept.deactivate();
+        topic.deactivate();
+
+        assertThatThrownBy(concept::activate)
+                .isInstanceOf(InvalidContentStateException.class)
+                .hasMessage("비활성 Topic의 Concept은 활성화할 수 없습니다.");
+        assertThat(concept.isActive()).isFalse();
     }
 
     private Topic createTopic() {
