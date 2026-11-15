@@ -145,8 +145,7 @@
   font-size: 14px;
   line-height: 20px;
 }
-.benefit-grid,
-.steps-grid {
+.benefit-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
@@ -157,8 +156,7 @@
   border: 1px solid var(--line);
   border-radius: 16px;
 }
-.benefit p,
-.steps-grid article > p:not(.eyebrow) {
+.benefit p {
   margin-top: 12px;
   color: var(--muted);
   font-size: 14px;
@@ -352,8 +350,7 @@
     font-size: 24px;
     line-height: 32px;
   }
-  .benefit-grid,
-  .steps-grid {
+  .benefit-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
