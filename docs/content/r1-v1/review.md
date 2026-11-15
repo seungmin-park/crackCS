@@ -2,7 +2,7 @@
 
 > 자동 생성 읽기 사본. 수정 기준은 [bundle.json](bundle.json). 사람 검수·공개 승인 대기.
 
-- 원본 SHA-256: `6d5a344ca2fc0a03d2ad177f576a014f2024ac4f20a5e015501181877c2005eb`
+- 원본 SHA-256: `6061d5f95147cff7633a14838edd9c5e1a0cc66843366a7d1e02533adfbd6fee`
 - 재생성: 저장소 루트에서 `python3 scripts/render_content_review.py --bundle docs/content/r1-v1/bundle.json`
 - 검수 절차·승인 기록: [콘텐츠 안내](README.md#사람-검수공개-순서)
 - 이 자료를 읽었다는 사실만으로 앱의 검수·공개 상태가 바뀌지 않음
@@ -3285,6 +3285,426 @@ Dockerfile의 각 명령은 이미지 레이어 하나를 만들고, 빌드는 �
 
 근거 문서: `r1-delivery-and-migration`. 검수 상태: **PENDING**
 
+### R1-CACHE-01 · BASIC
+
+상품 상세 조회가 느려 Redis를 캐시로 두려 합니다. 애플리케이션이 캐시를 먼저 확인하고 없을 때만 데이터베이스에서 읽어 캐시에 채우는 방식에서, 조회 한 번의 흐름을 순서대로 설명하세요. 상품 정보를 수정할 때 캐시를 어떻게 다뤄야 하는지와, 그래도 오래된 값이 보일 수 있는 경우를 답하세요.
+
+**모범 답안**
+
+조회할 때는 먼저 캐시에서 키를 찾는다. 값이 있으면 그대로 반환하고, 없으면 데이터베이스에서 읽어 캐시에 저장한 뒤 반환한다. 캐시에 없던 데이터만 필요할 때 채우므로 실제로 쓰이는 데이터만 캐시에 올라간다. 상품을 수정할 때는 데이터베이스를 먼저 고치고 해당 캐시 항목을 지운다. 그러면 다음 조회가 새 값을 읽어 다시 채운다. 캐시 값을 직접 새 값으로 덮어쓰는 방식은 두 수정이 겹칠 때 순서가 뒤바뀌어 옛 값이 남을 수 있다. 지우는 방식에서도 틈은 있다. 한 요청이 옛 값을 읽어 캐시에 넣으려는 사이에 다른 요청이 수정과 삭제를 끝내면, 뒤늦게 옛 값이 캐시에 들어간다. 그래서 캐시 항목에는 만료 시간을 함께 두어 어긋난 값이 무한정 남지 않게 한다.
+
+**필수 개념**
+
+- 캐시 조회 후 없을 때만 채우기 · 가중치 0.50: 캐시를 먼저 확인하고 없으면 DB에서 읽어 캐시에 저장한 뒤 반환한다는 조회 흐름.
+- 수정 시 무효화와 남는 불일치 · 가중치 0.50: DB를 먼저 고치고 캐시 항목을 지우며, 경쟁으로 옛 값이 남을 수 있어 만료 시간을 함께 둔다는 설명.
+
+**혼동 주의:** 캐시를 두면 데이터베이스와 항상 같은 값이 보인다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Azure Architecture Center — Cache-Aside pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside) — Cache-Aside pattern: Load data on demand into a cache from a data store
+
+근거 문서: `r1-cache-and-redis`. 검수 상태: **PENDING**
+
+### R1-CACHE-02 · INTERMEDIATE
+
+Redis에 세션 정보를 EXPIRE로 30분 만료를 걸어 저장했습니다. 만료 시각이 지난 키는 그 즉시 메모리에서 사라지나요? Redis가 만료된 키를 지우는 두 가지 방식을 설명하고, 만료된 키를 조회하면 어떤 결과가 나오는지 답하세요.
+
+**모범 답안**
+
+만료 시각이 지났다고 해서 그 순간 모든 키가 메모리에서 지워지는 것은 아니다. Redis는 두 가지 방식으로 만료를 처리한다. 수동 방식은 클라이언트가 키에 접근할 때 만료 여부를 확인해, 만료됐으면 그때 지우는 것이다. 능동 방식은 Redis가 주기적으로 만료 시간이 걸린 키 가운데 일부를 무작위로 골라 검사하고 만료된 것을 지우는 것이다. 접근되지 않는 키는 수동 방식만으로는 영영 남으므로 능동 방식이 이를 보완한다. 따라서 만료된 키가 잠시 메모리를 차지하고 있을 수는 있지만, 조회하면 접근 시점의 검사에 걸려 없는 키로 응답한다. 사용자가 만료된 세션을 유효한 것으로 받는 일은 없고, 메모리 사용량이 만료 시각에 맞춰 정확히 줄지 않을 뿐이다.
+
+**필수 개념**
+
+- 접근 시 확인하는 수동 만료 · 가중치 0.50: 키에 접근할 때 만료 여부를 확인해 지우므로 만료된 키는 조회되지 않는다는 설명.
+- 주기적 표본 검사인 능동 만료 · 가중치 0.50: 접근되지 않는 키를 위해 주기적으로 일부를 골라 만료된 키를 지우며 메모리 회수는 즉시가 아니라는 설명.
+
+**혼동 주의:** 만료 시간이 지나면 그 순간 메모리에서 바로 사라진다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Redis Docs — EXPIRE](https://redis.io/docs/latest/commands/expire/) — EXPIRE: a passive way and an active way
+
+근거 문서: `r1-cache-and-redis`. 검수 상태: **PENDING**
+
+### R1-CACHE-03 · INTERMEDIATE
+
+캐시로 쓰는 Redis의 메모리가 maxmemory 한도에 도달했습니다. maxmemory-policy가 noeviction일 때와 allkeys-lru일 때, 새 값을 쓰려는 명령은 각각 어떻게 처리되나요? 캐시 전용 인스턴스와, 지워지면 안 되는 데이터가 함께 있는 인스턴스에서 정책을 어떻게 골라야 하는지 설명하세요.
+
+**모범 답안**
+
+noeviction에서는 한도에 도달한 뒤 메모리를 더 쓰는 명령이 오류로 거부되고, 읽기 명령은 계속 동작한다. 기존 데이터는 지워지지 않는다. allkeys-lru에서는 가장 오랫동안 쓰이지 않은 키부터 지워 공간을 만들고 새 값을 받는다. 어떤 키든 지워질 수 있으므로 모든 데이터가 다시 만들 수 있는 캐시일 때 맞다. 캐시 전용 인스턴스라면 allkeys-lru처럼 전체 키를 대상으로 하는 정책이 자연스럽다. 지워지면 안 되는 데이터가 섞여 있다면 만료 시간이 설정된 키만 대상으로 삼는 volatile 계열 정책을 쓰고 캐시 항목에만 만료 시간을 건다. 다만 대상 키가 없으면 그 정책도 쓰기를 거부한다. 성격이 다른 데이터는 인스턴스를 나누는 편이 정책을 단순하게 만든다.
+
+**필수 개념**
+
+- 한도 도달 시 거부와 축출의 차이 · 가중치 0.50: noeviction은 쓰기를 오류로 거부하고 allkeys-lru는 오래 쓰이지 않은 키를 지워 공간을 만든다는 차이.
+- 데이터 성격에 맞는 정책 선택 · 가중치 0.50: 전부 캐시면 전체 키 대상 정책, 보존 데이터가 섞이면 만료 키만 대상으로 하거나 인스턴스를 나눈다는 기준.
+
+**혼동 주의:** 메모리 한도에 도달하면 Redis가 항상 오래된 키를 알아서 지운다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Redis Docs — Key eviction](https://redis.io/docs/latest/develop/reference/eviction/) — Key eviction: allkeys-lru; noeviction
+
+근거 문서: `r1-cache-and-redis`. 검수 상태: **PENDING**
+
+### R1-CACHE-04 · INTERMEDIATE
+
+Redis를 캐시가 아니라 장바구니 저장소로 쓰려 합니다. 서버가 재시작되면 메모리의 데이터는 어떻게 되나요? RDB 스냅샷과 AOF가 각각 무엇을 디스크에 남기는지 설명하고, 장애가 났을 때 잃을 수 있는 데이터의 범위로 두 방식을 비교하세요.
+
+**모범 답안**
+
+Redis는 데이터를 메모리에 두므로 지속성을 설정하지 않으면 재시작할 때 모두 사라진다. RDB는 정해진 간격으로 그 시점의 데이터 전체를 하나의 파일로 저장한다. 파일이 작고 복구가 빠르지만, 마지막 스냅샷 이후의 변경은 장애 때 잃는다. 스냅샷 간격이 5분이면 최대 5분치가 사라질 수 있다. AOF는 서버가 받은 쓰기 명령을 순서대로 파일 끝에 기록하고, 재시작할 때 이를 다시 실행해 상태를 복원한다. 디스크에 반영하는 주기를 매초로 두면 잃는 범위가 약 1초로 줄고, 명령마다 반영하면 더 줄지만 쓰기가 느려진다. 대신 파일이 더 크고 복구에 시간이 더 걸린다. 장바구니처럼 잃으면 안 되는 데이터라면 AOF를 켜거나 두 방식을 함께 쓰고, 다시 만들 수 있는 캐시라면 지속성 없이 써도 된다.
+
+**필수 개념**
+
+- 스냅샷과 명령 기록의 차이 · 가중치 0.50: RDB는 특정 시점의 전체 데이터를, AOF는 쓰기 명령을 순서대로 기록해 재시작 때 복원한다는 설명.
+- 장애 시 유실 범위의 비교 · 가중치 0.50: RDB는 마지막 스냅샷 이후를 잃고 AOF는 디스크 반영 주기만큼만 잃는 대신 파일과 복구 시간이 커진다는 비교.
+
+**혼동 주의:** Redis는 메모리 저장소라서 데이터를 디스크에 전혀 남길 수 없다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Redis Docs — Redis persistence](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/) — Redis persistence: point-in-time snapshots
+
+근거 문서: `r1-cache-and-redis`. 검수 상태: **PENDING**
+
+### R1-CACHE-05 · ADVANCED
+
+재고 차감을 서버 여러 대 가운데 한 대만 실행하도록 Redis로 락을 구현합니다. SET key value NX PX 30000으로 락을 얻고, 작업이 끝나면 DEL로 지웁니다. 작업이 30초보다 오래 걸렸을 때 이 구현에서 생기는 문제를 설명하세요. 락을 얻을 때 무작위 값을 저장하는 이유와 해제할 때 지켜야 할 절차도 답하세요.
+
+**모범 답안**
+
+NX는 키가 없을 때만 설정하므로 한 클라이언트만 락을 얻고, PX는 만료 시간을 걸어 락을 쥔 서버가 죽어도 락이 영원히 남지 않게 한다. 그러나 작업이 만료 시간보다 오래 걸리면 락이 자동으로 풀리고 다른 서버가 락을 얻는다. 두 서버가 동시에 작업하게 되며, 먼저 락을 얻었던 서버가 작업을 마치고 DEL을 실행하면 지금은 다른 서버의 것인 락을 지워 버린다. 이를 막으려고 락을 얻을 때 자신만 아는 무작위 값을 저장하고, 해제할 때는 저장된 값이 자신의 값과 같은 경우에만 지운다. 확인과 삭제 사이에 값이 바뀌면 안 되므로 두 동작을 하나의 스크립트로 원자적으로 실행한다. 이 장치는 남의 락을 지우는 것만 막을 뿐, 만료된 뒤에도 작업을 계속하는 문제는 막지 못한다. 그래서 만료 시간은 작업 시간보다 충분히 길게 잡고, 결과를 쓰는 쪽에서도 중복 실행을 견디게 해야 한다.
+
+**필수 개념**
+
+- 만료로 풀린 락과 동시 실행 · 가중치 0.50: 작업이 만료 시간보다 길면 락이 풀려 다른 클라이언트가 얻고, 값 확인 없는 삭제는 남의 락을 지운다는 문제.
+- 무작위 값 비교 후 원자적 해제 · 가중치 0.50: 락을 얻을 때 저장한 무작위 값과 같을 때만 지우며 확인과 삭제를 하나의 스크립트로 실행한다는 절차.
+
+**혼동 주의:** 만료 시간이 있는 락이 작업의 단독 실행을 끝까지 보장한다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Redis Docs — Distributed Locks with Redis](https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/) — Distributed Locks with Redis: SET resource_name my_random_value NX PX 30000
+
+근거 문서: `r1-cache-and-redis`. 검수 상태: **PENDING**
+
+### R1-KAFKA-01 · BASIC
+
+주문 생성, 결제 완료, 배송 시작 이벤트를 Kafka 토픽으로 보냅니다. 토픽에 파티션이 세 개 있을 때, 한 주문의 세 이벤트가 발생한 순서대로 소비된다고 보장할 수 있나요? Kafka가 순서를 보장하는 범위와, 같은 주문의 이벤트 순서를 지키려면 무엇을 해야 하는지 설명하세요.
+
+**모범 답안**
+
+Kafka는 토픽 전체가 아니라 파티션 하나 안에서만 순서를 보장한다. 한 파티션에 쓰인 이벤트는 쓰인 순서 그대로 읽히지만, 서로 다른 파티션에 들어간 이벤트 사이에는 순서가 정해져 있지 않다. 한 주문의 이벤트가 여러 파티션에 흩어지면 배송 시작이 주문 생성보다 먼저 소비될 수 있다. 순서를 지키려면 같은 주문의 이벤트가 항상 같은 파티션에 들어가야 한다. 이벤트의 키를 주문 번호로 지정하면 같은 키를 가진 이벤트는 같은 파티션에 쓰이므로, 주문 단위의 순서가 유지된다. 서로 다른 주문끼리는 여러 파티션에서 병렬로 처리된다. 파티션 수를 바꾸면 키와 파티션의 대응이 달라지므로 순서가 중요한 토픽은 파티션 수 변경에 주의해야 한다.
+
+**필수 개념**
+
+- 파티션 안에서만 보장되는 순서 · 가중치 0.50: Kafka는 한 파티션 안의 순서만 보장하며 다른 파티션의 이벤트와는 순서가 정해지지 않는다는 범위.
+- 키로 같은 파티션에 모으기 · 가중치 0.50: 같은 키의 이벤트는 같은 파티션에 쓰이므로 순서를 지킬 단위를 키로 지정한다는 방법.
+
+**혼동 주의:** Kafka가 토픽 전체에서 이벤트의 순서를 보장한다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Apache Kafka — Introduction](https://kafka.apache.org/intro) — Introduction: in exactly the same order as they were written
+
+근거 문서: `r1-messaging-and-kafka`. 검수 상태: **PENDING**
+
+### R1-KAFKA-02 · INTERMEDIATE
+
+파티션이 여섯 개인 토픽을 같은 컨슈머 그룹의 인스턴스 세 개가 소비하고 있습니다. 처리량을 늘리려고 인스턴스를 열 개로 늘렸습니다. 파티션은 인스턴스들에 어떻게 나뉘며 열 개가 모두 일하게 되나요? 같은 토픽을 정산 서비스와 알림 서비스가 각각 전부 받아야 할 때는 그룹을 어떻게 구성하는지도 설명하세요.
+
+**모범 답안**
+
+한 컨슈머 그룹 안에서 파티션 하나는 어느 시점에든 그 그룹의 컨슈머 하나에게만 배정된다. 인스턴스가 세 개면 여섯 파티션이 두 개씩 나뉜다. 인스턴스를 열 개로 늘리면 여섯 개가 파티션을 하나씩 맡고 나머지 네 개는 배정받을 파티션이 없어 대기한다. 한 그룹의 병렬 처리 한도는 파티션 수이므로, 처리량을 더 늘리려면 파티션 수를 늘려야 한다. 컨슈머가 추가되거나 빠지면 파티션 배정이 다시 이루어진다. 정산과 알림이 같은 이벤트를 각각 전부 받아야 한다면 두 서비스가 서로 다른 그룹을 쓴다. 그룹마다 읽은 위치를 따로 관리하므로 각 그룹은 토픽의 모든 이벤트를 독립적으로 받는다. 같은 그룹 안의 인스턴스들은 일을 나누고, 다른 그룹끼리는 같은 데이터를 각자 받는다.
+
+**필수 개념**
+
+- 그룹 안에서 파티션당 컨슈머 하나 · 가중치 0.50: 한 그룹에서 파티션은 한 컨슈머에게만 배정되어 병렬 처리 한도가 파티션 수라는 설명.
+- 그룹별로 독립된 소비 위치 · 가중치 0.50: 서로 다른 그룹은 읽은 위치를 따로 관리해 같은 이벤트를 각각 전부 받는다는 구성.
+
+**혼동 주의:** 컨슈머 인스턴스를 늘리면 파티션 수와 무관하게 처리량이 늘어난다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Apache Kafka 4.1 Documentation — Design](https://kafka.apache.org/41/design/design/) — Design: consumed by exactly one consumer within each subscribing consumer group
+
+근거 문서: `r1-messaging-and-kafka`. 검수 상태: **PENDING**
+
+### R1-KAFKA-03 · INTERMEDIATE
+
+컨슈머가 결제 이벤트를 읽어 포인트를 적립합니다. 메시지를 처리한 뒤 오프셋을 커밋하는 방식에서, 적립은 끝났지만 커밋 직전에 컨슈머가 죽으면 재시작 후 어떤 일이 생기나요? 커밋을 먼저 하는 방식과 비교해 ‘최대 한 번’과 ‘적어도 한 번’ 전달을 설명하고, 중복 적립을 막는 방법을 답하세요.
+
+**모범 답안**
+
+처리한 뒤 커밋하는 방식에서 커밋 전에 죽으면, 재시작한 컨슈머는 마지막으로 커밋된 위치부터 다시 읽는다. 이미 적립한 이벤트를 한 번 더 받아 포인트가 두 번 적립될 수 있다. 메시지를 잃지는 않지만 다시 전달될 수 있는 이 보장을 적어도 한 번 전달이라 한다. 반대로 커밋을 먼저 하고 처리하면, 커밋 뒤 처리 전에 죽었을 때 그 이벤트는 다시 읽히지 않아 적립이 빠진다. 다시 전달되지는 않지만 잃을 수 있는 이 보장이 최대 한 번 전달이다. 돈과 관련된 처리는 유실보다 중복이 다루기 쉬우므로 적어도 한 번 전달을 택하고, 중복을 소비자 쪽에서 걸러 낸다. 이벤트마다 고유 식별자를 두고 이미 처리한 식별자를 기록해 두거나, 적립 결과와 처리 기록을 같은 데이터베이스 트랜잭션에 저장하면 같은 이벤트를 다시 받아도 결과가 한 번만 반영된다.
+
+**필수 개념**
+
+- 커밋과 처리의 순서가 정하는 전달 보장 · 가중치 0.50: 처리 후 커밋은 재전달이 가능한 적어도 한 번, 커밋 후 처리는 유실이 가능한 최대 한 번 전달이 된다는 설명.
+- 소비자 쪽 중복 제거 · 가중치 0.50: 이벤트 식별자를 기록하거나 결과와 처리 기록을 한 트랜잭션에 저장해 재전달된 이벤트의 효과가 한 번만 반영되게 한다는 방법.
+
+**혼동 주의:** Kafka를 쓰면 별도 처리 없이 메시지가 정확히 한 번만 처리된다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Apache Kafka 4.1 Documentation — Design](https://kafka.apache.org/41/design/design/) — Design: Message Delivery Semantics; Messages are never lost but may be redelivered
+
+근거 문서: `r1-messaging-and-kafka`. 검수 상태: **PENDING**
+
+### R1-KAFKA-04 · ADVANCED
+
+주문 이벤트를 유실 없이 Kafka에 기록해야 합니다. 프로듀서의 acks를 1로 두면 리더 브로커가 기록한 직후 응답합니다. 이 설정에서 응답을 받은 메시지가 사라질 수 있는 경우를 설명하세요. acks=all과 동기화된 복제본의 관계로 유실을 줄이는 구성을 설명하고, 그 대가도 답하세요.
+
+**모범 답안**
+
+acks=1에서는 리더가 자신의 로그에 기록하면 팔로워의 복제를 기다리지 않고 성공을 응답한다. 응답 직후 팔로워가 그 메시지를 가져가기 전에 리더가 죽으면, 새 리더로 뽑힌 팔로워에는 그 메시지가 없어 프로듀서가 성공으로 알고 있는 메시지가 사라진다. acks=all은 동기화된 복제본 집합에 속한 모든 복제본이 메시지를 반영한 뒤에야 성공을 응답한다. 그러면 리더가 죽어도 동기화된 복제본 가운데 하나가 리더가 되므로 응답받은 메시지는 남는다. 다만 동기화된 복제본이 리더 하나뿐인 상태에서는 acks=all도 리더 혼자의 기록으로 응답하게 된다. 그래서 최소 동기화 복제본 수를 2 이상으로 두어, 복제본이 부족하면 쓰기를 거부하게 한다. 대가는 지연과 가용성이다. 응답이 복제를 기다리는 만큼 느려지고, 복제본이 부족한 동안에는 쓰기가 실패한다.
+
+**필수 개념**
+
+- 리더만 기록한 응답의 유실 가능성 · 가중치 0.50: acks=1은 복제 전에 응답하므로 응답 직후 리더가 죽으면 새 리더에 없는 메시지가 사라질 수 있다는 설명.
+- 동기화 복제본 전체 반영과 그 대가 · 가중치 0.50: acks=all과 최소 동기화 복제본 수로 유실을 줄이되 지연이 늘고 복제본 부족 시 쓰기가 거부된다는 설명.
+
+**혼동 주의:** acks=all만 설정하면 어떤 경우에도 메시지가 유실되지 않는다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Apache Kafka 4.1 Documentation — Design](https://kafka.apache.org/41/design/design/) — Design: in-sync replicas (ISR)
+
+근거 문서: `r1-messaging-and-kafka`. 검수 상태: **PENDING**
+
+### R1-KAFKA-05 · INTERMEDIATE
+
+일반적인 메시지 큐는 소비자가 메시지를 받아 가면 큐에서 지웁니다. Kafka 토픽에서는 컨슈머가 이벤트를 읽은 뒤에도 이벤트가 남아 있습니다. 이벤트가 언제 지워지는지와, 이 구조 덕분에 새로 만든 서비스나 버그를 고친 서비스가 할 수 있는 일을 설명하세요. 읽은 위치는 누가 관리하는지도 답하세요.
+
+**모범 답안**
+
+Kafka에서 이벤트는 소비됐다고 해서 지워지지 않는다. 토픽마다 정한 보존 기간이나 크기 한도에 따라 오래된 이벤트부터 삭제되며, 그 전까지는 몇 번이든 읽을 수 있다. 어디까지 읽었는지는 브로커가 메시지별로 기억하는 것이 아니라 컨슈머 그룹이 파티션마다 오프셋이라는 숫자 하나로 관리한다. 그래서 새로 만든 서비스는 새 그룹으로 토픽의 처음부터 읽어 과거 이벤트를 모두 받을 수 있다. 처리 로직의 버그를 고친 서비스는 오프셋을 과거로 되돌려 같은 이벤트를 다시 처리할 수 있다. 한 서비스가 읽어 간 것이 다른 서비스가 읽을 내용에 영향을 주지 않는다. 대신 보존 기간보다 오래 멈춰 있던 컨슈머는 그사이 지워진 이벤트를 읽지 못하므로, 지연이 보존 기간을 넘지 않는지 살펴야 한다.
+
+**필수 개념**
+
+- 소비와 무관한 보존 정책 · 가중치 0.50: 이벤트는 읽혔다고 지워지지 않고 보존 기간이나 크기 한도에 따라 삭제된다는 설명.
+- 오프셋으로 다시 읽기 · 가중치 0.50: 컨슈머 그룹이 오프셋으로 위치를 관리하므로 새 그룹은 처음부터 읽고 기존 그룹은 위치를 되돌려 다시 처리할 수 있다는 설명.
+
+**혼동 주의:** Kafka 토픽을 ‘읽으면 사라지는 큐’와 같은 것으로 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Apache Kafka — Introduction](https://kafka.apache.org/intro) — Introduction: events are not deleted after consumption
+
+근거 문서: `r1-messaging-and-kafka`. 검수 상태: **PENDING**
+
+### R1-OBS-01 · BASIC
+
+애플리케이션이 ‘지금까지 처리한 요청 수’와 ‘현재 처리 중인 요청 수’를 메트릭으로 내보냅니다. 각각 카운터와 게이지 중 무엇으로 정의해야 하나요? 카운터 값을 그대로 그래프에 그리는 대신 증가율로 바꿔 보는 이유와, 프로세스가 재시작됐을 때 카운터가 어떻게 되는지 설명하세요.
+
+**모범 답안**
+
+지금까지 처리한 요청 수는 늘어나기만 하는 누적 값이므로 카운터다. 현재 처리 중인 요청 수는 올라가기도 내려가기도 하는 값이므로 게이지다. 카운터의 원래 값은 프로세스가 시작된 뒤의 누적치라서 그 자체로는 ‘지금 얼마나 바쁜가’를 알려 주지 않는다. 일정 구간 동안 얼마나 늘었는지를 초당 증가율로 계산해야 요청량의 변화를 볼 수 있다. 카운터는 프로세스가 재시작되면 0으로 돌아간다. 증가율 계산은 값이 줄어든 것을 재시작으로 보고 보정하므로 누적 값이 초기화되어도 증가율은 이어진다. 줄어들 수 있는 값을 카운터로 정의하면 감소가 재시작으로 해석되어 잘못된 값이 나온다. 그래서 현재 수, 사용 중인 메모리, 큐 길이처럼 오르내리는 값은 게이지로 둔다.
+
+**필수 개념**
+
+- 누적 값인 카운터와 현재 값인 게이지 · 가중치 0.50: 늘어나기만 하는 누적 값은 카운터, 오르내리는 현재 값은 게이지로 정의한다는 구분.
+- 증가율로 읽는 카운터와 재시작 · 가중치 0.50: 카운터는 구간의 증가율로 해석하며 재시작 때 0으로 돌아가고 감소는 초기화로 처리된다는 설명.
+
+**혼동 주의:** 현재 접속자 수처럼 줄어들 수 있는 값을 카운터로 정의하지 않기.
+
+**출처 대조 위치**
+
+- [Prometheus Docs — Metric types](https://prometheus.io/docs/concepts/metric_types/) — Metric types: a cumulative metric; arbitrarily go up and down
+
+근거 문서: `r1-observability-and-performance`. 검수 상태: **PENDING**
+
+### R1-OBS-02 · INTERMEDIATE
+
+서버 네 대의 응답 시간 95번째 백분위수를 보려 합니다. 각 서버가 자신의 95번째 백분위수를 계산해 내보내고, 모니터링 시스템이 네 값을 평균하는 방법이 있습니다. 이 평균이 서비스 전체의 95번째 백분위수가 아닌 이유를 설명하세요. 구간별 개수를 세는 히스토그램을 쓰면 무엇이 달라지는지도 답하세요.
+
+**모범 답안**
+
+백분위수는 평균처럼 합치거나 평균 낼 수 있는 값이 아니다. 요청이 많은 서버와 적은 서버의 백분위수를 같은 비중으로 평균하면 요청 수의 차이가 무시되고, 한 서버에만 느린 요청이 몰려 있어도 평균에 묻힌다. 전체의 95번째 백분위수는 네 서버의 모든 요청을 한데 모아 놓고 구해야 한다. 히스토그램은 응답 시간을 미리 정한 구간으로 나누고 구간마다 관측 횟수를 누적해 내보낸다. 개수는 더할 수 있으므로 네 서버의 구간별 개수를 합친 뒤 그 분포에서 백분위수를 계산하면 서비스 전체의 값이 된다. 구간 경계 안에서는 보간으로 추정하므로 정확도는 경계를 어떻게 잡았는지에 달려 있다. 그래서 관심 있는 목표값 근처에 경계를 촘촘히 둔다. 서버가 직접 백분위수를 계산해 내보내는 서머리는 그 서버 하나의 값으로만 의미가 있다.
+
+**필수 개념**
+
+- 평균 낼 수 없는 백분위수 · 가중치 0.50: 서버별 백분위수를 평균해도 전체 요청의 백분위수가 되지 않으며 요청 수 차이와 치우침이 무시된다는 설명.
+- 합산 가능한 구간별 개수 · 가중치 0.50: 히스토그램은 구간별 관측 횟수를 내보내 여러 서버의 값을 합친 뒤 백분위수를 계산할 수 있고 정확도는 구간 경계에 달린다는 설명.
+
+**혼동 주의:** 서버별 백분위수의 평균을 서비스 전체의 백분위수로 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Prometheus Docs — Histograms and summaries](https://prometheus.io/docs/practices/histograms/) — Histograms and summaries: you cannot aggregate quantiles
+
+근거 문서: `r1-observability-and-performance`. 검수 상태: **PENDING**
+
+### R1-OBS-03 · INTERMEDIATE
+
+새로 맡은 API 서비스에 대시보드와 알림을 처음 구성합니다. CPU 사용률 같은 지표를 수십 개 늘어놓기 전에 사용자 관점에서 먼저 봐야 할 네 가지 신호가 무엇인지 설명하세요. 평균 응답 시간만 볼 때 놓치는 것과, 오류 응답의 지연을 성공 응답과 따로 봐야 하는 이유도 답하세요.
+
+**모범 답안**
+
+네 가지는 지연, 트래픽, 오류, 포화도다. 지연은 요청을 처리하는 데 걸리는 시간이고, 트래픽은 초당 요청 수처럼 시스템에 걸리는 수요다. 오류는 실패한 요청의 비율이며, 명시적인 오류 응답뿐 아니라 내용이 잘못된 성공 응답도 포함한다. 포화도는 메모리나 입출력처럼 가장 제약이 되는 자원이 얼마나 찼는지다. 평균 응답 시간은 대부분의 빠른 요청에 가려 소수의 매우 느린 요청을 드러내지 못한다. 요청의 1%가 수 초씩 걸려도 평균은 거의 움직이지 않으므로 분포나 높은 백분위수를 함께 봐야 한다. 오류 응답은 대개 일찍 실패해 매우 빠르다. 성공과 섞어 지연을 계산하면 오류가 늘 때 오히려 평균 지연이 좋아 보인다. 반대로 느리게 실패하는 오류는 그 자체로 살펴야 할 문제이므로 두 지연을 나눠 추적한다.
+
+**필수 개념**
+
+- 지연·트래픽·오류·포화도 · 가중치 0.50: 사용자 관점의 네 신호가 요청 처리 시간, 수요, 실패 비율, 자원이 찬 정도라는 설명.
+- 평균이 가리는 꼬리와 오류 지연의 분리 · 가중치 0.50: 평균은 소수의 느린 요청을 숨기며 빠르게 실패하는 오류가 섞이면 지연이 왜곡되어 따로 봐야 한다는 설명.
+
+**혼동 주의:** 평균 응답 시간이 정상이면 사용자 경험도 정상이라고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Google SRE Book — Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) — Monitoring Distributed Systems: The Four Golden Signals
+
+근거 문서: `r1-observability-and-performance`. 검수 상태: **PENDING**
+
+### R1-OBS-04 · INTERMEDIATE
+
+알림 규칙을 ‘데이터베이스 CPU 80% 초과’, ‘힙 사용률 70% 초과’처럼 원인이 될 만한 지표마다 걸어 두었더니, 사용자에게 문제가 없는데도 밤마다 호출이 옵니다. 증상에 거는 알림과 원인에 거는 알림의 차이를 설명하고, 사람을 깨우는 알림이 갖춰야 할 조건을 답하세요.
+
+**모범 답안**
+
+증상은 사용자가 겪는 문제, 곧 무엇이 고장 났는지이고 원인은 그것이 왜 일어났는지다. 응답이 느리다거나 오류 비율이 높다는 것은 증상이고, 데이터베이스 CPU가 높다는 것은 가능한 원인 가운데 하나다. 원인 지표는 사용자에게 아무 영향이 없을 때도 임계값을 넘는다. CPU가 80%를 넘어도 응답이 정상이면 당장 할 일이 없고, 이런 알림이 반복되면 진짜 문제의 알림도 무시하게 된다. 사람을 깨우는 알림은 사용자에게 보이는 증상에 걸고, 원인 지표는 문제를 조사할 때 보는 대시보드에 둔다. 호출 알림은 지금 실제로 일어나고 있거나 곧 일어날 문제여야 하고, 받은 사람이 즉시 취할 행동이 있어야 한다. 기계적으로 처리할 수 있는 대응이라면 알림이 아니라 자동화의 대상이다. 디스크가 며칠 뒤 가득 차는 것처럼 급하지 않은 신호는 근무 시간에 처리할 티켓으로 보낸다.
+
+**필수 개념**
+
+- 증상과 원인의 구분 · 가중치 0.50: 증상은 사용자가 겪는 문제이고 원인은 그 이유이며 원인 지표는 영향이 없을 때도 임계값을 넘는다는 설명.
+- 행동할 수 있는 긴급한 알림 · 가중치 0.50: 호출 알림은 사용자에게 보이는 긴급한 문제에 걸고 즉시 취할 행동이 있어야 하며 나머지는 대시보드나 티켓으로 보낸다는 조건.
+
+**혼동 주의:** 지표마다 임계값 알림을 걸수록 장애를 더 잘 잡는다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Google SRE Book — Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) — Monitoring Distributed Systems: Symptoms Versus Causes
+
+근거 문서: `r1-observability-and-performance`. 검수 상태: **PENDING**
+
+### R1-OBS-05 · INTERMEDIATE
+
+주문 요청 하나가 API 게이트웨이, 주문 서비스, 결제 서비스, 재고 서비스를 거칩니다. 응답이 가끔 3초씩 걸리는데 서비스마다 로그를 따로 봐서는 어느 구간이 느린지 알 수 없습니다. 분산 추적에서 트레이스와 스팬이 무엇인지 설명하고, 서비스 경계를 넘어 하나의 트레이스로 이어지게 하려면 무엇이 전달돼야 하는지 답하세요.
+
+**모범 답안**
+
+트레이스는 요청 하나가 시스템을 지나간 전체 경로이고, 스팬은 그 안의 작업 단위 하나다. 게이트웨이가 요청을 받은 것, 주문 서비스가 결제 서비스를 호출한 것, 재고를 조회한 쿼리가 각각 스팬이 된다. 스팬에는 시작 시각과 걸린 시간, 자신이 속한 트레이스의 식별자, 자신을 일으킨 부모 스팬의 식별자가 기록된다. 부모와 자식 관계로 스팬을 엮으면 한 요청에서 어느 구간이 얼마나 걸렸는지가 나무 모양으로 드러난다. 서비스가 다르면 프로세스도 다르므로 식별자를 저절로 공유하지 못한다. 호출하는 쪽이 트레이스 식별자와 현재 스팬 식별자를 요청 헤더에 실어 보내고, 받는 쪽이 이를 꺼내 자신의 스팬의 부모로 삼아야 한 트레이스로 이어진다. 이를 컨텍스트 전파라 한다. 중간의 한 서비스가 전파를 빠뜨리면 그 지점에서 트레이스가 끊긴다. 로그에도 같은 트레이스 식별자를 남기면 느린 요청의 로그를 서비스들에 걸쳐 모아 볼 수 있다.
+
+**필수 개념**
+
+- 트레이스와 스팬의 부모 관계 · 가중치 0.50: 트레이스는 요청의 전체 경로, 스팬은 작업 단위이며 부모 식별자로 엮어 구간별 소요 시간을 드러낸다는 설명.
+- 서비스 간 컨텍스트 전파 · 가중치 0.50: 호출 쪽이 트레이스와 스팬 식별자를 요청에 실어 보내고 받는 쪽이 이어받아야 하나의 트레이스가 된다는 설명.
+
+**혼동 주의:** 서비스마다 로그를 잘 남기면 분산 추적 없이도 구간별 지연을 알 수 있다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [OpenTelemetry Docs — Context propagation](https://opentelemetry.io/docs/concepts/context-propagation/) — Context propagation: Context propagation
+
+근거 문서: `r1-observability-and-performance`. 검수 상태: **PENDING**
+
+### R1-SD-01 · INTERMEDIATE
+
+개발자 네 명이 새 서비스를 시작하면서 처음부터 회원, 주문, 결제, 알림을 각각 다른 마이크로서비스로 나누려 합니다. 요구사항은 아직 자주 바뀝니다. 이 시점에 마이크로서비스로 시작할 때 치르는 비용과, 서비스 경계를 잘못 그었을 때 생기는 일을 설명하세요. 모놀리스로 시작한다면 나중의 분리를 위해 무엇을 지켜야 하는지도 답하세요.
+
+**모범 답안**
+
+마이크로서비스는 서비스마다 배포와 모니터링, 서비스 간 통신과 장애 처리, 데이터 일관성 문제를 따로 감당해야 한다. 팀이 작고 요구사항이 바뀌는 초기에 이 운영 부담은 기능을 만드는 속도를 떨어뜨린다. 더 큰 문제는 경계다. 도메인을 충분히 이해하기 전에는 어디를 나눠야 하는지 알기 어렵고, 잘못 나누면 한 기능을 바꿀 때 여러 서비스를 함께 고치고 함께 배포해야 한다. 한 프로세스 안에서 모듈 경계를 옮기는 것은 리팩터링이지만, 서비스 사이의 경계를 옮기는 것은 API와 데이터 저장소까지 옮기는 일이라 훨씬 비싸다. 그래서 모놀리스로 시작해 경계가 안정된 뒤에 분리하는 길이 흔히 성공한다. 다만 모놀리스 안에서도 모듈 사이의 의존 방향을 지키고 다른 모듈의 테이블을 직접 읽지 않게 해 두어야, 필요해졌을 때 그 경계를 따라 떼어 낼 수 있다.
+
+**필수 개념**
+
+- 초기 분산의 운영 부담과 경계 위험 · 가중치 0.50: 마이크로서비스는 운영과 분산 처리 비용이 크고 도메인 이해 전에 그은 경계는 서비스 간 수정 비용을 키운다는 설명.
+- 모듈 경계를 지킨 모놀리스에서 출발 · 가중치 0.50: 모놀리스로 시작하되 모듈 의존과 데이터 접근 경계를 지켜 두어야 나중에 그 경계로 분리할 수 있다는 조건.
+
+**혼동 주의:** 마이크로서비스를 규모와 무관하게 더 발전된 구조로 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Martin Fowler — MonolithFirst](https://martinfowler.com/bliki/MonolithFirst.html) — MonolithFirst: Almost all the successful microservice stories have started with a monolith
+
+근거 문서: `r1-system-design`. 검수 상태: **PENDING**
+
+### R1-SD-02 · INTERMEDIATE
+
+주문 서비스가 호출하는 추천 서비스가 응답하지 않기 시작했습니다. 주문 요청마다 추천 호출이 타임아웃까지 기다리면서 주문 서비스의 스레드가 모두 묶여, 추천과 무관한 요청까지 실패합니다. 서킷 브레이커의 닫힘, 열림, 반열림 상태가 각각 호출을 어떻게 다루는지 설명하고, 열린 동안 주문 서비스가 무엇을 반환해야 하는지 답하세요.
+
+**모범 답안**
+
+닫힘 상태에서는 호출을 그대로 보내면서 실패를 센다. 실패가 정해진 기준을 넘으면 차단기가 열린다. 열림 상태에서는 실제 호출을 하지 않고 즉시 실패를 돌려준다. 응답하지 않는 서비스를 기다리느라 스레드가 묶이지 않고, 이미 힘든 상대 서비스에 요청을 더 쌓지도 않는다. 일정 시간이 지나면 반열림 상태가 되어 시험 삼아 호출을 일부 보낸다. 성공하면 닫힘으로 돌아가고 실패하면 다시 열린다. 열린 동안 주문 서비스는 추천 없이도 주문을 처리할 수 있어야 한다. 추천 목록을 비워 응답하거나 미리 준비한 기본 목록을 주는 식으로, 핵심 기능이 부가 기능의 장애에 끌려가지 않게 한다. 차단기가 열렸다는 사실은 그 자체가 장애 신호이므로 모니터링에 드러나게 한다.
+
+**필수 개념**
+
+- 실패 누적에 따른 세 상태의 전환 · 가중치 0.50: 닫힘은 호출하며 실패를 세고, 열림은 호출 없이 즉시 실패시키며, 반열림은 시험 호출로 복구를 확인한다는 설명.
+- 부가 기능 장애의 격리와 대체 응답 · 가중치 0.50: 열린 동안 기다리지 않고 기본값으로 응답해 핵심 기능이 의존 서비스의 장애에 묶이지 않게 한다는 설명.
+
+**혼동 주의:** 서킷 브레이커를 실패한 호출을 자동으로 재시도해 주는 장치로 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Martin Fowler — CircuitBreaker](https://martinfowler.com/bliki/CircuitBreaker.html) — CircuitBreaker: the circuit breaker trips
+
+근거 문서: `r1-system-design`. 검수 상태: **PENDING**
+
+### R1-SD-03 · ADVANCED
+
+결제 서비스가 잠깐 느려지자 이를 호출하는 서버 수백 대가 모두 타임아웃 뒤 즉시 세 번씩 재시도했고, 결제 서비스는 회복하지 못했습니다. 재시도가 장애를 키운 이유를 설명하세요. 재시도 간격을 지수적으로 늘리는 백오프와, 거기에 무작위성을 더하는 지터가 각각 무엇을 줄이는지와 재시도해도 되는 요청의 조건을 답하세요.
+
+**모범 답안**
+
+재시도는 실패한 요청을 다시 보내 서버의 일을 늘린다. 서버가 과부하로 느려진 상황에서 모든 클라이언트가 재시도하면 요청량이 평소의 몇 배가 되어 회복을 막는다. 호출이 여러 층으로 이어져 있으면 층마다 재시도가 곱해져 가장 아래의 서비스에 요청이 폭증한다. 지수 백오프는 재시도할 때마다 대기 시간을 늘려 서버에 숨 돌릴 시간을 준다. 그러나 같은 순간에 실패한 클라이언트들이 같은 간격으로 기다리면 다시 같은 순간에 몰려온다. 지터는 대기 시간에 무작위 값을 섞어 재시도 시점을 흩뜨린다. 재시도 횟수에는 상한을 두고, 전체에서 재시도가 차지하는 비율도 제한한다. 재시도는 같은 요청이 두 번 실행돼도 결과가 같을 때만 안전하다. 결제처럼 부수 효과가 있는 요청은 멱등 키로 중복 실행을 걸러 낼 수 있을 때에만 재시도한다.
+
+**필수 개념**
+
+- 재시도가 부하를 키우는 이유 · 가중치 0.50: 과부하 상태에서 모든 클라이언트의 재시도가 요청량을 늘리고 계층마다 곱해져 회복을 막는다는 설명.
+- 백오프와 지터, 멱등 조건 · 가중치 0.50: 백오프는 재시도 간격을 늘리고 지터는 시점을 흩뜨리며 재시도는 중복 실행이 안전한 요청에만 적용한다는 설명.
+
+**혼동 주의:** 실패하면 최대한 빨리 여러 번 재시도하는 것이 안정적이라고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [Amazon Builders' Library — Timeouts, retries, and backoff with jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/) — Timeouts, retries, and backoff with jitter: Retries are “selfish.”
+
+근거 문서: `r1-system-design`. 검수 상태: **PENDING**
+
+### R1-SD-04 · BASIC
+
+애플리케이션 서버 세 대 앞에 nginx를 로드 밸런서로 둡니다. 요청을 순서대로 돌아가며 나누는 방식, 연결이 가장 적은 서버로 보내는 방식, 클라이언트 IP에 따라 정하는 방식이 있습니다. 처리 시간이 요청마다 크게 다른 서비스와, 로그인 세션을 서버 메모리에 두는 서비스에 각각 어떤 방식이 맞는지 이유와 함께 설명하세요.
+
+**모범 답안**
+
+순서대로 나누는 방식은 요청 수를 서버에 고르게 분배한다. 요청마다 처리 시간이 비슷하면 충분하지만, 오래 걸리는 요청이 섞이면 어떤 서버에는 무거운 요청이 쌓이는데도 같은 수의 새 요청을 계속 받는다. 처리 시간 편차가 큰 서비스에는 지금 처리 중인 연결이 가장 적은 서버로 보내는 방식이 맞다. 바쁜 서버에는 새 요청이 덜 가므로 부하가 실제 처리량에 따라 맞춰진다. 세션을 서버 메모리에 두는 서비스는 같은 사용자의 요청이 매번 다른 서버로 가면 로그인이 풀린다. 클라이언트 IP의 해시로 서버를 정하면 같은 IP의 요청이 같은 서버로 가서 세션이 유지된다. 다만 그 서버가 빠지면 세션은 사라지고, 같은 IP 뒤에 사용자가 많으면 한 서버로 몰린다. 세션을 공유 저장소로 옮기면 어떤 방식이든 쓸 수 있어 이 제약에서 벗어난다.
+
+**필수 개념**
+
+- 요청 수 균등과 처리 중 연결 기준 · 가중치 0.50: 순서대로 나누면 요청 수만 고르고, 처리 시간 편차가 크면 연결이 가장 적은 서버로 보내는 방식이 부하를 맞춘다는 설명.
+- IP 해시에 의한 세션 유지와 한계 · 가중치 0.50: IP 해시는 같은 클라이언트를 같은 서버로 보내 세션을 유지하지만 서버 이탈과 쏠림에 약해 세션 외부화가 근본책이라는 설명.
+
+**혼동 주의:** 로드 밸런서의 분배 방식이 모두 같은 결과를 낸다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [nginx Docs — Using nginx as HTTP load balancer](https://nginx.org/en/docs/http/load_balancing.html) — Using nginx as HTTP load balancer: least-connected
+
+근거 문서: `r1-system-design`. 검수 상태: **PENDING**
+
+### R1-SD-05 · INTERMEDIATE
+
+로드 밸런서 뒤의 서버 세 대 가운데 한 대가 응답하지 않게 됐습니다. 로드 밸런서가 그 서버로 계속 요청을 보내면 요청의 3분의 1이 실패합니다. nginx가 실패한 서버를 분배 대상에서 빼는 기준과 다시 포함하는 방식을 설명하세요. 실제 요청의 실패로만 판단하는 이 방식의 한계도 답하세요.
+
+**모범 답안**
+
+nginx는 서버와의 통신이 실패하면 그 서버를 실패한 것으로 표시하고 한동안 새 요청을 보내지 않는다. max_fails는 서버를 실패로 판단하기까지 허용하는 연속 실패 횟수이고, fail_timeout은 그 실패를 세는 시간 창이면서 서버를 제외해 두는 시간이다. 제외 시간이 지나면 실제 요청 몇 개를 그 서버로 보내 살아났는지 확인하고, 성공하면 다시 분배 대상에 넣는다. 이 방식은 실제 사용자 요청의 실패를 근거로 삼는다. 그래서 서버가 죽은 직후의 요청 몇 건은 실패를 겪어야 제외가 일어나고, 복구를 확인하는 요청도 사용자 요청이다. 연결은 되지만 오류 응답을 내는 서버는 설정에 따라 실패로 잡히지 않을 수 있다. 별도의 확인 요청을 주기적으로 보내는 능동 상태 검사를 쓰면 사용자 요청이 실패하기 전에 서버를 뺄 수 있고, 애플리케이션이 준비됐는지를 알려 주는 전용 경로를 검사 대상으로 삼을 수 있다.
+
+**필수 개념**
+
+- 연속 실패 횟수와 제외 시간 · 가중치 0.50: max_fails만큼 연속 실패하면 fail_timeout 동안 서버를 제외하고 이후 실제 요청으로 복구를 확인한다는 기준.
+- 요청 실패에 의존하는 판단의 한계 · 가중치 0.50: 실제 요청이 실패해야 제외되므로 일부 사용자가 실패를 겪으며 능동 상태 검사가 이를 보완한다는 설명.
+
+**혼동 주의:** 로드 밸런서가 장애 서버를 한 건의 실패도 없이 즉시 알아낸다고 설명하지 않기.
+
+**출처 대조 위치**
+
+- [nginx Docs — Using nginx as HTTP load balancer](https://nginx.org/en/docs/http/load_balancing.html) — Using nginx as HTTP load balancer: max_fails
+
+근거 문서: `r1-system-design`. 검수 상태: **PENDING**
+
 ## 검색에 제공할 근거 문서
 
 ### r1-java
@@ -4202,6 +4622,141 @@ docker-cache: https://docs.docker.com/build/cache/
 fowler-ci: https://martinfowler.com/articles/continuousIntegration.html
 fowler-iac: https://martinfowler.com/bliki/InfrastructureAsCode.html
 
+### r1-cache-and-redis
+
+캐시·Redis 보강 근거 · r1-v1 · Redis 공식 문서; 캐시 패턴 일반
+
+캐시·Redis 학습 근거 · r1-v1
+기준: Redis 공식 문서; 캐시 패턴 일반
+직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
+
+[R1-CACHE-01]
+캐시 어사이드 패턴은 필요할 때 데이터 저장소에서 캐시로 데이터를 불러온다. 애플리케이션은 먼저 캐시에 항목이 있는지 확인하고, 없으면 저장소에서 읽어 캐시에 복사본을 넣는다. 애플리케이션이 정보를 갱신할 때는 저장소에 변경을 쓴 다음 캐시의 해당 항목을 무효화한다. 다음에 그 항목이 필요해지면 저장소의 최신 값으로 다시 채워진다. 이 패턴은 저장소와 캐시의 일관성을 보장하지 않으므로, 항목에 만료 정책을 두어 오래된 데이터가 남는 시간을 제한한다.
+근거: ms-cache-aside — Cache-Aside pattern: Load data on demand into a cache from a data store
+
+[R1-CACHE-02]
+Redis 키는 수동 방식과 능동 방식의 두 가지로 만료된다. 어떤 클라이언트가 키에 접근하려 할 때 그 키의 만료 시간이 지났음이 확인되면 수동으로 만료된다. 그러나 다시 접근되지 않을 만료 키도 있으므로 이것만으로는 충분하지 않다. 그래서 Redis는 주기적으로 만료 시간이 설정된 키 가운데 일부를 무작위로 검사해, 만료된 키를 키 공간에서 지운다. 만료 정보는 절대 시각으로 저장되므로 서버가 꺼져 있던 동안에도 시간은 흐른 것으로 계산된다.
+근거: redis-expire — EXPIRE: a passive way and an active way
+
+[R1-CACHE-03]
+Redis는 maxmemory 한도에 도달했을 때의 동작을 maxmemory-policy로 정한다. noeviction은 새 값을 저장하지 않으며, 한도에 도달하면 메모리를 더 쓰는 명령에 오류를 반환하고 기존 데이터를 읽는 명령은 정상 동작한다. allkeys-lru는 가장 오래전에 사용된 키를 축출한다. volatile-lru는 만료 시간이 설정된 키 가운데 가장 오래전에 사용된 키를 축출한다. volatile 계열 정책은 축출할 수 있는 키가 없으면 noeviction처럼 동작한다. 축출 대상은 표본을 뽑아 근사적으로 고른다.
+근거: redis-eviction — Key eviction: allkeys-lru; noeviction
+
+[R1-CACHE-04]
+RDB 지속성은 지정한 간격으로 데이터셋의 특정 시점 스냅샷을 만든다. AOF 지속성은 서버가 받은 모든 쓰기 연산을 기록하고, 서버가 시작할 때 이를 다시 실행해 원래 데이터셋을 재구성한다. RDB는 파일 하나로 압축되어 백업과 빠른 재시작에 유리하지만, Redis가 갑자기 멈추면 마지막 스냅샷 이후의 데이터를 잃을 수 있다. AOF는 디스크 동기화 정책에 따라 내구성이 달라지며 기본값인 매초 동기화에서는 약 1초의 쓰기만 잃는다. 두 방식을 함께 쓸 수 있고, 지속성을 완전히 끌 수도 있다.
+근거: redis-persistence — Redis persistence: point-in-time snapshots
+
+[R1-CACHE-05]
+단일 인스턴스에서 락을 얻는 방법은 키가 없을 때만 설정하는 NX 옵션과 만료 시간을 거는 PX 옵션으로 SET을 실행하는 것이다. 키에는 모든 클라이언트와 락 요청에 걸쳐 고유한 무작위 값을 넣는다. 이 값은 락을 안전하게 해제하는 데 쓰이며, 키가 존재하고 저장된 값이 기대한 값과 같을 때만 키를 지우도록 스크립트로 실행한다. 이렇게 하면 다른 클라이언트가 만든 락을 지우는 일을 피할 수 있다. 분산 락은 어느 시점에든 한 클라이언트만 락을 가진다는 상호 배제를 안전성 속성으로 요구한다.
+근거: redis-lock — Distributed Locks with Redis: SET resource_name my_random_value NX PX 30000
+
+출처
+ms-cache-aside: https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside
+redis-expire: https://redis.io/docs/latest/commands/expire/
+redis-eviction: https://redis.io/docs/latest/develop/reference/eviction/
+redis-persistence: https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/
+redis-lock: https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/
+
+### r1-messaging-and-kafka
+
+메시징·Kafka 보강 근거 · r1-v1 · Apache Kafka 4.1 문서
+
+메시징·Kafka 학습 근거 · r1-v1
+기준: Apache Kafka 4.1 문서
+직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
+
+[R1-KAFKA-01]
+토픽은 파티션으로 나뉘어 여러 브로커에 분산된다. 새 이벤트를 토픽에 발행하면 실제로는 그 토픽의 파티션 가운데 하나에 덧붙여진다. 같은 이벤트 키를 가진 이벤트는 같은 파티션에 쓰인다. Kafka는 특정 토픽 파티션의 소비자가 그 파티션의 이벤트를 쓰인 순서와 정확히 같은 순서로 읽는다는 것을 보장한다. 데이터를 이렇게 나누어 두는 것은 확장성을 위한 것으로, 클라이언트가 여러 브로커에서 동시에 읽고 쓸 수 있게 한다.
+근거: kafka-intro — Introduction: in exactly the same order as they were written
+
+[R1-KAFKA-02]
+Kafka 토픽은 순서가 있는 파티션들로 나뉘며, 각 파티션은 구독하는 컨슈머 그룹마다 어느 시점에든 정확히 한 컨슈머에 의해 소비된다. 따라서 각 파티션에서 컨슈머의 위치는 다음에 읽을 메시지의 오프셋이라는 정수 하나로 표현된다. 소비 상태가 파티션마다 숫자 하나뿐이어서 관리 비용이 작다. 그룹에 속한 컨슈머들은 파티션을 나눠 맡아 부하를 분산하고, 서로 다른 그룹은 각자의 위치를 유지하므로 같은 토픽을 독립적으로 소비한다.
+근거: kafka-design — Design: consumed by exactly one consumer within each subscribing consumer group
+
+[R1-KAFKA-03]
+메시지 전달 보장에는 세 가지가 있다. 최대 한 번은 메시지가 유실될 수 있지만 다시 전달되지 않는다. 적어도 한 번은 메시지가 유실되지 않지만 다시 전달될 수 있다. 정확히 한 번은 각 메시지가 한 번만 처리된다. 컨슈머가 메시지를 읽고 위치를 먼저 저장한 뒤 처리하면, 위치 저장 뒤 처리 전에 실패했을 때 그 메시지는 처리되지 않으므로 최대 한 번이 된다. 메시지를 처리한 뒤 위치를 저장하면, 처리 뒤 위치 저장 전에 실패했을 때 다음 프로세스가 이미 처리된 메시지를 다시 받으므로 적어도 한 번이 된다.
+근거: kafka-design — Design: Message Delivery Semantics; Messages are never lost but may be redelivered
+
+[R1-KAFKA-04]
+Kafka는 각 파티션의 로그를 설정한 수의 서버에 복제한다. 리더는 동기화된 복제본의 집합을 관리하며, 이 집합의 모든 복제본이 메시지를 자신의 로그에 반영했을 때 그 메시지를 커밋된 것으로 본다. 커밋된 메시지는 동기화된 복제본이 하나라도 살아 있는 한 유실되지 않는다. 프로듀서는 요청이 완료된 것으로 간주하기 전에 받아야 할 확인의 수준을 선택할 수 있다. 모든 동기화 복제본의 확인을 요구하고 최소 동기화 복제본 수를 설정하면, 그 수를 채우지 못할 때 쓰기가 거부되어 가용성 대신 내구성을 택하게 된다.
+근거: kafka-design — Design: in-sync replicas (ISR)
+
+[R1-KAFKA-05]
+토픽의 이벤트는 필요한 만큼 여러 번 읽을 수 있다. 전통적인 메시징 시스템과 달리 이벤트는 소비된 뒤에 삭제되지 않는다. 대신 토픽별 설정으로 Kafka가 이벤트를 얼마나 오래 보존할지 정하고, 그 기간이 지난 이벤트는 버려진다. Kafka의 성능은 데이터 크기와 사실상 무관하게 일정하므로 데이터를 오래 보관해도 문제가 없다. 소비 위치는 컨슈머가 관리하는 오프셋으로 표현되어, 컨슈머는 위치를 이전 값으로 되돌려 데이터를 다시 소비할 수 있다.
+근거: kafka-intro — Introduction: events are not deleted after consumption
+
+출처
+kafka-intro: https://kafka.apache.org/intro
+kafka-design: https://kafka.apache.org/41/design/design/
+
+### r1-observability-and-performance
+
+관측·성능 보강 근거 · r1-v1 · Prometheus·OpenTelemetry 문서; Google SRE Book
+
+관측·성능 학습 근거 · r1-v1
+기준: Prometheus·OpenTelemetry 문서; Google SRE Book
+직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
+
+[R1-OBS-01]
+카운터는 단조 증가하는 하나의 값을 나타내는 누적 메트릭이다. 값은 증가하거나 재시작 때 0으로 초기화될 뿐이며, 처리한 요청 수나 완료한 작업 수, 오류 수를 나타내는 데 쓴다. 줄어들 수 있는 값에는 카운터를 쓰지 않는다. 게이지는 임의로 오르내릴 수 있는 하나의 수치를 나타내는 메트릭이다. 온도나 현재 메모리 사용량 같은 측정값, 동시에 처리 중인 요청 수처럼 늘고 줄 수 있는 개수에 쓴다.
+근거: prom-types — Metric types: a cumulative metric; arbitrarily go up and down
+
+[R1-OBS-02]
+히스토그램과 서머리는 모두 관측값을 표본으로 수집한다. 서머리는 계측된 프로그램 쪽에서 미리 정한 분위수를 계산해 내보내고, 히스토그램은 구간별 관측 횟수를 내보내 서버 쪽에서 분위수를 계산한다. 서머리가 내보낸 분위수는 여러 인스턴스에 걸쳐 집계할 수 없다. 히스토그램은 구간별 개수를 합친 뒤 분위수를 계산할 수 있어 여러 인스턴스의 값을 집계해야 할 때 선택한다. 히스토그램으로 계산한 분위수의 오차는 구간의 폭에 좌우되므로, 관심 있는 값 주변의 구간을 좁게 잡는다.
+근거: prom-histograms — Histograms and summaries: you cannot aggregate quantiles
+
+[R1-OBS-03]
+모니터링의 네 가지 황금 신호는 지연, 트래픽, 오류, 포화도다. 지연은 요청을 처리하는 데 걸리는 시간이며 성공한 요청과 실패한 요청의 지연을 구분하는 것이 중요하다. 오류 응답은 매우 빠를 수 있어 전체 지연에 섞으면 계산이 왜곡되고, 느린 오류는 빠른 오류보다 더 나쁘므로 따로 추적한다. 트래픽은 시스템에 가해지는 수요의 크기다. 오류는 실패한 요청의 비율로, 명시적 실패와 암묵적 실패를 모두 포함한다. 포화도는 서비스가 얼마나 가득 찼는지를 나타내며 가장 제약이 큰 자원을 중심으로 본다. 평균만으로 지연을 보면 꼬리에 있는 느린 요청을 놓치므로 분포를 구간별로 수집한다.
+근거: sre-monitoring — Monitoring Distributed Systems: The Four Golden Signals
+
+[R1-OBS-04]
+모니터링 시스템은 무엇이 고장 났는지와 왜 고장 났는지라는 두 질문에 답해야 한다. 무엇이 고장 났는지는 증상을, 왜 고장 났는지는 원인을 가리킨다. 사람을 호출하는 규칙은 긴급하고, 행동할 수 있으며, 사용자에게 보이거나 곧 보이게 될 문제를 나타내야 한다. 호출을 받을 때마다 긴박하게 대응할 수 있어야 하는데, 그런 대응은 하루에 몇 번밖에 할 수 없다. 기계적인 대응만 필요한 호출은 호출이 아니어야 한다. 증상 중심으로 알림을 구성하면 적은 규칙으로 더 많은 문제를 잡고, 원인 정보는 디버깅에 쓴다.
+근거: sre-monitoring — Monitoring Distributed Systems: Symptoms Versus Causes
+
+[R1-OBS-05]
+트레이스는 요청이 애플리케이션을 지나가는 경로를 보여 준다. 스팬은 작업이나 연산의 단위를 나타내며 트레이스를 이루는 구성 요소다. 스팬에는 이름과 시작·종료 시각, 속성, 그리고 스팬 컨텍스트가 담긴다. 스팬 컨텍스트에는 트레이스 식별자와 스팬 식별자가 들어 있다. 컨텍스트 전파는 서비스와 프로세스의 경계를 넘어 이 컨텍스트를 전달하는 장치로, 호출하는 쪽이 컨텍스트를 요청에 실어 보내고 받는 쪽이 이를 추출해 새 스팬의 부모로 사용한다. 전파가 이루어져야 서로 다른 서비스에서 만들어진 스팬들이 하나의 트레이스로 조립된다.
+근거: otel-propagation — Context propagation: Context propagation
+
+출처
+prom-types: https://prometheus.io/docs/concepts/metric_types/
+prom-histograms: https://prometheus.io/docs/practices/histograms/
+sre-monitoring: https://sre.google/sre-book/monitoring-distributed-systems/
+otel-propagation: https://opentelemetry.io/docs/concepts/context-propagation/
+
+### r1-system-design
+
+시스템 설계 보강 근거 · r1-v1 · 설계 사례 일반; 인용 문서 기준
+
+시스템 설계 학습 근거 · r1-v1
+기준: 설계 사례 일반; 인용 문서 기준
+직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
+
+[R1-SD-01]
+성공한 마이크로서비스 사례의 거의 대부분은 너무 커진 모놀리스를 나누면서 시작됐고, 처음부터 마이크로서비스로 만든 시스템은 심각한 어려움을 겪은 경우가 많다. 마이크로서비스는 서비스들을 관리하는 부담을 얹으므로 그 부담을 감수할 만큼 복잡한 시스템에서만 이득이 된다. 또 마이크로서비스가 잘 동작하려면 서비스 사이의 경계가 안정적이어야 하는데, 기능을 서비스 사이에서 옮기는 리팩터링은 모놀리스 안에서 옮기는 것보다 훨씬 어렵다. 모놀리스로 먼저 만들면 어디에 경계를 두어야 하는지를 알게 된 뒤에 서비스로 나눌 수 있다.
+근거: fowler-monolithfirst — MonolithFirst: Almost all the successful microservice stories have started with a monolith
+
+[R1-SD-02]
+원격 호출은 응답 없이 멈춰 타임아웃까지 기다리게 만들 수 있고, 응답하지 않는 공급자에 호출이 몰리면 중요한 자원이 고갈되어 여러 시스템으로 장애가 번진다. 서킷 브레이커는 보호할 호출을 감싸 실패를 감시한다. 실패가 일정 기준에 이르면 차단기가 열리고, 이후의 호출은 보호된 호출을 실행하지 않은 채 오류를 반환한다. 일정 시간이 지나면 반열림 상태에서 시험 호출을 보내, 성공하면 차단기를 닫고 실패하면 다시 연다. 차단기의 상태 변화는 더 깊은 문제의 신호이므로 기록하고 감시해야 한다.
+근거: fowler-circuitbreaker — CircuitBreaker: the circuit breaker trips
+
+[R1-SD-03]
+재시도는 이기적이다. 클라이언트가 재시도하면 더 높은 성공 확률을 얻으려고 서버의 시간을 더 쓰게 된다. 실패가 드물고 일시적일 때는 문제가 없지만, 과부하 때문에 실패하는 상황에서는 재시도가 부하를 키워 상황을 악화시킨다. 백오프는 실패한 뒤 바로 재시도하지 않고 기다리는 것이며, 시도할 때마다 대기 시간을 지수적으로 늘리는 방식이 흔하다. 지터는 백오프에 무작위성을 더해 재시도가 같은 시각에 몰리지 않고 시간에 걸쳐 퍼지게 한다. 재시도가 안전하려면 API가 멱등해야 하며, 그렇지 않은 경우에는 같은 요청이 여러 번 실행되는 부작용을 감수하게 된다.
+근거: aws-retries — Timeouts, retries, and backoff with jitter: Retries are “selfish.”
+
+[R1-SD-04]
+nginx는 세 가지 부하 분산 방식을 지원한다. 라운드 로빈은 요청을 애플리케이션 서버들에 돌아가며 분배한다. 최소 연결 방식은 활성 연결 수가 가장 적은 서버에 다음 요청을 배정해, 완료에 시간이 더 걸리는 요청이 있을 때 바쁜 서버에 과부하가 걸리지 않게 한다. IP 해시 방식은 클라이언트의 IP 주소를 해시 키로 써서 다음 요청을 받을 서버를 정하므로, 같은 클라이언트의 요청은 그 서버를 쓸 수 없는 경우가 아니면 항상 같은 서버로 간다. 라운드 로빈이나 최소 연결에서는 요청마다 다른 서버로 갈 수 있어 세션 유지가 보장되지 않는다.
+근거: nginx-lb — Using nginx as HTTP load balancer: least-connected
+
+[R1-SD-05]
+nginx의 역방향 프록시 구현에는 수동 상태 검사가 들어 있다. 특정 서버의 응답이 오류로 실패하면 nginx는 그 서버를 실패한 것으로 표시하고 한동안 이후의 요청에 그 서버를 선택하지 않는다. max_fails 지시어는 fail_timeout 동안 일어나야 하는 연속된 통신 실패 횟수를 정한다. fail_timeout은 서버를 실패로 표시해 두는 시간도 정한다. 그 시간이 지나면 nginx는 실제 클라이언트 요청으로 서버를 조심스럽게 다시 확인하고, 확인이 성공하면 서버를 살아 있는 것으로 표시한다.
+근거: nginx-lb — Using nginx as HTTP load balancer: max_fails
+
+출처
+fowler-monolithfirst: https://martinfowler.com/bliki/MonolithFirst.html
+fowler-circuitbreaker: https://martinfowler.com/bliki/CircuitBreaker.html
+aws-retries: https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/
+nginx-lb: https://nginx.org/en/docs/http/load_balancing.html
+
 ## 출처 이용 조건 검수
 
 원문·코드·그림 미포함. 아래 메모는 법률 검토나 공개 승인 결과가 아님.
@@ -4238,11 +4793,13 @@ fowler-iac: https://martinfowler.com/bliki/InfrastructureAsCode.html
 - [Java SE 21 API — java.lang.Throwable](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Throwable.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Java SE 21 API — package java.time](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/package-summary.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Java SE 21 API — java.util.concurrent.ThreadPoolExecutor](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/ThreadPoolExecutor.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Amazon Builders' Library — Timeouts, retries, and backoff with jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Docker Docs — Docker build cache](https://docs.docker.com/build/cache/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [WHATWG Fetch Standard](https://fetch.spec.whatwg.org/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — BlueGreenDeployment](https://martinfowler.com/bliki/BlueGreenDeployment.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — CanaryRelease](https://martinfowler.com/bliki/CanaryRelease.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — Continuous Integration](https://martinfowler.com/articles/continuousIntegration.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Martin Fowler — CircuitBreaker](https://martinfowler.com/bliki/CircuitBreaker.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — CodeAsDocumentation](https://martinfowler.com/bliki/CodeAsDocumentation.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — TestCoverage](https://martinfowler.com/bliki/TestCoverage.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — CommandQuerySeparation](https://martinfowler.com/bliki/CommandQuerySeparation.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
@@ -4253,6 +4810,7 @@ fowler-iac: https://martinfowler.com/bliki/InfrastructureAsCode.html
 - [Martin Fowler — Inversion of Control Containers and the Dependency Injection pattern](https://martinfowler.com/articles/injection.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — LegacySeam](https://martinfowler.com/bliki/LegacySeam.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — Mocks Aren't Stubs](https://martinfowler.com/articles/mocksArentStubs.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Martin Fowler — MonolithFirst](https://martinfowler.com/bliki/MonolithFirst.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — Eradicating Non-Determinism in Tests](https://martinfowler.com/articles/nonDeterminism.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — ParallelChange](https://martinfowler.com/bliki/ParallelChange.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Martin Fowler — TestDrivenDevelopment](https://martinfowler.com/bliki/TestDrivenDevelopment.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
@@ -4272,8 +4830,12 @@ fowler-iac: https://martinfowler.com/bliki/InfrastructureAsCode.html
 - [Jakarta Persistence 3.2 Specification](https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Kubernetes Documentation — Deployments](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Kubernetes Documentation — Overview](https://kubernetes.io/docs/concepts/overview/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Apache Kafka 4.1 Documentation — Design](https://kafka.apache.org/41/design/design/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Apache Kafka — Introduction](https://kafka.apache.org/intro): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Linux man-pages — pipe(7)](https://man7.org/linux/man-pages/man7/pipe.7.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Robert C. Martin — The Single Responsibility Principle](https://blog.cleancoder.com/uncle-bob/2014/05/08/SingleReponsibilityPrinciple.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Azure Architecture Center — Cache-Aside pattern](https://learn.microsoft.com/en-us/azure/architecture/patterns/cache-aside): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [nginx Docs — Using nginx as HTTP load balancer](https://nginx.org/en/docs/http/load_balancing.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [OSTEP 32: Common Concurrency Problems](https://pages.cs.wisc.edu/~remzi/OSTEP/threads-bugs.pdf): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [OSTEP 6: Mechanism: Limited Direct Execution](https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-mechanisms.pdf): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [OSTEP 4: The Abstraction: The Process](https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-intro.pdf): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
@@ -4281,6 +4843,7 @@ fowler-iac: https://martinfowler.com/bliki/InfrastructureAsCode.html
 - [OSTEP 31: Semaphores](https://pages.cs.wisc.edu/~remzi/OSTEP/threads-sema.pdf): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [OSTEP 21: Beyond Physical Memory: Mechanisms](https://pages.cs.wisc.edu/~remzi/OSTEP/vm-beyondphys.pdf): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [OSTEP 26: Concurrency: An Introduction](https://pages.cs.wisc.edu/~remzi/OSTEP/threads-intro.pdf): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [OpenTelemetry Docs — Context propagation](https://opentelemetry.io/docs/concepts/context-propagation/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [OWASP Cheat Sheet Series — Password Storage](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [OWASP Cheat Sheet Series — Session Management](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [OWASP Cheat Sheet Series — SQL Injection Prevention](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
@@ -4300,6 +4863,12 @@ fowler-iac: https://martinfowler.com/bliki/InfrastructureAsCode.html
 - [PostgreSQL 17 Documentation — 2.7 Aggregate Functions](https://www.postgresql.org/docs/17/tutorial-agg.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [PostgreSQL 17 Documentation — 3.4 Transactions](https://www.postgresql.org/docs/17/tutorial-transactions.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [PostgreSQL 17 Documentation — 7.4 Combining Queries](https://www.postgresql.org/docs/17/queries-union.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Prometheus Docs — Histograms and summaries](https://prometheus.io/docs/practices/histograms/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Prometheus Docs — Metric types](https://prometheus.io/docs/concepts/metric_types/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Redis Docs — Key eviction](https://redis.io/docs/latest/develop/reference/eviction/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Redis Docs — EXPIRE](https://redis.io/docs/latest/commands/expire/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Redis Docs — Distributed Locks with Redis](https://redis.io/docs/latest/develop/clients/patterns/distributed-locks/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Redis Docs — Redis persistence](https://redis.io/docs/latest/operate/oss_and_stack/management/persistence/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Refactoring catalog — Encapsulate Collection](https://refactoring.com/catalog/encapsulateCollection.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Refactoring catalog — Replace Nested Conditional with Guard Clauses](https://refactoring.com/catalog/replaceNestedConditionalWithGuardClauses.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Refactoring catalog — Hide Delegate](https://refactoring.com/catalog/hideDelegate.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
@@ -4326,3 +4895,4 @@ fowler-iac: https://martinfowler.com/bliki/InfrastructureAsCode.html
 - [Spring Framework 7.0 Reference — @ResponseBody](https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-controller/ann-methods/responsebody.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Spring Framework 7.0 Reference — Special Bean Types](https://docs.spring.io/spring-framework/reference/7.0/web/webmvc/mvc-servlet/special-bean-types.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
 - [Spring Framework 7.0 Reference — Java Bean Validation](https://docs.spring.io/spring-framework/reference/7.0/core/validation/beanvalidation.html): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
+- [Google SRE Book — Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/): 원문 저작권은 원저작자 소유. 본문·예제 코드·도표 재배포 없이 출처 링크와 새로 작성한 한국어 설명만 포함. 공개 전 사람의 출처·이용 조건 검수 대기.
