@@ -2,7 +2,7 @@
 
 > 자동 생성 읽기 사본. 수정 기준은 [bundle.json](bundle.json). 사람 검수·공개 승인 대기.
 
-- 원본 SHA-256: `54f185c721b88d75f1de5f38779f26502321669fdae711efa6506b6fb729d309`
+- 원본 SHA-256: `7b302ac69d5739c87b304b823fdc96b169ce5067a353b01eeb89f08fb843d6cc`
 - 재생성: 저장소 루트에서 `python3 scripts/render_content_review.py --bundle docs/content/a2-v1/bundle.json`
 - 검수 절차·승인 기록: [콘텐츠 안내](README.md#사람-검수공개-순서)
 - 이 자료를 읽었다는 사실만으로 앱의 검수·공개 상태가 바뀌지 않음
@@ -1739,7 +1739,7 @@ Money는 amount와 currency로 업무상 같음을 판단합니다. Order는 고
 
 # 표현·단위·조건부터 고정하는 설명
 
-기준: 단위·논리·로그·표본 통계; 정수 사례는 Java 21. 직접 작성한 학습 근거 초안. 사람 검수·공개 승인 대기.
+기준: 단위·논리·로그·표본 통계; 정수 사례는 Java 21.
 
 ```text
 bit/B·Mi/M → 계산 단위 일치
@@ -1748,8 +1748,6 @@ bit/B·Mi/M → 계산 단위 일치
 ```
 
 ## 사례별 판단 근거
-
-### A2-FND-01
 
 전제: 압축·헤더·재전송 없이 파일 10 MiB를 일정한 100 Mbit/s로 보낸다고 가정합니다. 1바이트는 8비트입니다. 전송 시간은 얼마인가요? 실제 다운로드 시간에도 같은 값을 단정할 수 있는지 설명하세요.
 
@@ -1765,8 +1763,6 @@ bit/B·Mi/M → 계산 단위 일치
 근거 대조:
 
 - [NIST — Prefixes for binary multiples](https://physics.nist.gov/cuu/Units/binary.html) — Prefixes for binary multiples: MiB·Mbit 비교
-
-### A2-FND-02
 
 전제: Java 21에서 int count = 2147483647입니다. long a = count + 1;과 long b = (long) count + 1;의 값이 왜 다른가요? 계산 뒤 long으로 바꾸는 방식이 충분한지 설명하세요.
 
@@ -1784,8 +1780,6 @@ a는 -2147483648L, b는 2147483648L이다. 첫 식의 덧셈은 두 피연산자
 - [Java Language Specification 21 — Chapter 4 Types, Values, and Variables](https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html) — §4.2.1 Integer Types and Values; §4.2.2 Integer Operations
 - [Java Language Specification 21 — Chapter 15 Expressions](https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html) — §15.18.2 Additive Operators for Numeric Types
 
-### A2-FND-03
-
 전제: 접근 허용 조건은 “활성 회원이면서, 소유자이거나 관리자”입니다. 순수 boolean active, owner, admin만 사용합니다. (active && owner) || admin이 조건을 만족하나요? 올바른 식과 반례 하나를 제시하세요.
 
 올바른 식은 active && (owner || admin)이다. 기존 식은 admin=true이면 active=false여도 허용한다. 예를 들어 active=false, owner=false, admin=true이면 기존 식은 true이고 요구한 식은 false다. 괄호는 활성 조건이 소유자·관리자 양쪽에 공통으로 적용됨을 드러낸다. 모든 입력 조합의 진리표로 두 식을 비교할 수 있다.
@@ -1800,8 +1794,6 @@ a는 -2147483648L, b는 2147483648L이다. 첫 식의 덧셈은 두 피연산자
 근거 대조:
 
 - [Java Language Specification 21 — Chapter 15 Expressions](https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html) — §15.23 Conditional-And; §15.24 Conditional-Or. 업무 허용식은 문항 자체 계약
-
-### A2-FND-04
 
 전제: 후보가 1,048,576개입니다. 단계마다 후보 수를 정확히 절반으로 줄여 1개가 될 때까지 반복합니다. 몇 단계가 필요한가요? 후보 수를 두 배로 늘릴 때 단계 수와, 매 단계의 실제 시간이 어떻게 달라지는지 구분하세요.
 
@@ -1818,8 +1810,6 @@ a는 -2147483648L, b는 2147483648L이다. 첫 식의 덧셈은 두 피연산자
 
 - [Princeton Algorithms 4e — Analysis of Algorithms](https://algs4.cs.princeton.edu/14analysis/) — Order-of-growth classifications; binary search 사례
 
-### A2-FND-05
-
 전제: 각각 100건의 응답 시간입니다. A는 전부 20ms, B는 94건이 10ms이고 6건이 530/3ms입니다. p95는 오름차순 ceil(0.95×100)번째 값으로 정합니다. 평균과 p95를 비교하고, 이 표본으로 전체 사용자의 미래 품질을 확정할 수 있는지 설명하세요.
 
 A 평균과 p95는 20ms다. B의 합은 94×10+6×530/3=2000ms이므로 평균도 20ms지만 95번째 값은 530/3ms, 약 176.67ms다. 같은 평균이 느린 꼬리를 숨긴다. p95는 95% 지점의 값이지 가장 느린 5%의 평균이 아니다. 주어진 100건·계산법의 결과이며 측정 기간·요청 종류·실패 포함 여부·표본 대표성을 확인하지 않고 미래 전체 사용자 품질을 확정할 수 없다.
@@ -1835,17 +1825,13 @@ A 평균과 p95는 20ms다. B의 합은 94×10+6×530/3=2000ms이므로 평균�
 
 - [Google SRE Book — Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/) — Worrying About Your Tail (or, Instrumentation and Performance)
 
-## 확인·판정 한계
-
-질문의 명시적 전제와 이 문서의 근거를 함께 확인. 다른 언어·버전·배치·업무 계약에 결과를 그대로 적용하지 않음. 설계 사례는 조건을 충족하는 여러 대안을 허용. 필요한 개념의 근거가 검색 결과에서 빠지면 판정 보류. 이 문서의 존재·구조 검사 통과는 사람 검수·검색 적합성·모델 품질을 증명하지 않음.
-
 ### A2-ARCH-DOC
 
 성능을 하드웨어 작업과 비용으로 설명 · Cornell CS3410 2024; OSTEP 1.10의 하드웨어·I/O 모델
 
 # 성능을 하드웨어 작업과 비용으로 설명
 
-기준: Cornell CS3410 2024; OSTEP 1.10의 하드웨어·I/O 모델. 직접 작성한 학습 근거 초안. 사람 검수·공개 승인 대기.
+기준: Cornell CS3410 2024; OSTEP 1.10의 하드웨어·I/O 모델.
 
 ```text
 주소 변환: 가상 주소 → TLB/페이지 테이블 → 물리 주소
@@ -1854,8 +1840,6 @@ I/O: CPU 요청 설정 → 장치/DMA 작업 → 완료 처리
 ```
 
 ## 사례별 판단 근거
-
-### A2-ARCH-01
 
 전제: 고정된 작업이 1코어에서 100초 걸립니다. 그중 20초는 병렬화할 수 없고 80초는 4코어에 완벽히 나눌 수 있습니다. 추가 비용은 없습니다. 4코어 시간·속도 향상과 코어를 무한히 늘릴 때의 한계를 설명하세요.
 
@@ -1871,8 +1855,6 @@ I/O: CPU 요청 설정 → 장치/DMA 작업 → 완료 처리
 근거 대조:
 
 - [Cornell CS3410 Fall 2024 — Performance in Parallel Programming](https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/parallel-perf.html) — Performance in Parallel Programming: Scalability; Amdahl’s law
-
-### A2-ARCH-02
 
 전제: 같은 수의 int 값을 한 번 합산합니다. A는 연속 메모리 배열을 앞에서부터 읽고 B는 메모리 여러 곳에 흩어진 연결리스트 노드를 따라갑니다. 둘 다 O(n)인데도 시간이 다를 수 있는 이유와 비교할 때 확인할 조건을 설명하세요.
 
@@ -1890,8 +1872,6 @@ I/O: CPU 요청 설정 → 장치/DMA 작업 → 완료 처리
 - [Cornell CS3410 Fall 2024 — Caches](https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/caches.html) — The principle of locality: temporal/spatial locality; cache lines
 - [MIT 6.006 Spring 2020 — Lecture 2 Data Structures](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf) — Array Sequence; Linked List Sequence: 저장 형태
 
-### A2-ARCH-03
-
 전제: 단일 캐시를 순차로 확인합니다. hit는 총 1ns, miss는 캐시 확인 1ns 뒤 메모리에서 추가 50ns가 듭니다. hit율은 95%입니다. 평균 접근 시간은 얼마인가요? hit율이 같아도 실제 프로그램 시간이 같지 않을 수 있는 조건을 설명하세요.
 
 평균은 0.95×1+0.05×(1+50)=3.5ns다. miss의 50ns는 캐시 확인 뒤 추가 비용이므로 0.95×1+0.05×50=3.45ns로 계산하면 확인 비용을 빠뜨린다. 이 모델은 순차 접근의 평균이다. 실제 다층 캐시·중첩된 메모리 요청·접근 횟수·작업 종류가 다르면 같은 hit율도 전체 실행 시간을 정하지 못한다.
@@ -1906,8 +1886,6 @@ I/O: CPU 요청 설정 → 장치/DMA 작업 → 완료 처리
 근거 대조:
 
 - [Cornell CS3410 Fall 2024 — Caches](https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/caches.html) — Cache performance: average access time; multi-level caches
-
-### A2-ARCH-04
 
 전제: 유효하고 읽기 가능한 페이지가 이미 RAM에 있습니다. 해당 가상 페이지의 주소 변환만 TLB에 없습니다. 하드웨어가 페이지 테이블을 조회하는 모델에서 이 접근은 반드시 디스크 읽기인가요? TLB miss·데이터 캐시 miss·페이지 부재를 구별하세요.
 
@@ -1925,8 +1903,6 @@ I/O: CPU 요청 설정 → 장치/DMA 작업 → 완료 처리
 - [OSTEP 1.10 — Chapter 19 Paging: Faster Translations (TLBs)](https://pages.cs.wisc.edu/~remzi/OSTEP/vm-tlbs.pdf) — Chapter 19 §19.1 TLB Basic Algorithm; §19.4 TLB Contents
 - [Cornell CS3410 Fall 2024 — Caches](https://www.cs.cornell.edu/courses/cs3410/2024fa/notes/caches.html) — Cache line and memory hierarchy: data accesses
 
-### A2-ARCH-05
-
 전제: 큰 블록을 장치로 보낼 때 CPU가 상태 레지스터를 반복 조회하고 데이터도 한 단어씩 복사합니다. interrupt와 DMA는 각각 어느 CPU 작업을 줄이나요? 두 기법을 쓰면 장치 자체 지연이 없어지는지 설명하세요.
 
 interrupt는 완료를 기다리며 상태를 계속 polling하는 CPU 비용을 줄이고, DMA는 설정 후 장치와 메모리 사이 데이터 이동을 담당해 CPU의 단어별 복사를 줄인다. CPU는 요청 설정·완료 처리·버퍼 수명 관리에 여전히 관여한다. 장치 지연·버스 대역폭은 남으므로 두 기법이 I/O를 즉시 완료시키지 않는다. 매우 짧은 작업·빈번한 interrupt에서는 polling이나 묶음 처리의 비용을 비교해야 한다.
@@ -1942,17 +1918,13 @@ interrupt는 완료를 기다리며 상태를 계속 polling하는 CPU 비용을
 
 - [OSTEP 1.10 — Chapter 36 I/O Devices](https://pages.cs.wisc.edu/~remzi/OSTEP/file-devices.pdf) — Chapter 36 §36.3 Canonical Protocol; §36.4 Interrupts; §36.5 DMA
 
-## 확인·판정 한계
-
-질문의 명시적 전제와 이 문서의 근거를 함께 확인. 다른 언어·버전·배치·업무 계약에 결과를 그대로 적용하지 않음. 설계 사례는 조건을 충족하는 여러 대안을 허용. 필요한 개념의 근거가 검색 결과에서 빠지면 판정 보류. 이 문서의 존재·구조 검사 통과는 사람 검수·검색 적합성·모델 품질을 증명하지 않음.
-
 ### A2-DS-DOC
 
 연산 계약을 저장 방식과 연결 · MIT 6.006 Spring 2020; Princeton Algorithms 4th Edition
 
 # 연산 계약을 저장 방식과 연결
 
-기준: MIT 6.006 Spring 2020; Princeton Algorithms 4th Edition. 직접 작성한 학습 근거 초안. 사람 검수·공개 승인 대기.
+기준: MIT 6.006 Spring 2020; Princeton Algorithms 4th Edition.
 
 ```text
 무엇을 빨리 할 것인가? → 저장 표현 선택
@@ -1961,8 +1933,6 @@ interrupt는 완료를 기다리며 상태를 계속 polling하는 CPU 비용을
 ```
 
 ## 사례별 판단 근거
-
-### A2-DS-01
 
 전제: n개 원소에서 인덱스 i의 값을 읽고 그 뒤에 하나를 삽입합니다. 여유 용량이 있는 배열과 단일 연결리스트를 비교하세요. 연결리스트는 머리만 아는 경우와 i번째 노드의 참조를 이미 가진 경우를 나누고, i는 중간 위치라고 가정합니다.
 
@@ -1980,8 +1950,6 @@ interrupt는 완료를 기다리며 상태를 계속 polling하는 CPU 비용을
 - [MIT 6.006 Spring 2020 — Lecture 2 Data Structures](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf) — Array Sequence; Linked List Sequence: get_at·insert_at
 - [Princeton Algorithms 4e — Bags, Queues, and Stacks](https://algs4.cs.princeton.edu/13stacks/) — Linked lists: insertion and links
 
-### A2-DS-02
-
 전제: 단일 스레드 FIFO 대기열에 A,B,C를 넣고 하나를 꺼냅니다. 용량 4인 원형 배열에서 head와 tail이 같은 경우가 빈 상태인지 꽉 찬 상태인지 구별하려면 무엇이 필요한가요? 크기 필드 또는 한 칸 비우기 정책을 허용합니다.
 
 FIFO이므로 A가 먼저 나온다. stack의 LIFO와 달리 먼저 들어온 항목을 먼저 꺼낸다. 원형 인덱스만으로 head=tail이면 빈 상태와 꽉 찬 상태가 겹칠 수 있다. size를 저장해 0과 4를 구별하거나 한 칸을 비워 next(tail)=head를 full로 정의할 수 있다. 한 칸 비우기를 택하면 물리 용량 4의 사용 가능 용량은 3이다. enqueue/dequeue 후 인덱스와 크기를 함께 갱신해야 한다.
@@ -1996,8 +1964,6 @@ FIFO이므로 A가 먼저 나온다. stack의 LIFO와 달리 먼저 들어온 �
 근거 대조:
 
 - [Princeton Algorithms 4e — Bags, Queues, and Stacks](https://algs4.cs.princeton.edu/13stacks/) — FIFO queues; Array resizing: queue. 원형 상태 정책은 문항에서 허용한 설계
-
-### A2-DS-03
 
 전제: 별도 연결리스트로 충돌을 처리하는 해시 테이블에 서로 다른 키 n개를 넣습니다. 모든 키가 같은 bucket에 들어가고, 키 비교와 해시 계산은 O(1)입니다. 해시가 같다는 이유로 앞 값을 덮어써도 되나요? 없는 키 조회 비용과 배열 확장만으로 해결되는지 설명하세요.
 
@@ -2014,8 +1980,6 @@ FIFO이므로 A가 먼저 나온다. stack의 LIFO와 달리 먼저 들어온 �
 
 - [Princeton Algorithms 4e — Hash Tables](https://algs4.cs.princeton.edu/34hash/) — Hash functions: consistency; Assumption J; Hashing with separate chaining
 
-### A2-DS-04
-
 전제: 서로 다른 점수 8,2,6,10,4가 차례로 옵니다. 가장 큰 3개만 보관하려고 용량을 미리 확보한 min-heap을 씁니다. 최종 점수 집합·루트의 의미·새 점수 처리와 비용을 설명하세요. 힙 배열이 전체 오름차순인지도 답하세요.
 
 최종 집합은{6,8,10}이고 루트 6은 보관한 큰 3개 중 가장 작다. 처음 3개는 넣고, 이후 루트보다 큰 10은 2를 교체하며 4는 6 이하라 버린다. 가득 찬 뒤 루트 비교는 O(1), 교체 후 복구는 O(log K)이고 저장은 O(K)다. min-heap은 부모≤자식 조건으로 루트 최소를 보장할 뿐 형제·전체 배열 정렬을 보장하지 않는다. 내림차순 출력은 별도 정렬이나 반복 추출이 필요하다.
@@ -2030,8 +1994,6 @@ FIFO이므로 A가 먼저 나온다. stack의 LIFO와 달리 먼저 들어온 �
 근거 대조:
 
 - [Princeton Algorithms 4e — Priority Queues](https://algs4.cs.princeton.edu/24pq/) — Heap definitions; heap-order maintenance; TopM client; resizing cost caveat
-
-### A2-DS-05
 
 전제: 단순 무방향 그래프의 정점은 1000개, 간선은 2000개입니다. 인접 리스트와 1000×1000 인접 행렬을 비교하세요. 저장 규모와 한 정점의 모든 이웃 열거 비용, 특정 두 정점의 연결 검사 비용이 왜 다른가요?
 
@@ -2048,17 +2010,13 @@ FIFO이므로 A가 먼저 나온다. stack의 LIFO와 달리 먼저 들어온 �
 
 - [Princeton Algorithms 4e — Undirected Graphs](https://algs4.cs.princeton.edu/41graph/) — Graph representations: adjacency matrix and adjacency lists
 
-## 확인·판정 한계
-
-질문의 명시적 전제와 이 문서의 근거를 함께 확인. 다른 언어·버전·배치·업무 계약에 결과를 그대로 적용하지 않음. 설계 사례는 조건을 충족하는 여러 대안을 허용. 필요한 개념의 근거가 검색 결과에서 빠지면 판정 보류. 이 문서의 존재·구조 검사 통과는 사람 검수·검색 적합성·모델 품질을 증명하지 않음.
-
 ### A2-ALG-DOC
 
 실행 순서·반례·복잡도로 알고리즘 검증 · MIT 6.006 Spring 2020; Princeton Algorithms 4th Edition
 
 # 실행 순서·반례·복잡도로 알고리즘 검증
 
-기준: MIT 6.006 Spring 2020; Princeton Algorithms 4th Edition. 직접 작성한 학습 근거 초안. 사람 검수·공개 승인 대기.
+기준: MIT 6.006 Spring 2020; Princeton Algorithms 4th Edition.
 
 ```text
 입력 전제 → 유지할 조건 → 구간/상태 축소
@@ -2067,8 +2025,6 @@ FIFO이므로 A가 먼저 나온다. stack의 LIFO와 달리 먼저 들어온 �
 ```
 
 ## 사례별 판단 근거
-
-### A2-ALG-01
 
 전제: 오름차순 배열 [2,4,4,4,9]에서 값 4의 첫 인덱스를 0부터 찾습니다. lower_bound를 반열린 구간 [lo,hi)로 구현할 때 같은 값을 만나면 어디를 줄이나요? 없는 값·빈 배열을 처리하는 조건과 정렬되지 않은 입력의 문제를 설명하세요.
 
@@ -2085,8 +2041,6 @@ lo=0, hi=n에서 mid 값을 비교한다. a[mid]<target이면 lo=mid+1, 그렇�
 
 - [Princeton Algorithms 4e — Analysis of Algorithms](https://algs4.cs.princeton.edu/14analysis/) — Binary search examples. lower_bound 규칙·반열린 구간은 문항의 알고리즘 계약
 
-### A2-ALG-02
-
 전제: 연속한 두 반쪽을 재귀 정렬 후 O(n)에 병합하는 배열 merge sort입니다. 별도 O(n) 버퍼를 재사용합니다. 점수만 비교하는 입력 [(3,A),(1,B),(3,C),(1,D)]에서 동점의 입력 순서를 보존하려면 병합 중 동점일 때 어느 쪽을 먼저 가져오나요? 시간·추가 공간도 설명하세요.
 
 반쪽 둘을 정렬하는 비용과 선형 병합이 반복되어 O(n log n) 시간, 재사용 버퍼 O(n)과 재귀 O(log n)의 추가 공간이 든다. 양쪽이 내부 동점 순서를 유지한다면 동점에서 왼쪽을 먼저 가져와 전체 입력 순서를 보존한다. 결과는 [(1,B),(1,D),(3,A),(3,C)]다. 오른쪽을 먼저 고르면 원래 뒤의 항목이 앞 항목을 넘어갈 수 있으므로 점수 정렬만으로 안정성을 보장하지 않는다.
@@ -2102,13 +2056,11 @@ lo=0, hi=n에서 mid 값을 비교한다. a[mid]<target이면 lo=mid+1, 그렇�
 
 - [Princeton Algorithms 4e — Mergesort](https://algs4.cs.princeton.edu/22mergesort/) — Abstract in-place merge; Top-down mergesort; Proposition; Faster merge의 비안정 변형
 
-### A2-ALG-03
-
 전제: 인접 리스트 그래프에서 BFS로 시작점의 최단 경로를 찾습니다. 모든 간선 비용이 1일 때 queue와 방문 표시는 어떻게 쓰나요? A→D 비용 10, A→B 비용 1, B→D 비용 1인 다른 그래프에서도 같은 BFS가 최소 비용을 찾는지 설명하세요.
 
 BFS는 시작점을 enqueue 때 방문 표시하고, dequeue한 정점의 미방문 이웃도 enqueue 때 표시해 단계별로 확장한다. 모두 비용 1이면 처음 발견한 단계 수가 최소 비용이자 최소 간선 수다. 인접 리스트 전체 탐색은 O(V+E)다. 주어진 가중 그래프는 직접 A→D가 한 간선이지만 비용 10, A→B→D는 두 간선이지만 비용 2다. 일반 BFS는 최소 간선 수를 찾으므로 가변 비용의 최소 합을 보장하지 않는다. 비음수 가중치에는 Dijkstra 등의 조건 맞는 대안을 선택한다.
 
-판단 범위: 방문을 늦게 표시하는 변형도 올바른 중복 방어·거리 계약을 설명하면 검수 가능. 이름만으로 감점 금지.
+판단 범위: 방문을 늦게 표시하는 변형도 올바른 중복 방어·거리 계약을 설명하면 인정. 이름만으로 감점 금지.
 
 개념별 핵심:
 
@@ -2118,8 +2070,6 @@ BFS는 시작점을 enqueue 때 방문 표시하고, dequeue한 정점의 미방
 근거 대조:
 
 - [Princeton Algorithms 4e — Undirected Graphs](https://algs4.cs.princeton.edu/41graph/) — Breadth-first search: shortest path in number of edges; marked queue
-
-### A2-ALG-04
 
 전제: 동전 1,3,4를 제한 없이 써 금액 6을 최소 동전 수로 만듭니다. 남은 금액 이하의 가장 큰 동전부터 고르는 greedy가 최적인가요? 이 입력의 반례와 모든 금액 0..6에 대해 답을 만드는 DP 상태·초기값·전이를 설명하세요. 시간·공간 비용도 설명하세요.
 
@@ -2135,8 +2085,6 @@ greedy는 4+1+1로 3개지만 3+3은 2개이므로 이 체계에서 최적이 �
 근거 대조:
 
 - [MIT 6.006 Spring 2020 — Lecture 16 Dynamic Programming Subproblems](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/28461a74f81101874a13d9679a40584d_MIT6_006S20_lec16.pdf) — Dynamic Programming Review; SRT BOT Steps: state·recurrence·base·time. 최소 동전 사례는 자체 구성
-
-### A2-ALG-05
 
 전제: 처음 빈 동적 배열의 용량은 1입니다. 꽉 차면 용량을 두 배로 늘리며 기존 원소를 모두 복사하고, 끝에 하나를 넣습니다. 삭제 없이 n개를 넣을 때 특정 append의 최악 비용과 전체·상환 비용을 구별하세요.
 
@@ -2154,17 +2102,13 @@ greedy는 4+1+1로 3개지만 3+3은 2개이므로 이 체계에서 최적이 �
 - [MIT 6.006 Spring 2020 — Lecture 2 Data Structures](https://ocw.mit.edu/courses/6-006-introduction-to-algorithms-spring-2020/79a07dc1cb47d76dae2ffedc701e3d2b_MIT6_006S20_lec2.pdf) — Dynamic Array Sequence; Amortized Analysis
 - [Princeton Algorithms 4e — Bags, Queues, and Stacks](https://algs4.cs.princeton.edu/13stacks/) — Array resizing: doubling
 
-## 확인·판정 한계
-
-질문의 명시적 전제와 이 문서의 근거를 함께 확인. 다른 언어·버전·배치·업무 계약에 결과를 그대로 적용하지 않음. 설계 사례는 조건을 충족하는 여러 대안을 허용. 필요한 개념의 근거가 검색 결과에서 빠지면 판정 보류. 이 문서의 존재·구조 검사 통과는 사람 검수·검색 적합성·모델 품질을 증명하지 않음.
-
 ### A2-NET-DOC
 
 네트워크 계층의 보장과 앱의 책임 · RFC 9293·768·5681·1034·8446; TLS 1.3
 
 # 네트워크 계층의 보장과 앱의 책임
 
-기준: RFC 9293·768·5681·1034·8446; TLS 1.3. 직접 작성한 학습 근거 초안. 사람 검수·공개 승인 대기.
+기준: RFC 9293·768·5681·1034·8446; TLS 1.3.
 
 ```text
 DNS 이름 조회 → 연결 → TLS endpoint → 앱 요청
@@ -2173,8 +2117,6 @@ TCP 바이트 순서 ≠ 앱 메시지 경계
 ```
 
 ## 사례별 판단 근거
-
-### A2-NET-01
 
 전제: 같은 TCP 연결에서 송신 앱이 메시지 ABC와 DEF를 두 번 write했습니다. 연결은 정상이고 데이터 손실 없이 수신됩니다. 수신 앱이 두 번 read해서 정확히 ABC, DEF를 얻는다고 보장되나요? 메시지를 나누는 방법과 EOF의 의미를 설명하세요.
 
@@ -2190,8 +2132,6 @@ TCP는 순서 있는 바이트 스트림이며 앱 write의 메시지 경계를 
 근거 대조:
 
 - [RFC 9293 — Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293.html) — §2.2 Key TCP Concepts; §3.9.1.2 Send: push does not supply a record boundary; §3.9.1.3 Receive
-
-### A2-NET-02
 
 전제: 한 UDP datagram씩 위치 갱신을 보냅니다. 최신 위치가 오면 늦은 예전 위치를 버릴 수 있지만, 중복이나 역순 도착이 있어도 상태가 과거로 돌아가면 안 됩니다. UDP 자체가 이 요구를 보장하나요? 앱에 필요한 정보와, 이 선택을 결제 명령에 그대로 쓸 수 없는 이유를 설명하세요.
 
@@ -2209,8 +2149,6 @@ UDP는 전달·중복 방지·순서를 보장하지 않는다. 앱은 보낸 �
 - [RFC 768 — User Datagram Protocol](https://www.rfc-editor.org/rfc/rfc768.html) — User Datagram Protocol: delivery and duplicate protection not guaranteed
 - [RFC 9293 — Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293.html) — §2.2 Key TCP Concepts: transport byte-stream 보장. 앱 버전·결제 계약은 자체 설계
 
-### A2-NET-03
-
 전제: TCP 송신에서 수신 윈도 rwnd=64KiB, 혼잡 윈도 cwnd=16KiB, 보낸 뒤 아직 ACK되지 않은 데이터는 12KiB입니다. 단순화한 모델에서 추가로 보낼 수 있는 양과 두 윈도의 책임을 설명하세요. 수신 버퍼만 늘리면 항상 더 보낼 수 있나요?
 
 총 미확인 데이터 한도는 min(rwnd,cwnd)=16KiB이고 이미 12KiB이므로 추가 4KiB다. rwnd는 수신자가 처리·보관할 여유를 알리는 흐름 제어, cwnd는 네트워크 경로의 혼잡을 고려한 송신자 제한이다. 이 경우 cwnd가 더 작으므로 수신 버퍼와 rwnd만 늘려도 추가 한도는 커지지 않는다. ACK·손실·송신 pacing 등 실제 조건도 확인해야 하며 둘 중 하나만 보고 전송 가능량을 확정하지 않는다.
@@ -2227,8 +2165,6 @@ UDP는 전달·중복 방지·순서를 보장하지 않는다. 앱은 보낸 �
 - [RFC 5681 — TCP Congestion Control](https://www.rfc-editor.org/rfc/rfc5681.html) — §2 Definitions: rwnd·cwnd; §3 Congestion Control Algorithms
 - [RFC 9293 — Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293.html) — §3.8.6.1 Window Management
 
-### A2-NET-04
-
 전제: resolver가 t=0에 TTL 300초인 A 레코드의 옛 IP를 저장했습니다. 권한 서버는 t=100에 새 IP로 바꾸며 새 레코드 TTL을 30초로 정했습니다. prefetch·serve-stale·중간 캐시·기존 연결 없이 RFC 1034 기본 TTL 모델만 씁니다. t=150 질의에서 옛 IP가 가능한 이유와, 새 TTL 30이 기존 캐시를 즉시 없애는지 설명하세요.
 
 기존 캐시의 저장 수명은 t=0부터 300초이므로 t=150에서 남은 150초 동안 옛 레코드를 사용할 수 있다. 권한 서버의 갱신은 이미 저장된 모든 resolver 캐시를 즉시 밀어내지 않는다. 새 TTL 30은 새 응답을 받아 저장할 때의 수명이지 옛 캐시에 소급되지 않는다. 이 모델에서는 t=300에 기존 항목이 만료되어 다음 조회에서 새 값을 얻을 수 있다. 변경 준비는 기존 TTL이 지나갈 시간을 고려해야 하며 DNS 갱신과 살아 있는 연결 전환을 같은 사건으로 다루지 않는다.
@@ -2243,8 +2179,6 @@ UDP는 전달·중복 방지·순서를 보장하지 않는다. 앱은 보낸 �
 근거 대조:
 
 - [RFC 1034 — Domain Names: Concepts and Facilities](https://www.rfc-editor.org/rfc/rfc1034.html) — §3.2.1 Resource records: TTL; §4.3.4 Caching; §5.3.3 resolver algorithm
-
-### A2-NET-05
 
 전제: 브라우저는 신뢰 체인·호스트명·서명 검증을 정상 수행하는 인증서 기반 TLS 1.3으로 프록시에 연결합니다. 프록시에서 TLS를 종료하고 앱까지는 별도 네트워크의 평문 HTTP입니다. TLS가 보호하는 구간·프록시의 평문 관측·앱 구간과 사용자 인가의 책임을 설명하세요.
 
@@ -2261,17 +2195,13 @@ TLS의 기밀성·무결성은 브라우저와 TLS endpoint인 프록시 사이�
 
 - [RFC 8446 — The Transport Layer Security (TLS) Protocol Version 1.3](https://www.rfc-editor.org/rfc/rfc8446.html) — §1 Introduction: authentication·confidentiality·integrity; §4.4 Authentication Messages. 프록시 배치는 자체 사례
 
-## 확인·판정 한계
-
-질문의 명시적 전제와 이 문서의 근거를 함께 확인. 다른 언어·버전·배치·업무 계약에 결과를 그대로 적용하지 않음. 설계 사례는 조건을 충족하는 여러 대안을 허용. 필요한 개념의 근거가 검색 결과에서 빠지면 판정 보류. 이 문서의 존재·구조 검사 통과는 사람 검수·검색 적합성·모델 품질을 증명하지 않음.
-
 ### A2-OOD-DOC
 
 상태·정보·변경 이유에 맞춘 객체 협력 · Java 21; Liskov·Wing 1994; 명시한 업무 계약의 설계 사례
 
 # 상태·정보·변경 이유에 맞춘 객체 협력
 
-기준: Java 21; Liskov·Wing 1994; 명시한 업무 계약의 설계 사례. 직접 작성한 학습 근거 초안. 사람 검수·공개 승인 대기.
+기준: Java 21; Liskov·Wing 1994; 명시한 업무 계약의 설계 사례.
 
 ```text
 입력 → 객체의 전체 검증 → 상태 변경
@@ -2280,8 +2210,6 @@ TLS의 기밀성·무결성은 브라우저와 TLS endpoint인 프록시 사이�
 ```
 
 ## 사례별 판단 근거
-
-### A2-OOD-01
 
 전제: 기간 객체가 start≤end를 항상 유지해야 합니다. 현재 (2,4)에서 replacePeriod(5,3)를 호출합니다. 공개 setter 두 개로 순서대로 바꾸면 어떤 문제가 생기나요? 실패 시 두 값 모두 (2,4)를 유지하는 변경 방법과 규칙의 소유자를 설명하세요.
 
@@ -2299,8 +2227,6 @@ start부터 5로 바꾸면 중간 (5,4)이 불변식을 어기고, end 검증에
 - [Martin Fowler — Anemic Domain Model](https://martinfowler.com/bliki/AnemicDomainModel.html) — Anemic Domain Model: behavior and domain logic
 - [Java Language Specification 21 — Chapter 8 Classes](https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html) — §8.3 Field Declarations; §8.8 Constructors. 기간 불변식·실패 계약은 자체 설계
 
-### A2-OOD-02
-
 전제: 주문은 소계·최종금액을 소유하며 0≤할인≤소계를 항상 유지해야 합니다. 할인 정책은 등급·소계로 금액을 계산하며 캠페인마다 바뀝니다. 주문에 모든 정책 분기를 넣는 대신 어떤 협력 경계를 둘 수 있나요? 정책 변경과 잘못된 반환값의 책임을 나눠 설명하세요.
 
 할인 계산을 DiscountPolicy 같은 작은 계약으로 분리하고 주문 또는 유스케이스가 선택한 정책을 합성할 수 있다. 필요한 등급·소계를 전달하면 정책별 계산 변경이 해당 정책으로 모인다. 주문은 정책 반환값을 신뢰해 무조건 저장하지 않고 자신의 금액 불변식을 최종 검사한다. 새 정책 때 주문 핵심 규칙까지 바꿀 필요는 줄지만 정책 선택/조립은 바뀔 수 있다. 함수 전략이나 명확히 분리한 규칙 모듈도 조건을 만족하면 유효하며 상속 계층이 필수는 아니다.
@@ -2316,8 +2242,6 @@ start부터 5로 바꾸면 중간 (5,4)이 불변식을 어기고, end 검증에
 
 - [Java Language Specification 21 — Chapter 9 Interfaces](https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html) — Chapter 9 introduction: unrelated classes implement one contract
 - [Martin Fowler — Anemic Domain Model](https://martinfowler.com/bliki/AnemicDomainModel.html) — Domain logic in behavior-rich objects. 정책 분리·금액 계약은 자체 설계
-
-### A2-OOD-03
 
 전제: Withdrawal 계약은 잔액이 충분한 양수 amount를 받으면 추가 수수료 없이 정확히 amount만 차감합니다. 구현 LimitedWithdrawal은 amount>1000이면 거부하고 성공 시 추가 10을 차감합니다. 컴파일은 됩니다. 이 구현을 원계약의 대체로 쓸 수 있나요? 요구를 보존할 대안을 설명하세요.
 
@@ -2335,8 +2259,6 @@ start부터 5로 바꾸면 중간 (5,4)이 불변식을 어기고, end 검증에
 - [Liskov and Wing 1994 — A Behavioral Notion of Subtyping](https://www.cs.cmu.edu/~wing/publications/LiskovWing94.pdf) — §1 Subtype Requirement; §3 subtype methods and behavior preservation
 - [Java Language Specification 21 — Chapter 9 Interfaces](https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html) — Chapter 9 interface implementation: 언어 타입 계약과의 구별
 
-### A2-OOD-04
-
 전제: 배송 견적 유스케이스가 외부 HTTP의 인증 헤더·JSON 필드명·timeout과 배송 정책을 한 메서드에서 다룹니다. 외부 필드명만 바뀌었는데 업무 코드도 수정됩니다. 작은 조회 계약과 adapter를 쓴다면 어떤 정보·실패를 경계에 두며, mock 통과가 무엇을 검증하지 못하나요?
 
 유스케이스가 필요한 배송 요율 조회 계약을 업무 입력·출력으로 정하고 HTTP adapter가 인증·JSON 변환·통신을 소유한다. 업무 정책은 그 값을 받아 견적을 판단하므로 필드명 변경은 주로 adapter에 모인다. timeout·조회 불가·유효하지 않은 요율의 의미를 계약에 명시하고 모두 0원으로 숨기지 않는다. interface가 있어도 HTTP DTO가 계약에 새면 경계가 약해진다. mock 통과는 호출자 조정만 확인하며 실제 HTTP 인증·직렬화·외부 응답·DB나 네트워크 정상까지 증명하지 않는다.
@@ -2353,13 +2275,11 @@ start부터 5로 바꾸면 중간 (5,4)이 불변식을 어기고, end 검증에
 - [Java Language Specification 21 — Chapter 9 Interfaces](https://docs.oracle.com/javase/specs/jls/se21/html/jls-9.html) — Chapter 9: abstract contract and implementation
 - [Martin Fowler — Anemic Domain Model](https://martinfowler.com/bliki/AnemicDomainModel.html) — Domain logic and service coordination. port·adapter·실패 계약은 자체 설계
 
-### A2-OOD-05
-
 전제: Money는 amount와 currency로 업무상 같음을 판단합니다. Order는 고유 orderId로 같음을 판단합니다. Money(100,KRW) 둘과 Money(100,USD), 같은 총액의 서로 다른 orderId 주문을 비교하세요. 값 객체를 불변으로 둘 이유와 final 필드만으로 충분한지도 설명하세요.
 
 두 Money(100,KRW)는 업무값이 같고 Money(100,USD)는 통화가 달라 같지 않다. 총액이 같아도 서로 다른 orderId 주문은 다른 엔티티다. 같은 값과 같은 대상 식별을 구별한다. 값 객체를 불변으로 두면 공유 참조의 변경으로 다른 사용자의 의미가 바뀌는 위험을 줄이고 새 값으로 교체할 수 있다. final은 참조 재대입만 막으므로 가변 내부 컬렉션·객체가 있다면 방어적 복사나 불변 구성까지 필요하다. 값 동등성 정의는 업무 전제에 맞춰 명시해야 한다.
 
-판단 범위: equals/hashCode·영속 ID 생성 시점·환율/반올림의 구체 구현은 추가 검수 범위. initial-v1의 record 가변 참조와 개념 중첩을 독립 표본에서 구분.
+판단 범위: equals/hashCode·영속 ID 생성 시점·환율/반올림의 구체 구현은 이 사례의 범위 밖.
 
 개념별 핵심:
 
@@ -2370,10 +2290,6 @@ start부터 5로 바꾸면 중간 (5,4)이 불변식을 어기고, end 검증에
 
 - [Martin Fowler — Value Object](https://martinfowler.com/bliki/ValueObject.html) — ValueObject: value/reference identity; immutability
 - [Java Language Specification 21 — Chapter 4 Types, Values, and Variables](https://docs.oracle.com/javase/specs/jls/se21/html/jls-4.html) — §4.12.4 final Variables
-
-## 확인·판정 한계
-
-질문의 명시적 전제와 이 문서의 근거를 함께 확인. 다른 언어·버전·배치·업무 계약에 결과를 그대로 적용하지 않음. 설계 사례는 조건을 충족하는 여러 대안을 허용. 필요한 개념의 근거가 검색 결과에서 빠지면 판정 보류. 이 문서의 존재·구조 검사 통과는 사람 검수·검색 적합성·모델 품질을 증명하지 않음.
 
 ## 출처 이용 조건 검수
 
