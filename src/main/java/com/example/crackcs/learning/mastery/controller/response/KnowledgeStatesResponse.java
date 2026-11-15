@@ -1,9 +1,10 @@
 package com.example.crackcs.learning.mastery.controller.response;
 
+import com.example.crackcs.common.web.response.ApiTimestamp;
 import com.example.crackcs.learning.mastery.domain.KnowledgeStatus;
 import com.example.crackcs.learning.mastery.service.result.KnowledgeStatesResult;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record KnowledgeStatesResponse(List<TopicState> topics) {
@@ -22,10 +23,10 @@ public record KnowledgeStatesResponse(List<TopicState> topics) {
     }
 
     public record ConceptState(Long conceptId, String conceptName, KnowledgeStatus status, Double masteryScore,
-                               int confidenceScore, long attemptCount, LocalDateTime lastEvaluatedAt) {
+                               int confidenceScore, long attemptCount, Instant lastEvaluatedAt) {
         public static ConceptState from(KnowledgeStatesResult.ConceptState result) {
             return new ConceptState(result.conceptId(), result.conceptName(), result.status(), result.masteryScore(),
-                    result.confidenceScore(), result.attemptCount(), result.lastEvaluatedAt());
+                    result.confidenceScore(), result.attemptCount(), ApiTimestamp.from(result.lastEvaluatedAt()));
         }
     }
 }

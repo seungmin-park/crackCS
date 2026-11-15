@@ -133,7 +133,7 @@ class KnowledgeFlowTest {
         mockMvc.perform(get("/api/members/me/knowledge-states").with(user(principal)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.topics[0].concepts[0].status").value("LEARNING"))
                 .andExpect(jsonPath("$.topics[0].concepts[0].attemptCount").value(1))
-                .andExpect(jsonPath("$.topics[0].concepts[0].lastEvaluatedAt").isNotEmpty());
+                .andExpect(jsonPath("$.topics[0].concepts[0].lastEvaluatedAt").value(org.hamcrest.Matchers.endsWith("Z")));
         mockMvc.perform(get("/api/members/me/progress").with(user(principal)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.totalAnswers").value(1))
                 .andExpect(jsonPath("$.recentEvaluations[0].status").value("EVALUATED"))

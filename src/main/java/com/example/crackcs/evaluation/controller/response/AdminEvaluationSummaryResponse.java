@@ -1,9 +1,10 @@
 package com.example.crackcs.evaluation.controller.response;
 
+import com.example.crackcs.common.web.response.ApiTimestamp;
 import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.evaluation.service.AdminEvaluationSummary;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record AdminEvaluationSummaryResponse(
         Long evaluationId,
@@ -13,12 +14,12 @@ public record AdminEvaluationSummaryResponse(
         String failureCode,
         String modelName,
         String evaluatorVersion,
-        LocalDateTime occurredAt
+        Instant occurredAt
 ) {
     public static AdminEvaluationSummaryResponse from(AdminEvaluationSummary summary) {
         return new AdminEvaluationSummaryResponse(
                 summary.evaluationId(), summary.answerId(), summary.questionId(), summary.status(),
-                summary.failureCode(), summary.modelName(), summary.evaluatorVersion(), summary.occurredAt()
+                summary.failureCode(), summary.modelName(), summary.evaluatorVersion(), ApiTimestamp.from(summary.occurredAt())
         );
     }
 }

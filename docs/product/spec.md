@@ -286,6 +286,7 @@ flowchart TD
 
 - 학습자는 자신이 제출한 Answer 목록을 최신순으로 조회한다.
 - 각 Answer에서 Question, 제출 시각, Evaluation 상태와 판정을 확인한다.
+- API는 시각을 UTC(ISO-8601, `Z`)로 내보내고 화면은 보는 사람의 시간대로 표시한다.
 - 다른 회원의 Answer는 조회할 수 없다.
 
 ### 10.5 Retrieval과 AI 평가

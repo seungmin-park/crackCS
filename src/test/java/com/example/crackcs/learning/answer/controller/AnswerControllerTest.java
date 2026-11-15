@@ -35,6 +35,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -108,7 +109,8 @@ class AnswerControllerTest {
                 .andExpect(jsonPath("$.questionId").value(7))
                 .andExpect(jsonPath("$.questionContent").value("문제 본문"))
                 .andExpect(jsonPath("$.content").value("  답변 원문  "))
-                .andExpect(jsonPath("$.submittedAt").value("2026-09-07T10:30:00"))
+                .andExpect(jsonPath("$.submittedAt").value(
+                        LocalDateTime.of(2026, 9, 7, 10, 30).atZone(ZoneId.systemDefault()).toInstant().toString()))
                 .andExpect(jsonPath("$.evaluation.status").value("EVALUATING"))
                 .andExpect(jsonPath("$.evaluation.verdict").isEmpty())
                 .andExpect(jsonPath("$.evaluation.concepts").isArray());

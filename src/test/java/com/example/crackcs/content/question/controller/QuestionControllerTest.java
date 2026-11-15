@@ -95,8 +95,8 @@ class QuestionControllerTest {
                 .andExpect(jsonPath("$.type").value("NORMAL"))
                 .andExpect(jsonPath("$.difficulty").value("BASIC"))
                 .andExpect(jsonPath("$.status").value("DRAFT"))
-                .andExpect(jsonPath("$.createdAt").isNotEmpty())
-                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
+                .andExpect(jsonPath("$.createdAt").value(org.hamcrest.Matchers.endsWith("Z")))
+                .andExpect(jsonPath("$.updatedAt").value(org.hamcrest.Matchers.endsWith("Z")));
 
         verify(questionService).create(
                 77L,
