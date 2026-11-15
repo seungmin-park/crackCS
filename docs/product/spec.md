@@ -477,6 +477,7 @@ Actuator 운영 엔드포인트는 제품 API가 아니다. 별도 관리 포트
 | GET | `/api/admin/concepts/{conceptId}` | ADMIN | 200 | Concept 상세 조회 |
 | PATCH | `/api/admin/concepts/{conceptId}` | ADMIN | 200 | Concept 수정 |
 | POST | `/api/admin/concepts/{conceptId}/deactivate` | ADMIN | 204 | Concept 비활성화 |
+| POST | `/api/admin/concepts/{conceptId}/activate` | ADMIN | 204 | 비활성 Concept 재활성화. 소속 Topic이 비활성이면 409 |
 
 Concept 목록은 `topicId`, `active`, `page`, `size`, `sort`를 선택적으로 받는다. Topic 목록은 `parentId`, `active`, `page`, `size`, `sort`를 선택적으로 받는다.
 

@@ -1,5 +1,6 @@
 package com.example.crackcs.content.concept.domain;
 
+import com.example.crackcs.exception.InvalidContentStateException;
 import com.example.crackcs.content.topic.domain.Topic;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -81,5 +82,12 @@ public class Concept {
 
     public void deactivate() {
         this.active = false;
+    }
+
+    public void activate() {
+        if (!topic.isActive()) {
+            throw new InvalidContentStateException("비활성 Topic의 Concept은 활성화할 수 없습니다.");
+        }
+        this.active = true;
     }
 }

@@ -67,4 +67,12 @@ public class ConceptController {
         conceptService.deactivate(conceptId);
         return ResponseEntity.noContent().build();
     }
+
+    @PostMapping("/{conceptId}/activate")
+    public ResponseEntity<Void> activate(
+            @Positive(message = "conceptId는 양수여야 합니다.") @PathVariable Long conceptId
+    ) {
+        conceptService.activate(conceptId);
+        return ResponseEntity.noContent().build();
+    }
 }
