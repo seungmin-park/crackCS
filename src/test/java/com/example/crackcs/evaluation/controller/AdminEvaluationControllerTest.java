@@ -16,6 +16,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
@@ -49,7 +50,9 @@ class AdminEvaluationControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content[0].evaluationId").value(5L))
                 .andExpect(jsonPath("$.content[0].failureCode").value("EVIDENCE_NOT_FOUND"))
-                .andExpect(jsonPath("$.content[0].evaluatorVersion").value("os-evaluator-v1"));
+                .andExpect(jsonPath("$.content[0].evaluatorVersion").value("os-evaluator-v1"))
+                .andExpect(jsonPath("$.content[0].occurredAt").value(
+                        occurredAt.atZone(ZoneId.systemDefault()).toInstant().toString()));
 
         verify(adminEvaluationService).findFailures(EvaluationStatus.NEEDS_REVIEW, pageable);
     }

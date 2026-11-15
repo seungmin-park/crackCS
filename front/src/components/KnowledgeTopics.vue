@@ -5,7 +5,12 @@ import QuestionState from "@/components/QuestionState.vue";
 defineProps<{ topics: TopicKnowledge[]; details?: boolean }>();
 const labels: Record<KnowledgeStatus, string> = { UNKNOWN: "미평가", LEARNING: "학습 중", STABLE: "안정" };
 const score = (value: number) => Number(value.toFixed(1));
-const date = (value: string) => value.replace("T", " ").slice(0, 16);
+const pad = (part: number) => String(part).padStart(2, "0");
+// 서버가 준 UTC 시각을 보는 사람의 시간대로 바꿔 "YYYY-MM-DD HH:mm"으로 적는다.
+const date = (value: string) => {
+  const at = new Date(value);
+  return `${at.getFullYear()}-${pad(at.getMonth() + 1)}-${pad(at.getDate())} ${pad(at.getHours())}:${pad(at.getMinutes())}`;
+};
 </script>
 
 <template>

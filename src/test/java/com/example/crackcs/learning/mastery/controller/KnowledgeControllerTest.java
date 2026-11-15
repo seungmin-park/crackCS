@@ -40,6 +40,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 import static org.mockito.BDDMockito.given;
@@ -114,7 +115,8 @@ class KnowledgeControllerTest {
                 .andExpect(jsonPath("$.recentEvaluations[0].status").value("EVALUATED"))
                 .andExpect(jsonPath("$.recentEvaluations[0].verdict").value("CORRECT"))
                 .andExpect(jsonPath("$.recentEvaluations[0].score").value(100))
-                .andExpect(jsonPath("$.recentEvaluations[0].submittedAt").value("2026-09-13T12:00:00"))
+                .andExpect(jsonPath("$.recentEvaluations[0].submittedAt").value(
+                        LocalDateTime.of(2026, 9, 13, 12, 0).atZone(ZoneId.systemDefault()).toInstant().toString()))
                 .andExpect(jsonPath("$.topics[0].topicId").value(1))
                 .andExpect(jsonPath("$.topics[0].concepts[0].conceptId").value(2))
                 .andExpect(jsonPath("$.recommendation.questionId").value(5));

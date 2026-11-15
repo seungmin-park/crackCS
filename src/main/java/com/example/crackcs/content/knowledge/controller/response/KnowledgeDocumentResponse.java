@@ -1,10 +1,11 @@
 package com.example.crackcs.content.knowledge.controller.response;
 
+import com.example.crackcs.common.web.response.ApiTimestamp;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocument;
 import com.example.crackcs.content.knowledge.domain.KnowledgeDocumentStatus;
 import com.example.crackcs.content.knowledge.domain.KnowledgeSourceType;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record KnowledgeDocumentResponse(
         Long id,
@@ -21,9 +22,9 @@ public record KnowledgeDocumentResponse(
         String content,
         String checksum,
         KnowledgeDocumentStatus status,
-        LocalDateTime reviewedAt,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        Instant reviewedAt,
+        Instant createdAt,
+        Instant updatedAt
 ) {
     public static KnowledgeDocumentResponse from(KnowledgeDocument document) {
         return new KnowledgeDocumentResponse(
@@ -41,9 +42,9 @@ public record KnowledgeDocumentResponse(
                 document.getContent(),
                 document.getChecksum(),
                 document.getStatus(),
-                document.getReviewedAt(),
-                document.getCreatedAt(),
-                document.getUpdatedAt()
+                ApiTimestamp.from(document.getReviewedAt()),
+                ApiTimestamp.from(document.getCreatedAt()),
+                ApiTimestamp.from(document.getUpdatedAt())
         );
     }
 }

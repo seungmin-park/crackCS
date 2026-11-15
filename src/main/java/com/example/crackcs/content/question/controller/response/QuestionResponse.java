@@ -1,9 +1,10 @@
 package com.example.crackcs.content.question.controller.response;
 
+import com.example.crackcs.common.web.response.ApiTimestamp;
 import com.example.crackcs.content.question.domain.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record QuestionResponse(
@@ -19,10 +20,10 @@ public record QuestionResponse(
         int questionVersion,
         Long createdByMemberId,
         Long reviewedByMemberId,
-        LocalDateTime reviewedAt,
+        Instant reviewedAt,
         List<QuestionConceptResponse> concepts,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        Instant createdAt,
+        Instant updatedAt
 ) {
 
     public static QuestionResponse from(Question question) {
@@ -39,7 +40,7 @@ public record QuestionResponse(
                 question.getQuestionVersion(),
                 question.getCreatedByMemberId(),
                 question.getReviewedByMemberId(),
-                question.getReviewedAt(),
+                ApiTimestamp.from(question.getReviewedAt()),
                 question.getQuestionConcepts().stream()
                         .map(concept -> new QuestionConceptResponse(
                                 concept.getConcept().getId(),
@@ -49,8 +50,8 @@ public record QuestionResponse(
                                 concept.isRequired()
                         ))
                         .toList(),
-                question.getCreatedAt(),
-                question.getUpdatedAt()
+                ApiTimestamp.from(question.getCreatedAt()),
+                ApiTimestamp.from(question.getUpdatedAt())
         );
     }
 

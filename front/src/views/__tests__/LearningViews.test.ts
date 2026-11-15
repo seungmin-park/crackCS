@@ -17,7 +17,7 @@ function topic() {
     unknownCount: 1, learningCount: 1, stableCount: 0,
     concepts: [
       { conceptId: 11, conceptName: "DNS", status: "UNKNOWN", masteryScore: null, confidenceScore: 0, attemptCount: 0, lastEvaluatedAt: null },
-      { conceptId: 12, conceptName: "TCP", status: "LEARNING", masteryScore: 0, confidenceScore: 25, attemptCount: 1, lastEvaluatedAt: "2026-09-13T10:00:00" },
+      { conceptId: 12, conceptName: "TCP", status: "LEARNING", masteryScore: 0, confidenceScore: 25, attemptCount: 1, lastEvaluatedAt: "2026-09-13T01:00:00Z" },
     ],
   };
 }
@@ -78,8 +78,19 @@ describe("개인 학습 화면", () => {
     expect(tcp.text()).toContain("숙련도 0");
     expect(tcp.text()).toContain("신뢰도 25");
     expect(tcp.text()).toContain("평가 1회");
-    expect(tcp.get("time").attributes("datetime")).toBe("2026-09-13T10:00:00");
+    expect(tcp.get("time").attributes("datetime")).toBe("2026-09-13T01:00:00Z");
     expect(wrapper.text()).toContain("정답 확률");
+  });
+
+  it("개념의 최근 평가 시각을 보는 사람의 시간대로 표시한다", async () => {
+    // 서버는 UTC 시각을 준다. 보는 사람의 저녁 7시 5분에 해당하는 UTC 문자열을 만들어 넣는다.
+    const network = topic();
+    network.concepts[1].lastEvaluatedAt = new Date(2026, 8, 13, 19, 5).toISOString();
+    fetchKnowledgeStates.mockResolvedValue({ topics: [network] });
+    const wrapper = mount(KnowledgeMapView, { global });
+    await flushPromises();
+
+    expect(wrapper.get('[data-concept-id="12"]').text()).toContain("최근 2026-09-13 19:05");
   });
 
   it("안정 상태의 점수와 신뢰도를 백분율로 다시 곱하지 않는다", async () => {

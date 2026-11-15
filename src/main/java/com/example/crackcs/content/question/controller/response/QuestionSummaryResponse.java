@@ -1,11 +1,12 @@
 package com.example.crackcs.content.question.controller.response;
 
+import com.example.crackcs.common.web.response.ApiTimestamp;
 import com.example.crackcs.content.question.domain.Question;
 import com.example.crackcs.content.question.domain.QuestionDifficulty;
 import com.example.crackcs.content.question.domain.QuestionOrigin;
 import com.example.crackcs.content.question.domain.QuestionStatus;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 public record QuestionSummaryResponse(
         Long id,
@@ -15,8 +16,8 @@ public record QuestionSummaryResponse(
         String content,
         QuestionStatus status,
         int questionVersion,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        Instant createdAt,
+        Instant updatedAt
 ) {
     public static QuestionSummaryResponse from(Question question) {
         return new QuestionSummaryResponse(
@@ -27,8 +28,8 @@ public record QuestionSummaryResponse(
                 question.getContent(),
                 question.getStatus(),
                 question.getQuestionVersion(),
-                question.getCreatedAt(),
-                question.getUpdatedAt()
+                ApiTimestamp.from(question.getCreatedAt()),
+                ApiTimestamp.from(question.getUpdatedAt())
         );
     }
 }

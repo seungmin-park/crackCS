@@ -1216,7 +1216,7 @@ components:
           maximum: 100
           description: 평가 관측량, AI 정답 확률 아님
         attemptCount: { type: integer, format: int64, minimum: 0 }
-        lastEvaluatedAt: { type: [string, 'null'], description: '평가 완료 로컬 시각(ISO-8601, 시간대 오프셋 없음)' }
+        lastEvaluatedAt: { type: [string, 'null'], format: date-time, description: '평가 완료 UTC 시각(ISO-8601, Z로 끝남)' }
     TopicKnowledgeResponse:
       type: object
       required: [topicId, topicName, status, masteryScore, confidenceScore, unknownCount, learningCount, stableCount, concepts]
@@ -1258,7 +1258,7 @@ components:
         status: { type: string, enum: [EVALUATING, PROCESSING, EVALUATED, NEEDS_REVIEW, FAILED] }
         verdict: { type: [string, 'null'], enum: [CORRECT, PARTIALLY_CORRECT, INCORRECT, NEEDS_REVIEW, null] }
         score: { type: [integer, 'null'], minimum: 0, maximum: 100 }
-        submittedAt: { type: string, description: '답변 제출 로컬 시각(ISO-8601, 시간대 오프셋 없음)' }
+        submittedAt: { type: string, format: date-time, description: '답변 제출 UTC 시각(ISO-8601, Z로 끝남)' }
     LearningProgressResponse:
       type: object
       required: [totalAnswers, recentAnswerCount, recentEvaluations, topics, recommendation]
@@ -1292,7 +1292,9 @@ components:
           type: string
         submittedAt:
           type: string
-          description: 서버 LocalDateTime, ISO-8601 offset 없는 시각
+          format: date-time
+          description: 답변 제출 UTC 시각(ISO-8601, Z로 끝남)
+          example: '2026-11-15T07:42:40.123456Z'
         evaluation:
           $ref: '#/components/schemas/EvaluationResponse'
     AnswerPageResponse:
@@ -1587,9 +1589,9 @@ components:
         content: { type: string }
         checksum: { type: string, pattern: '^[0-9a-f]{64}$' }
         status: { $ref: '#/components/schemas/KnowledgeDocumentStatus' }
-        reviewedAt: { type: [string, 'null'] }
-        createdAt: { type: string }
-        updatedAt: { type: string }
+        reviewedAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     KnowledgeDocumentPageResponse:
       allOf:
         - $ref: '#/components/schemas/PageMetadata'
@@ -1644,7 +1646,7 @@ components:
         failureCode: { type: [string, 'null'] }
         modelName: { type: [string, 'null'] }
         evaluatorVersion: { type: [string, 'null'] }
-        occurredAt: { type: [string, 'null'] }
+        occurredAt: { type: [string, 'null'], format: date-time }
     AdminEvaluationDetailResponse:
       allOf:
         - $ref: '#/components/schemas/AdminEvaluationSummaryResponse'
@@ -1876,18 +1878,21 @@ components:
           format: int64
         reviewedAt:
           type: [string, 'null']
+          format: date-time
         concepts:
           type: array
           items:
             $ref: '#/components/schemas/QuestionConceptResponse'
         createdAt:
           type: string
-          description: 서버 로컬 시간 기준 ISO-8601 날짜와 시간
-          example: '2026-08-30T22:50:00.123456'
+          format: date-time
+          description: UTC 시각(ISO-8601, Z로 끝남)
+          example: '2026-08-30T13:50:00.123456Z'
         updatedAt:
           type: string
-          description: 서버 로컬 시간 기준 ISO-8601 날짜와 시간
-          example: '2026-08-30T22:50:00.123456'
+          format: date-time
+          description: UTC 시각(ISO-8601, Z로 끝남)
+          example: '2026-08-30T13:50:00.123456Z'
     QuestionPageResponse:
       type: object
       required:
@@ -1925,8 +1930,8 @@ components:
         content: { type: string }
         status: { $ref: '#/components/schemas/QuestionStatus' }
         questionVersion: { type: integer, minimum: 1 }
-        createdAt: { type: string }
-        updatedAt: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     ApiErrorResponse:
       type: object
       required:

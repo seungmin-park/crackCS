@@ -1,12 +1,13 @@
 package com.example.crackcs.learning.progress.controller.response;
 
+import com.example.crackcs.common.web.response.ApiTimestamp;
 import com.example.crackcs.evaluation.domain.EvaluationStatus;
 import com.example.crackcs.evaluation.domain.Verdict;
 import com.example.crackcs.learning.mastery.controller.response.KnowledgeStatesResponse;
 import com.example.crackcs.learning.progress.service.result.LearningProgressResult;
 import com.example.crackcs.learning.recommendation.controller.response.RecommendationResponse;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.List;
 
 public record ProgressResponse(long totalAnswers, long recentAnswerCount, List<RecentEvaluation> recentEvaluations,
@@ -19,10 +20,10 @@ public record ProgressResponse(long totalAnswers, long recentAnswerCount, List<R
     }
 
     public record RecentEvaluation(Long answerId, String questionTitle, EvaluationStatus status, Verdict verdict,
-                                   Integer score, LocalDateTime submittedAt) {
+                                   Integer score, Instant submittedAt) {
         public static RecentEvaluation from(LearningProgressResult.RecentEvaluation result) {
             return new RecentEvaluation(result.answerId(), result.questionTitle(), result.status(), result.verdict(),
-                    result.score(), result.submittedAt());
+                    result.score(), ApiTimestamp.from(result.submittedAt()));
         }
     }
 }

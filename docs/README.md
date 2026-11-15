@@ -116,6 +116,7 @@ ADR 작성 기준: 독자가 판단할 결정 하나, 대안과 선택 이유, �
 | 목업 디자인과 실제 학습 화면의 연결 | 구현·로컬 검증 완료, 원격 전달 결과는 연결 기록 | [UI 교체 검증](changes/2026-10-30-mockup-ui/verification.md) | 공통 디자인·소개 경로·모바일 메뉴·폰트 변경 |
 | 2026-11-04 보안 감사 후속 수정 | 5건 main·운영 반영 완료(#24~#28) | [수정 검증](changes/2026-11-04-security-audit-fixes/verification.md) | 수정 범위·테스트·PR 결과 변경 |
 | 초안 문제·문서 삭제 API | 구현·테스트 완료 | [삭제 API 검증](changes/2026-11-15-draft-content-delete/verification.md) | 삭제 조건·상태 코드 변경 |
+| API 시각의 UTC 표기 | 구현·테스트 완료 | [시각 표기 검증](changes/2026-11-15-api-timestamp-utc/verification.md) | 응답 시각 형식·화면 시각 표시 변경 |
 
 `changes/`의 과거 테스트 수는 당시 증거다. 현재 통과 여부는 새 실행 결과로 판단한다.
 
