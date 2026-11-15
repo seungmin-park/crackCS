@@ -51,7 +51,7 @@ onBeforeUnmount(() => {
           <h1>알고 있는 CS를,<span>설명할 수 있는 CS로.</span></h1>
           <p class="hero-lede">
             분명 아는 개념인데, 말로 설명하면 막히나요?<br />직접 답하고, 평가
-            근거를 확인하고,<br />부족한 개념을 다시 연결하세요.
+            근거를 확인하고,<br />부족한 개념은 후속 질문으로 다시 풀어 보세요.
           </p>
           <RouterLink class="primary-button" to="/questions"
             >문제 풀어보기 <span aria-hidden="true">↗</span></RouterLink
@@ -77,7 +77,7 @@ onBeforeUnmount(() => {
                 <span class="difficulty-pill">개념별 피드백 예시</span>
                 <p>
                   자원 공유의 차이를 잘 설명했어요.<br />스레드의 독립적인
-                  스택도 연결해 볼까요?
+                  스택도 함께 설명해 볼까요?
                 </p>
               </div>
               <p class="hero-note">
@@ -86,7 +86,7 @@ onBeforeUnmount(() => {
             </div>
           </article>
           <p class="preview-caption">
-            읽는 공부에서, 설명하는 공부로 <span>01 / 03</span>
+            답변마다 붙는 개념별 피드백 <span>01 / 03</span>
           </p>
         </div>
       </section>
@@ -94,12 +94,12 @@ onBeforeUnmount(() => {
         <p><strong>25개 주제 260여 문항</strong> 공개</p>
         <p><strong>서술형 답변</strong>으로 이해 확인</p>
         <p><strong>참고 문서</strong>로 평가 근거 확인</p>
-        <p><strong>지식 지도</strong>로 다음 학습 연결</p>
+        <p><strong>지식 지도</strong>로 다음에 풀 개념 찾기</p>
       </div>
       <section id="benefits" class="landing-section reveal">
         <header class="landing-section-heading">
           <div>
-            <p class="eyebrow">막연한 이해에서, 분명한 설명으로</p>
+            <p class="eyebrow">직접 써 보면 보이는 것</p>
             <h2>정답을 읽는 것만으로는<br />알 수 없던 나의 빈틈.</h2>
           </div>
           <p>
@@ -120,15 +120,14 @@ onBeforeUnmount(() => {
             <span class="feature-number">02</span>
             <h3>평가의 이유까지 확인해요</h3>
             <p>
-              맞고 틀렸다는 결과를 넘어, 개념별 피드백과 참고 문서의 근거를 함께
-              읽어요.
+              정답 여부와 함께 개념별 피드백과 참고 문서의 근거를 읽어요.
             </p>
           </article>
           <article class="benefit">
             <span class="feature-number">03</span>
             <h3>다음에 공부할 것이 보여요</h3>
             <p>
-              지식 지도에서 부족한 개념을 찾고, 연결된 후속 질문으로 학습을
+              지식 지도에서 부족한 개념을 찾고, 그 개념의 후속 질문으로 학습을
               이어가요.
             </p>
           </article>
@@ -144,48 +143,14 @@ onBeforeUnmount(() => {
           >
         </h2>
       </section>
-      <section id="how" class="reveal">
-        <header class="landing-section-heading">
-          <div>
-            <p class="eyebrow">한 질문에서 시작하는 학습</p>
-            <h2>답하고, 확인하고, 연결해요.</h2>
-          </div>
-        </header>
-        <div class="steps-grid">
-          <article>
-            <p class="eyebrow">STEP 01</p>
-            <h3>궁금한 질문을 골라요</h3>
-            <p>
-              주제와 난이도를 살펴보고,<br />지금 설명해 보고 싶은 질문을
-              선택해요.
-            </p>
-          </article>
-          <article>
-            <p class="eyebrow">STEP 02</p>
-            <h3>내 언어로 설명해요</h3>
-            <p>
-              완벽하지 않아도 괜찮아요.<br />지금 이해한 만큼, 생각을 글로 꺼내
-              보세요.
-            </p>
-          </article>
-          <article>
-            <p class="eyebrow">STEP 03</p>
-            <h3>근거를 읽고 다시 연결해요</h3>
-            <p>
-              답변의 빈틈과 참고 근거를 확인하고,<br />다음 질문으로 이해를
-              넓혀요.
-            </p>
-          </article>
-        </div>
-      </section>
       <section class="landing-section reveal">
         <div class="landing-evidence">
           <div>
-            <p class="eyebrow">점수보다 중요한, 그다음 이해</p>
+            <p class="eyebrow">평가 근거</p>
             <h2>“왜 이런 평가인가요?”<br />근거에서 답을 찾아요.</h2>
             <p>
-              평가 결과 옆에 참고 문서와 연결된 개념을 함께 보여줘요. 어떤
-              설명을 보완하면 좋을지 직접 확인하세요.
+              평가 결과 옆에 개념별 판정과 근거가 된 참고 문서를 함께 보여줘요.
+              어떤 설명을 보완하면 좋을지 직접 확인하세요.
             </p>
           </div>
           <article class="source-example">
@@ -254,8 +219,8 @@ onBeforeUnmount(() => {
       </section>
       <section class="final-cta reveal">
         <p class="eyebrow">내 언어로 쌓는 CS</p>
-        <h2>오늘의 한 질문이,<br />내일의 분명한 설명이 되도록.</h2>
-        <p>지금 아는 만큼, 첫 문장을 써 보세요.</p>
+        <h2>지금 아는 만큼, 첫 문장을 써 보세요.</h2>
+        <p>완벽하지 않아도 괜찮아요.</p>
         <RouterLink class="primary-button" to="/questions"
           >문제 풀어보기 <span aria-hidden="true">↗</span></RouterLink
         >
