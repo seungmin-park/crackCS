@@ -3,7 +3,7 @@
 - 독자·질문: 제작자·검수자 / 어떤 원본을 무엇으로 확인했고 아직 무엇을 확인하지 않았는가?
 - 확인일: 2026-11-15
 - 브랜치: `docs/content-rebuild`(17개 Topic·156문항), `docs/r1-remaining-topics`(4개 Topic·20문항 추가)
-- 기준 원본: [bundle.json](bundle.json), SHA-256 `6061d5f95147cff7633a14838edd9c5e1a0cc66843366a7d1e02533adfbd6fee`
+- 기준 원본: [bundle.json](bundle.json), SHA-256 `bc92cc020642431e91a64795e7be7efe1c96d04f2ea871038b823f9831dbe0cd`
 - 산출물·검수 절차: [README](README.md), [읽기 사본](review.md)
 
 ## 제작 결과

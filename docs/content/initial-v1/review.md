@@ -2,7 +2,7 @@
 
 > 자동 생성 읽기 사본. 수정 기준은 [bundle.json](bundle.json). 사람 검수·공개 승인 대기.
 
-- 원본 SHA-256: `cba7aae00b69c39fd4a4b6a0659acd50f121e5d889e5ae14cadc0b41c6295333`
+- 원본 SHA-256: `03e7ac14964a62775ecf87fb21a0e7d9ebc45905e668d7a22cf9f1bee211a7f4`
 - 재생성: 저장소 루트에서 `python3 scripts/render_content_review.py`
 - 검수 절차·승인 기록: [콘텐츠 안내](README.md#사람-검수공개-순서)
 - 이 자료를 읽었다는 사실만으로 앱의 검수·공개 상태가 바뀌지 않음
@@ -543,173 +543,138 @@ ORDINAL은 선언 순서의 번호를 저장하므로 앞에 상수를 넣어 �
 
 ### operating_system-v1
 
-운영체제 핵심 동작과 경계 · initial-v1 · OSTEP / xv6 RISC-V rev5 (Unix 계열 개념)
+운영체제 핵심 동작과 경계 · OSTEP / xv6 RISC-V rev5 (Unix 계열 개념)
 
-운영체제 학습 근거 · initial-v1
-기준: OSTEP / xv6 RISC-V rev5 (Unix 계열 개념)
-직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
+운영체제 · 기준: OSTEP / xv6 RISC-V rev5 (Unix 계열 개념)
 
-[OS-101]
 fork의 프로세스 생성과 exec의 프로그램 교체는 별개의 동작이다. fork가 성공하면 부모와 새 자식이 각각 실행을 이어간다. exec가 성공하면 호출한 자식 프로세스의 프로그램 이미지가 교체되고 이전 코드로 돌아오지 않는다. exec 자체가 새 프로세스를 하나 더 만드는 것은 아니다.
-근거: OS-API — 5.1 fork, 5.3 exec; OS-XV6 — 1.1 Processes and memory
+출처: OSTEP 5: Process API — 5.1 fork, 5.3 exec; MIT xv6 book, RISC-V revision 5 — 1.1 Processes and memory
 
-[OS-102]
 자식 종료 대기와 회수는 시간 지연과 다르다. sleep은 시간의 경과만 기다리므로 대상 자식의 완료를 보장하지 않는다. wait 계열로 대상 자식의 종료를 확인하고 상태를 회수한 뒤 부모의 후속 작업을 진행하는 것이 조건 기반 실행 순서다. 오류·중단 반환을 종료 완료로 취급하면 안 된다.
-근거: OS-API — 5.2 The wait() System Call; OS-XV6 — 1.1 exit and wait; 9.4 Code: Wait, exit, and kill
+출처: OSTEP 5: Process API — 5.2 The wait() System Call; MIT xv6 book, RISC-V revision 5 — 1.1 exit and wait; 9.4 Code: Wait, exit, and kill
 
-[OS-103]
 프로세스별 파일 디스크립터 테이블은 별개다. 일반 파일을 연 뒤 fork로 상속한 디스크립터는 같은 열린 파일 상태를 참조하므로 파일 오프셋을 공유한다. 한쪽의 읽기는 다른 쪽이 다음에 읽을 위치에도 영향을 준다. 자식이 자신의 디스크립터를 close해도 부모의 참조는 유지된다. 부모와 자식이 파일을 각각 다시 연 경우는 이 상속 사례와 구분한다.
-근거: OS-XV6 — 1.2 I/O and File descriptors, pp. 13–15; OS-API — 5.4 file descriptors; homework 2 (상속한 디스크립터의 입출력 사례)
+출처: MIT xv6 book, RISC-V revision 5 — 1.2 I/O and File descriptors, pp. 13–15; OSTEP 5: Process API — 5.4 file descriptors; homework 2 (상속한 디스크립터의 입출력 사례)
 
-[OS-104]
 POSIX 조건 변수의 알림은 큐의 항목을 예약하지 않는다. 깨어난 뒤 다른 소비자가 항목을 가져갔거나 불필요한 깨움이 생길 수 있으므로, mutex를 다시 얻은 상태에서 while로 조건을 재검사한다. 잠금과 대기 전환의 원자성도 필요하다. 같은 mutex로 상태 검사·변경을 보호하고, wait는 mutex 해제와 대기 등록을 원자적으로 연결하며 반환 전에 mutex를 다시 얻는다. 검사와 대기 사이의 알림 유실을 막는 원리는 xv6의 condition lock과 sleep/wakeup에서도 확인할 수 있다. POSIX mutex와 xv6 커널 잠금의 구현은 서로 구분한다.
-근거: OS-CV — 30.1, pp. 2–3; 30.2, pp. 9–14; OS-XV6 — 9.1–9.2, pp. 81–84
+출처: OSTEP 30: Condition Variables — 30.1, pp. 2–3; 30.2, pp. 9–14; MIT xv6 book, RISC-V revision 5 — 9.1–9.2, pp. 81–84
 
-[OS-105]
 라운드 로빈의 응답성은 첫 CPU 실행 기회를 얼마나 빨리 얻는가와 연결된다. 여기서 응답 시간은 작업 도착부터 첫 CPU 실행까지다. 짧은 타임 슬라이스는 순환 대기를 줄일 수 있지만 문맥 교환의 부가 비용을 더 자주 지불한다. 레지스터 전환과 캐시 효과 등으로 실제 작업에 쓰는 시간이 줄어, 처리량이나 완료 시간이 나빠질 수 있다. 모든 지표가 함께 개선되는 것은 아니다.
-근거: OS-SCHED — 7.6–7.7, pp. 6–9; OS-XV6 — 8.2–8.3, pp. 75–76; 8.6, p. 79
+출처: OSTEP 7: Scheduling — 7.6–7.7, pp. 6–9; MIT xv6 book, RISC-V revision 5 — 8.2–8.3, pp. 75–76; 8.6, p. 79
 
-출처
-OS-API: https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-api.pdf
-OS-CV: https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf
-OS-SCHED: https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched.pdf
-OS-XV6: https://pdos.csail.mit.edu/6.1810/2025/xv6/book-riscv-rev5.pdf
+참고 문서
+OSTEP 5: Process API: https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-api.pdf
+OSTEP 30: Condition Variables: https://pages.cs.wisc.edu/~remzi/OSTEP/threads-cv.pdf
+OSTEP 7: Scheduling: https://pages.cs.wisc.edu/~remzi/OSTEP/cpu-sched.pdf
+MIT xv6 book, RISC-V revision 5: https://pdos.csail.mit.edu/6.1810/2025/xv6/book-riscv-rev5.pdf
 
 ### java-v1
 
-Java 핵심 동작과 경계 · initial-v1 · Java 21
+Java 핵심 동작과 경계 · Java 21
 
-Java 학습 근거 · initial-v1
-기준: Java 21
-직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
+Java · 기준: Java 21
 
-[JAVA-101]
 record는 고정된 컴포넌트 구조와 접근자·동등성 등의 기본 동작을 제공한다. 필드 참조를 다시 대입할 수 없다는 성질은 객체 그래프 전체의 불변성과 다르다. 생성 경계에서 소유권을 분리하고 외부로 내보내는 참조를 점검해야 변경 경로를 통제할 수 있다.
-근거: JAVA-CLASS — 8.10.3 Record Members; 8.10.4 Record Constructor Declarations
+출처: JLS 21 Chapter 8 — 8.10.3 Record Members; 8.10.4 Record Constructor Declarations
 
-[JAVA-102]
 메서드 호출에는 어떤 선언이 적용 가능한지 고르는 단계와 실행할 인스턴스 구현을 찾는 단계가 있다. 인수의 정적 타입은 오버로드 해석에 참여한다. 런타임의 동적 디스패치는 오버라이딩된 인스턴스 구현에 관한 것이며, 인수의 실제 객체를 보고 모든 오버로드 후보를 다시 비교하는 방식이 아니다.
-근거: JAVA-EXPR — 15.12.2 Compile-Time Step 2; 15.12.4.4 Locate Method to Invoke
+출처: JLS 21 Chapter 15 — 15.12.2 Compile-Time Step 2; 15.12.4.4 Locate Method to Invoke
 
-[JAVA-103]
 Object.clone의 기본 복사는 참조가 가리키는 모든 내부 객체를 재귀적으로 만들지 않는다. 바깥 객체는 구분되더라도 내부 리스트는 공유될 수 있다. 필드의 참조 교체와 공유 객체의 변경을 구분하면 복사 후 생기는 예상 밖의 결합을 설명할 수 있다.
-근거: JAVA-OBJECT — Object.clone(): implementation requirements
+출처: Java 21 Object API — Object.clone(): implementation requirements
 
-[JAVA-104]
 BigDecimal은 정수 형태의 값과 scale을 함께 갖는다. 수치 순서는 같은 수를 나타내는 표현을 같은 위치로 비교할 수 있지만 객체 동등성은 표현 정보까지 반영한다. 시스템이 필요한 것은 수치 비교인지 동일한 표현인지 먼저 정하고, 정규화 규칙을 쓴다면 저장·조회 경계에서 일관되게 적용한다.
-근거: JAVA-DECIMAL — class description: cohorts; equals(Object); compareTo(BigDecimal)
+출처: Java 21 BigDecimal API — class description: cohorts; equals(Object); compareTo(BigDecimal)
 
-[JAVA-105]
 인터럽트는 협력적으로 중단 의사를 전달하는 메커니즘이다. Thread.sleep이 InterruptedException을 던질 때 현재 스레드의 인터럽트 상태는 지워진다. 해당 계층에서 취소를 처리하지 못하면 예외를 전파하거나 Thread.currentThread().interrupt()로 상태를 복구해 상위 흐름이 관찰하도록 한다.  대기 API가 예외로 신호를 전달하는 경우와 코드가 상태를 검사하는 경우가 연결되어야 한다. sleep에서 받은 예외를 처리했다는 이유만으로 작업을 계속해도 되는 것은 아니며, 누가 취소를 책임지는지 정해야 한다.
-근거: JAVA-THREAD — interrupt(); sleep(long); interrupted(); isInterrupted()
+출처: Java 21 Thread API — interrupt(); sleep(long); interrupted(); isInterrupted()
 
-출처
-JAVA-CLASS: https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html
-JAVA-EXPR: https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html
-JAVA-OBJECT: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html
-JAVA-DECIMAL: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html
-JAVA-THREAD: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html
+참고 문서
+JLS 21 Chapter 8: https://docs.oracle.com/javase/specs/jls/se21/html/jls-8.html
+JLS 21 Chapter 15: https://docs.oracle.com/javase/specs/jls/se21/html/jls-15.html
+Java 21 Object API: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Object.html
+Java 21 BigDecimal API: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/math/BigDecimal.html
+Java 21 Thread API: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/Thread.html
 
 ### spring_framework-v1
 
-Spring Framework 핵심 동작과 경계 · initial-v1 · Spring Framework 7.0.x
+Spring Framework 핵심 동작과 경계 · Spring Framework 7.0.x
 
-Spring Framework 학습 근거 · initial-v1
-기준: Spring Framework 7.0.x
-직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
+Spring Framework · 기준: Spring Framework 7.0.x
 
-[SF-101]
 스코프는 빈을 요청할 때의 인스턴스 제공 규칙이다. 이미 저장한 참조가 매 호출마다 자동 교체된다는 뜻이 아니다. 반복 생성이 필요하면 반복 조회하는 의존성이 있어야 하며, 수명이 짧은 객체가 파일 같은 자원을 소유하면 그 자원을 닫는 주체도 명시해야 한다.
-근거: SF-SCOPE — The Prototype Scope; Singleton Beans with Prototype-bean Dependencies
+출처: Spring Framework 7.0 Bean Scopes — The Prototype Scope; Singleton Beans with Prototype-bean Dependencies
 
-[SF-102]
 타입은 어떤 역할의 객체인지 결정하고 qualifier는 그 역할의 후보 중 필요한 특성을 표시한다. 같은 특성을 가진 후보가 여러 개라면 단일 객체를 주입할 때의 모호성과 컬렉션을 주입할 때의 다중 선택을 구분해야 한다.
-근거: SF-QUALIFIER — Fine-tuning Annotation-based Autowiring with Qualifiers: type matching and typed collections
+출처: Spring Framework 7.0 Qualifiers — Fine-tuning Annotation-based Autowiring with Qualifiers: type matching and typed collections
 
-[SF-103]
 애플리케이션 이벤트는 직접 의존을 줄이는 통신 방법이지만 실행 시간과 실패 전파가 자동으로 분리되는 것은 아니다. 기본 multicaster는 호출 스레드에서 리스너를 실행한다. 비동기 전달을 선택했다면 호출 완료와 후속 처리 완료를 같은 성공으로 취급하지 않아야 한다.
-근거: SF-EVENT — Standard and Custom Events; Asynchronous Listeners; Application Event Multicaster
+출처: Spring Framework 7.0 Context Events — Standard and Custom Events; Asynchronous Listeners; Application Event Multicaster
 
-[SF-104]
 비동기 API에서는 제출 성공과 작업 성공이 다른 사건이다. 반환값이 없는 비동기 작업의 예외는 별도 관측·처리 경로로 연결한다. Future 등의 결과 핸들을 제공하면 호출 측이 완료와 실패를 관찰할 수 있지만, 핸들을 받았다는 사실만으로 실제 작업 완료가 보장되는 것은 아니다.
-근거: SF-ASYNC — The @Async Annotation; Exception Management with @Async
+출처: Spring Framework 7.0 Task Execution — The @Async Annotation; Exception Management with @Async
 
-[SF-105]
 읽기 전용 선언은 의도 전달과 최적화에 쓰일 수 있지만 이식 가능한 보안 장벽으로 취급하면 안 된다. 해당 힌트를 해석하지 못하는 관리자는 무시할 수 있다. 데이터 변경을 막아야 하는 요구는 도메인 규칙과 DB 권한 등 실제 강제 수단의 책임으로 구분한다.
-근거: SF-TX — readOnly() element documentation
+출처: Spring Framework 7.0 Transactional API — readOnly() element documentation
 
-출처
-SF-SCOPE: https://docs.spring.io/spring-framework/reference/7.0/core/beans/factory-scopes.html
-SF-QUALIFIER: https://docs.spring.io/spring-framework/reference/7.0/core/beans/annotation-config/autowired-qualifiers.html
-SF-ASYNC: https://docs.spring.io/spring-framework/reference/7.0/integration/scheduling.html
-SF-EVENT: https://docs.spring.io/spring-framework/reference/7.0/core/beans/context-introduction.html
-SF-TX: https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/transaction/annotation/Transactional.html
+참고 문서
+Spring Framework 7.0 Bean Scopes: https://docs.spring.io/spring-framework/reference/7.0/core/beans/factory-scopes.html
+Spring Framework 7.0 Qualifiers: https://docs.spring.io/spring-framework/reference/7.0/core/beans/annotation-config/autowired-qualifiers.html
+Spring Framework 7.0 Task Execution: https://docs.spring.io/spring-framework/reference/7.0/integration/scheduling.html
+Spring Framework 7.0 Context Events: https://docs.spring.io/spring-framework/reference/7.0/core/beans/context-introduction.html
+Spring Framework 7.0 Transactional API: https://docs.spring.io/spring-framework/docs/7.0.x/javadoc-api/org/springframework/transaction/annotation/Transactional.html
 
 ### spring_boot-v1
 
-Spring Boot 핵심 동작과 경계 · initial-v1 · Spring Boot 4.1.x
+Spring Boot 핵심 동작과 경계 · Spring Boot 4.1.x
 
-Spring Boot 학습 근거 · initial-v1
-기준: Spring Boot 4.1.x
-직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
+Spring Boot · 기준: Spring Boot 4.1.x
 
-[BOOT-101]
 Boot의 자동 설정은 조건을 만족할 때 제공되는 기본값이다. 특정 기능의 빈을 직접 정의하면 그 기능에 해당하는 기본 설정이 대체될 수 있다. 예상과 다르게 동작할 때는 의존성 유무뿐 아니라 이미 등록된 빈과 조건 보고서를 함께 확인한다.
-근거: BOOT-AUTO — Gradually Replacing Auto-configuration
+출처: Spring Boot 4.1 Auto-configuration — Gradually Replacing Auto-configuration
 
-[BOOT-102]
 같은 키의 설정이 여러 곳에 있으면 파일을 읽은 순서만으로 추측하지 않고 속성 원천의 우선순위를 확인한다. 일반 SpringApplication 실행에서 다른 원천이 없고 명령행 처리를 끄지 않았다면 명령행 인수가 OS 환경 변수보다, OS 환경 변수가 일반 application.properties보다 우선한다. 따라서 --server.port=8082, SERVER_PORT=8081, 파일의 server.port=8080이 함께 있으면 8082가 적용된다.  일반 실행의 설정 파일·환경 변수·명령행 인수는 서로 다른 원천이다. 명령행 처리를 비활성화하는 옵션이나 테스트 전용 속성처럼 전제를 바꾸는 조건을 명시하면 재현 가능한 설명이 된다.
-근거: BOOT-CONFIG — PropertySource order; Accessing Command Line Properties; Binding From Environment Variables
+출처: Spring Boot 4.1 Externalized Configuration — PropertySource order; Accessing Command Line Properties; Binding From Environment Variables
 
-[BOOT-103]
 프로세스 재시작으로 회복 가능한 상태와 외부 의존 시스템의 상태를 구분해야 한다. 공유 DB를 다시 시작하지 못하는 앱만 반복 재시작해도 문제가 해결되지는 않는다. 트래픽 제외 또한 가용한 다른 인스턴스와 대체 기능이 있는지에 따라 서비스 전체의 가용성을 바꿀 수 있다.
-근거: BOOT-HEALTH — Kubernetes Probes; Checking External State With Kubernetes Probes
+출처: Spring Boot 4.1 Actuator Endpoints — Kubernetes Probes; Checking External State With Kubernetes Probes
 
-[BOOT-104]
 정상 종료는 요청을 마무리할 기회를 주는 절차다. spring.lifecycle.timeout-per-shutdown-phase는 종료 단계의 대기 한도를 정한다. 앱의 유예 시간뿐 아니라 실행 환경이 프로세스에 허용하는 시간도 함께 맞춰야 한다. 이미 접수된 장기 작업은 HTTP 종료와 별도의 복구 정책이 필요할 수 있다.
-근거: BOOT-STOP — Graceful Shutdown: timeout and proper SIGTERM requirement
+출처: Spring Boot 4.1 Graceful Shutdown — Graceful Shutdown: timeout and proper SIGTERM requirement
 
-[BOOT-105]
 RANDOM_PORT는 실제 서버를 시작하므로 테스트 호출 스택과 서버 요청 처리 스택이 분리된다. 테스트에 붙은 트랜잭션은 그 테스트 실행 범위를 보호할 뿐 네트워크 너머의 서버 트랜잭션을 감싸지 않는다. 반복 실행 가능한 테스트에는 생성 데이터의 정리 책임이 명시되어야 한다.
-근거: BOOT-TEST — Testing Spring Boot Applications: RANDOM_PORT/DEFINED_PORT and @Transactional note
+출처: Spring Boot 4.1 Testing — Testing Spring Boot Applications: RANDOM_PORT/DEFINED_PORT and @Transactional note
 
-출처
-BOOT-AUTO: https://docs.spring.io/spring-boot/4.1/reference/using/auto-configuration.html
-BOOT-CONFIG: https://docs.spring.io/spring-boot/4.1/reference/features/external-config.html
-BOOT-HEALTH: https://docs.spring.io/spring-boot/4.1/reference/actuator/endpoints.html
-BOOT-STOP: https://docs.spring.io/spring-boot/4.1/reference/web/graceful-shutdown.html
-BOOT-TEST: https://docs.spring.io/spring-boot/4.1/reference/testing/spring-boot-applications.html
+참고 문서
+Spring Boot 4.1 Auto-configuration: https://docs.spring.io/spring-boot/4.1/reference/using/auto-configuration.html
+Spring Boot 4.1 Externalized Configuration: https://docs.spring.io/spring-boot/4.1/reference/features/external-config.html
+Spring Boot 4.1 Actuator Endpoints: https://docs.spring.io/spring-boot/4.1/reference/actuator/endpoints.html
+Spring Boot 4.1 Graceful Shutdown: https://docs.spring.io/spring-boot/4.1/reference/web/graceful-shutdown.html
+Spring Boot 4.1 Testing: https://docs.spring.io/spring-boot/4.1/reference/testing/spring-boot-applications.html
 
 ### jpa-v1
 
-Jakarta Persistence 핵심 동작과 경계 · initial-v1 · Jakarta Persistence 3.2
+Jakarta Persistence 핵심 동작과 경계 · Jakarta Persistence 3.2
 
-Jakarta Persistence 학습 근거 · initial-v1
-기준: Jakarta Persistence 3.2
-직접 작성한 한국어 설명. 사람 검수와 공개 승인 대기.
+Jakarta Persistence · 기준: Jakarta Persistence 3.2
 
-[JPA-101]
 관리 상태 전이, SQL 실행, 트랜잭션 확정은 서로 다른 사건이다. 새 객체를 persist한 뒤 관리 상태가 됐다는 사실과 DB 트랜잭션의 성공 여부는 분리해 확인한다. 구현이나 식별자 전략이 SQL을 일찍 실행해도 이후 롤백 가능성이 사라지는 것은 아니다.
-근거: JPA-SPEC — 3.3.2 Persisting an Entity Instance; 3.3.4 Synchronization to the Database
+출처: Jakarta Persistence 3.2 Specification — 3.3.2 Persisting an Entity Instance; 3.3.4 Synchronization to the Database
 
-[JPA-102]
 표준 이름의 힌트라도 모든 실행 환경에서 강제되는 계약은 아닐 수 있다. 잠금 대기 한도를 요구한다면 표준 문서의 이식성 경고와 사용하는 DB·드라이버·구현의 지원을 함께 확인한다. 서비스 응답 시간 제한은 잠금 외의 실행 단계까지 포함하므로 별도 경계다.
-근거: JPA-SPEC — 3.5.4.3 Lock Mode Properties and Uses
+출처: Jakarta Persistence 3.2 Specification — 3.5.4.3 Lock Mode Properties and Uses
 
-[JPA-103]
 enum 매핑 방식은 Java 이름과 DB 값 사이의 계약이다. 명시적 ORDINAL과 커스텀 값 필드가 없는 경우에는 선언 순서가 저장 의미에 영향을 준다. 명시적 STRING은 이름을 계약으로 삼는다. Jakarta Persistence 3.2의 EnumeratedValue 같은 별도 매핑 조건이 있는 경우는 이 단순 비교의 전제에서 제외한다.
-근거: JPA-SPEC — 11.1.18 Enumerated Annotation; 11.1.19 EnumeratedValue Annotation
+출처: Jakarta Persistence 3.2 Specification — 11.1.18 Enumerated Annotation; 11.1.19 EnumeratedValue Annotation
 
-[JPA-104]
 컬렉션 매핑을 고를 때는 원소가 단순 값인지 독립적으로 식별되는 대상인지 먼저 판단한다. ElementCollection의 원소는 기본 값 또는 임베디드 값으로 컬렉션 테이블에 저장된다. 독립 식별성을 가진 엔티티는 엔티티 간 관계로 표현하며 그 생명주기 정책도 별도로 정한다.
-근거: JPA-SPEC — 2.7 Embeddable Classes; 2.8 Collections of Embeddable Classes and Basic Types
+출처: Jakarta Persistence 3.2 Specification — 2.7 Embeddable Classes; 2.8 Collections of Embeddable Classes and Basic Types
 
-[JPA-105]
 DB 트랜잭션과 메모리 객체의 변경 기록은 같은 저장소가 아니다. 롤백 이후 참조를 가지고 있어도 그 값이 현재 DB를 대표한다고 보장되지 않는다. 특히 버전과 생성된 값이 불일치할 수 있으므로 재시도는 새로운 실행 경계에서 상태를 다시 읽고 판단하는 흐름으로 구성한다.
-근거: JPA-SPEC — 3.4.3 Transaction Rollback
+출처: Jakarta Persistence 3.2 Specification — 3.4.3 Transaction Rollback
 
-출처
-JPA-SPEC: https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html
+참고 문서
+Jakarta Persistence 3.2 Specification: https://jakarta.ee/specifications/persistence/3.2/jakarta-persistence-spec-3.2.html
 
 ## 출처 이용 조건 검수
 
