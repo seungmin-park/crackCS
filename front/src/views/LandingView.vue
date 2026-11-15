@@ -91,6 +91,7 @@ onBeforeUnmount(() => {
         </div>
       </section>
       <div class="proof-strip">
+        <p><strong>25개 주제 260여 문항</strong> 공개</p>
         <p><strong>서술형 답변</strong>으로 이해 확인</p>
         <p><strong>참고 문서</strong>로 평가 근거 확인</p>
         <p><strong>지식 지도</strong>로 다음 학습 연결</p>
@@ -223,8 +224,9 @@ onBeforeUnmount(() => {
           <details>
             <summary>답변은 어떻게 평가하나요?</summary>
             <p>
-              참고 문서를 바탕으로 개념별 판정과 평가 근거를 제공해요. 평가가
-              완료되지 않거나 근거 검토가 필요하면 그 상태를 구분해 알려드려요.
+              참고 문서를 바탕으로 AI가 개념별 판정과 평가 근거를 제공해요.
+              평가가 완료되지 않거나 근거 검토가 필요하면 그 상태를 구분해
+              알려드려요.
             </p>
           </details>
           <details>
