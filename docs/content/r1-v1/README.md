@@ -7,7 +7,7 @@
 
 ## 범위
 
-17개 Topic·156문항·312개 Concept·17문서·120개 출처. BASIC 33, INTERMEDIATE 114, ADVANCED 9.
+21개 Topic·176문항·352개 Concept·21문서·135개 출처. BASIC 37, INTERMEDIATE 127, ADVANCED 12.
 
 | Topic | 문항 | 기준 | 다루는 내용 |
 |---|---|---|---|
@@ -28,8 +28,12 @@
 | `TESTING` | 7 | 테스트 설계 일반 | 테스트 대역, 커버리지, TDD, 이음새, 격리, 시간 제어 |
 | `SECURITY` | 8 | OWASP·RFC | 세션 고정, 비밀번호 저장, 파일 업로드, SQL 인젝션, JWT, OAuth 2.0, PKCE, CORS |
 | `DELIVERY_AND_MIGRATION` | 9 | Docker·Kubernetes 문서 | 컨테이너, 리버스 프록시, 롤링·블루-그린·카나리, 스키마 변경, 빌드 캐시, CI, 코드형 인프라 |
+| `CACHE_AND_REDIS` | 5 | Redis 공식 문서 | 캐시 어사이드, 키 만료, 축출 정책, RDB와 AOF, 락 |
+| `MESSAGING_AND_KAFKA` | 5 | Apache Kafka 4.1 문서 | 파티션과 순서, 컨슈머 그룹, 전달 보장, 복제와 acks, 보존과 재처리 |
+| `OBSERVABILITY_AND_PERFORMANCE` | 5 | Prometheus·OpenTelemetry·SRE Book | 카운터와 게이지, 백분위수와 히스토그램, 네 가지 신호, 증상 기반 알림, 분산 추적 |
+| `SYSTEM_DESIGN` | 5 | 인용 문서 기준 | 모놀리스와 마이크로서비스, 서킷 브레이커, 재시도와 백오프, 부하 분산, 장애 서버 제외 |
 
-`API_DESIGN`, `SPRING_BOOT`, `CS_FOUNDATIONS`, `COMPUTER_ARCHITECTURE`는 이 묶음에 없음. 기존 [initial-v1](../initial-v1/README.md)·[a1-v1](../a1-v1/README.md)·[a2-v1](../a2-v1/README.md) 문항만 있음. 관측·성능, 캐시, 메시징, 시스템 설계는 커리큘럼 B·C 묶음의 미제작 범위.
+`API_DESIGN`, `SPRING_BOOT`, `CS_FOUNDATIONS`, `COMPUTER_ARCHITECTURE`는 이 묶음에 없음. 기존 [initial-v1](../initial-v1/README.md)·[a1-v1](../a1-v1/README.md)·[a2-v1](../a2-v1/README.md) 문항만 있음. 관측·성능, 캐시, 메시징, 시스템 설계는 각 5문항의 첫 묶음이며 커리큘럼 B·C의 나머지 개념은 미제작.
 
 ## 문항 형식
 

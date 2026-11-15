@@ -19,7 +19,7 @@ Java·Spring·JPA 사용법에 CS·웹·DB·객체 설계·테스트·운영 원
 | 로컬 승인·공개 | OS·Java 각5문항·1문서, 총10문항·20개 Concept·2문서. [OS 실제 GPT·버전 보존](../../changes/2026-10-05-os-content/verification.md), [Java 합성 provider 흐름](../../changes/2026-10-05-java-content-flow/verification.md) |
 | 기존 검수 대기 | Spring Framework·Spring Boot·JPA 15문항·3문서 |
 | 확장 핵심 | 기존5개를 포함한 **28개 말단 Topic**의 제작 계획. [A1 신규6개](../a1-v1/README.md) 30문항·64개 Concept·6문서, [A2 신규6개](../a2-v1/README.md) 30문항·60개 Concept·6문서 DRAFT 초안 제작. 나머지 신규11개 콘텐츠 미제작 |
-| 기존 Topic 보강 | [R1](../r1-v1/README.md) 17개 Topic·156문항·312개 Concept·17문서 DRAFT 초안. JVM/동시성·보안·변경/협업·배포는 B 묶음 범위의 일부를 먼저 다룸 |
+| 기존 Topic 보강 | [R1](../r1-v1/README.md) 21개 Topic·176문항·352개 Concept·21문서 DRAFT 초안. B·C 묶음 범위(JVM/동시성·보안·변경/협업·배포·관측·캐시·메시징·시스템 설계)의 일부를 먼저 다룸 |
 | 선택 확장 | Kotlin 상호 운용·AI 개발 검증 **2개 Topic**. 핵심28개와 별도 |
 
 이 문서는 제작할 지식 범위의 기준. 전체28개 완성이 제한 파일럿의 자동 선행 조건은 아님. 출시 대상으로 선택한 leaf Topic만 OQ-006 수량·검수·근거·평가 Gate 적용. 신규 Topic을 단순 활성 등록하면 지식 지도에 미평가 범위가 늘 수 있으므로 등록·노출도 출시 묶음과 함께 검토.
