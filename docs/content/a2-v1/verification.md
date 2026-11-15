@@ -4,8 +4,9 @@
 - 확인일: 2026-10-07
 - 작업 경로: `/Users/seungmin/Desktop/repo/crackCS/.worktrees/a2-content`
 - 브랜치·기준: `docs/a2-content`, 최신 origin/main `f803b11`에서 분리
-- 기준 원본: [bundle.json](bundle.json), SHA-256 `7b302ac69d5739c87b304b823fdc96b169ce5067a353b01eeb89f08fb843d6cc`
+- 기준 원본: [bundle.json](bundle.json), SHA-256 `a5705b81ac9ca01953bafbbd22b6c357be0645c4a7b8d6762d80ce9e61d6e42a`
 - 2026-11-15 근거 문서 정리: 문서 제목의 묶음 표기, 머리말의 검수 대기 문구, 문항 키 줄, ‘확인·판정 한계’ 절을 제거하고 출처 ID를 문서 제목으로 바꿈. 설명 문단은 불변
+- 2026-11-15 문장 재검토: 질문 4문항 교정, 근거 문서의 개념 코드 표기 60줄 제거. A2-FND-05 표본 값을 정수(90건 10ms·10건 110ms, 평균 20ms·p95 110ms)로 바꾸고 답안·기준·진단 사례를 같은 값으로 수정
 - 2026-11-15 문장 교정: 한글 뒤 숫자·영문 띄어쓰기, 질문 문장 합쇼체 통일. 수치·식별자·판정 기준·출처 불변. 아래 2026-10-07 기록의 원본 SHA-256은 `8077c1a2…8292`
 - 산출물·검수 절차: [README](README.md), [읽기 사본](review.md)
 - 전달 commit·PR·최종 CI: 해당 변경의 Git/PR 이력에서 관리. 이 문서의 로컬 검증과 콘텐츠 공개 승인은 별개

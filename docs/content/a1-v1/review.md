@@ -2,7 +2,7 @@
 
 > 자동 생성 읽기 사본. 수정 기준은 [bundle.json](bundle.json). 사람 검수·공개 승인 대기.
 
-- 원본 SHA-256: `b4233665c156ea67ed74cde2c9b3e65af21b0f329c8d027b343d1a02c9693d50`
+- 원본 SHA-256: `04d35b901b98e94ebbb9dd918e7601938672d7b7fbcf38add70639644d9c8be2`
 - 재생성: 저장소 루트에서 `python3 scripts/render_content_review.py --bundle docs/content/a1-v1/bundle.json`
 - 검수 절차·승인 기록: [콘텐츠 안내](README.md#사람-검수공개-순서)
 - 이 자료를 읽었다는 사실만으로 앱의 검수·공개 상태가 바뀌지 않음
@@ -383,7 +383,7 @@ members.id는 non-NULL이고 값은 1,2입니다. blocked.member_id에는 1,NULL
 
 **필수 개념**
 
-- WHERE의 unknown 탈락 · 가중치 0.50: 주어진 NOT IN에서 1은 false, 2는 unknown이므로 WHERE 결과가 0행인 이유 설명.
+- NULL 비교와 WHERE의 3값 논리 · 가중치 0.50: 주어진 NOT IN에서 1은 false, 2는 unknown이므로 WHERE 결과가 0행인 이유 설명.
 - 반대 집합의 조건 표현 · 가중치 0.50: correlated NOT EXISTS 또는 외부 ID non-NULL 전제의 서브쿼리 NULL 제거로 2를 얻음. NULL 전제 구분.
 
 **개념별 판정 경계**
@@ -727,7 +727,7 @@ Read Committed의 일반 SELECT는 문장 시작 시점의 snapshot을 사용하
 
 ### A1-TX-03 · INTERMEDIATE
 
-PostgreSQL 17 Read Committed에서 재고 10을 A와 B가 일반 SELECT로 읽고, 각각 UPDATE stock SET quantity=9 WHERE id=1을 실행해 둘 다 commit합니다. 최종 9가 의도한 두 번 차감 결과 8이 아닌 이유와, 재고가 음수가 되지 않게 차감하는 대안을 설명하세요.
+PostgreSQL 17 Read Committed에서 재고 10을 A와 B가 일반 SELECT로 읽고, 각각 UPDATE stock SET quantity=9 WHERE id=1을 실행해 둘 다 commit합니다. 두 번 차감했는데 최종 값이 8이 아닌 9가 되는 이유와, 재고가 음수가 되지 않게 차감하는 대안을 설명하세요.
 
 **모범 답안**
 
@@ -958,7 +958,7 @@ FOR UPDATE는 실제 조회한 행을 잠그므로 0행이면 존재하지 않�
 
 ### A1-HTTP-02 · INTERMEDIATE
 
-응답 Cache-Control에 필드명 없는 no-cache, no-store, private를 각각 사용할 때 저장과 재사용 규칙은 어떻게 다른가요? private이면 브라우저도 저장하지 않는지, no-store가 모든 개인정보 복사까지 막는지 설명하세요.
+응답 Cache-Control에 인자 없이 쓴 no-cache, no-store, private를 각각 사용할 때 저장과 재사용 규칙은 어떻게 다른가요? private이면 브라우저도 저장하지 않는지, no-store가 모든 개인정보 복사까지 막는지 설명하세요.
 
 **모범 답안**
 
@@ -966,13 +966,13 @@ no-cache는 저장 자체를 막지 않고 재사용 전에 원 서버의 성공
 
 **필수 개념**
 
-- 저장과 재검증의 구분 · 가중치 0.50: 필드명 없는 no-cache의 저장 가능·재검증 요구와 no-store의 저장·재사용 금지를 구분.
+- 저장과 재검증의 구분 · 가중치 0.50: 인자 없이 쓴 no-cache의 저장 가능·재검증 요구와 no-store의 저장·재사용 금지를 구분.
 - 캐시 적용 범위 · 가중치 0.50: private의 공유/개별 캐시 구분과 no-store의 비준수 저장·기존 복사에 대한 보장 한계 설명.
 
 **개념별 판정 경계**
 
 - `HTTP_02_01`
-  - CORRECT: 필드명 없는 no-cache의 저장 가능·재검증 요구와 no-store의 저장·재사용 금지를 구분.
+  - CORRECT: 인자 없이 쓴 no-cache의 저장 가능·재검증 요구와 no-store의 저장·재사용 금지를 구분.
   - PARTIALLY_CORRECT: no-cache와 no-store를 구분하되 검증 시점 일부 누락.
   - INCORRECT: no-cache가 모든 저장을 금지하고 no-store는 저장 후 재검증만 요구한다고 주장.
   - NEEDS_REVIEW: 해당 개념을 뒷받침하는 근거 문서가 제공되지 않았거나 전제·버전이 불명확해 답변과 대조할 수 없는 상태. 명백한 오답과 구분.
@@ -1129,7 +1129,7 @@ API 요청에서 자격 증명이 없거나 무효일 때와, 요청을 이해�
 
 ### A1-HTTP-05 · INTERMEDIATE
 
-POST 결제 요청 처리 뒤 서버가 Location: /receipts/8과 함께 303 또는 307을 반환할 수 있다고 합시다. 자동 redirect에서 목적지 요청 메서드는 어떻게 달라지나요? redirect만으로 결제 중복을 방지했다고 할 수 있는지 설명하세요.
+POST 결제 요청 처리 뒤 서버가 Location: /receipts/8과 함께 303 또는 307로 응답한다고 가정합니다. 자동 redirect에서 목적지 요청 메서드는 어떻게 달라지나요? redirect만으로 결제 중복을 방지했다고 할 수 있는지 설명하세요.
 
 **모범 답안**
 
@@ -1186,7 +1186,7 @@ POST 결제 요청 처리 뒤 서버가 Location: /receipts/8과 함께 303 또�
 
 ### A1-API-01 · BASIC
 
-한 서비스가 명사형 URI와 GET·POST·PUT·DELETE, JSON을 사용한다는 정보만 있습니다. 이를 REST의 모든 제약을 충족한 API라고 확정할 수 있나요? Uniform interface에 필요한 내용과 확인하지 못한 제약을 설명하세요.
+한 서비스가 명사형 URI와 GET·POST·PUT·DELETE, JSON을 사용한다는 정보만 있습니다. 이를 REST의 모든 제약을 충족한 API라고 확정할 수 있나요? 일관된 인터페이스(uniform interface)에 필요한 내용과 확인하지 못한 제약을 설명하세요.
 
 **모범 답안**
 
@@ -1479,7 +1479,7 @@ OpenAPI는 약속을 기술하며 파일 자체가 실제 응답을 자동 검�
 
 ### A1-TEST-01 · BASIC
 
-주문 수량의 불변식, Service commit 후 저장 결과, HTTP 입력 validation·JSON 이름, 로그인부터 답변 제출까지의 연결을 검증하려 합니다. 각각 어느 수준의 테스트가 적절한가요? HTTP 계약 테스트의 Service double이 전체 DB 흐름을 증명하는지도 설명하세요.
+주문 수량의 불변식, Service commit 후 저장 결과, HTTP 입력 validation·JSON 이름, 로그인부터 주문 제출까지의 연결을 검증하려 합니다. 각각 어느 수준의 테스트가 적절한가요? HTTP 계약 테스트의 Service double이 전체 DB 흐름을 증명하는지도 설명하세요.
 
 **모범 답안**
 
@@ -1537,7 +1537,7 @@ OpenAPI는 약속을 기술하며 파일 자체가 실제 응답을 자동 검�
 
 ### A1-TEST-02 · INTERMEDIATE
 
-Repository를 mock한 Service 테스트가 모두 green입니다. 운영에서는 FK 위반과 잘못된 JOIN query가 발견됐습니다. 기존 테스트는 무엇을 증명했고 무엇을 증명하지 못했나요? 필요한 보강을 설명하되 mock이 항상 쓸모없다는 결론은 피하세요.
+Repository를 mock한 Service 테스트가 모두 통과합니다. 운영에서는 FK 위반과 잘못된 JOIN query가 발견됐습니다. 기존 테스트는 무엇을 증명했고 무엇을 증명하지 못했나요? 필요한 보강을 설명하세요.
 
 **모범 답안**
 
@@ -1711,7 +1711,7 @@ HTTP 클라이언트 테스트와 실제 서버는 다른 스레드·transaction
 
 ### A1-TEST-05 · ADVANCED
 
-fake 평가 provider가 timeout·429·503을 내도록 설정하고 retry·취소·학습 화면 오류 처리가 모두 통과했습니다. 이것으로 실제 제공자 장애 대응과 모델 채점 품질까지 검증했다고 발표할 수 있나요? 작성자가 만든 답변 사례의 역할과 추가 증거를 설명하세요.
+AI가 답안을 채점하는 서비스를 테스트합니다. 채점 모델 제공자를 흉내 낸 가짜(fake) 구현이 timeout·429·503을 내도록 설정했고, 재시도·취소·화면의 오류 처리 테스트가 모두 통과했습니다. 이것으로 실제 제공자 장애 대응과 모델의 채점 품질까지 검증했다고 발표할 수 있나요? 개발자가 직접 만든 답변 사례의 역할과 추가로 필요한 증거를 설명하세요.
 
 **모범 답안**
 
@@ -1871,7 +1871,7 @@ LEFT JOIN의 미매칭 고객은 오른쪽 NULL인 결과 행 하나를 남김.
 
 COUNT(*)는 NULL 확장 행도 셈. non-NULL PK인 COUNT(o.id)로 실제 매칭 주문만 세어 0 표현.
 
-### WHERE의 unknown 탈락
+### NULL 비교와 WHERE의 3값 논리
 
 주어진 NOT IN에서 1은 false, 2는 unknown이므로 WHERE 결과가 0행인 이유 설명.
 
@@ -2002,7 +2002,7 @@ GET에 If-None-Match를 보내 현재 표현과 맞으면 조건부 조회의 30
 
 ### 저장과 재검증의 구분
 
-필드명 없는 no-cache의 저장 가능·재검증 요구와 no-store의 저장·재사용 금지를 구분.
+인자 없이 쓴 no-cache의 저장 가능·재검증 요구와 no-store의 저장·재사용 금지를 구분.
 
 ### 캐시 적용 범위
 
